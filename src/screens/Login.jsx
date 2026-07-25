@@ -18,7 +18,10 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault()
     setStatus('sending')
-    const { error } = await supabase.auth.signInWithOtp({ email })
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    })
     if (error) {
       setErrorMessage(error.message)
       setStatus('error')
