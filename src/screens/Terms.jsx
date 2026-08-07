@@ -35,7 +35,7 @@ const SECTIONS = [
     heading: '4. Accounts',
     content: [
       'To use the App, you must create an account using a valid email address. You are responsible for maintaining the confidentiality of your account access and for all activity under your account. Notify us immediately at info@qolcompanion.com.au if you suspect unauthorized use of your account.',
-      'Each account is currently limited to one pet profile. This limitation may be changed at our discretion — see Section 10.',
+      'Each account is currently limited to one pet profile. This limitation may be changed at our discretion.',
     ],
   },
   {
