@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
 
 const SECTIONS = [
   {
@@ -47,6 +48,8 @@ const SECTIONS = [
 export default function Legal() {
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <SectionTitle>Legal &amp; Privacy</SectionTitle>
         <p>

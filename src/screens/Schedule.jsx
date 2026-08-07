@@ -3,6 +3,7 @@ import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
 
 const CADENCE_OPTIONS = [
   { value: 1, label: 'Daily' },
@@ -57,6 +58,8 @@ export default function Schedule() {
 
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <SectionTitle>Schedule</SectionTitle>
         <p>

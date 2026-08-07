@@ -1,6 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -22,6 +23,8 @@ export default function Trends() {
 
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <SectionTitle>Trends</SectionTitle>
         <p>

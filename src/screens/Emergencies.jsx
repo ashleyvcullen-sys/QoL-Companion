@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
 import { usePets } from '../lib/PetsContext'
 
 const GENERAL_EMERGENCIES = [
@@ -30,6 +31,8 @@ export default function Emergencies() {
 
   return (
     <div className="screen">
+      <HomeLink />
+
       <div className="warning-banner">
         <AlertTriangle size={20} />
         <p>

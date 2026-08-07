@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
+import HomeLink from '../components/HomeLink'
 import AgeBracketPicker from './endOfLife/AgeBracketPicker'
 import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
@@ -19,6 +20,8 @@ export default function EndOfLife() {
 
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <SectionTitle>End Of Life</SectionTitle>
         <p>

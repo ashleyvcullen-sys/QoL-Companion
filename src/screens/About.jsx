@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Heart, TrendingUp, FileDown, HeartHandshake } from 'lucide-react'
 import Card from '../components/Card'
+import HomeLink from '../components/HomeLink'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 import WelcomeSlide1 from './welcome/WelcomeSlide1'
 import WelcomeSlide2 from './welcome/WelcomeSlide2'
@@ -21,6 +22,8 @@ export default function About() {
 
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <WelcomeSlide1 petName={pet?.name} />
       </Card>

@@ -1,6 +1,7 @@
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
+import HomeLink from '../components/HomeLink'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -25,6 +26,8 @@ export default function ExportReport() {
 
   return (
     <div className="screen">
+      <HomeLink className="no-print" />
+
       <Card>
         <SectionTitle>Report</SectionTitle>
         <p>A summary you can print or save as a PDF to bring to a vet visit.</p>
