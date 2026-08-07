@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOut } from 'lucide-react'
+import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOut, Stethoscope, PlusCircle, Lock } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
 import { supabase } from '../lib/supabase'
 import Card from '../components/Card'
@@ -21,6 +21,11 @@ const NAV_ITEMS = [
   { to: '/about', label: 'About', Icon: AboutIcon },
 ]
 
+const LOCKED_NAV_ITEMS = [
+  { label: 'Specific Disease Monitoring', Icon: Stethoscope },
+  { label: 'Add Another Pet', Icon: PlusCircle },
+]
+
 export default function Home() {
   const { pets, refresh } = usePets()
   const pet = pets[0]
@@ -29,6 +34,7 @@ export default function Home() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [lockedFeatureLabel, setLockedFeatureLabel] = useState(null)
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -80,6 +86,25 @@ export default function Home() {
             </Card>
           </Link>
         ))}
+
+        {LOCKED_NAV_ITEMS.map(({ label, Icon }) => (
+          <button
+            key={label}
+            type="button"
+            className="icon-tile-link"
+            onClick={() => setLockedFeatureLabel(label)}
+          >
+            <Card className="icon-tile icon-tile-locked">
+              <span className="icon-tile-lock-badge">
+                <Lock size={11} />
+              </span>
+              <span className="icon-badge icon-badge-locked">
+                <Icon size={22} strokeWidth={2} color="#fff" />
+              </span>
+              <span className="icon-tile-label">{label}</span>
+            </Card>
+          </button>
+        ))}
       </div>
 
       <button type="button" className="sign-out-button" onClick={handleSignOut}>
@@ -115,6 +140,15 @@ export default function Home() {
               {deleting ? 'Deleting…' : 'Delete'}
             </Btn>
           </div>
+        </Modal>
+      )}
+
+      {lockedFeatureLabel && (
+        <Modal title="Coming soon" onClose={() => setLockedFeatureLabel(null)}>
+          <p>{lockedFeatureLabel} isn't available yet, but it's on the way.</p>
+          <Btn type="button" className="btn-block" onClick={() => setLockedFeatureLabel(null)}>
+            Got it
+          </Btn>
         </Modal>
       )}
     </div>

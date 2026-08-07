@@ -305,6 +305,7 @@ code {
 }
 
 .icon-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -324,6 +325,25 @@ code {
   transform: scale(0.98);
 }
 
+.icon-tile-locked {
+  opacity: 0.6;
+}
+
+.icon-tile-lock-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .icon-badge {
   width: 44px;
   height: 44px;
@@ -333,6 +353,10 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.icon-badge-locked {
+  background: var(--text-muted);
 }
 
 .icon-tile-label {
