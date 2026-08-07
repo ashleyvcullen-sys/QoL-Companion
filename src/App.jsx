@@ -14,6 +14,7 @@ import Schedule from './screens/Schedule'
 import ExportReport from './screens/ExportReport'
 import About from './screens/About'
 import Legal from './screens/Legal'
+import Support from './screens/Support'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading } = useAuth()
@@ -32,6 +33,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/support" element={<Support />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/welcome" element={<Welcome />} />
       <Route element={<RequireOnboardedPet />}>
