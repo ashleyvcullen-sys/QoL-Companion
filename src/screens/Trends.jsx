@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -8,6 +8,8 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { computeOverviewCategories, severityColorFromPercent } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import TrendsCalendar from './trends/TrendsCalendar'
+
+const BRUSH_DEFAULT_WINDOW_DAYS = 14
 
 export default function Trends() {
   const { pets } = usePets()
@@ -20,6 +22,10 @@ export default function Trends() {
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const hasHistory = dailySeries.length > 0
+  // Default the Brush to the most recent ~14 days; the handles remain
+  // draggable to scroll/pan or widen the range across the full history.
+  const brushStartIndex = Math.max(0, dailySeries.length - BRUSH_DEFAULT_WINDOW_DAYS)
+  const brushEndIndex = Math.max(0, dailySeries.length - 1)
 
   return (
     <div className="screen">
@@ -81,13 +87,21 @@ export default function Trends() {
         {!hasHistory ? (
           <p>No assessments logged yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={240}>
             <LineChart data={dailySeries}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F5DFE4" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
               <Line type="monotone" dataKey="generalTotal" stroke="#C97B8C" strokeWidth={2} dot={false} connectNulls />
+              <Brush
+                dataKey="date"
+                height={24}
+                stroke="#C97B8C"
+                travellerWidth={10}
+                startIndex={brushStartIndex}
+                endIndex={brushEndIndex}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -104,13 +118,21 @@ export default function Trends() {
           {!hasHistory ? (
             <p>No assessments logged yet.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={220}>
               <LineChart data={dailySeries}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F5DFE4" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={false} connectNulls />
+                <Brush
+                  dataKey="date"
+                  height={24}
+                  stroke={color}
+                  travellerWidth={10}
+                  startIndex={brushStartIndex}
+                  endIndex={brushEndIndex}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
