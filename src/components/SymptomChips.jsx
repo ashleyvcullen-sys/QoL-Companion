@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import Modal from './Modal'
+import Btn from './Btn'
 
 export default function SymptomChips({ options, selected, onChange }) {
   const [showOtherInput, setShowOtherInput] = useState(false)
@@ -63,19 +65,25 @@ export default function SymptomChips({ options, selected, onChange }) {
       })}
 
       {showOtherInput && (
-        <div className="chip-other-modal">
-          <input
-            type="text"
-            value={otherText}
-            onChange={(e) => setOtherText(e.target.value)}
-            placeholder="Describe symptom"
-            autoFocus
-          />
-          <div className="chip-other-modal-actions">
-            <button type="button" onClick={addOther}>Add</button>
-            <button type="button" onClick={() => setShowOtherInput(false)}>Cancel</button>
+        <Modal title="Describe symptom" onClose={() => setShowOtherInput(false)}>
+          <div className="field">
+            <input
+              type="text"
+              value={otherText}
+              onChange={(e) => setOtherText(e.target.value)}
+              placeholder="Describe symptom"
+              autoFocus
+            />
           </div>
-        </div>
+          <div className="modal-actions">
+            <Btn type="button" variant="outline" onClick={() => setShowOtherInput(false)}>
+              Cancel
+            </Btn>
+            <Btn type="button" variant="primary" onClick={addOther}>
+              Add
+            </Btn>
+          </div>
+        </Modal>
       )}
     </div>
   )

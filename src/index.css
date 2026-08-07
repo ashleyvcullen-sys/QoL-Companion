@@ -447,40 +447,6 @@ code {
   color: #fff;
 }
 
-.chip-other-modal {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fff;
-  margin-top: 4px;
-}
-
-.chip-other-modal input {
-  font: inherit;
-  padding: 9px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  box-sizing: border-box;
-}
-
-.chip-other-modal-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.chip-other-modal-actions button {
-  font: inherit;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #fff;
-  cursor: pointer;
-}
-
 .unsure-toggle {
   display: flex;
   align-items: center;
@@ -703,8 +669,9 @@ code {
   inset: 0;
   background: rgba(61, 43, 48, 0.45);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 20px;
   z-index: 100;
 }
 
@@ -714,7 +681,7 @@ code {
   max-width: 480px;
   max-height: 85vh;
   overflow-y: auto;
-  border-radius: 24px 24px 0 0;
+  border-radius: 24px;
   padding: 24px;
   box-sizing: border-box;
 }
