@@ -52,6 +52,7 @@ export default function About() {
       </Card>
 
       <Link to="/legal" className="subtle-link">Privacy, Data &amp; Legal</Link>
+      <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
     </div>
   )
 }
