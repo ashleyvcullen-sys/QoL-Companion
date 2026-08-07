@@ -69,6 +69,7 @@ export default function Legal() {
 
       <Link to="/about" className="subtle-link">Back to About</Link>
       <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
+      <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
     </div>
   )
 }

@@ -162,6 +162,7 @@ export default function Terms() {
       ))}
 
       <Link to="/legal" className="subtle-link">Back to Legal &amp; Privacy</Link>
+      <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
     </div>
   )
 }

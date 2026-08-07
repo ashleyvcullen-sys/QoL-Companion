@@ -15,6 +15,7 @@ import ExportReport from './screens/ExportReport'
 import About from './screens/About'
 import Legal from './screens/Legal'
 import Terms from './screens/Terms'
+import Privacy from './screens/Privacy'
 import Support from './screens/Support'
 
 function RequireOnboardedPet() {
@@ -36,6 +37,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/support" element={<Support />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/welcome" element={<Welcome />} />
       <Route element={<RequireOnboardedPet />}>
