@@ -58,7 +58,7 @@ export default function HomeCareTips() {
       </Card>
 
       <div className="icon-grid">
-        {WELLBEING_CONCEPTS.map(({ key, label, Icon }) => (
+        {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => (
           <button
             key={key}
             type="button"
@@ -66,7 +66,7 @@ export default function HomeCareTips() {
             onClick={() => setActiveKey(key)}
           >
             <Card className="icon-tile">
-              <span className="icon-badge">
+              <span className="icon-badge" style={{ background: color }}>
                 <Icon size={22} color="#fff" />
               </span>
               <span className="icon-tile-label">{label}</span>
