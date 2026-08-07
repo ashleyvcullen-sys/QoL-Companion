@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Droplet } from 'lucide-react'
 import Card from '../components/Card'
+import Btn from '../components/Btn'
+import Modal from '../components/Modal'
 import SwipeableWizard from '../components/SwipeableWizard'
 import IntroPage from './assessment/IntroPage'
 import SliderWithChipsPage from './assessment/SliderWithChipsPage'
@@ -42,6 +44,7 @@ export default function QualityOfLifeAssessment() {
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
 
   function updateScore(field, value) {
     setEntry((prev) => ({ ...prev, scores: { ...prev.scores, [field]: value } }))
@@ -196,6 +199,10 @@ export default function QualityOfLifeAssessment() {
 
   return (
     <div className="screen">
+      <button type="button" className="home-link" onClick={() => setShowExitConfirm(true)}>
+        🏠 Exit
+      </button>
+
       <Card>
         <SwipeableWizard
           pages={pages}
@@ -203,6 +210,20 @@ export default function QualityOfLifeAssessment() {
           onComplete={handleComplete}
         />
       </Card>
+
+      {showExitConfirm && (
+        <Modal title="Exit assessment?" onClose={() => setShowExitConfirm(false)}>
+          <p>Are you sure? Your progress on this assessment won't be saved.</p>
+          <div className="modal-actions">
+            <Btn type="button" variant="outline" onClick={() => setShowExitConfirm(false)}>
+              Cancel
+            </Btn>
+            <Btn type="button" variant="danger" onClick={() => navigate('/')}>
+              Exit
+            </Btn>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
