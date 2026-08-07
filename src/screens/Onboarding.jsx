@@ -22,7 +22,7 @@ const SEX_OPTIONS = [
 
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth()
-  const { refresh } = usePets()
+  const { pets, loading: petsLoading, refresh } = usePets()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -33,8 +33,9 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  if (authLoading) return <p>Loading…</p>
+  if (authLoading || petsLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
+  if (pets.length > 0) return <Navigate to="/" replace />
 
   const weightOptions = WEIGHT_RANGES[species]
   const humanYears = humanYearsForAge(species, weightRangeKey, ageLabel)
@@ -59,6 +60,14 @@ export default function Onboarding() {
     })
 
     if (error) {
+      if (error.code === '23505') {
+        // A pet row already exists for this user (e.g. a duplicate submit, or
+        // this screen was reached after onboarding already completed) — just
+        // pick up the existing pet instead of showing a raw DB error.
+        await refresh()
+        navigate('/')
+        return
+      }
       setErrorMessage(error.message)
       setSubmitting(false)
       return
