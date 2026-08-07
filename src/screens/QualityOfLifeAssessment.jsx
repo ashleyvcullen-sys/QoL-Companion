@@ -137,6 +137,8 @@ export default function QualityOfLifeAssessment() {
       value={entry.urination}
       onChange={(v) => updateField('urination', v)}
       icon={DropletsIcon}
+      species={pet.species}
+      sex={pet.sex}
     />,
     <DrinkingPage
       key="drinking"
