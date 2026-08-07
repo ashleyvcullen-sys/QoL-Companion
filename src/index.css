@@ -995,6 +995,7 @@ code {
   color: var(--text-muted);
   text-decoration: none;
   margin-bottom: 4px;
+  padding-top: max(16px, env(safe-area-inset-top));
 }
 
 .home-link:hover {
