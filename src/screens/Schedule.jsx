@@ -1,9 +1,12 @@
+import { useState } from 'react'
+import { HelpCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
+import Modal from '../components/Modal'
 import Footer from '../components/Footer'
 
 const CADENCE_OPTIONS = [
@@ -46,13 +49,20 @@ function ScheduleRow({ label, lastDate, cadenceDays, onCadenceChange }) {
 export default function Schedule() {
   const { pets, refresh } = usePets()
   const pet = pets[0]
-  const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
+  const { generalEntries, loading } = useQolHistory(pet?.id)
+  const [showFrequencyInfo, setShowFrequencyInfo] = useState(false)
 
   const latestGeneralDate = generalEntries[generalEntries.length - 1]?.date ?? null
-  const latestPainDate = painEntries[painEntries.length - 1]?.date ?? null
 
-  async function updateCadence(field, days) {
-    const nextSchedule = { ...pet.schedule, [field]: days }
+  // Schedule used to track "general" and "pain" cadence separately, even
+  // though a save always writes both halves of the assessment together —
+  // there was never a real scenario where they'd differ. Consolidated to a
+  // single `qol` field; existing pets fall back to whatever `general` was
+  // already set to (or a weekly default) so no one's cadence silently resets.
+  const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
+
+  async function updateCadence(days) {
+    const nextSchedule = { ...pet.schedule, qol: days }
     const { error } = await supabase.from('pets').update({ schedule: nextSchedule }).eq('id', pet.id)
     if (!error) await refresh()
   }
@@ -64,8 +74,8 @@ export default function Schedule() {
       <Card>
         <SectionTitle>Schedule</SectionTitle>
         <p>
-          Set how often each assessment should be repeated. A due/overdue badge shows next
-          to each based on your last logged entry — a simple way to keep monitoring consistent.
+          Set how often the assessment should be repeated. A due/overdue badge shows
+          based on your last logged entry — a simple way to keep monitoring consistent.
         </p>
       </Card>
 
@@ -73,27 +83,45 @@ export default function Schedule() {
         {loading ? (
           <p>Loading…</p>
         ) : (
-          <>
-            <ScheduleRow
-              label="Quality of Life assessment"
-              lastDate={latestGeneralDate}
-              cadenceDays={pet.schedule.general}
-              onCadenceChange={(days) => updateCadence('general', days)}
-            />
-            <ScheduleRow
-              label="Pain scoring"
-              lastDate={latestPainDate}
-              cadenceDays={pet.schedule.pain}
-              onCadenceChange={(days) => updateCadence('pain', days)}
-            />
-          </>
+          <ScheduleRow
+            label="Quality of Life assessment"
+            lastDate={latestGeneralDate}
+            cadenceDays={cadenceDays}
+            onCadenceChange={updateCadence}
+          />
         )}
+      </Card>
+
+      <Card>
+        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
+          <div className="welcome-help-row">
+            <span className="icon-badge">
+              <HelpCircle size={20} color="#fff" />
+            </span>
+            <span>How often should I be assessing my pet's quality of life?</span>
+          </div>
+        </button>
       </Card>
 
       <p className="assessment-hint">
         This app tracks due dates in-app rather than sending push notifications — check the
         Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding).
       </p>
+
+      {showFrequencyInfo && (
+        <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>
+          <p>
+            For young, healthy pets, checking in at least fortnightly is a reasonable
+            baseline — enough to catch any gradual changes without it feeling like a chore.
+          </p>
+          <p>
+            For older pets, or pets with a diagnosed illness or declining health, assessing
+            daily — or as often as you're able — gives you and your vet the clearest, most
+            accurate picture of how they're really doing, especially when things can change
+            quickly.
+          </p>
+        </Modal>
+      )}
 
       <Footer />
     </div>
