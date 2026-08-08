@@ -39,25 +39,40 @@ export default function FelineGrimacePage({ answers, onAnswerChange, onTotalChan
         </span>
       </div>
 
-      {FELINE_GRIMACE_ACTION_UNITS.map((unit) => (
-        <div key={unit.key} className="grimace-action-unit">
-          <p className="grimace-action-unit-label">{unit.label}</p>
-          <div className="severity-option-list">
-            {unit.options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`severity-option ${answers[unit.key] === option.value ? 'selected' : ''}`.trim()}
-                onClick={() => onAnswerChange(unit.key, option.value)}
-              >
-                <span className="severity-option-content">
-                  <span>{option.text}</span>
-                </span>
-              </button>
-            ))}
+      {FELINE_GRIMACE_ACTION_UNITS.map((unit) => {
+        // Defaults to the "0" photo before an answer is picked, rather than
+        // showing no image — avoids a layout jump/empty gap next to a
+        // question the user hasn't reached yet, matching how the overall
+        // reference image above also defaults to its "None" band.
+        const selectedValue = answers[unit.key] ?? 0
+
+        return (
+          <div key={unit.key} className="grimace-action-unit">
+            <div className="grimace-action-unit-header">
+              <p className="grimace-action-unit-label">{unit.label}</p>
+              <img
+                src={`/images/fgs/${unit.imagePrefix}_${selectedValue}.jpg`}
+                alt=""
+                className="grimace-action-unit-thumb"
+              />
+            </div>
+            <div className="severity-option-list">
+              {unit.options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`severity-option ${answers[unit.key] === option.value ? 'selected' : ''}`.trim()}
+                  onClick={() => onAnswerChange(unit.key, option.value)}
+                >
+                  <span className="severity-option-content">
+                    <span>{option.text}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

@@ -6,6 +6,7 @@ export const FELINE_GRIMACE_ACTION_UNITS = [
   {
     key: 'earPosition',
     label: 'Ear position',
+    imagePrefix: 'ear',
     options: [
       { value: 0, text: 'Ears facing forward' },
       { value: 1, text: 'Ears slightly pulled apart or rotated outward' },
@@ -15,6 +16,7 @@ export const FELINE_GRIMACE_ACTION_UNITS = [
   {
     key: 'orbitalTightening',
     label: 'Orbital tightening',
+    imagePrefix: 'orbital',
     options: [
       { value: 0, text: 'Eyes open' },
       { value: 1, text: 'Eyes partially open / squinting' },
@@ -24,6 +26,7 @@ export const FELINE_GRIMACE_ACTION_UNITS = [
   {
     key: 'muzzleTension',
     label: 'Muzzle tension',
+    imagePrefix: 'muzzle',
     options: [
       { value: 0, text: 'Muzzle relaxed (round shape)' },
       { value: 1, text: 'Muzzle mildly tense' },
@@ -33,6 +36,7 @@ export const FELINE_GRIMACE_ACTION_UNITS = [
   {
     key: 'whiskersChange',
     label: 'Whiskers change',
+    imagePrefix: 'whisker',
     options: [
       { value: 0, text: 'Whiskers loose and curved' },
       { value: 1, text: 'Whiskers slightly curved or straight' },
@@ -42,6 +46,7 @@ export const FELINE_GRIMACE_ACTION_UNITS = [
   {
     key: 'headPosition',
     label: 'Head position',
+    imagePrefix: 'head',
     options: [
       { value: 0, text: 'Head held above the shoulder line' },
       { value: 1, text: 'Head aligned with the shoulder line' },

@@ -1029,11 +1029,29 @@ code {
   gap: 8px;
 }
 
+.grimace-action-unit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .grimace-action-unit-label {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-h);
   margin: 0;
+}
+
+.grimace-action-unit-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  object-position: top center;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid var(--border);
 }
 
 .schedule-row {
