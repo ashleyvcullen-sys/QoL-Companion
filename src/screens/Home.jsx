@@ -45,13 +45,6 @@ export default function Home() {
   const tourSteps = NAV_ITEMS.map(({ to, label }) => ({ to, label, message: HOME_TOUR_MESSAGES[to] }))
 
   useEffect(() => {
-    console.log('[HomeTour] auto-show check:', {
-      petId: pet?.id,
-      petName: pet?.name,
-      has_seen_app_tour: pet?.has_seen_app_tour,
-      typeofFlag: typeof pet?.has_seen_app_tour,
-      autoTourShownRefCurrent: autoTourShownRef.current,
-    })
     if (pet && !pet.has_seen_app_tour && !autoTourShownRef.current) {
       autoTourShownRef.current = true
       setShowTour(true)
@@ -66,15 +59,13 @@ export default function Home() {
   }, [location.state, navigate])
 
   async function completeTour() {
-    console.log('[HomeTour] completeTour called, pet before update:', pet?.id, pet?.has_seen_app_tour)
     setShowTour(false)
     if (pet && !pet.has_seen_app_tour) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('pets')
         .update({ has_seen_app_tour: true })
         .eq('id', pet.id)
         .select()
-      console.log('[HomeTour] update result:', { data, error })
       if (error) {
         // If this write silently fails (e.g. a missing UPDATE RLS policy on
         // `pets`), has_seen_app_tour never actually flips to true, and the
@@ -83,7 +74,6 @@ export default function Home() {
         return
       }
       await refresh()
-      console.log('[HomeTour] refresh() finished')
     }
   }
 
