@@ -25,7 +25,6 @@ export const HYGIENE_SYMPTOM_OPTIONS = [
 export const VOMITING_CHARACTER_OPTIONS = ['Bile', 'Foamy', 'Undigested food', 'Blood', 'Other']
 
 export const URINATION_SYMPTOM_OPTIONS = [
-  'None',
   'Straining',
   'Blood',
   'Small volume',
