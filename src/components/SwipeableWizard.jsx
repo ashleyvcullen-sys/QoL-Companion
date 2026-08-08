@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Btn from './Btn'
 
-export default function SwipeableWizard({ pages, onComplete, indicator = 'fraction', finishLabel = 'Finish' }) {
+export default function SwipeableWizard({ pages, onComplete, indicator = 'fraction', finishLabel = 'Finish', footer }) {
   const [pageIndex, setPageIndex] = useState(0)
   const isLastPage = pageIndex === pages.length - 1
 
@@ -37,6 +37,7 @@ export default function SwipeableWizard({ pages, onComplete, indicator = 'fracti
         <Btn type="button" variant="outline" onClick={goBack} disabled={pageIndex === 0}>Back</Btn>
         <Btn type="button" onClick={goNext}>{isLastPage ? finishLabel : 'Next'}</Btn>
       </div>
+      {footer}
     </div>
   )
 }

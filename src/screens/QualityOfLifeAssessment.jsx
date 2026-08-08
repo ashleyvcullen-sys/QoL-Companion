@@ -4,6 +4,7 @@ import { Bell, Droplet, House } from 'lucide-react'
 import Card from '../components/Card'
 import Btn from '../components/Btn'
 import Modal from '../components/Modal'
+import Footer from '../components/Footer'
 import SwipeableWizard from '../components/SwipeableWizard'
 import IntroPage from './assessment/IntroPage'
 import SliderWithChipsPage from './assessment/SliderWithChipsPage'
@@ -238,6 +239,7 @@ export default function QualityOfLifeAssessment() {
           pages={pages}
           finishLabel={saving ? 'Saving…' : 'Save'}
           onComplete={handleComplete}
+          footer={<Footer />}
         />
       </Card>
 
