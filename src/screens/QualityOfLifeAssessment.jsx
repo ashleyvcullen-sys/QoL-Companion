@@ -154,7 +154,7 @@ export default function QualityOfLifeAssessment() {
     />,
     <SliderWithChipsPage
       key="hygiene"
-      title="Hygiene"
+      title="Hygiene, Coat Quality And Grooming"
       sliderValue={entry.scores.hygiene}
       onSliderChange={(v) => updateScore('hygiene', v)}
       chipOptions={HYGIENE_SYMPTOM_OPTIONS}
