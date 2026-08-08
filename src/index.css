@@ -515,9 +515,6 @@ code {
 
 .welcome-slide {
   gap: 18px;
-}
-
-.welcome-slide--centered {
   align-items: center;
   text-align: center;
 }

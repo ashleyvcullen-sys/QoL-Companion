@@ -3,7 +3,7 @@ import SectionTitle from '../../components/SectionTitle'
 
 export default function WelcomeSlide5() {
   return (
-    <div className="assessment-page welcome-slide welcome-slide--centered">
+    <div className="assessment-page welcome-slide">
       <span className="welcome-alert-badge" aria-hidden="true">
         <AlertTriangle size={24} color="#fff" />
       </span>

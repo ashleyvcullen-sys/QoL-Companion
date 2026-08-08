@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Droplet } from 'lucide-react'
+import { Bell, Droplet, House } from 'lucide-react'
 import Card from '../components/Card'
 import Btn from '../components/Btn'
 import Modal from '../components/Modal'
@@ -200,7 +200,8 @@ export default function QualityOfLifeAssessment() {
   return (
     <div className="screen">
       <button type="button" className="home-link" onClick={() => setShowExitConfirm(true)}>
-        🏠 Exit
+        <House size={14} />
+        Exit
       </button>
 
       <Card>
