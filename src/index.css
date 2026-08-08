@@ -988,17 +988,6 @@ code {
   margin: -8px 0 4px;
 }
 
-.grimace-reference-image {
-  display: block;
-  width: 100%;
-  max-width: 220px;
-  margin: 0 auto;
-  border-radius: 14px;
-  object-fit: contain;
-  background: #fff;
-  border: 1px solid var(--border);
-}
-
 .grimace-total {
   display: flex;
   flex-direction: column;

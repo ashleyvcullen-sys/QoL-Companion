@@ -20,7 +20,6 @@ export default function FelineGrimacePage({ answers, onAnswerChange, onTotalChan
 
   const bandIndex = beapBandIndexForScore(runningTotal)
   const band = BEAP_BANDS[bandIndex]
-  const referenceImage = `/images/beap/cat_eyes_${bandIndex}.jpg`
 
   return (
     <div className="assessment-page">
@@ -30,20 +29,10 @@ export default function FelineGrimacePage({ answers, onAnswerChange, onTotalChan
         Université de Montréal).
       </p>
 
-      <img src={referenceImage} alt="" className="grimace-reference-image" />
-
-      <div className="grimace-total">
-        <span className="grimace-total-value">{runningTotal} / 10</span>
-        <span className="grimace-total-label" style={{ color: bandColorForIndex(bandIndex) }}>
-          {band.label}
-        </span>
-      </div>
-
       {FELINE_GRIMACE_ACTION_UNITS.map((unit) => {
         // Defaults to the "0" photo before an answer is picked, rather than
         // showing no image — avoids a layout jump/empty gap next to a
-        // question the user hasn't reached yet, matching how the overall
-        // reference image above also defaults to its "None" band.
+        // question the user hasn't reached yet.
         const selectedValue = answers[unit.key] ?? 0
 
         return (
@@ -73,6 +62,13 @@ export default function FelineGrimacePage({ answers, onAnswerChange, onTotalChan
           </div>
         )
       })}
+
+      <div className="grimace-total">
+        <span className="grimace-total-value">{runningTotal} / 10</span>
+        <span className="grimace-total-label" style={{ color: bandColorForIndex(bandIndex) }}>
+          {band.label}
+        </span>
+      </div>
     </div>
   )
 }
