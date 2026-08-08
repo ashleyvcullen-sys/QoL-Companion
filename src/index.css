@@ -988,6 +988,54 @@ code {
   margin: -8px 0 4px;
 }
 
+.grimace-reference-image {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto;
+  border-radius: 14px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--border);
+}
+
+.grimace-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(201, 123, 140, 0.06);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.grimace-total-value {
+  font-family: var(--heading);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.grimace-total-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.grimace-action-unit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grimace-action-unit-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
 .schedule-row {
   display: flex;
   flex-direction: column;

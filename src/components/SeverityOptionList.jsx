@@ -1,23 +1,8 @@
 import { AlertTriangle } from 'lucide-react'
-import { SEVERITY_COLORS } from '../lib/scoring'
+import { BEAP_BANDS, bandColorForIndex } from '../lib/scoring'
 
 const SCORES = [0, 2, 4, 6, 8, 10]
 const EMERGENCY_MARKER = '(emergency)'
-
-const BEAP_BANDS = [
-  { value: 0, label: "No abnormalities" },
-  { value: 2, label: "Mild (1–2)" },
-  { value: 4, label: "Moderate (3–4)" },
-  { value: 6, label: "Moderate to severe (5–6)" },
-  { value: 8, label: "Severe (7–8)" },
-  { value: 10, label: "Very severe (9–10)" },
-]
-
-function bandColorForIndex(i) {
-  if (i <= 1) return SEVERITY_COLORS.good
-  if (i <= 3) return SEVERITY_COLORS.moderate
-  return SEVERITY_COLORS.severe
-}
 
 function parseEmergencyFlag(text) {
   const isEmergency = text.includes(EMERGENCY_MARKER)

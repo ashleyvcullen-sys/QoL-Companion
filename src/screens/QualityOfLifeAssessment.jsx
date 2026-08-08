@@ -12,8 +12,10 @@ import UrinationPage from './assessment/UrinationPage'
 import DrinkingPage from './assessment/DrinkingPage'
 import SliderOnlyPage from './assessment/SliderOnlyPage'
 import BeapCategoryPage from './assessment/BeapCategoryPage'
+import FelineGrimacePage from './assessment/FelineGrimacePage'
 import ReviewPage from './assessment/ReviewPage'
 import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS } from '../lib/assessmentOptions'
+import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -34,6 +36,10 @@ const INITIAL_ENTRY = {
   waterIntake: { status: null },
   notes: '',
   beap: Object.fromEntries(BEAP_CATEGORIES.map((category) => [category, null])),
+  // Only ever used for cats — the 5 Feline Grimace Scale action-unit answers
+  // that sum into beap.eyes. Kept separate from `beap` since it's never sent
+  // to Supabase itself, only the resulting total is.
+  catEyesGrimace: Object.fromEntries(FELINE_GRIMACE_ACTION_UNITS.map((unit) => [unit.key, null])),
 }
 
 export default function QualityOfLifeAssessment() {
@@ -62,6 +68,13 @@ export default function QualityOfLifeAssessment() {
 
   function updateBeap(category, value) {
     setEntry((prev) => ({ ...prev, beap: { ...prev.beap, [category]: value } }))
+  }
+
+  function updateGrimaceAnswer(unitKey, value) {
+    setEntry((prev) => ({
+      ...prev,
+      catEyesGrimace: { ...prev.catEyesGrimace, [unitKey]: value },
+    }))
   }
 
   async function handleComplete() {
@@ -187,15 +200,24 @@ export default function QualityOfLifeAssessment() {
       icon={SleepIcon}
       scaleLabels={['Restless, disrupted, or reversed day/night pattern', 'Some restless nights', 'Settles and sleeps normally']}
     />,
-    ...BEAP_CATEGORIES.map((category) => (
-      <BeapCategoryPage
-        key={category}
-        species={pet.species}
-        categoryKey={category}
-        value={entry.beap[category]}
-        onChange={(v) => updateBeap(category, v)}
-      />
-    )),
+    ...BEAP_CATEGORIES.map((category) =>
+      category === 'eyes' && pet.species === 'cat' ? (
+        <FelineGrimacePage
+          key={category}
+          answers={entry.catEyesGrimace}
+          onAnswerChange={updateGrimaceAnswer}
+          onTotalChange={(total) => updateBeap('eyes', total)}
+        />
+      ) : (
+        <BeapCategoryPage
+          key={category}
+          species={pet.species}
+          categoryKey={category}
+          value={entry.beap[category]}
+          onChange={(v) => updateBeap(category, v)}
+        />
+      )
+    ),
     <ReviewPage
       key="review"
       entry={entry}

@@ -108,13 +108,29 @@ export const BEAP_CATEGORIES = [
   'palpation',
 ]
 
-const BEAP_SEVERITY_LABELS = {
-  0: 'None',
-  2: 'Mild',
-  4: 'Moderate',
-  6: 'Moderate–severe',
-  8: 'Severe',
-  10: 'Very severe',
+// Single source of truth for the 6 BEAAAAPP severity bands — shared by the
+// per-category 0/2/4/6/8/10 option picker (indexed positionally) and the
+// Feline Grimace Scale's summed 0–10 total (looked up by range via `max`,
+// since a sum of five 0–2 sub-scores can land on any integer, not just the
+// even values the picker itself ever produces).
+export const BEAP_BANDS = [
+  { max: 0, label: 'No abnormalities', shortLabel: 'None' },
+  { max: 2, label: 'Mild (1–2)', shortLabel: 'Mild' },
+  { max: 4, label: 'Moderate (3–4)', shortLabel: 'Moderate' },
+  { max: 6, label: 'Moderate to severe (5–6)', shortLabel: 'Moderate–severe' },
+  { max: 8, label: 'Severe (7–8)', shortLabel: 'Severe' },
+  { max: 10, label: 'Very severe (9–10)', shortLabel: 'Very severe' },
+]
+
+export function bandColorForIndex(i) {
+  if (i <= 1) return SEVERITY_COLORS.good
+  if (i <= 3) return SEVERITY_COLORS.moderate
+  return SEVERITY_COLORS.severe
+}
+
+export function beapBandIndexForScore(score) {
+  const index = BEAP_BANDS.findIndex((band) => score <= band.max)
+  return index === -1 ? BEAP_BANDS.length - 1 : index
 }
 
 export function computeBeapWorst(beap) {
@@ -122,7 +138,7 @@ export function computeBeapWorst(beap) {
 }
 
 export function beapSeverityLabel(score) {
-  return BEAP_SEVERITY_LABELS[score]
+  return BEAP_BANDS[beapBandIndexForScore(score)].shortLabel
 }
 
 export function computeDiseaseInstrumentResult(scoresByDomain) {
