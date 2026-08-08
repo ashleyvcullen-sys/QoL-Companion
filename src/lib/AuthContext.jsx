@@ -1,32 +1,31 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { App as CapacitorApp } from '@capacitor/app'
-import { supabase } from './supabase'
+import { supabase, NATIVE_AUTH_REDIRECT } from './supabase'
 
 const AuthContext = createContext(undefined)
 
-const NATIVE_LOGIN_CALLBACK_URL = 'com.qolcompanion.app://login-callback'
+// Handles the app being reopened via the com.qolcompanion.app://login-callback
+// deep link after the user taps the magic-link email on a native device.
+async function handleAuthDeepLink({ url }) {
+  if (!url.startsWith(NATIVE_AUTH_REDIRECT)) return
 
-// When the magic-link email is opened on a native device, iOS hands the
-// custom-scheme URL back to us via the appUrlOpen event instead of a normal
-// page load. Pull the session out of it and hand it to supabase-js so the
-// rest of the app sees the same auth state it would on the web.
-async function completeNativeLoginFromUrl(url) {
-  if (!url.startsWith(NATIVE_LOGIN_CALLBACK_URL)) return
-
-  const parsed = new URL(url)
-  const params = new URLSearchParams(parsed.hash ? parsed.hash.slice(1) : parsed.search)
+  const { search, hash } = new URL(url)
+  const params = new URLSearchParams(hash ? hash.slice(1) : search)
 
   const code = params.get('code')
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+
+  let error
   if (code) {
-    await supabase.auth.exchangeCodeForSession(code)
-    return
+    ;({ error } = await supabase.auth.exchangeCodeForSession(code))
+  } else if (accessToken && refreshToken) {
+    ;({ error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }))
   }
 
-  const access_token = params.get('access_token')
-  const refresh_token = params.get('refresh_token')
-  if (access_token && refresh_token) {
-    await supabase.auth.setSession({ access_token, refresh_token })
+  if (error) {
+    console.error('Failed to complete native login:', error.message)
   }
 }
 
@@ -40,17 +39,13 @@ export function AuthProvider({ children }) {
       setSession(newSession)
     })
 
-    if (!Capacitor.isNativePlatform()) {
-      return () => listener.subscription.unsubscribe()
-    }
-
-    const urlListenerPromise = CapacitorApp.addListener('appUrlOpen', ({ url }) => {
-      completeNativeLoginFromUrl(url)
-    })
+    const urlOpenListener = Capacitor.isNativePlatform()
+      ? App.addListener('appUrlOpen', handleAuthDeepLink)
+      : null
 
     return () => {
       listener.subscription.unsubscribe()
-      urlListenerPromise.then((urlListener) => urlListener.remove())
+      urlOpenListener?.then((handle) => handle.remove())
     }
   }, [])
 

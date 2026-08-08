@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
-import { supabase } from '../lib/supabase'
+import { supabase, NATIVE_AUTH_REDIRECT } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
-
-const NATIVE_LOGIN_CALLBACK_URL = 'com.qolcompanion.app://login-callback'
 
 export default function Login() {
   const { user, loading } = useAuth()
@@ -22,7 +20,7 @@ export default function Login() {
     e.preventDefault()
     setStatus('sending')
     const emailRedirectTo = Capacitor.isNativePlatform()
-      ? NATIVE_LOGIN_CALLBACK_URL
+      ? NATIVE_AUTH_REDIRECT
       : window.location.origin
     const { error } = await supabase.auth.signInWithOtp({
       email,

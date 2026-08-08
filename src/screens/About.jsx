@@ -51,6 +51,7 @@ export default function About() {
         <WelcomeSlide5 />
       </Card>
 
+      <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
       <Link to="/legal" className="subtle-link">Privacy, Data &amp; Legal</Link>
       <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
       <Link to="/privacy" className="subtle-link">Privacy Policy</Link>

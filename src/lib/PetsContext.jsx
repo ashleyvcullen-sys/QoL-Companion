@@ -21,6 +21,7 @@ export function PetsProvider({ children }) {
       .from('pets')
       .select('*')
       .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Failed to load pets:', error.message)

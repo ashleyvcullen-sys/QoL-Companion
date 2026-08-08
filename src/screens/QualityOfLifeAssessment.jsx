@@ -33,7 +33,6 @@ const INITIAL_ENTRY = {
   waterIntake: { status: null },
   notes: '',
   beap: Object.fromEntries(BEAP_CATEGORIES.map((category) => [category, null])),
-  beapNotes: '',
 }
 
 export default function QualityOfLifeAssessment() {
@@ -100,7 +99,7 @@ export default function QualityOfLifeAssessment() {
         entry_date: entryDate,
         beap: entry.beap,
         beap_worst: beapWorst,
-        notes: entry.beapNotes,
+        notes: entry.notes,
       }, { onConflict: 'pet_id,entry_date' })
 
     if (painError) {
@@ -194,7 +193,6 @@ export default function QualityOfLifeAssessment() {
       key="review"
       entry={entry}
       onNotesChange={(v) => updateField('notes', v)}
-      onBeapNotesChange={(v) => updateField('beapNotes', v)}
       errorMessage={errorMessage}
     />,
   ]
