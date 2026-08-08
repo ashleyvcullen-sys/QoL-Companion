@@ -2,9 +2,8 @@ import { AlertTriangle } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import { usePets } from '../lib/PetsContext'
 
-const GENERAL_EMERGENCIES = [
+const EMERGENCIES = [
   'Collapse, or unable to stand or walk',
   'Difficulty breathing, pale, white or blue/grey gums',
   'Uncontrolled bleeding',
@@ -17,21 +16,20 @@ const GENERAL_EMERGENCIES = [
   'Sudden, severe pain or crying out',
   'A sudden eye injury or sudden blindness',
   'Repeated vomiting or an inability to keep any food/water down',
+  'Open-mouth breathing in cats',
 ]
 
-const CAT_ONLY_EMERGENCY = 'Panting / open mouth breathing in cats'
-
 export default function Emergencies() {
-  const { pets } = usePets()
-  const species = pets[0]?.species
-
-  const emergencies = species === 'cat'
-    ? [...GENERAL_EMERGENCIES, CAT_ONLY_EMERGENCY]
-    : GENERAL_EMERGENCIES
-
   return (
     <div className="screen">
       <HomeLink />
+
+      <Card>
+        <SectionTitle>Emergencies — See Your Vet ASAP</SectionTitle>
+        <p className="home-subtitle">
+          Signs that mean 'go now', not 'monitor and see'.
+        </p>
+      </Card>
 
       <div className="warning-banner">
         <AlertTriangle size={20} />
@@ -44,7 +42,7 @@ export default function Emergencies() {
       <Card>
         <SectionTitle>Emergency signs</SectionTitle>
         <ul className="emergency-list">
-          {emergencies.map((item) => (
+          {EMERGENCIES.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
