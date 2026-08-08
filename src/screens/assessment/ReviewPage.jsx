@@ -1,7 +1,7 @@
 import SectionTitle from '../../components/SectionTitle'
 import { computeGeneralQolResult, computeBeapWorst, beapSeverityLabel } from '../../lib/scoring'
 
-export default function ReviewPage({ entry, onNotesChange, onBeapNotesChange, errorMessage }) {
+export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
   const generalResult = computeGeneralQolResult(entry)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
@@ -28,16 +28,6 @@ export default function ReviewPage({ entry, onNotesChange, onBeapNotesChange, er
           id="general-notes"
           value={entry.notes}
           onChange={(e) => onNotesChange(e.target.value)}
-          rows={3}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="pain-notes">Any notes about pain or mobility?</label>
-        <textarea
-          id="pain-notes"
-          value={entry.beapNotes}
-          onChange={(e) => onBeapNotesChange(e.target.value)}
           rows={3}
         />
       </div>

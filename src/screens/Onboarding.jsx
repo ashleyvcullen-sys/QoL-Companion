@@ -22,7 +22,7 @@ const SEX_OPTIONS = [
 
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth()
-  const { refresh } = usePets()
+  const { pets, loading: petsLoading, refresh } = usePets()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -33,8 +33,12 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  if (authLoading) return <p>Loading…</p>
+  if (authLoading || petsLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
+  // Accounts are limited to one pet — if they already have one (pets is
+  // ordered most-recent-first), send them straight to Home instead of
+  // letting Onboarding create a second row.
+  if (pets.length > 0) return <Navigate to="/" replace />
 
   const weightOptions = WEIGHT_RANGES[species]
   const humanYears = humanYearsForAge(species, weightRangeKey, ageLabel)
@@ -59,6 +63,15 @@ export default function Onboarding() {
     })
 
     if (error) {
+      // 23505 = Postgres unique_violation. The DB-level unique constraint on
+      // pets.user_id is the real backstop for the one-pet-per-account limit;
+      // if it fires (e.g. a double-submit race), just treat it the same as
+      // "already onboarded" rather than showing a raw DB error.
+      if (error.code === '23505') {
+        await refresh()
+        navigate('/')
+        return
+      }
       setErrorMessage(error.message)
       setSubmitting(false)
       return
@@ -72,7 +85,7 @@ export default function Onboarding() {
     <div className="screen">
       <Card>
         <SectionTitle>Welcome — Let's Add Your First Pet</SectionTitle>
-        <p className="home-subtitle">Set up a QoL record for a pet — you can add more later.</p>
+        <p className="home-subtitle">Set up a QoL record for your pet.</p>
         <form onSubmit={handleSubmit} className="form">
           <div className="field">
             <label htmlFor="pet-name">Name</label>

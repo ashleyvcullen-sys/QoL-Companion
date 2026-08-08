@@ -1,12 +1,22 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
+import ConceptDefinition from '../components/ConceptDefinition'
+import OverviewBars from '../components/OverviewBars'
+import TrendLineChart from '../components/TrendLineChart'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
-import { computeOverviewCategories, severityColorFromPercent } from '../lib/scoring'
+import { useConceptToggle } from '../lib/useConceptToggle'
+import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import TrendsCalendar from './trends/TrendsCalendar'
+
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr) return dateStr
+  const [year, month, day] = dateStr.split('-')
+  return `${day}/${month}/${year}`
+}
 
 export default function Trends() {
   const { pets } = usePets()
@@ -20,8 +30,26 @@ export default function Trends() {
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const hasHistory = dailySeries.length > 0
 
+  // No dedicated "baseline" flag on entries — the chronologically earliest
+  // general/pain entry (arrays are fetched sorted ascending) serves as the
+  // baseline for comparison.
+  const hasBaseline = generalEntries.length > 0 || painEntries.length > 0
+  const baselineOverview = computeOverviewCategories(generalEntries[0] ?? null, painEntries[0] ?? null)
+
+  const overviewToggle = useConceptToggle()
+  const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
+
+  const chartToggle = useConceptToggle()
+  const activeChartConcept = WELLBEING_CONCEPTS.find((c) => c.key === chartToggle.activeKey)
+
+  const notesHistory = [...generalEntries]
+    .reverse()
+    .filter((entry) => entry.notes && entry.notes.trim())
+    .slice(0, 10)
+
   return (
     <div className="screen">
+      <HomeLink />
       <Card>
         <SectionTitle>Trends</SectionTitle>
         <p>
@@ -36,33 +64,16 @@ export default function Trends() {
         {!loading && !hasLatestData && <p>No assessments logged yet.</p>}
         {!loading && hasLatestData && (
           <>
-            <div className="overview-bars">
-              {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => {
-                const value = overview[key]
-                return (
-                  <div key={key} className="overview-bar-row">
-                    <span className="overview-bar-icon" style={{ background: color }}>
-                      <Icon size={16} color="#fff" />
-                    </span>
-                    <span className="overview-bar-label">{label}</span>
-                    <div className="overview-bar-track">
-                      <div
-                        className="overview-bar-fill"
-                        style={{
-                          width: `${value ?? 0}%`,
-                          background: value != null ? severityColorFromPercent(value) : 'var(--border)',
-                        }}
-                      />
-                    </div>
-                    <span className="overview-bar-percent">
-                      {value != null ? `${Math.round(value)}%` : '—'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+            <OverviewBars
+              concepts={WELLBEING_CONCEPTS}
+              overview={overview}
+              baselineOverview={baselineOverview}
+              hasBaseline={hasBaseline}
+              onIconClick={overviewToggle.toggle}
+            />
+            <ConceptDefinition concept={activeOverviewConcept} />
             <p className="assessment-hint">
-              From {latestGeneralEntry?.date ?? latestPainEntry?.date} — based on your most recent assessment.
+              From {formatDateDDMMYYYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
             </p>
           </>
         )}
@@ -71,6 +82,9 @@ export default function Trends() {
       <Card>
         <SectionTitle>Good / bad days</SectionTitle>
         <TrendsCalendar generalEntries={generalEntries} />
+        <p className="assessment-hint">
+          A good quality of life means having more good days than bad.
+        </p>
       </Card>
 
       <Card>
@@ -78,41 +92,47 @@ export default function Trends() {
         {!hasHistory ? (
           <p>No assessments logged yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={dailySeries}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F5DFE4" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Line type="monotone" dataKey="generalTotal" stroke="#C97B8C" strokeWidth={2} dot={false} connectNulls />
-            </LineChart>
-          </ResponsiveContainer>
+          <TrendLineChart data={dailySeries} dataKey="generalTotal" color="#C97B8C" height={200} brush />
         )}
       </Card>
 
       {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => (
         <Card key={key}>
           <div className="chart-title">
-            <span className="chart-title-icon" style={{ background: color }}>
+            <button
+              type="button"
+              className="chart-title-icon"
+              style={{ background: color }}
+              onClick={() => chartToggle.toggle(key)}
+            >
               <Icon size={14} color="#fff" />
-            </span>
+            </button>
             <SectionTitle>{label} over time</SectionTitle>
           </div>
+          {chartToggle.activeKey === key && <ConceptDefinition concept={activeChartConcept} />}
           {!hasHistory ? (
             <p>No assessments logged yet.</p>
           ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={dailySeries}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F5DFE4" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey={key} stroke={color} strokeWidth={2} dot={false} connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
+            <TrendLineChart data={dailySeries} dataKey={key} color={color} height={180} domain={[0, 100]} brush />
           )}
         </Card>
       ))}
+
+      <Card>
+        <SectionTitle>History</SectionTitle>
+        {notesHistory.length === 0 ? (
+          <p>No notes logged yet.</p>
+        ) : (
+          <div className="history-list">
+            {notesHistory.map((entry) => (
+              <div key={entry.date} className="history-item">
+                <p className="history-date">{formatDateDDMMYYYY(entry.date)}</p>
+                <p className="history-notes">{entry.notes}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

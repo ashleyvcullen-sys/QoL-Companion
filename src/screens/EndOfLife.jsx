@@ -2,11 +2,16 @@ import { useState } from 'react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
+import HomeLink from '../components/HomeLink'
 import AgeBracketPicker from './endOfLife/AgeBracketPicker'
 import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
 import { useLatestGeneralQol } from '../lib/useLatestGeneralQol'
 import { computeGeneralQolResult } from '../lib/scoring'
+
+function renderWithBold(text) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))
+}
 
 export default function EndOfLife() {
   const { pets } = usePets()
@@ -19,6 +24,7 @@ export default function EndOfLife() {
 
   return (
     <div className="screen">
+      <HomeLink />
       <Card>
         <SectionTitle>End Of Life</SectionTitle>
         <p>
@@ -59,9 +65,21 @@ export default function EndOfLife() {
 
       {activeTopic && (
         <Modal title={activeTopic.label} onClose={() => setActiveTopicKey(null)}>
-          {activeTopic.paragraphs.map((paragraph, i) => (
-            <p key={i}>{paragraph.replace('[pet]', pet?.name || 'them')}</p>
-          ))}
+          {activeTopic.paragraphs.map((paragraph, i) => {
+            if (paragraph.type === 'list') {
+              return (
+                <div key={i} className="modal-list-block">
+                  <p>{paragraph.intro}</p>
+                  <ul className="emergency-list">
+                    {paragraph.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            }
+            return <p key={i}>{renderWithBold(paragraph.replace('[pet]', pet?.name || 'them'))}</p>
+          })}
           {activeTopic.hasAgeBracketPicker && <AgeBracketPicker />}
           {activeTopic.citation && <p className="modal-citation">{activeTopic.citation}</p>}
         </Modal>

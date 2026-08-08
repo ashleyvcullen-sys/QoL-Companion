@@ -1,7 +1,7 @@
 import SectionTitle from '../../components/SectionTitle'
 import WellbeingConcepts from '../../components/WellbeingConcepts'
 
-export default function IntroPage() {
+export default function IntroPage({ petName, isBaseline }) {
   return (
     <div className="assessment-page">
       <SectionTitle>Quality Of Life Assessment</SectionTitle>
@@ -13,7 +13,11 @@ export default function IntroPage() {
 
       <WellbeingConcepts />
 
-      <p className="assessment-hint">Tap Next or swipe to begin.</p>
+      <p className="assessment-hint">
+        {isBaseline
+          ? `Let's establish what's normal for ${petName}. This first assessment becomes their baseline — future check-ins will be compared against it.`
+          : "Tap Next or swipe to begin today's check-in."}
+      </p>
     </div>
   )
 }

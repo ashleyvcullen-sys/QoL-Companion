@@ -8,8 +8,18 @@ export const END_OF_LIFE_TOPICS = [
     label: "How to know when it's time",
     Icon: AboutIcon,
     paragraphs: [
-      "There's no single test that decides this — it's a combination of your vet's assessment and what you observe day to day, which is exactly what the Quality of Life scores in this app are for. A useful rule of thumb many vets use: if there are consistently more bad days than good over a couple of weeks, or the good days are only 'okay' while the bad days are truly hard, that's usually a sign quality of life has slipped below what's fair to ask your pet to keep living with.",
-      "Other signals worth weighing alongside the QoL score: pain that isn't responding to treatment, an illness that's no longer being helped by medication, persistent loss of interest in things they used to enjoy, or a body that is visibly failing even though the personality is still 'in there.' None of this has to be decided alone — consult with your veterinarian to help guide the decision-making process.",
+      "There's no single test that decides this — it's a combination of your vet's assessment and what you observe day to day, which is exactly what the Quality of Life scores in this app are for. A useful rule of thumb many vets use: if there are consistently **more bad days than good** over a couple of weeks, or the good days are only 'okay' while the bad days are truly hard, that's usually a sign quality of life has slipped below what's fair to ask your pet to keep living with.",
+      {
+        type: 'list',
+        intro: 'Other signals worth weighing alongside the QoL score:',
+        items: [
+          "Pain that isn't responding to treatment",
+          "An illness that's no longer being helped by medication",
+          'Persistent loss of interest in things they used to enjoy',
+          "A body that is visibly failing, even if their personality is still there.",
+        ],
+      },
+      'None of this has to be decided alone — consult with your veterinarian to help guide the decision-making process.',
       "It's also normal to feel like you're deciding 'too early' or 'too late' no matter when you choose — that discomfort doesn't mean the decision is wrong.",
       "It is very common for pet owners to feel guilty and to see euthanasia as 'giving up.' They will therefore often wait until the last minute to make this difficult decision. Unfortunately, in hindsight, many owners regret waiting too long due to the poor quality of life their pet experienced at the end. Waiting too long can also limit control and available options when the time comes to say goodbye — emergency situations and traumatic passings become far more likely. It is far more peaceful to make the decision earlier rather than too late.",
       "This is one of the hardest decisions a pet owner can face — but it's also one of the most selfless and kindest things you can do for them. Choosing to spare your pet from suffering, even when it breaks your heart, is a final act of love.",
@@ -21,7 +31,8 @@ export const END_OF_LIFE_TOPICS = [
     Icon: AlertTriangle,
     paragraphs: [
       "It's a common hope that a pet will simply pass away quietly in their sleep at home, and it can happen — but for most terminal or end-stage conditions, it's the exception rather than the rule. As organs fail or disease progresses, the more common pattern is a period of labored breathing, pain, disorientation, seizures, or the body struggling in ways that are distressing to witness and, more importantly, to experience.",
-      "Euthanasia exists precisely to prevent that final stretch of suffering. Done well, it's fast and controlled: often a sedative first, so your pet is deeply relaxed or asleep, followed by an overdose of anaesthetic that stops the heart within moments, entirely painlessly. Choosing euthanasia isn't giving up early — for many pets, it's the kinder ending compared to what letting the disease run its course would actually look like.",
+      "Euthanasia exists precisely to prevent that final stretch of suffering. It's fast and controlled: often a sedative first, so your pet is deeply relaxed or asleep, followed by an overdose of anaesthetic that stops the heart within moments, entirely painlessly. Choosing euthanasia isn't giving up early — for many pets, it's the kinder ending compared to what letting the disease run its course would actually look like.",
+      'Choosing euthanasia is a selfless final act of love.',
     ],
   },
   {
@@ -29,9 +40,9 @@ export const END_OF_LIFE_TOPICS = [
     label: 'The euthanasia process & options',
     Icon: BookOpen,
     paragraphs: [
-      "Most vets use a two-step process: a sedative or pain-relief injection first, which lets your pet relax fully (often they'll appear to fall asleep), followed by the euthanasia solution itself, usually given into a vein. The process is extremely peaceful and not painful — the injection site may pinch briefly, like any injection.",
-      "You can usually choose between an in-clinic appointment or an at-home visit from a mobile/in-home euthanasia vet, where these services are available in your area. In-clinic tends to be more readily available and has full medical support on hand; at-home means your pet can be in a familiar space, on their own bed, without a car trip — many families find that meaningfully gentler. Ask your regular vet what they offer or who they'd recommend locally.",
-      "You can typically choose whether to be present, and whether other family members or pets are there too. There's no right answer — some people want to be there until the end, others find it too hard and prefer to say goodbye beforehand. Both are okay.",
+      "Most vets use a two-step process: a sedative or pain-relief injection first, which lets your pet relax fully (often they'll appear to fall asleep), followed by the euthanasia solution itself, usually given into a vein. The process is extremely peaceful and not painful.",
+      "You can usually choose between an in-clinic appointment or an at-home visit from a mobile/in-home euthanasia vet, where these services are available in your area. In-clinic tends to be more readily available and has full medical support on hand; at-home means your pet can be in a familiar space, without a car trip — many families find saying goodbye at home to be more meaningful and less stressful. Ask your regular vet what they offer or who they'd recommend locally.",
+      "You can typically choose whether to be present, and whether other family members or pets are there too. There's no right answer — some people want to be there until the end, others find it too hard and prefer to say goodbye beforehand.",
     ],
   },
   {
@@ -70,7 +81,7 @@ export const END_OF_LIFE_TOPICS = [
     Icon: PawPrint,
     paragraphs: [
       "Surviving pets grieve just like we do. They often show real changes after a companion dies — searching the house, changes in appetite or sleep, increased clinginess, or withdrawal. These behaviour changes reflect a genuine sense of loss, not just a disrupted routine.",
-      "Some people find it helps to let a surviving pet see or sniff their companion's body afterward, if that's practical and appropriate — many seem to settle faster with a clear 'ending' rather than a companion simply vanishing. Otherwise, keeping routines steady, offering extra affection, and giving it a few weeks before worrying about persistent changes is generally reasonable — though ongoing loss of appetite or withdrawal is still worth a vet check, since grief and illness can look similar.",
+      "It is often helpful to let a surviving pet see or sniff their companion after they have passed. This helps them to understand that their companion is no longer with us. Many seem to settle faster with a clear 'ending' rather than a companion simply vanishing. Otherwise, keeping routines steady, offering extra affection, and giving it a few weeks before worrying about persistent changes is generally reasonable — though ongoing loss of appetite or withdrawal is still worth a vet check, since grief and illness can look similar.",
     ],
   },
 ]

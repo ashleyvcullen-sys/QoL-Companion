@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useConceptToggle } from '../lib/useConceptToggle'
+import ConceptDefinition from './ConceptDefinition'
 import ComfortIcon from './icons/ComfortIcon'
 import AppetiteIcon from './icons/AppetiteIcon'
 import SleepIcon from './icons/SleepIcon'
@@ -49,7 +50,7 @@ export const WELLBEING_CONCEPTS = [
 ]
 
 export default function WellbeingConcepts() {
-  const [activeKey, setActiveKey] = useState(null)
+  const { activeKey, toggle } = useConceptToggle()
   const active = WELLBEING_CONCEPTS.find((concept) => concept.key === activeKey)
 
   return (
@@ -62,7 +63,7 @@ export default function WellbeingConcepts() {
               key={key}
               type="button"
               className={`concept-circle ${isActive ? 'active' : ''}`.trim()}
-              onClick={() => setActiveKey(isActive ? null : key)}
+              onClick={() => toggle(key)}
             >
               <span className="concept-icon" style={{ background: isActive ? color : tint }}>
                 <Icon size={20} color={isActive ? '#fff' : color} />
@@ -73,11 +74,7 @@ export default function WellbeingConcepts() {
         })}
       </div>
 
-      {active && (
-        <p className="concept-definition" style={{ background: active.tint }}>
-          {active.definition}
-        </p>
-      )}
+      <ConceptDefinition concept={active} />
     </>
   )
 }

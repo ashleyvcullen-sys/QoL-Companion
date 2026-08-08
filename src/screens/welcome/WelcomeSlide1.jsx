@@ -9,21 +9,21 @@ export default function WelcomeSlide1({ petName }) {
         className="welcome-illustration"
       />
       <SectionTitle>Welcome To Quality Of Life Companion</SectionTitle>
+      <p className="welcome-credibility-line">
+        Developed by a veterinarian to help pet owners, vets and pets every step of the way.
+      </p>
       <p>
         A gentle way to notice, track, and talk about how your pet is really doing — day
         by day, not just at the next check-up.
       </p>
       <div className="welcome-callout">
         <p>
-          Downloading an app like this isn't always an easy step to take — it can mean
-          sitting with some hard feelings about {petName}'s health. That takes courage,
-          and it says a lot about how deeply you care for {petName}. We're glad you're
-          here.
+          Paying close attention to {petName}'s wellbeing — at any age or stage of life —
+          is one of the most caring things you can do for them. Whether you're getting to
+          know a new pet, keeping an eye on changes as they get older, or navigating
+          something harder, we're glad you're here.
         </p>
       </div>
-      <p className="welcome-footnote">
-        Developed by a veterinarian to help pet owners, vets and pets every step of the way.
-      </p>
     </div>
   )
 }

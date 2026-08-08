@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { Capacitor } from '@capacitor/core'
+import { supabase, NATIVE_AUTH_REDIRECT } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -18,9 +19,12 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault()
     setStatus('sending')
+    const emailRedirectTo = Capacitor.isNativePlatform()
+      ? NATIVE_AUTH_REDIRECT
+      : window.location.origin
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo },
     })
     if (error) {
       setErrorMessage(error.message)

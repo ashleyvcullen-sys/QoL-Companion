@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Droplet } from 'lucide-react'
+import { Bell, Droplet, X } from 'lucide-react'
 import Card from '../components/Card'
+import Modal from '../components/Modal'
+import Btn from '../components/Btn'
 import SwipeableWizard from '../components/SwipeableWizard'
 import IntroPage from './assessment/IntroPage'
 import SliderWithChipsPage from './assessment/SliderWithChipsPage'
@@ -14,6 +16,7 @@ import ReviewPage from './assessment/ReviewPage'
 import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS } from '../lib/assessmentOptions'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
+import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
@@ -31,17 +34,19 @@ const INITIAL_ENTRY = {
   waterIntake: { status: null },
   notes: '',
   beap: Object.fromEntries(BEAP_CATEGORIES.map((category) => [category, null])),
-  beapNotes: '',
 }
 
 export default function QualityOfLifeAssessment() {
   const { pets } = usePets()
   const pet = pets[0]
   const navigate = useNavigate()
+  const { generalEntries } = useQolHistory(pet?.id)
+  const isBaseline = generalEntries.length === 0
 
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
 
   function updateScore(field, value) {
     setEntry((prev) => ({ ...prev, scores: { ...prev.scores, [field]: value } }))
@@ -97,7 +102,7 @@ export default function QualityOfLifeAssessment() {
         entry_date: entryDate,
         beap: entry.beap,
         beap_worst: beapWorst,
-        notes: entry.beapNotes,
+        notes: entry.notes,
       }, { onConflict: 'pet_id,entry_date' })
 
     if (painError) {
@@ -111,7 +116,7 @@ export default function QualityOfLifeAssessment() {
   }
 
   const pages = [
-    <IntroPage key="intro" />,
+    <IntroPage key="intro" petName={pet.name} isBaseline={isBaseline} />,
     <SliderWithChipsPage
       key="stool"
       title="Stool quality"
@@ -189,13 +194,15 @@ export default function QualityOfLifeAssessment() {
       key="review"
       entry={entry}
       onNotesChange={(v) => updateField('notes', v)}
-      onBeapNotesChange={(v) => updateField('beapNotes', v)}
       errorMessage={errorMessage}
     />,
   ]
 
   return (
     <div className="screen">
+      <button type="button" className="home-link" onClick={() => setShowExitConfirm(true)}>
+        <X size={14} /> Exit
+      </button>
       <Card>
         <SwipeableWizard
           pages={pages}
@@ -203,6 +210,20 @@ export default function QualityOfLifeAssessment() {
           onComplete={handleComplete}
         />
       </Card>
+
+      {showExitConfirm && (
+        <Modal title="Exit assessment?" onClose={() => setShowExitConfirm(false)}>
+          <p>Are you sure? Your progress on this assessment won't be saved.</p>
+          <div className="modal-confirm-actions">
+            <Btn type="button" variant="outline" onClick={() => setShowExitConfirm(false)}>
+              Keep going
+            </Btn>
+            <Btn type="button" variant="danger" onClick={() => navigate('/')}>
+              Exit
+            </Btn>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

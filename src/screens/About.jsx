@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Heart, TrendingUp, FileDown, HeartHandshake } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import Card from '../components/Card'
+import HomeLink from '../components/HomeLink'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 import WelcomeSlide1 from './welcome/WelcomeSlide1'
 import WelcomeSlide2 from './welcome/WelcomeSlide2'
@@ -15,12 +18,22 @@ const FEATURE_ITEMS = [
   { Icon: HeartHandshake, label: 'Support And Preparation For End Of Life Decisions', to: '/end-of-life' },
 ]
 
+const INSTAGRAM_URL = 'https://instagram.com/qol_companion'
+
+async function openInstagram(e) {
+  if (Capacitor.isNativePlatform()) {
+    e.preventDefault()
+    await Browser.open({ url: INSTAGRAM_URL })
+  }
+}
+
 export default function About() {
   const { pets } = usePets()
   const pet = pets[0]
 
   return (
     <div className="screen">
+      <HomeLink />
       <Card>
         <WelcomeSlide1 petName={pet?.name} />
       </Card>
@@ -48,6 +61,16 @@ export default function About() {
         <WelcomeSlide5 />
       </Card>
 
+      <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
+      <a
+        href={INSTAGRAM_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="subtle-link"
+        onClick={openInstagram}
+      >
+        Follow us on Instagram — @qol_companion
+      </a>
       <Link to="/legal" className="subtle-link">Privacy, Data &amp; Legal</Link>
     </div>
   )

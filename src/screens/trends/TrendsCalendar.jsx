@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { computeGeneralQolResult, severityColorFromPercent } from '../../lib/scoring'
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
@@ -7,13 +9,15 @@ export default function TrendsCalendar({ generalEntries }) {
     generalEntries.map((entry) => [entry.date, computeGeneralQolResult(entry).percent])
   )
 
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  const monthLabel = today.toLocaleString('default', { month: 'long', year: 'numeric' })
+  const now = new Date()
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
 
-  const firstDayOfWeek = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })
+
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
 
   const cells = [
     ...Array.from({ length: firstDayOfWeek }, () => null),
@@ -21,14 +25,52 @@ export default function TrendsCalendar({ generalEntries }) {
   ]
 
   function dateKeyFor(day) {
-    const mm = String(month + 1).padStart(2, '0')
+    const mm = String(viewMonth + 1).padStart(2, '0')
     const dd = String(day).padStart(2, '0')
-    return `${year}-${mm}-${dd}`
+    return `${viewYear}-${mm}-${dd}`
+  }
+
+  function goToPreviousMonth() {
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1)
+      setViewMonth(11)
+    } else {
+      setViewMonth((m) => m - 1)
+    }
+  }
+
+  function goToNextMonth() {
+    if (isCurrentMonth) return
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1)
+      setViewMonth(0)
+    } else {
+      setViewMonth((m) => m + 1)
+    }
   }
 
   return (
     <div className="calendar">
-      <div className="calendar-month-label">{monthLabel}</div>
+      <div className="calendar-header">
+        <button
+          type="button"
+          className="calendar-nav-button"
+          onClick={goToPreviousMonth}
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="calendar-month-label">{monthLabel}</div>
+        <button
+          type="button"
+          className="calendar-nav-button"
+          onClick={goToNextMonth}
+          disabled={isCurrentMonth}
+          aria-label="Next month"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
       <div className="calendar-grid">
         {WEEKDAY_LABELS.map((label, i) => (
           <div key={`weekday-${i}`} className="calendar-weekday">{label}</div>
@@ -38,7 +80,7 @@ export default function TrendsCalendar({ generalEntries }) {
             return <div key={`empty-${i}`} className="calendar-cell calendar-cell-empty" />
           }
           const percent = percentByDate.get(dateKeyFor(day))
-          const color = percent != null ? severityColorFromPercent(percent) : null
+          const color = percent != null ? severityColorFromPercent(percent) : 'var(--border)'
           return (
             <div
               key={day}

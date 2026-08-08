@@ -7,6 +7,9 @@ export default function AgeBracketPicker() {
 
   return (
     <div className="age-bracket-picker">
+      <p className="assessment-hint">
+        Click on the age brackets to read about how children of different ages grieve.
+      </p>
       <div className="age-bracket-row">
         {AGE_BRACKET_GRIEF_DATA.map(({ key, label }) => (
           <button
