@@ -1,15 +1,23 @@
 import SectionTitle from '../../components/SectionTitle'
 import WellbeingConcepts from '../../components/WellbeingConcepts'
 
-export default function IntroPage() {
+export default function IntroPage({ petName, isFirstAssessment }) {
   return (
     <div className="assessment-page">
       <SectionTitle>Quality Of Life Assessment</SectionTitle>
-      <p>
-        This check-in walks through how your pet has been doing lately. It only takes a
-        few minutes, and the more you can answer the more useful the trends will be — but
-        "Not sure" is always a fine answer too.
-      </p>
+      {isFirstAssessment ? (
+        <p>
+          Let's establish what's normal for {petName}. This first assessment becomes
+          their baseline — future check-ins will be compared against it, so you can see
+          what's actually changed rather than guessing.
+        </p>
+      ) : (
+        <p>
+          This check-in walks through how your pet has been doing lately. It only takes a
+          few minutes, and the more you can answer the more useful the trends will be — but
+          "Not sure" is always a fine answer too.
+        </p>
+      )}
 
       <WellbeingConcepts />
 

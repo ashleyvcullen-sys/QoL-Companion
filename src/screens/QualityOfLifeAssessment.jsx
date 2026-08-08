@@ -16,6 +16,7 @@ import ReviewPage from './assessment/ReviewPage'
 import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS } from '../lib/assessmentOptions'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
+import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
@@ -39,6 +40,12 @@ export default function QualityOfLifeAssessment() {
   const { pets } = usePets()
   const pet = pets[0]
   const navigate = useNavigate()
+
+  // Loads lazily and defaults to the normal intro copy until it resolves —
+  // for a returning user that's already correct, and for a first-timer the
+  // fetch is quick enough that a flash of the wrong copy is unlikely.
+  const { generalEntries, loading: historyLoading } = useQolHistory(pet.id)
+  const isFirstAssessment = !historyLoading && generalEntries.length === 0
 
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
@@ -113,7 +120,7 @@ export default function QualityOfLifeAssessment() {
   }
 
   const pages = [
-    <IntroPage key="intro" />,
+    <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
     <SliderWithChipsPage
       key="stool"
       title="Stool quality"
