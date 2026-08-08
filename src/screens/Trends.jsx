@@ -1,6 +1,7 @@
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
 import TrendLineChart from '../components/TrendLineChart'
@@ -133,6 +134,8 @@ export default function Trends() {
           </div>
         )}
       </Card>
+
+      <Footer />
     </div>
   )
 }

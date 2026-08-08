@@ -8,6 +8,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 import OverviewBars from '../components/OverviewBars'
 import TrendLineChart from '../components/TrendLineChart'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
@@ -305,6 +306,8 @@ export default function ExportReport() {
           </div>
         ))}
       </div>
+
+      <Footer className="no-print" />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import Footer from '../components/Footer'
 
 const SUPPORT_EMAIL = 'info@qolcompanion.com.au'
 
@@ -16,6 +17,8 @@ export default function Support() {
       </Card>
 
       <Link to="/legal" className="subtle-link">Back to Legal &amp; Privacy</Link>
+
+      <Footer />
     </div>
   )
 }

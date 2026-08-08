@@ -3,6 +3,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { HOME_CARE_TIPS } from '../lib/homeCareTips'
 
@@ -48,6 +49,8 @@ export default function HomeCareTips() {
           </ul>
         </Modal>
       )}
+
+      <Footer />
     </div>
   )
 }

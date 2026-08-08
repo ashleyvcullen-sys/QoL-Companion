@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 
 const SECTIONS = [
   {
@@ -70,6 +71,8 @@ export default function Legal() {
       <Link to="/about" className="subtle-link">Back to About</Link>
       <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
       <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
+
+      <Footer />
     </div>
   )
 }

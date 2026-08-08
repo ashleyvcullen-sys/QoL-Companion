@@ -1,4 +1,5 @@
 import SectionTitle from '../../components/SectionTitle'
+import Footer from '../../components/Footer'
 import { computeGeneralQolResult, computeBeapWorst, beapSeverityLabel } from '../../lib/scoring'
 
 export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
@@ -39,6 +40,8 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
       )}
 
       {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
+
+      <Footer />
     </div>
   )
 }

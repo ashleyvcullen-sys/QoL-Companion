@@ -4,6 +4,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 
 const CADENCE_OPTIONS = [
   { value: 1, label: 'Daily' },
@@ -93,6 +94,8 @@ export default function Schedule() {
         This app tracks due dates in-app rather than sending push notifications — check the
         Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding).
       </p>
+
+      <Footer />
     </div>
   )
 }

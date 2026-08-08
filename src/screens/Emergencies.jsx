@@ -2,6 +2,7 @@ import { AlertTriangle } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 
 const EMERGENCIES = [
   'Collapse, or unable to stand or walk',
@@ -52,6 +53,8 @@ export default function Emergencies() {
         This list can't cover everything — if something feels seriously wrong and isn't
         listed here, trust that instinct and call your vet anyway.
       </p>
+
+      <Footer />
     </div>
   )
 }

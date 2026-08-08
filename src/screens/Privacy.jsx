@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import Footer from '../components/Footer'
 
 const SECTIONS = [
   {
@@ -139,6 +140,8 @@ export default function Privacy() {
       ))}
 
       <Link to="/legal" className="subtle-link">Back to Legal &amp; Privacy</Link>
+
+      <Footer />
     </div>
   )
 }

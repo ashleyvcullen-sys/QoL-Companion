@@ -3,6 +3,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 import AgeBracketPicker from './endOfLife/AgeBracketPicker'
 import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
@@ -88,6 +89,8 @@ export default function EndOfLife() {
           {activeTopic.citation && <p className="modal-citation">{activeTopic.citation}</p>}
         </Modal>
       )}
+
+      <Footer />
     </div>
   )
 }

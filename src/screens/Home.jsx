@@ -10,6 +10,7 @@ import HomeTour from '../components/HomeTour'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
 import ComingSoonModal from '../components/ComingSoonModal'
+import Footer from '../components/Footer'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 import AboutIcon from '../components/icons/AboutIcon'
 
@@ -220,6 +221,8 @@ export default function Home() {
           </div>
         </Modal>
       )}
+
+      <Footer />
     </div>
   )
 }

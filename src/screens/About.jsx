@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Heart, TrendingUp, FileDown, HeartHandshake } from 'lucide-react'
 import Card from '../components/Card'
 import HomeLink from '../components/HomeLink'
+import Footer from '../components/Footer'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 import WelcomeSlide1 from './welcome/WelcomeSlide1'
 import WelcomeSlide2 from './welcome/WelcomeSlide2'
@@ -51,10 +52,10 @@ export default function About() {
         <WelcomeSlide5 />
       </Card>
 
-      <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
-      <Link to="/legal" className="subtle-link">Privacy, Data &amp; Legal</Link>
       <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
       <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
+
+      <Footer />
     </div>
   )
 }

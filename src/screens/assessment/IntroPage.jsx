@@ -1,5 +1,6 @@
 import SectionTitle from '../../components/SectionTitle'
 import WellbeingConcepts from '../../components/WellbeingConcepts'
+import Footer from '../../components/Footer'
 
 export default function IntroPage({ petName, isFirstAssessment }) {
   return (
@@ -22,6 +23,8 @@ export default function IntroPage({ petName, isFirstAssessment }) {
       <WellbeingConcepts />
 
       <p className="assessment-hint">Tap Next or swipe to begin.</p>
+
+      <Footer />
     </div>
   )
 }
