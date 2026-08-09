@@ -51,8 +51,8 @@ export default function UrinationPage({ value, onChange, icon, species, sex }) {
             <AlertTriangle size={20} />
             <p>
               Straining to urinate, or being unable to pass any urine, can be a sign of a
-              urinary blockage in male cats — a genuine emergency that can become
-              life-threatening within 24–48 hours if untreated.
+              urinary blockage, especially for male cats — a genuine emergency that can
+              become life-threatening within 24–48 hours if untreated.
             </p>
           </div>
           <p>
