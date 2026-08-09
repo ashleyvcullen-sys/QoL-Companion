@@ -5,6 +5,10 @@ import Btn from './Btn'
 const SPOTLIGHT_PADDING = 8
 const TOOLTIP_GAP = 12
 const TOOLTIP_ESTIMATE_HEIGHT = 160
+// Generous placeholder just for deciding whether the "place above" branch
+// would land too close to the top to be worth it — the actual fallback
+// below is exact, via env(), not this number.
+const TOOLTIP_MIN_TOP_ESTIMATE = 80
 
 export default function HomeTour({ steps, targetRefs, onFinish }) {
   const [stepIndex, setStepIndex] = useState(0)
@@ -54,7 +58,13 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
   const tooltipStyle = rect
     ? rect.bottom + TOOLTIP_ESTIMATE_HEIGHT < window.innerHeight
       ? { top: rect.bottom + TOOLTIP_GAP }
-      : { top: Math.max(rect.top - TOOLTIP_ESTIMATE_HEIGHT, 16) }
+      : rect.top - TOOLTIP_ESTIMATE_HEIGHT > TOOLTIP_MIN_TOP_ESTIMATE
+        ? { top: rect.top - TOOLTIP_ESTIMATE_HEIGHT }
+        // Placing above would land too close to the top to trust a raw
+        // pixel guess — this position is fixed (not inside .screen's
+        // padded box), so it needs its own safe-area clamp rather than
+        // inheriting one from a container.
+        : { top: 'max(16px, calc(env(safe-area-inset-top) + 12px))' }
     : { top: '50%', transform: 'translateY(-50%)' }
 
   return (
