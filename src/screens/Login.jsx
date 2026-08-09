@@ -59,6 +59,10 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <p className="assessment-hint">
+              We'll use this to create your account (or sign you in, if you already have
+              one) — no password needed. We'll email you a secure link to tap instead.
+            </p>
           </div>
           <Btn type="submit" className="btn-block" disabled={status === 'sending'}>
             {status === 'sending' ? 'Sending…' : 'Send magic link'}
