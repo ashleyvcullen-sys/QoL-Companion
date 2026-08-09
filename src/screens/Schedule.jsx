@@ -159,12 +159,6 @@ export default function Schedule() {
         </button>
       </Card>
 
-      <p className="assessment-hint">
-        {Capacitor.isNativePlatform()
-          ? 'Check the Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding) — reminders are a backstop, not a replacement.'
-          : 'This app tracks due dates in-app rather than sending push notifications — check the Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding).'}
-      </p>
-
       {showFrequencyInfo && (
         <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>
           <p>
