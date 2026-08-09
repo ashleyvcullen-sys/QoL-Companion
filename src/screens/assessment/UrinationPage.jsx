@@ -8,7 +8,7 @@ import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
 import { URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_OPTIONS } from '../../lib/assessmentOptions'
 
-const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all', 'Vocalisation']
+const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all']
 
 export default function UrinationPage({ value, onChange, icon, species, sex }) {
   const { status, symptoms } = value
