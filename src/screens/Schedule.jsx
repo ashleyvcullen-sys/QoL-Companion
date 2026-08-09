@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HelpCircle } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '../lib/supabase'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
+import {
+  checkNotificationPermission,
+  requestNotificationPermission,
+  scheduleQolReminder,
+} from '../lib/notifications'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Modal from '../components/Modal'
+import Btn from '../components/Btn'
 import Footer from '../components/Footer'
 
 const CADENCE_OPTIONS = [
@@ -20,6 +27,13 @@ function daysSince(dateStr) {
   const last = new Date(dateStr)
   const now = new Date()
   return Math.floor((now - last) / (1000 * 60 * 60 * 24))
+}
+
+function openNotificationSettings() {
+  // No Capacitor plugin exposes this directly — a WKWebView hands off
+  // Apple's own app-settings: URL scheme to the OS without needing any
+  // extra native config, the same way tel:/mailto: links already do.
+  window.location.href = 'app-settings:'
 }
 
 function ScheduleRow({ label, lastDate, cadenceDays, onCadenceChange }) {
@@ -51,6 +65,7 @@ export default function Schedule() {
   const pet = pets[0]
   const { generalEntries, loading } = useQolHistory(pet?.id)
   const [showFrequencyInfo, setShowFrequencyInfo] = useState(false)
+  const [notifStatus, setNotifStatus] = useState(null)
 
   const latestGeneralDate = generalEntries[generalEntries.length - 1]?.date ?? null
 
@@ -61,10 +76,33 @@ export default function Schedule() {
   // already set to (or a weekly default) so no one's cadence silently resets.
   const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
 
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    checkNotificationPermission().then(setNotifStatus)
+  }, [])
+
+  // Keeps the scheduled reminder in sync with the current cadence whenever
+  // this screen is visited with permission already granted — not just
+  // right after a change — so it self-heals (e.g. after a reinstall, or
+  // permission granted after a cadence was already set).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || notifStatus !== 'granted' || loading) return
+    scheduleQolReminder({
+      petName: pet.name,
+      cadenceDays,
+      fromDate: latestGeneralDate ?? new Date(),
+    })
+  }, [notifStatus, loading, cadenceDays, latestGeneralDate, pet.name])
+
   async function updateCadence(days) {
     const nextSchedule = { ...pet.schedule, qol: days }
     const { error } = await supabase.from('pets').update({ schedule: nextSchedule }).eq('id', pet.id)
     if (!error) await refresh()
+  }
+
+  async function handleEnableReminders() {
+    const display = await requestNotificationPermission()
+    setNotifStatus(display)
   }
 
   return (
@@ -92,6 +130,24 @@ export default function Schedule() {
         )}
       </Card>
 
+      {Capacitor.isNativePlatform() && (notifStatus === 'prompt' || notifStatus === 'prompt-with-rationale') && (
+        <Card>
+          <p>Allow notifications so we can remind you when it's time for your next check-in?</p>
+          <Btn type="button" className="btn-block" onClick={handleEnableReminders}>
+            Enable reminders
+          </Btn>
+        </Card>
+      )}
+
+      {Capacitor.isNativePlatform() && notifStatus === 'denied' && (
+        <Card>
+          <p className="assessment-hint">Reminders are off.</p>
+          <Btn type="button" variant="outline" className="btn-block" onClick={openNotificationSettings}>
+            Open Settings to turn them back on
+          </Btn>
+        </Card>
+      )}
+
       <Card>
         <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
           <div className="welcome-help-row">
@@ -104,8 +160,9 @@ export default function Schedule() {
       </Card>
 
       <p className="assessment-hint">
-        This app tracks due dates in-app rather than sending push notifications — check the
-        Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding).
+        {Capacitor.isNativePlatform()
+          ? 'Check the Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding) — reminders are a backstop, not a replacement.'
+          : 'This app tracks due dates in-app rather than sending push notifications — check the Overview tab regularly, or make it part of a daily routine (e.g. alongside feeding).'}
       </p>
 
       {showFrequencyInfo && (

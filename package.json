@@ -13,6 +13,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/share": "^8.0.1",
     "@supabase/supabase-js": "^2.110.8",
     "html2canvas": "^1.4.1",

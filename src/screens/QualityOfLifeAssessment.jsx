@@ -21,6 +21,7 @@ import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
+import { scheduleQolReminder } from '../lib/notifications'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
@@ -128,6 +129,14 @@ export default function QualityOfLifeAssessment() {
       setSaving(false)
       return
     }
+
+    // Reschedule from this completion, not the cadence-change baseline —
+    // keeps the reminder counting from when the pet was actually last
+    // checked on rather than drifting from whenever the cadence was set.
+    const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
+    scheduleQolReminder({ petName: pet.name, cadenceDays, fromDate: entryDate }).catch((error) => {
+      console.error('Failed to reschedule QoL reminder:', error.message)
+    })
 
     setSaving(false)
     navigate('/')

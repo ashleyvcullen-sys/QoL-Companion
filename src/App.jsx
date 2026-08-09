@@ -1,4 +1,7 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
+import { LocalNotifications } from '@capacitor/local-notifications'
 import { useAuth } from './lib/AuthContext'
 import { usePets } from './lib/PetsContext'
 import Login from './screens/Login'
@@ -32,6 +35,25 @@ function RequireOnboardedPet() {
 }
 
 function App() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    const listenerPromise = LocalNotifications.addListener(
+      'localNotificationActionPerformed',
+      (action) => {
+        if (action.notification?.extra?.screen === 'assessment') {
+          navigate('/assessment')
+        }
+      }
+    )
+
+    return () => {
+      listenerPromise.then((listener) => listener.remove())
+    }
+  }, [navigate])
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
