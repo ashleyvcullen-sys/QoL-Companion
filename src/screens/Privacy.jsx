@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
+import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 
 const SECTIONS = [
@@ -117,6 +118,8 @@ const SECTIONS = [
 export default function Privacy() {
   return (
     <div className="screen">
+      <HomeLink />
+
       <Card>
         <SectionTitle>Privacy Policy</SectionTitle>
         <p className="assessment-hint">Last updated: August 2026</p>
