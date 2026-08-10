@@ -519,6 +519,18 @@ code {
   text-align: center;
 }
 
+/* .section-title's own text-align: left wins over inheriting center from
+   .welcome-slide above — direct rules on an element always beat inherited
+   ones, regardless of the parent. align-items: center only centers the
+   heading's box, which looks fine for a single line but goes visibly
+   left-ragged the moment a heading wraps to two lines (as "Welcome To
+   Quality Of Life Companion" reliably does on real phone widths). This
+   overrides the actual text-align for headings in this context specifically,
+   rather than changing .section-title's default for every other screen. */
+.welcome-slide .section-title {
+  text-align: center;
+}
+
 .welcome-illustration {
   width: 150px;
   height: auto;
