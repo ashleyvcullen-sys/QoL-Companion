@@ -8,13 +8,13 @@ export const BEAP_SCALES = {
       "Constant rapid, laboured breathing, even at rest.",
       "Distressed gasping, struggling to breathe. Gums may appear white or blue.",
     ] },
-    { key: "eyes", letter: "E", label: "Eyes / Face", levels: [
-      "Bright, relaxed expression. Eyes open and soft, ears in normal position. Relaxed forehead and muzzle.",
-      "Eyes slightly less bright than usual, occasional squinting or reduced eye softness. Ears occasionally pulled back or subtle facial tension that may come and go.",
-      "Eyes slightly squinting or narrowed more consistently. Mild tension around the forehead. Ears held back more often. Overall facial expression appears less relaxed than normal.",
-      "Constant squinting or narrowed eyes with a duller expression. Ears often held back, with marked facial tension involving the eyes, forehead, and muzzle. Overall expression appears worried or uncomfortable.",
-      "Eyes may be narrowed or widened with a fixed/glazed appearance. Pronounced facial tension with ears often pulled back. Expression constantly appears very worried or distressed.",
-      "Eyes persistently tightly closed or staring vacantly. Severe facial tension with ears often pinned. Expression will not change in response to stimulation and appears panicked or distressed constantly.",
+    { key: "eyes", letter: "E", label: "Eyes", levels: [
+      "Eyes open and soft.",
+      "Eyes slightly less bright than usual, occasional squinting or reduced eye softness.",
+      "Eyes slightly squinting or narrowed more consistently.",
+      "Constant squinting or narrowed eyes with a duller expression.",
+      "Eyes may be narrowed or widened with a fixed/glazed appearance.",
+      "Eyes persistently tightly closed or staring vacantly, unresponsive to stimulation.",
     ] },
     { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", levels: [
       "Walks normally, manages stairs easily, no stiffness. Jumps into the car or onto furniture without hesitation.",
