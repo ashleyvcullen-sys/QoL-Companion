@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Droplet, House } from 'lucide-react'
 import Card from '../components/Card'
@@ -22,6 +22,7 @@ import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import { scheduleQolReminder } from '../lib/notifications'
+import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
@@ -59,6 +60,49 @@ export default function QualityOfLifeAssessment() {
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [draftToResume, setDraftToResume] = useState(null)
+  const [readyToPersist, setReadyToPersist] = useState(false)
+
+  // Checked once on mount. If a same-day draft exists, hold off persisting
+  // anything until the user picks Resume or Start Fresh below — otherwise
+  // the blank INITIAL_ENTRY would overwrite their real draft the moment
+  // this component mounts, before they ever see the prompt.
+  useEffect(() => {
+    let cancelled = false
+    loadTodaysAssessmentDraft(pet.id).then((draftEntry) => {
+      if (cancelled) return
+      if (draftEntry) {
+        setDraftToResume(draftEntry)
+      } else {
+        setReadyToPersist(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [pet.id])
+
+  // Debounced so rapid typing (e.g. the notes field) doesn't fire a write
+  // per keystroke — still eventually-consistent within well under a second.
+  useEffect(() => {
+    if (!readyToPersist) return
+    const timeout = setTimeout(() => {
+      saveAssessmentDraft(pet.id, entry)
+    }, 400)
+    return () => clearTimeout(timeout)
+  }, [entry, readyToPersist, pet.id])
+
+  function handleResumeDraft() {
+    setEntry(draftToResume)
+    setDraftToResume(null)
+    setReadyToPersist(true)
+  }
+
+  function handleStartFresh() {
+    clearAssessmentDraft(pet.id)
+    setDraftToResume(null)
+    setReadyToPersist(true)
+  }
 
   function updateScore(field, value) {
     setEntry((prev) => ({ ...prev, scores: { ...prev.scores, [field]: value } }))
@@ -137,6 +181,8 @@ export default function QualityOfLifeAssessment() {
     scheduleQolReminder({ petName: pet.name, cadenceDays, fromDate: entryDate }).catch((error) => {
       console.error('Failed to reschedule QoL reminder:', error.message)
     })
+
+    await clearAssessmentDraft(pet.id)
 
     setSaving(false)
     navigate('/')
@@ -254,13 +300,30 @@ export default function QualityOfLifeAssessment() {
 
       {showExitConfirm && (
         <Modal title="Exit assessment?" onClose={() => setShowExitConfirm(false)}>
-          <p>Are you sure? Your progress on this assessment won't be saved.</p>
+          <p>
+            Are you sure? Your answers so far are saved as a draft you can resume next
+            time, but this attempt won't be submitted unless you finish and save.
+          </p>
           <div className="modal-actions">
             <Btn type="button" variant="outline" onClick={() => setShowExitConfirm(false)}>
               Cancel
             </Btn>
             <Btn type="button" variant="danger" onClick={() => navigate('/')}>
               Exit
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {draftToResume && (
+        <Modal title="Resume assessment?" onClose={handleStartFresh}>
+          <p>You have an assessment in progress — resume where you left off, or start fresh?</p>
+          <div className="modal-actions">
+            <Btn type="button" variant="outline" onClick={handleStartFresh}>
+              Start fresh
+            </Btn>
+            <Btn type="button" onClick={handleResumeDraft}>
+              Resume
             </Btn>
           </div>
         </Modal>
