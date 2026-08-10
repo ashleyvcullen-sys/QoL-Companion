@@ -9,12 +9,12 @@ export const BEAP_SCALES = {
       "Distressed gasping, struggling to breathe. Gums may appear white or blue. (emergency)",
     ] },
     { key: "eyes", letter: "E", label: "Eyes", levels: [
-      "Eyes open and soft.",
-      "Eyes slightly less bright than usual, occasional squinting or reduced eye softness.",
-      "Eyes slightly squinting or narrowed more consistently.",
-      "Constant squinting or narrowed eyes with a duller expression.",
-      "Eyes may be narrowed or widened with a fixed/glazed appearance.",
-      "Eyes persistently tightly closed or staring vacantly, unresponsive to stimulation.",
+      "Eyes bright and alert.",
+      "Eyes slightly less bright than usual.",
+      "Eyes slightly duller, brow may be slightly furrowed.",
+      "Dull eyes, may look slightly narrowed or worried.",
+      "Dull eyes, may look narrowed or distressed.",
+      "Dull eyes that may be closed completely or may look panicked.",
     ] },
     { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", levels: [
       "Walks normally, manages stairs easily, no stiffness. Jumps into the car or onto furniture without hesitation.",
