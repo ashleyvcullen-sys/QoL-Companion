@@ -38,4 +38,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Lets reminder notifications fire at the exact scheduled time rather
+         than within the OS's default battery-saving delivery window. Not
+         required — @capacitor/local-notifications falls back to inexact
+         delivery automatically if this is denied, which is a fine outcome
+         for a "check in every few days" reminder. Declaring it means Google
+         Play Console will ask for a justification during review; if that
+         becomes friction, this can be dropped and the exact-alarm UI in
+         Schedule.jsx removed along with it, no functional loss beyond
+         precise timing. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>

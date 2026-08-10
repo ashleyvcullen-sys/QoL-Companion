@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
 // Single pet per account (enforced elsewhere), so there's only ever one QoL
@@ -13,6 +14,25 @@ export async function checkNotificationPermission() {
 export async function requestNotificationPermission() {
   const { display } = await LocalNotifications.requestPermissions()
   return display
+}
+
+// Android 12+ only — exact-alarm delivery is a separate, optional setting
+// from base notification permission (iOS has no equivalent concept, so
+// these are no-ops there). The plugin already falls back to inexact
+// delivery when this isn't granted, so this is purely "more precise timing
+// if the user wants it," never a blocker for reminders working at all.
+export async function checkExactAlarmPermission() {
+  if (Capacitor.getPlatform() !== 'android') return 'granted'
+  const { exact_alarm } = await LocalNotifications.checkExactNotificationSetting()
+  return exact_alarm
+}
+
+export async function requestExactAlarmPermission() {
+  if (Capacitor.getPlatform() !== 'android') return 'granted'
+  // Sends the user to the system "Alarms & reminders" settings screen and
+  // resolves with the resulting state once they return to the app.
+  const { exact_alarm } = await LocalNotifications.changeExactNotificationSetting()
+  return exact_alarm
 }
 
 export async function cancelQolReminder() {

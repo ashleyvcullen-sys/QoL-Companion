@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { HelpCircle } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
+import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings'
 import { supabase } from '../lib/supabase'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import {
   checkNotificationPermission,
   requestNotificationPermission,
+  checkExactAlarmPermission,
+  requestExactAlarmPermission,
   scheduleQolReminder,
 } from '../lib/notifications'
 import Card from '../components/Card'
@@ -30,10 +33,15 @@ function daysSince(dateStr) {
 }
 
 function openNotificationSettings() {
-  // No Capacitor plugin exposes this directly — a WKWebView hands off
-  // Apple's own app-settings: URL scheme to the OS without needing any
-  // extra native config, the same way tel:/mailto: links already do.
-  window.location.href = 'app-settings:'
+  // Cross-platform: opens the app's own notification settings on Android
+  // (Settings.ACTION_APP_NOTIFICATION_SETTINGS) and the app settings screen
+  // on iOS (the only one Apple officially supports opening directly) —
+  // replaces an earlier iOS-only window.location.href = 'app-settings:'
+  // hack that had no Android equivalent.
+  return NativeSettings.open({
+    optionAndroid: AndroidSettings.AppNotification,
+    optionIOS: IOSSettings.App,
+  })
 }
 
 function ScheduleRow({ label, lastDate, cadenceDays, onCadenceChange }) {
@@ -66,6 +74,8 @@ export default function Schedule() {
   const { generalEntries, loading } = useQolHistory(pet?.id)
   const [showFrequencyInfo, setShowFrequencyInfo] = useState(false)
   const [notifStatus, setNotifStatus] = useState(null)
+  const [exactAlarmStatus, setExactAlarmStatus] = useState(null)
+  const isAndroid = Capacitor.getPlatform() === 'android'
 
   const latestGeneralDate = generalEntries[generalEntries.length - 1]?.date ?? null
 
@@ -80,6 +90,14 @@ export default function Schedule() {
     if (!Capacitor.isNativePlatform()) return
     checkNotificationPermission().then(setNotifStatus)
   }, [])
+
+  // Exact-alarm timing is a separate, optional Android 12+ setting on top
+  // of base notification permission — only worth checking/showing once the
+  // user has actually turned reminders on at all.
+  useEffect(() => {
+    if (!isAndroid || notifStatus !== 'granted') return
+    checkExactAlarmPermission().then(setExactAlarmStatus)
+  }, [isAndroid, notifStatus])
 
   // Keeps the scheduled reminder in sync with the current cadence whenever
   // this screen is visited with permission already granted — not just
@@ -103,6 +121,11 @@ export default function Schedule() {
   async function handleEnableReminders() {
     const display = await requestNotificationPermission()
     setNotifStatus(display)
+  }
+
+  async function handleEnableExactAlarms() {
+    const exact = await requestExactAlarmPermission()
+    setExactAlarmStatus(exact)
   }
 
   return (
@@ -146,6 +169,26 @@ export default function Schedule() {
             Open Settings to turn them back on
           </Btn>
         </Card>
+      )}
+
+      {isAndroid && (exactAlarmStatus === 'prompt' || exactAlarmStatus === 'prompt-with-rationale') && (
+        <Card>
+          <p>
+            For the most precise reminder timing, Android has a separate "exact alarms"
+            setting — optional, reminders will still arrive without it, just not always
+            at the exact time.
+          </p>
+          <Btn type="button" variant="outline" className="btn-block" onClick={handleEnableExactAlarms}>
+            Enable precise timing
+          </Btn>
+        </Card>
+      )}
+
+      {isAndroid && exactAlarmStatus === 'denied' && (
+        <p className="assessment-hint">
+          Precise reminder timing is off — reminders will still arrive, just not always
+          at the exact time.
+        </p>
       )}
 
       <Card>

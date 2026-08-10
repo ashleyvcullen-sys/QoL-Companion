@@ -17,6 +17,7 @@
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/share": "^8.0.1",
     "@supabase/supabase-js": "^2.110.8",
+    "capacitor-native-settings": "^8.2.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.26.0",
