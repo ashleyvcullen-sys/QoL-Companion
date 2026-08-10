@@ -5,8 +5,8 @@ export const BEAP_SCALES = {
       "Occasional panting at rest. Breathing otherwise appears comfortable, calm, and takes minimal effort.",
       "Occasionally breathing a little faster or heavier, panting more often at rest.",
       "Often breathing faster or heavier than usual. Panting often at rest.",
-      "Constant rapid, laboured breathing, even at rest.",
-      "Distressed gasping, struggling to breathe. Gums may appear white or blue.",
+      "Constant rapid, laboured breathing, even at rest. (emergency)",
+      "Distressed gasping, struggling to breathe. Gums may appear white or blue. (emergency)",
     ] },
     { key: "eyes", letter: "E", label: "Eyes", levels: [
       "Eyes open and soft.",
