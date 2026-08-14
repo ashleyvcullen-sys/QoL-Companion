@@ -45,6 +45,76 @@ const INITIAL_ENTRY = {
   catEyesGrimace: Object.fromEntries(FELINE_GRIMACE_ACTION_UNITS.map((unit) => [unit.key, null])),
 }
 
+// Mirrors the wizard's actual page order (see `pages` below) without
+// depending on it directly — resume-index lookups happen from event
+// handlers, well after any particular render's `pages` array existed, so a
+// static list decoupled from render timing is simpler than threading the
+// live one through.
+const PAGE_KEY_ORDER = [
+  'intro',
+  'stool', 'vomiting', 'urination', 'drinking', 'hygiene', 'vision', 'hearing', 'sleep',
+  ...BEAP_CATEGORIES,
+  'review',
+]
+
+// "unsure" is both a slider's default AND a deliberate, valid answer (the
+// "Not sure" toggle) — there's no way to tell those apart from the stored
+// value alone. Treating "still at the pristine default" as "unanswered" is
+// an approximation, not a perfect signal: a user who explicitly confirmed
+// "Not sure" and never touched anything else on that page would get
+// resumed there again. Acceptable trade-off — worst case is a mild, occasional
+// re-visit to a page they'd already deliberately answered, never data loss.
+function isSectionAnswered(entryToCheck, pageKey) {
+  switch (pageKey) {
+    case 'stool':
+      return entryToCheck.scores.stool !== 'unsure' || entryToCheck.stoolSymptoms.length > 0
+    case 'vomiting':
+      return entryToCheck.vomiting.hasVomited !== null
+    case 'urination':
+      return entryToCheck.urination.status !== null
+    case 'drinking':
+      return entryToCheck.waterIntake.status !== null
+    case 'hygiene':
+      return entryToCheck.scores.hygiene !== 'unsure' || entryToCheck.hygieneSymptoms.length > 0
+    case 'vision':
+      return entryToCheck.scores.vision !== 'unsure'
+    case 'hearing':
+      return entryToCheck.scores.hearing !== 'unsure'
+    case 'sleep':
+      return entryToCheck.scores.sleep !== 'unsure'
+    default:
+      // BEAP categories (key is the category name itself) — 'intro' and
+      // 'review' also fall through here and are always "answered", since
+      // neither has anything to complete on its own and neither should
+      // ever itself be a resume target.
+      return BEAP_CATEGORIES.includes(pageKey) ? entryToCheck.beap[pageKey] !== null : true
+  }
+}
+
+function findResumeIndex(hydratedEntry) {
+  const index = PAGE_KEY_ORDER.findIndex((key) => !isSectionAnswered(hydratedEntry, key))
+  return index === -1 ? PAGE_KEY_ORDER.length - 1 : index
+}
+
+// Reconstructs the assessment-flow `entry` shape from already-submitted
+// Supabase rows, for the "Edit Existing" path. catEyesGrimace can't be
+// recovered — only the summed total was ever persisted — so it's left
+// blank; FelineGrimacePage won't clobber the hydrated beap.eyes value with
+// that until the user actually starts re-answering it (see there).
+function entryFromServerRows(generalRow, painRow) {
+  return {
+    scores: generalRow?.scores ?? INITIAL_ENTRY.scores,
+    stoolSymptoms: generalRow?.stoolSymptoms ?? [],
+    hygieneSymptoms: generalRow?.hygieneSymptoms ?? [],
+    vomiting: generalRow?.vomiting ?? INITIAL_ENTRY.vomiting,
+    urination: generalRow?.urination ?? INITIAL_ENTRY.urination,
+    waterIntake: generalRow?.waterIntake ?? INITIAL_ENTRY.waterIntake,
+    notes: generalRow?.notes ?? painRow?.notes ?? '',
+    beap: painRow?.beap ?? INITIAL_ENTRY.beap,
+    catEyesGrimace: INITIAL_ENTRY.catEyesGrimace,
+  }
+}
+
 export default function QualityOfLifeAssessment() {
   const { pets } = usePets()
   const pet = pets[0]
@@ -53,21 +123,41 @@ export default function QualityOfLifeAssessment() {
   // Loads lazily and defaults to the normal intro copy until it resolves —
   // for a returning user that's already correct, and for a first-timer the
   // fetch is quick enough that a flash of the wrong copy is unlikely.
-  const { generalEntries, loading: historyLoading } = useQolHistory(pet.id)
+  const { generalEntries, painEntries, loading: historyLoading } = useQolHistory(pet.id)
   const isFirstAssessment = !historyLoading && generalEntries.length === 0
+
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const todaysGeneralEntry = generalEntries.find((e) => e.date === todayStr) ?? null
+  const todaysPainEntry = painEntries.find((e) => e.date === todayStr) ?? null
 
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [draftToResume, setDraftToResume] = useState(null)
+  const [showExistingTodayChoice, setShowExistingTodayChoice] = useState(false)
   const [readyToPersist, setReadyToPersist] = useState(false)
+  const [initialPageIndex, setInitialPageIndex] = useState(0)
+  const [wizardKey, setWizardKey] = useState(0)
 
-  // Checked once on mount. If a same-day draft exists, hold off persisting
-  // anything until the user picks Resume or Start Fresh below — otherwise
-  // the blank INITIAL_ENTRY would overwrite their real draft the moment
-  // this component mounts, before they ever see the prompt.
+  // Runs once history has loaded. A completed entry for today takes
+  // priority over the local in-progress draft entirely — if today's
+  // already submitted, the "already completed" choice below is what's
+  // offered, and any stray local draft (e.g. from an abandoned edit
+  // attempt earlier the same day) gets cleared rather than separately
+  // offered too, to avoid stacking two different resume prompts. Only
+  // when there's no entry for today yet does the local-draft check run.
+  // Persisting is held off (readyToPersist stays false) until whichever
+  // prompt applies has been resolved — otherwise the blank INITIAL_ENTRY
+  // would silently overwrite a real draft the moment this mounts.
   useEffect(() => {
+    if (historyLoading) return
+
+    if (todaysGeneralEntry) {
+      setShowExistingTodayChoice(true)
+      return
+    }
+
     let cancelled = false
     loadTodaysAssessmentDraft(pet.id).then((draftEntry) => {
       if (cancelled) return
@@ -80,7 +170,8 @@ export default function QualityOfLifeAssessment() {
     return () => {
       cancelled = true
     }
-  }, [pet.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyLoading, generalEntries, pet.id])
 
   // Debounced so rapid typing (e.g. the notes field) doesn't fire a write
   // per keystroke — still eventually-consistent within well under a second.
@@ -92,8 +183,17 @@ export default function QualityOfLifeAssessment() {
     return () => clearTimeout(timeout)
   }, [entry, readyToPersist, pet.id])
 
+  // Forces SwipeableWizard to remount with the new starting index — plain
+  // prop changes wouldn't do anything once it's already mounted, since its
+  // pageIndex is only ever initialized from props on first mount.
+  function jumpTo(hydratedEntry) {
+    setInitialPageIndex(findResumeIndex(hydratedEntry))
+    setWizardKey((k) => k + 1)
+  }
+
   function handleResumeDraft() {
     setEntry(draftToResume)
+    jumpTo(draftToResume)
     setDraftToResume(null)
     setReadyToPersist(true)
   }
@@ -101,6 +201,21 @@ export default function QualityOfLifeAssessment() {
   function handleStartFresh() {
     clearAssessmentDraft(pet.id)
     setDraftToResume(null)
+    setReadyToPersist(true)
+  }
+
+  function handleStartNewToday() {
+    clearAssessmentDraft(pet.id)
+    setShowExistingTodayChoice(false)
+    setReadyToPersist(true)
+  }
+
+  function handleEditExisting() {
+    const hydrated = entryFromServerRows(todaysGeneralEntry, todaysPainEntry)
+    setEntry(hydrated)
+    jumpTo(hydrated)
+    clearAssessmentDraft(pet.id)
+    setShowExistingTodayChoice(false)
     setReadyToPersist(true)
   }
 
@@ -263,6 +378,7 @@ export default function QualityOfLifeAssessment() {
           answers={entry.catEyesGrimace}
           onAnswerChange={updateGrimaceAnswer}
           onTotalChange={(total) => updateBeap('eyes', total)}
+          initialTotal={entry.beap.eyes}
         />
       ) : (
         <BeapCategoryPage
@@ -291,7 +407,9 @@ export default function QualityOfLifeAssessment() {
 
       <Card>
         <SwipeableWizard
+          key={wizardKey}
           pages={pages}
+          initialPageIndex={initialPageIndex}
           finishLabel={saving ? 'Saving…' : 'Save'}
           onComplete={handleComplete}
           footer={<Footer />}
@@ -324,6 +442,23 @@ export default function QualityOfLifeAssessment() {
             </Btn>
             <Btn type="button" onClick={handleResumeDraft}>
               Resume
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {showExistingTodayChoice && (
+        <Modal title="Already completed today" onClose={handleStartNewToday}>
+          <p>
+            You've already completed today's assessment. Would you like to start a new one
+            (this will overwrite today's entry) or edit your existing entry?
+          </p>
+          <div className="modal-actions">
+            <Btn type="button" variant="outline" onClick={handleStartNewToday}>
+              Start New
+            </Btn>
+            <Btn type="button" onClick={handleEditExisting}>
+              Edit Existing
             </Btn>
           </div>
         </Modal>

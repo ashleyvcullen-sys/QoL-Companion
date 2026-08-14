@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import Btn from './Btn'
 
-export default function SwipeableWizard({ pages, onComplete, indicator = 'fraction', finishLabel = 'Finish', footer }) {
-  const [pageIndex, setPageIndex] = useState(0)
+export default function SwipeableWizard({ pages, onComplete, indicator = 'fraction', finishLabel = 'Finish', footer, initialPageIndex = 0 }) {
+  const [pageIndex, setPageIndex] = useState(initialPageIndex)
   const isLastPage = pageIndex === pages.length - 1
 
   // Per-page scroll offsets, captured whenever a page is left. Forward
