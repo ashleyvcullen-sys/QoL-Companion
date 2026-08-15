@@ -72,7 +72,7 @@ const SECTIONS = [
     content: [
       'Your data is retained for as long as your account remains active.',
       'You can permanently delete a pet\'s data at any time using the "Delete Pet" option on the Home screen — this immediately and permanently removes that pet\'s profile and all associated assessments, notes, and history.',
-      'To delete your entire account, contact us at info@qolcompanion.com.au.',
+      'You can permanently delete your entire account at any time using the "Delete Account" option on the Home screen. This immediately and permanently deletes your account, your pet profile(s), and all associated data — this action cannot be undone, and does not require contacting us.',
     ],
   },
   {

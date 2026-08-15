@@ -43,6 +43,10 @@ export default function Home() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deleteAccountError, setDeleteAccountError] = useState('')
+
   const [showDiseaseMonitoringPreview, setShowDiseaseMonitoringPreview] = useState(false)
   const [showAddPetPreview, setShowAddPetPreview] = useState(false)
 
@@ -105,6 +109,31 @@ export default function Home() {
     // RequireOnboardedPet route guard in App.jsx redirects to /onboarding
     // as soon as it sees pets.length === 0 — no manual navigate needed here.
     await refresh()
+  }
+
+  async function handleDeleteAccount() {
+    if (deletingAccount) return
+    setDeletingAccount(true)
+    setDeleteAccountError('')
+
+    // Runs server-side with the service-role key (see
+    // supabase/functions/delete-account) — deletes this user's pet(s), all
+    // associated QoL/pain entries, and the auth.users record itself.
+    // supabase-js automatically attaches the current session's access
+    // token as the Authorization header.
+    const { error } = await supabase.functions.invoke('delete-account')
+
+    if (error) {
+      setDeleteAccountError(error.message || 'Something went wrong deleting your account. Please try again.')
+      setDeletingAccount(false)
+      return
+    }
+
+    // The account (and its session, server-side) no longer exists — signing
+    // out here just clears the local session state before returning to
+    // Login.
+    await supabase.auth.signOut()
+    navigate('/login')
   }
 
   return (
@@ -192,6 +221,14 @@ export default function Home() {
         </button>
       )}
 
+      <button
+        type="button"
+        className="delete-pet-link"
+        onClick={() => setShowDeleteAccountConfirm(true)}
+      >
+        Delete Account
+      </button>
+
       {showTour && (
         <HomeTour steps={tourSteps} targetRefs={tileRefs} onFinish={completeTour} />
       )}
@@ -232,6 +269,26 @@ export default function Home() {
             </Btn>
             <Btn type="button" variant="danger" onClick={handleDeletePet} disabled={deleting}>
               {deleting ? 'Deleting…' : 'Delete'}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+
+      {showDeleteAccountConfirm && (
+        <Modal
+          title="Delete Account?"
+          onClose={() => (deletingAccount ? null : setShowDeleteAccountConfirm(false))}
+        >
+          <p>
+            This will permanently delete your account and all associated data. This cannot be undone.
+          </p>
+          {deleteAccountError && <p className="form-error" role="alert">{deleteAccountError}</p>}
+          <div className="modal-confirm-actions">
+            <Btn type="button" variant="outline" onClick={() => setShowDeleteAccountConfirm(false)} disabled={deletingAccount}>
+              Cancel
+            </Btn>
+            <Btn type="button" variant="danger" onClick={handleDeleteAccount} disabled={deletingAccount}>
+              {deletingAccount ? 'Deleting…' : 'Delete Account'}
             </Btn>
           </div>
         </Modal>
