@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { usePets } from '../lib/PetsContext'
+import { useRevenueCat } from '../lib/RevenueCatContext'
 import { WEIGHT_RANGES, AGE_OPTIONS } from '../lib/petOptions'
 import { humanYearsForAge } from '../lib/humanYears'
 import { hasMultiPetAccess } from '../lib/entitlements'
@@ -24,6 +25,7 @@ const SEX_OPTIONS = [
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth()
   const { pets, loading: petsLoading, refresh } = usePets()
+  const { customerInfo } = useRevenueCat()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -37,7 +39,7 @@ export default function Onboarding() {
   if (authLoading || petsLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
   // Only one pet is allowed per account until multi-pet access is entitled.
-  if (pets.length > 0 && !hasMultiPetAccess(pets[0])) return <Navigate to="/" replace />
+  if (pets.length > 0 && !hasMultiPetAccess(customerInfo)) return <Navigate to="/" replace />
 
   const weightOptions = WEIGHT_RANGES[species]
   const humanYears = humanYearsForAge(species, weightRangeKey, ageLabel)

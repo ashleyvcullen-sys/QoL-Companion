@@ -1,20 +1,30 @@
-// Central gate for tier-gated feature access. This app has no billing yet —
-// every pet is on the 'free' tier (see the `subscription_tier` column on
-// `pets`, added ahead of any real monetization work). Every place in the app
-// that needs to know whether a feature is unlocked should call through here
-// rather than hard-coding its own check, so real entitlement logic (reading
-// `pet.subscription_tier`, a subscription service, etc.) can be dropped in
-// later without touching call sites.
+// Central gate for tier-gated feature access. Reads live entitlement state
+// from RevenueCat (see RevenueCatContext.jsx) rather than a hard-coded
+// value — every place in the app that needs to know whether a feature is
+// unlocked should call through here rather than checking conditions
+// directly, so a single source of truth stays in one place.
 //
-// Each function currently ignores its `pet` argument and returns a fixed
-// value matching today's behavior — every feature below is locked for
-// everyone. The argument is kept in the signature now so callers already
-// pass the right context once these start reading real tier data.
+// These identifiers must exactly match entitlement identifiers configured
+// in the RevenueCat dashboard (Project > Entitlements). Until an entitlement
+// with a given identifier actually exists there (and has a product attached
+// that's been purchased), `customerInfo.entitlements.active` will simply
+// never contain it — every function below safely returns `false` by
+// default, matching current (pre-monetization) behavior with nothing to
+// configure on our end.
+const ENTITLEMENT_MULTI_PET = 'multi_pet'
+const ENTITLEMENT_DISEASE_MONITORING = 'disease_monitoring'
 
-export function hasMultiPetAccess(pet) { // eslint-disable-line no-unused-vars
-  return false
+function hasEntitlement(customerInfo, entitlementId) {
+  return Boolean(customerInfo?.entitlements?.active?.[entitlementId])
 }
 
-export function hasDiseaseMonitoringAccess(pet) { // eslint-disable-line no-unused-vars
-  return false
+// `customerInfo` is the object from useRevenueCat() — pass it in from the
+// caller rather than reaching into the context here, so these stay plain,
+// easily testable functions instead of hooks.
+export function hasMultiPetAccess(customerInfo) {
+  return hasEntitlement(customerInfo, ENTITLEMENT_MULTI_PET)
+}
+
+export function hasDiseaseMonitoringAccess(customerInfo) {
+  return hasEntitlement(customerInfo, ENTITLEMENT_DISEASE_MONITORING)
 }

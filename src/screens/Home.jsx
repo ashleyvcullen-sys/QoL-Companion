@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOut, PawPrint, Stethoscope } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
+import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
 import { hasMultiPetAccess, hasDiseaseMonitoringAccess } from '../lib/entitlements'
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
 
 export default function Home() {
   const { pets, refresh } = usePets()
+  const { customerInfo } = useRevenueCat()
   const pet = pets[0]
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
@@ -143,7 +145,7 @@ export default function Home() {
           onClick={() => {
             // Once disease monitoring is a real, buildable feature, the
             // granted branch routes to it instead of the preview modal.
-            if (!hasDiseaseMonitoringAccess(pet)) setShowDiseaseMonitoringPreview(true)
+            if (!hasDiseaseMonitoringAccess(customerInfo)) setShowDiseaseMonitoringPreview(true)
           }}
         >
           <Card className="icon-tile icon-tile-disabled">
@@ -163,7 +165,7 @@ export default function Home() {
           type="button"
           className="icon-tile-link"
           onClick={() => {
-            if (!hasMultiPetAccess(pet)) setShowAddPetPreview(true)
+            if (!hasMultiPetAccess(customerInfo)) setShowAddPetPreview(true)
           }}
         >
           <Card className="icon-tile icon-tile-disabled">
@@ -199,6 +201,7 @@ export default function Home() {
           title="Monitoring Specific Diseases"
           message="Specific quality-of-life tracking for diagnosed conditions like arthritis, cardiac disease, kidney disease, and more — coming soon."
           onClose={() => setShowDiseaseMonitoringPreview(false)}
+          showPlansLink
         />
       )}
 
@@ -207,6 +210,7 @@ export default function Home() {
           title="Add Another Pet"
           message="Support for tracking more than one pet on the same account is coming soon."
           onClose={() => setShowAddPetPreview(false)}
+          showPlansLink
         />
       )}
 

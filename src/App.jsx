@@ -16,6 +16,7 @@ import HomeCareTips from './screens/HomeCareTips'
 import Schedule from './screens/Schedule'
 import ExportReport from './screens/ExportReport'
 import About from './screens/About'
+import Paywall from './screens/Paywall'
 import Legal from './screens/Legal'
 import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
@@ -72,6 +73,7 @@ function App() {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
+        <Route path="/paywall" element={<Paywall />} />
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>

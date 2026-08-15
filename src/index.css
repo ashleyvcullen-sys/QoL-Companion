@@ -1263,6 +1263,28 @@ code {
   white-space: nowrap;
 }
 
+.modal-secondary-link {
+  margin-top: 4px;
+}
+
+.paywall-package {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.paywall-package-title {
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 2px;
+}
+
+.paywall-package-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 .home-link {
   display: inline-flex;
   align-items: center;
