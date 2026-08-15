@@ -5,6 +5,7 @@ import { useAuth } from '../lib/AuthContext'
 import { usePets } from '../lib/PetsContext'
 import { WEIGHT_RANGES, AGE_OPTIONS } from '../lib/petOptions'
 import { humanYearsForAge } from '../lib/humanYears'
+import { hasMultiPetAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -35,7 +36,8 @@ export default function Onboarding() {
 
   if (authLoading || petsLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
-  if (pets.length > 0) return <Navigate to="/" replace />
+  // Only one pet is allowed per account until multi-pet access is entitled.
+  if (pets.length > 0 && !hasMultiPetAccess(pets[0])) return <Navigate to="/" replace />
 
   const weightOptions = WEIGHT_RANGES[species]
   const humanYears = humanYearsForAge(species, weightRangeKey, ageLabel)

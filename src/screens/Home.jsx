@@ -4,6 +4,7 @@ import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOu
 import { usePets } from '../lib/PetsContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
+import { hasMultiPetAccess, hasDiseaseMonitoringAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
@@ -139,7 +140,11 @@ export default function Home() {
         <button
           type="button"
           className="icon-tile-link"
-          onClick={() => setShowDiseaseMonitoringPreview(true)}
+          onClick={() => {
+            // Once disease monitoring is a real, buildable feature, the
+            // granted branch routes to it instead of the preview modal.
+            if (!hasDiseaseMonitoringAccess(pet)) setShowDiseaseMonitoringPreview(true)
+          }}
         >
           <Card className="icon-tile icon-tile-disabled">
             <span className="icon-badge icon-badge-disabled">
@@ -150,13 +155,16 @@ export default function Home() {
           </Card>
         </button>
 
-        {/* TODO: multi-pet support isn't built yet — this tile is a placeholder,
-            not a subscription gate. Replace with a real "add pet" flow once
-            multi-pet support ships. */}
+        {/* TODO: multi-pet support isn't built yet — this tile is a placeholder.
+            Replace with a real "add pet" flow once multi-pet support ships;
+            the granted branch below already routes there instead of the
+            preview modal once hasMultiPetAccess() starts returning true. */}
         <button
           type="button"
           className="icon-tile-link"
-          onClick={() => setShowAddPetPreview(true)}
+          onClick={() => {
+            if (!hasMultiPetAccess(pet)) setShowAddPetPreview(true)
+          }}
         >
           <Card className="icon-tile icon-tile-disabled">
             <span className="icon-badge icon-badge-disabled">
