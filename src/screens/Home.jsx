@@ -201,7 +201,10 @@ export default function Home() {
           title="Monitoring Specific Diseases"
           message="Specific quality-of-life tracking for diagnosed conditions like arthritis, cardiac disease, kidney disease, and more — coming soon."
           onClose={() => setShowDiseaseMonitoringPreview(false)}
-          showPlansLink
+          // showPlansLink temporarily omitted — re-add once real subscription
+          // products exist in App Store Connect / RevenueCat. Paywall screen
+          // and RevenueCat integration are untouched, just unreachable from
+          // the UI for now so App Review doesn't see an empty paywall.
         />
       )}
 
@@ -210,7 +213,7 @@ export default function Home() {
           title="Add Another Pet"
           message="Support for tracking more than one pet on the same account is coming soon."
           onClose={() => setShowAddPetPreview(false)}
-          showPlansLink
+          // showPlansLink temporarily omitted — see note above.
         />
       )}
 
