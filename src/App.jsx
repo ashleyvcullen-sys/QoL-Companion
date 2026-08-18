@@ -21,13 +21,23 @@ import Legal from './screens/Legal'
 import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
 import Support from './screens/Support'
+import StartupErrorScreen from './components/StartupErrorScreen'
 
 function RequireOnboardedPet() {
-  const { user, loading: authLoading } = useAuth()
-  const { pets, loading: petsLoading } = usePets()
+  const { user, loading: authLoading, authError, retryAuth } = useAuth()
+  const { pets, loading: petsLoading, petsError, refresh: retryPets } = usePets()
 
+  // Checked before the loading states below — a failed or timed-out check
+  // would otherwise leave authLoading/petsLoading permanently true, and the
+  // user stuck on a bare "Loading…" forever with no way to recover.
+  if (authError) {
+    return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
+  }
   if (authLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
+  if (petsError) {
+    return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={retryPets} />
+  }
   if (petsLoading) return <p>Loading…</p>
   if (pets.length === 0) return <Navigate to="/onboarding" replace />
   if (!pets[0].has_seen_welcome) return <Navigate to="/welcome" replace />

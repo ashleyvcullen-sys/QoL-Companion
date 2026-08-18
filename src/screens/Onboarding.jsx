@@ -10,6 +10,7 @@ import { hasMultiPetAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
+import StartupErrorScreen from '../components/StartupErrorScreen'
 
 const SPECIES_OPTIONS = [
   { value: 'dog', label: 'Dog' },
@@ -23,8 +24,8 @@ const SEX_OPTIONS = [
 ]
 
 export default function Onboarding() {
-  const { user, loading: authLoading } = useAuth()
-  const { pets, loading: petsLoading, refresh } = usePets()
+  const { user, loading: authLoading, authError, retryAuth } = useAuth()
+  const { pets, loading: petsLoading, petsError, refresh } = usePets()
   const { customerInfo } = useRevenueCat()
   const navigate = useNavigate()
 
@@ -36,8 +37,15 @@ export default function Onboarding() {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  if (authLoading || petsLoading) return <p>Loading…</p>
+  if (authError) {
+    return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
+  }
+  if (authLoading) return <p>Loading…</p>
   if (!user) return <Navigate to="/login" replace />
+  if (petsError) {
+    return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={refresh} />
+  }
+  if (petsLoading) return <p>Loading…</p>
   // Only one pet is allowed per account until multi-pet access is entitled.
   if (pets.length > 0 && !hasMultiPetAccess(customerInfo)) return <Navigate to="/" replace />
 
