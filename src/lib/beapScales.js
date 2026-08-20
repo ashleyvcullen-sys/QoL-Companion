@@ -37,8 +37,8 @@ export const BEAP_SCALES = {
       "Slightly slower to eat.",
       "A bit picky, some hesitancy.",
       "Eating noticeably less; only wants treats or human food.",
-      "Little interest in food or water, even treats.",
-      "Refusing food and water.",
+      "Little interest in food or water, even treats. (emergency)",
+      "Refusing food and water. (emergency)",
     ] },
     { key: "attitude", letter: "A", label: "Attitude", levels: [
       "Happy, interested, seeks attention.",
@@ -103,8 +103,8 @@ export const BEAP_SCALES = {
       "Slightly slower to eat.",
       "A bit picky, some hesitancy.",
       "Eating noticeably less; only wants treats or human food.",
-      "Little interest in food or water, even treats — in cats this needs prompt attention.",
-      "Refusing food and water.",
+      "Little interest in food or water, even treats — in cats this needs prompt attention. (emergency)",
+      "Refusing food and water. (emergency)",
     ] },
     { key: "attitude", letter: "A", label: "Attitude", levels: [
       "Sociable, curious, seeks attention.",
