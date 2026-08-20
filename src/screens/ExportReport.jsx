@@ -15,7 +15,7 @@ import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries } from '../lib/qolData'
-import { computeGeneralQolResult, computeOverviewCategories, beapSeverityLabel } from '../lib/scoring'
+import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 
 function capitalize(value) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
@@ -23,7 +23,7 @@ function capitalize(value) {
 
 const PDF_MARGIN = 40
 
-async function buildReportPdf({ pet, generalResult, latestPainEntry, recent, notesText, chartRefs }) {
+async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -102,7 +102,6 @@ async function buildReportPdf({ pet, generalResult, latestPainEntry, recent, not
 
   addSectionHeader('Latest scores')
   addLine(`General QoL: ${generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}`)
-  addLine(`Pain (BEAAAAPP): ${latestPainEntry ? beapSeverityLabel(latestPainEntry.beapWorst) : 'Not yet assessed'}`)
   addSpacer()
 
   addSectionHeader('Notes')
@@ -166,7 +165,6 @@ export default function ExportReport() {
       const doc = await buildReportPdf({
         pet,
         generalResult,
-        latestPainEntry,
         recent,
         notesText,
         chartRefs: { overview: overviewChartRef, general: generalChartRef, concepts: conceptChartRefs },
@@ -229,10 +227,6 @@ export default function ExportReport() {
             <div className="report-field-row">
               <span>General QoL</span>
               <strong>{generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}</strong>
-            </div>
-            <div className="report-field-row">
-              <span>Pain (BEAAAAPP)</span>
-              <strong>{latestPainEntry ? beapSeverityLabel(latestPainEntry.beapWorst) : 'Not yet assessed'}</strong>
             </div>
           </Card>
 
