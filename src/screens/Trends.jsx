@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
+import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
 import TrendLineChart from '../components/TrendLineChart'
@@ -23,6 +25,7 @@ export default function Trends() {
   const { pets } = usePets()
   const pet = pets[0]
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
+  const [showScoringExplainer, setShowScoringExplainer] = useState(false)
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -134,6 +137,19 @@ export default function Trends() {
           </div>
         )}
       </Card>
+
+      <button type="button" className="subtle-link" onClick={() => setShowScoringExplainer(true)}>
+        How does QoL Companion calculate quality of life?
+      </button>
+
+      {showScoringExplainer && (
+        <Modal title="How does QoL Companion calculate quality of life?" onClose={() => setShowScoringExplainer(false)}>
+          <p>Your Overview scores and your General QoL score are calculated a little differently, and both matter.</p>
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) are built from your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework. For cats, the Comfort score also draws on the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
+          <p>Your overall General QoL score is based on everyday function — things like appetite, hydration, hygiene, and senses — reflecting how your pet is managing day to day, separate from pain scoring specifically.</p>
+          <p>Together, these give you a fuller picture than either could alone. The scoring rules themselves are fixed and transparent — built using adaptations of these clinical frameworks alongside veterinary clinical expertise, not judged case-by-case or influenced by AI.</p>
+        </Modal>
+      )}
 
       <Footer />
     </div>
