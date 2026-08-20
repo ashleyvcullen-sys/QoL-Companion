@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, HeartHandshake, Heart, PawPrint } from 'lucide-react'
+import { AlertTriangle, BookOpen, HeartHandshake, HandHeart, Heart, PawPrint } from 'lucide-react'
 import AboutIcon from '../components/icons/AboutIcon'
 import BrokenHeartIcon from '../components/icons/BrokenHeartIcon'
 
@@ -58,6 +58,17 @@ export const END_OF_LIFE_TOPICS = [
     content: [
       { type: 'p', text: "Grieving often starts well before the loss itself — while you're still caring for a pet who is declining, it's very common to feel waves of sadness, guilt, dread, or even relief-tinged-with-guilt, all at once. This is called anticipatory grief, and it's a normal, well-recognised response, not a sign you're 'giving up' on your pet." },
       { type: 'p', text: "It can help to let yourself feel it rather than push it away, to talk to someone who understands what this pet means to you, and to make space for good moments with your pet alongside the hard ones — both are real and both matter." },
+    ],
+  },
+  {
+    key: 'caregiver-burnout',
+    label: 'Caregiver burnout — looking after yourself too',
+    Icon: HandHeart,
+    content: [
+      { type: 'p', text: "Caring for a pet through a chronic or declining illness is real work — medication schedules, mobility support, disrupted sleep, financial pressure, and near-constant watchfulness, often for weeks or months at a stretch. It's normal for that to wear you down, physically and emotionally, even when you'd do it all again without hesitation." },
+      { type: 'p', text: "Burnout can show up as exhaustion, irritability, a sense of dread before each day, withdrawal from things you'd normally enjoy, or — confusingly — flashes of resentment or numbness toward the very pet you love. That reaction can bring its own wave of guilt, but it doesn't mean you love them any less or that you're a bad caregiver. It's a well-recognised response to sustained caregiving, and naming it as burnout rather than a personal failing is often the first step in coping with it." },
+      { type: 'p', text: "It helps to accept support where it's offered — family, friends, a dog walker, pet-sitting, or respite care — and to let yourself take small breaks without guilt. Keeping even a little of your own routine going (sleep, food, movement) makes a real difference. Talking to someone, whether a friend, a therapist, or a caregiver or pet-loss support group, matters too — this isn't something you have to carry alone." },
+      { type: 'p', text: "Looking after yourself isn't selfish, and it isn't a betrayal of your pet. It's what allows you to keep showing up for them — and it matters just as much as anything you do for them directly." },
     ],
   },
   {
