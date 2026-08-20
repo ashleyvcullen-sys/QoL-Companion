@@ -36,6 +36,39 @@ export default function SwipeableWizard({ pages, onComplete, indicator = 'fracti
     setPageIndex((i) => Math.max(0, i - 1))
   }
 
+  // Horizontal swipe navigation, alongside (not instead of) the Back/Next
+  // buttons below — reuses the exact same goNext()/goBack() so both
+  // interaction methods behave identically, including Finish-on-swipe on
+  // the last page.
+  const touchStartRef = useRef(null)
+  const SWIPE_THRESHOLD_PX = 50
+
+  function handleTouchStart(e) {
+    const touch = e.touches[0]
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+  }
+
+  function handleTouchEnd(e) {
+    const start = touchStartRef.current
+    touchStartRef.current = null
+    if (!start) return
+
+    const touch = e.changedTouches[0]
+    const dx = touch.clientX - start.x
+    const dy = touch.clientY - start.y
+
+    // Require the gesture to be clearly horizontal and past a minimum
+    // distance — otherwise this is almost certainly the user scrolling the
+    // page's own content (chips, sliders, etc.), not navigating.
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) < Math.abs(dy)) return
+
+    if (dx < 0) {
+      goNext()
+    } else {
+      goBack()
+    }
+  }
+
   return (
     <div className="swipeable-wizard">
       {indicator === 'dots' ? (
@@ -49,7 +82,7 @@ export default function SwipeableWizard({ pages, onComplete, indicator = 'fracti
           {pageIndex + 1} / {pages.length}
         </div>
       )}
-      <div className="swipeable-wizard-page">
+      <div className="swipeable-wizard-page" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {pages[pageIndex]}
       </div>
       <div className="swipeable-wizard-nav">

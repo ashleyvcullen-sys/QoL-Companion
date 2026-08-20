@@ -41,7 +41,10 @@ function scoreSlider(value) {
 }
 
 function scoreStoolOrHygiene(value, symptoms, { perSymptomPenalty, flatPenalty } = {}) {
-  if (value === 'unsure') return null
+  // 'none' is stool-only ("No faeces today") — like 'unsure', there's no
+  // quality to score, so it's excluded from the average rather than
+  // penalized or treated as a perfect score.
+  if (value === 'unsure' || value === 'none') return null
   const penalty = flatPenalty != null
     ? (symptoms.length > 0 ? flatPenalty : 0)
     : symptoms.length * perSymptomPenalty

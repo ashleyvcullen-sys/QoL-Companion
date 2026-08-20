@@ -15,7 +15,7 @@ import SliderOnlyPage from './assessment/SliderOnlyPage'
 import BeapCategoryPage from './assessment/BeapCategoryPage'
 import FelineGrimacePage from './assessment/FelineGrimacePage'
 import ReviewPage from './assessment/ReviewPage'
-import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS } from '../lib/assessmentOptions'
+import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS, STOOL_NONE_TODAY_OPTION } from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
@@ -315,12 +315,14 @@ export default function QualityOfLifeAssessment() {
       onChipChange={(v) => updateField('stoolSymptoms', v)}
       icon={PooIcon}
       scaleLabels={['Watery / diarrhoea', 'Mixed', 'Well formed']}
+      extraOption={STOOL_NONE_TODAY_OPTION}
     />,
     <VomitingPage
       key="vomiting"
       value={entry.vomiting}
       onChange={(v) => updateField('vomiting', v)}
       icon={PuddleIcon}
+      species={pet.species}
     />,
     <UrinationPage
       key="urination"

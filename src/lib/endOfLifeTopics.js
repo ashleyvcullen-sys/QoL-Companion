@@ -38,7 +38,7 @@ export const END_OF_LIFE_TOPICS = [
     Icon: BookOpen,
     content: [
       { type: 'p', text: "Most vets use a two-step process: a sedative or pain-relief injection first, which lets your pet relax fully (often they'll appear to fall asleep), followed by the euthanasia solution itself, usually given into a vein. The process is extremely peaceful and not painful." },
-      { type: 'p', text: "You can usually choose between an in-clinic appointment or an at-home visit from a mobile/in-home euthanasia vet, where these services are available in your area. In-clinic tends to be more readily available and has full medical support on hand; at-home means your pet can be in a familiar space, without a car trip — many families find saying goodbye at home to be more meaningful and less stressful. Ask your regular vet what they offer or who they'd recommend locally." },
+      { type: 'p', text: "You can usually choose between an in-clinic appointment or an at-home visit from a mobile/in-home euthanasia vet, if these services are available in your area. In-clinic tends to be more readily available and has full medical support on hand; at-home means your pet can be in a familiar space, without a car trip — many families find saying goodbye at home to be more meaningful and less stressful. Ask your regular vet what they offer or who they'd recommend locally." },
       { type: 'p', text: "You can typically choose whether to be present, and whether other family members or pets are there too. There's no right answer — some people want to be there until the end, others find it too hard and prefer to say goodbye beforehand." },
     ],
   },
@@ -65,13 +65,13 @@ export const END_OF_LIFE_TOPICS = [
     label: 'How children grieve, and how to talk to them about euthanasia',
     Icon: Heart,
     content: [
-      { type: 'p', text: 'Children process pet loss very differently depending on age — the table below is a general guide, not a strict rule, since every child is different.' },
+      { type: 'p', text: "Children process pet loss very differently depending on age — this is a general guide, not a strict rule, since every child is different." },
       { type: 'p', text: "Gentle honesty tends to work better than euphemisms. Phrases like 'put to sleep' can accidentally create a fear of sleep or of going to the vet for anything. Something closer to: 'the vet is going to give [pet] medicine that will stop their body from working, so they won't hurt anymore, and then they will die — we won't be able to see them again, but we'll always remember them' tends to be clearer and, in the long run, less frightening." },
       { type: 'p', text: "Where it feels right, let children choose whether to be involved — saying goodbye beforehand, being present, or creating a small memorial afterward (a drawing, a paw print, a favourite photo) can all help them process it concretely. There's no need to hide your own grief from them; seeing that it's okay for adults to be sad too is part of how children learn grief is survivable." },
-      { type: 'p', text: 'Click on the age brackets to read about how children of different ages grieve.' },
+      { type: 'p', text: 'Select an age bracket to read about how children of different ages grieve and understand death.' },
     ],
     hasAgeBracketPicker: true,
-    citation: 'Adapted from material by Kristi Lehman, MSW, LISW, DVM Center.',
+    citation: 'Adapted from guidance by Kristi Lehman, MSW, LISW, DVM Center.',
   },
   {
     key: 'other-pets-grief',

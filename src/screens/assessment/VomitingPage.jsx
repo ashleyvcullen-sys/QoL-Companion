@@ -6,11 +6,18 @@ import {
   VOMITING_HAS_VOMITED_OPTIONS,
   VOMITING_UNIT_OPTIONS,
   VOMITING_CHARACTER_OPTIONS,
+  VOMITING_CHARACTER_OPTIONS_CAT_EXTRA,
+  VOMITING_FREQUENCY_QUALIFIER_OPTIONS,
 } from '../../lib/assessmentOptions'
 
-export default function VomitingPage({ value, onChange, icon }) {
+const FREQUENCY_QUALIFIER_VALUES = VOMITING_FREQUENCY_QUALIFIER_OPTIONS.map((o) => o.value)
+
+export default function VomitingPage({ value, onChange, icon, species }) {
   const { hasVomited, frequency, unit, character } = value
-  const frequencyUnsure = frequency === 'unsure'
+  const isFrequencyQualifier = FREQUENCY_QUALIFIER_VALUES.includes(frequency)
+  const characterOptions = species === 'cat'
+    ? [...VOMITING_CHARACTER_OPTIONS.slice(0, -1), ...VOMITING_CHARACTER_OPTIONS_CAT_EXTRA, 'Other']
+    : VOMITING_CHARACTER_OPTIONS
 
   function update(patch) {
     onChange({ ...value, ...patch })
@@ -35,8 +42,7 @@ export default function VomitingPage({ value, onChange, icon }) {
               id="vomit-frequency"
               type="number"
               min="0"
-              value={frequencyUnsure ? '' : frequency}
-              disabled={frequencyUnsure}
+              value={isFrequencyQualifier ? '' : frequency}
               onChange={(e) => update({ frequency: e.target.value })}
             />
           </div>
@@ -47,17 +53,15 @@ export default function VomitingPage({ value, onChange, icon }) {
             onChange={(v) => update({ unit: v })}
           />
 
-          <label className="unsure-toggle">
-            <input
-              type="checkbox"
-              checked={frequencyUnsure}
-              onChange={(e) => update({ frequency: e.target.checked ? 'unsure' : '' })}
-            />
-            Not sure of frequency
-          </label>
+          <p className="field-hint">Or, if you don't have an exact count:</p>
+          <ChoiceButtons
+            options={VOMITING_FREQUENCY_QUALIFIER_OPTIONS}
+            value={isFrequencyQualifier ? frequency : null}
+            onChange={(v) => update({ frequency: v })}
+          />
 
           <SymptomChips
-            options={VOMITING_CHARACTER_OPTIONS}
+            options={characterOptions}
             selected={character}
             onChange={(v) => update({ character: v })}
           />

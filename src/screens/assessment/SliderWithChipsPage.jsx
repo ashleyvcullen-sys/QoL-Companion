@@ -12,12 +12,13 @@ export default function SliderWithChipsPage({
   onChipChange,
   icon,
   scaleLabels,
+  extraOption,
 }) {
   return (
     <div className="assessment-page">
       <SectionTitle>{title}</SectionTitle>
       {description && <p>{description}</p>}
-      <ScoreSlider label={title} value={sliderValue} onChange={onSliderChange} icon={icon} scaleLabels={scaleLabels} />
+      <ScoreSlider label={title} value={sliderValue} onChange={onSliderChange} icon={icon} scaleLabels={scaleLabels} extraOption={extraOption} />
       <SymptomChips options={chipOptions} selected={chipValue} onChange={onChipChange} />
     </div>
   )

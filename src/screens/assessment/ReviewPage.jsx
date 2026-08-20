@@ -1,11 +1,10 @@
 import SectionTitle from '../../components/SectionTitle'
-import { computeGeneralQolResult, computeBeapWorst, beapSeverityLabel } from '../../lib/scoring'
+import { computeGeneralQolResult } from '../../lib/scoring'
 
 export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
   const generalResult = computeGeneralQolResult(entry)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
-  const beapWorst = hasAllBeapAnswers ? computeBeapWorst(entry.beap) : null
 
   return (
     <div className="assessment-page">
@@ -15,10 +14,6 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
         <div className="review-summary-row">
           <span>General QoL</span>
           <strong>{generalResult.percent}% — {generalResult.band}</strong>
-        </div>
-        <div className="review-summary-row">
-          <span>Pain (BEAAAAPP)</span>
-          <strong>{hasAllBeapAnswers ? beapSeverityLabel(beapWorst) : 'Incomplete'}</strong>
         </div>
       </div>
 
