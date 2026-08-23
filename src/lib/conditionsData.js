@@ -1,0 +1,253 @@
+import { useCallback, useEffect, useState } from 'react'
+import { supabase } from './supabase'
+
+export function todayIsoDate() {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)
+}
+
+function mapConditionRow(row) {
+  return {
+    id: row.id,
+    petId: row.pet_id,
+    conditionKey: row.condition_key,
+    diagnosedOn: row.diagnosed_on,
+    notes: row.notes,
+    active: row.active,
+  }
+}
+
+function mapEntryRow(row) {
+  return {
+    id: row.id,
+    conditionKey: row.condition_key,
+    date: row.entry_date,
+    values: row.values ?? {},
+    notes: row.notes,
+  }
+}
+
+export async function fetchPetConditions(petId) {
+  const { data, error } = await supabase
+    .from('pet_conditions')
+    .select('*')
+    .eq('pet_id', petId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []).map(mapConditionRow)
+}
+
+export async function addPetCondition({ petId, conditionKey, diagnosedOn, notes }) {
+  const { data, error } = await supabase
+    .from('pet_conditions')
+    .upsert(
+      {
+        pet_id: petId,
+        condition_key: conditionKey,
+        diagnosed_on: diagnosedOn || null,
+        notes: notes || null,
+        active: true,
+      },
+      { onConflict: 'pet_id,condition_key' },
+    )
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapConditionRow(data)
+}
+
+export async function setConditionActive(conditionId, active) {
+  const { error } = await supabase.from('pet_conditions').update({ active }).eq('id', conditionId)
+  if (error) throw error
+}
+
+export async function removePetCondition(conditionId) {
+  const { error } = await supabase.from('pet_conditions').delete().eq('id', conditionId)
+  if (error) throw error
+}
+
+export async function fetchConditionEntries(petId, conditionKey) {
+  const { data, error } = await supabase
+    .from('condition_entries')
+    .select('*')
+    .eq('pet_id', petId)
+    .eq('condition_key', conditionKey)
+    .order('entry_date', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []).map(mapEntryRow)
+}
+
+// One entry per condition per day. A second save on the same date replaces
+// the first, matching every other log in the app.
+export async function saveConditionEntry({ petId, conditionKey, values, notes, entryDate }) {
+  const { error } = await supabase
+    .from('condition_entries')
+    .upsert(
+      {
+        pet_id: petId,
+        condition_key: conditionKey,
+        entry_date: entryDate ?? todayIsoDate(),
+        values,
+        notes: notes || null,
+      },
+      { onConflict: 'pet_id,condition_key,entry_date' },
+    )
+
+  if (error) throw error
+}
+
+export function usePetConditions(petId) {
+  const [conditions, setConditions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [reloadToken, setReloadToken] = useState(0)
+
+  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
+
+  useEffect(() => {
+    if (!petId) {
+      setConditions([])
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+
+    fetchPetConditions(petId)
+      .then((result) => { if (!cancelled) setConditions(result) })
+      .catch((error) => {
+        console.error('Failed to load conditions:', error.message)
+        if (!cancelled) setConditions([])
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [petId, reloadToken])
+
+  return { conditions, loading, refresh }
+}
+
+export function useConditionEntries(petId, conditionKey) {
+  const [entries, setEntries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [reloadToken, setReloadToken] = useState(0)
+
+  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
+
+  useEffect(() => {
+    if (!petId || !conditionKey) {
+      setEntries([])
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+
+    fetchConditionEntries(petId, conditionKey)
+      .then((result) => { if (!cancelled) setEntries(result) })
+      .catch((error) => {
+        console.error('Failed to load condition entries:', error.message)
+        if (!cancelled) setEntries([])
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [petId, conditionKey, reloadToken])
+
+  return { entries, loading, refresh }
+}
+
+// --- Events ---------------------------------------------------------------
+
+export const EVENT_TYPES = [
+  { value: 'episode', label: 'Medical episode', colour: '#A33A2E' },
+  { value: 'diagnosis', label: 'Diagnosis', colour: '#5C6F8A' },
+  { value: 'medication_started', label: 'Medication started', colour: '#3D8259' },
+  { value: 'medication_stopped', label: 'Medication stopped', colour: '#C97A2E' },
+  { value: 'other', label: 'Something else', colour: '#8A5C6F' },
+]
+
+export function eventTypeByValue(value) {
+  return EVENT_TYPES.find((entry) => entry.value === value) ?? null
+}
+
+function mapEventRow(row) {
+  return {
+    id: row.id,
+    conditionKey: row.condition_key,
+    date: row.event_date,
+    type: row.event_type,
+    title: row.title,
+    notes: row.notes,
+  }
+}
+
+export async function fetchConditionEvents(petId, conditionKey) {
+  const { data, error } = await supabase
+    .from('condition_events')
+    .select('*')
+    .eq('pet_id', petId)
+    .eq('condition_key', conditionKey)
+    .order('event_date', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []).map(mapEventRow)
+}
+
+export async function addConditionEvent({ petId, conditionKey, type, title, notes, eventDate }) {
+  const { data, error } = await supabase
+    .from('condition_events')
+    .insert({
+      pet_id: petId,
+      condition_key: conditionKey,
+      event_type: type,
+      title,
+      notes: notes || null,
+      event_date: eventDate ?? todayIsoDate(),
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapEventRow(data)
+}
+
+export async function deleteConditionEvent(eventId) {
+  const { error } = await supabase.from('condition_events').delete().eq('id', eventId)
+  if (error) throw error
+}
+
+export function useConditionEvents(petId, conditionKey) {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [reloadToken, setReloadToken] = useState(0)
+
+  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
+
+  useEffect(() => {
+    if (!petId || !conditionKey) {
+      setEvents([])
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+
+    fetchConditionEvents(petId, conditionKey)
+      .then((result) => { if (!cancelled) setEvents(result) })
+      .catch((error) => {
+        console.error('Failed to load events:', error.message)
+        if (!cancelled) setEvents([])
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [petId, conditionKey, reloadToken])
+
+  return { events, loading, refresh }
+}

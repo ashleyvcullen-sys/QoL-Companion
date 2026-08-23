@@ -2,17 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Bell, Camera, FileDown, Heart, HeartHandshake, LogOut, PawPrint, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
-import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
-import { hasDiseaseMonitoringAccess } from '../lib/entitlements'
 import { cancelQolReminder } from '../lib/notifications'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
-import ComingSoonModal from '../components/ComingSoonModal'
 import Footer from '../components/Footer'
 import PetSwitcher from '../components/PetSwitcher'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
@@ -40,7 +37,6 @@ const NAV_ITEMS = [
 
 export default function Home() {
   const { pets, refresh, selectedPet, selectPet } = usePets()
-  const { customerInfo } = useRevenueCat()
   const pet = selectedPet
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
@@ -58,7 +54,6 @@ export default function Home() {
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [deleteAccountError, setDeleteAccountError] = useState('')
 
-  const [showDiseaseMonitoringPreview, setShowDiseaseMonitoringPreview] = useState(false)
 
   const tourSteps = NAV_ITEMS.map(({ to, label }) => ({ to, label, message: HOME_TOUR_MESSAGES[to] }))
 
@@ -199,23 +194,18 @@ export default function Home() {
           </Link>
         ))}
 
-        <button
-          type="button"
-          className="icon-tile-link"
-          onClick={() => {
-            // Once disease monitoring is a real, buildable feature, the
-            // granted branch routes to it instead of the preview modal.
-            if (!hasDiseaseMonitoringAccess(customerInfo)) setShowDiseaseMonitoringPreview(true)
-          }}
-        >
-          <Card className="icon-tile icon-tile-disabled">
-            <span className="icon-badge icon-badge-disabled">
+        {/* PRO-tier feature, currently ungated for testing. Gate on
+            hasDiseaseMonitoringAccess(customerInfo) when the products are
+            live — the preview modal below is what a non-entitled user should
+            see once it is. */}
+        <Link to="/conditions" className="icon-tile-link">
+          <Card className="icon-tile">
+            <span className="icon-badge">
               <Stethoscope size={22} strokeWidth={2} color="#fff" />
             </span>
             <span className="icon-tile-label">Monitoring Specific Diseases</span>
-            <span className="icon-tile-sublabel">Coming soon</span>
           </Card>
-        </button>
+        </Link>
 
         {/* Multi-pet is currently ungated — this routes straight to the
             add-pet flow. To put it behind the paywall later, gate this on
@@ -255,18 +245,6 @@ export default function Home() {
 
       {showTour && (
         <HomeTour steps={tourSteps} targetRefs={tileRefs} onFinish={completeTour} />
-      )}
-
-      {showDiseaseMonitoringPreview && (
-        <ComingSoonModal
-          title="Monitoring Specific Diseases"
-          message="Specific quality-of-life tracking for diagnosed conditions like arthritis, cardiac disease, kidney disease, and more — coming soon."
-          onClose={() => setShowDiseaseMonitoringPreview(false)}
-          // showPlansLink temporarily omitted — re-add once real subscription
-          // products exist in App Store Connect / RevenueCat. Paywall screen
-          // and RevenueCat integration are untouched, just unreachable from
-          // the UI for now so App Review doesn't see an empty paywall.
-        />
       )}
 
       {showDeleteConfirm && (

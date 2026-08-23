@@ -20,6 +20,8 @@ import Paywall from './screens/Paywall'
 import BodyConditionScore from './screens/BodyConditionScore'
 import Medications from './screens/Medications'
 import PetMedia from './screens/PetMedia'
+import ConditionMonitoring from './screens/ConditionMonitoring'
+import Conditions from './screens/Conditions'
 import Legal from './screens/Legal'
 import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
@@ -108,6 +110,8 @@ function App() {
         <Route path="/body-condition" element={<BodyConditionScore />} />
         <Route path="/medications" element={<Medications />} />
         <Route path="/media" element={<PetMedia />} />
+        <Route path="/conditions" element={<Conditions />} />
+        <Route path="/conditions/:conditionKey" element={<ConditionMonitoring />} />
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>

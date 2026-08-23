@@ -469,6 +469,254 @@ code {
   color: var(--text-h);
 }
 
+/* A flagged reading. Deliberately not styled as an error — a raised
+   respiratory rate is information to act on, not a mistake the owner made. */
+.condition-flag {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 145%;
+  color: var(--severity-moderate);
+}
+
+/* Emergencies get a filled block rather than coloured text. A white gum or a
+   collapse means "phone someone now", and that has to survive being scrolled
+   past on a small screen by a worried owner. */
+.condition-emergency {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(163, 58, 46, 0.1);
+  border: 1px solid var(--severity-severe);
+  color: var(--severity-severe);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 145%;
+}
+
+.condition-emergency svg,
+.condition-flag svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.condition-parameter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.condition-parameter:last-of-type {
+  border-bottom: 0;
+}
+
+.condition-parameter-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.condition-parameter textarea,
+.condition-followup textarea {
+  font: inherit;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-h);
+  box-sizing: border-box;
+  resize: vertical;
+  width: 100%;
+}
+
+.condition-followup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.how-to-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.condition-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Full-width rows rather than the square grid used on Home. A condition needs
+   a line of explanation to be choosable, and that doesn't fit in a tile. */
+.condition-tile-link {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.condition-badge {
+  width: 56px;
+  height: 56px;
+}
+
+.condition-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 16px;
+}
+
+.condition-tile-disabled {
+  opacity: 0.6;
+}
+
+.condition-tile-link:disabled {
+  cursor: default;
+}
+
+.condition-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.condition-tile-label {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.condition-tile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.condition-tile-status.tracking {
+  color: var(--severity-good);
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.event-row:last-child {
+  border-bottom: 0;
+}
+
+/* Colour-coded to match the marker drawn on the chart, so a line on the
+   graph and a row in the list are recognisably the same event. */
+.event-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.event-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.event-title {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.event-row > button {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.status-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.status-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.status-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.status-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.how-to-steps {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 14px;
+  line-height: 150%;
+  color: var(--text);
+}
+
 .icon-label-header-badge {
   display: inline-flex;
   align-items: center;

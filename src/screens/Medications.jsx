@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { BellOff, Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
@@ -71,6 +72,21 @@ export default function Medications() {
   const [notifStatus, setNotifStatus] = useState(null)
 
   const isNative = Capacitor.isNativePlatform()
+
+  // Arriving from a "medication started" event on a condition: open the add
+  // form with the name already in, so the owner finishes one thought rather
+  // than starting a new one. The state is cleared immediately so a refresh or
+  // a back-and-forward doesn't reopen a form they already dealt with.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const prefillName = location.state?.newMedicationName
+
+  useEffect(() => {
+    if (!prefillName) return
+    setEditingId('new')
+    setForm({ ...EMPTY_FORM, name: prefillName })
+    navigate(location.pathname, { replace: true, state: null })
+  }, [prefillName, navigate, location.pathname])
 
   useEffect(() => {
     if (!isNative) return
