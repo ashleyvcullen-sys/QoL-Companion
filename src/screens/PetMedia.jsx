@@ -92,8 +92,9 @@ export default function PetMedia() {
           posture — or a short clip of how they're walking or breathing.
         </p>
         <p className="assessment-hint">
-          Some things a vet needs to see can't be described. Video is especially useful for
-          gait, breathing effort, tremors or seizures.
+          Some things are easier for a vet to assess visually rather than based on a
+          description. Video is especially useful for gait, breathing effort, tremors or
+          seizures.
         </p>
       </Card>
 

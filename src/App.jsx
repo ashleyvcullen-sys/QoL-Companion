@@ -25,6 +25,7 @@ import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
 import Support from './screens/Support'
 import StartupErrorScreen from './components/StartupErrorScreen'
+import { useReminderRehydration } from './lib/useReminderRehydration'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
@@ -55,6 +56,13 @@ function RequireOnboardedPet() {
 function App() {
   const navigate = useNavigate()
   const { selectPet } = usePets()
+
+  // Re-arms medication reminders the OS has lost — after a reinstall,
+  // a restore, or a new phone. No-op on a normal launch where everything is
+  // still queued. Lives here rather than on the Medications screen because
+  // the whole failure mode is the owner NOT visiting that screen: they trust
+  // the reminders and only find out when a dose is missed.
+  useReminderRehydration()
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return

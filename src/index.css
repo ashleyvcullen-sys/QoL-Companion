@@ -74,6 +74,21 @@ p {
   margin: 0;
 }
 
+/* The global rule above stays at 0 so nothing outside a card shifts, but
+   inside a card, stacked paragraphs and lists were touching with only
+   line-height between them — which is what made dense screens (Privacy,
+   Terms, the assessment intros) read as a wall of text. Spacing the GAPS
+   rather than giving every paragraph a margin means the first and last
+   child still sit flush against the card's own padding, so cards don't
+   gain uneven top and bottom whitespace. */
+.card p + p,
+.card p + ul,
+.card ul + p,
+.card p + .field,
+.card .field + p {
+  margin-top: 12px;
+}
+
 code,
 .counter {
   font-family: var(--mono);
@@ -111,7 +126,7 @@ code {
   font-family: var(--heading);
   font-weight: 600;
   color: var(--text-h);
-  margin: 0 0 4px;
+  margin: 0 0 12px;
   text-align: left;
 }
 
@@ -919,6 +934,42 @@ code {
   padding: 4px;
 }
 
+.med-reminder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.med-reminder-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Count and period read as one sentence ("2 per day"), so they sit side by
+   side. .field-group is a vertical stack and would have broken that apart. */
+.med-frequency-row {
+  display: flex;
+  gap: 12px;
+}
+
+.med-frequency-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The "reminders off" marker sits inline with the dose pills, so its icon
+   needs to ride on the text baseline rather than sitting above it. */
+.med-slot-row .assessment-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* --- Photos & videos --- */
 
 .media-grid {
@@ -1296,7 +1347,10 @@ code {
   font-size: 12px;
   color: var(--text-muted);
   font-style: italic;
-  margin: -8px 0 4px;
+  /* Was -8px top, pulling it tight under a heading that then sat only 4px
+     away. The heading now provides that space itself, so the negative
+     margin would just undo it. */
+  margin: 0;
 }
 
 .grimace-total {

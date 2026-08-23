@@ -158,14 +158,19 @@ export async function cancelMedicationReminders(medicationId) {
   }
 }
 
-export async function scheduleMedicationReminders({ medicationId, medicationName, petName, dose, times, active }) {
+export async function scheduleMedicationReminders({ medicationId, medicationName, petName, dose, times, active, remindersEnabled = true }) {
   if (!medicationId) return
 
   await cancelMedicationReminders(medicationId)
 
-  // An inactive course, or an as-needed medication with no fixed times, has
-  // nothing to schedule — the cancel above is the whole job.
-  if (!active || !times || times.length === 0) return
+  // Nothing to schedule for an inactive course, an as-needed medication, or
+  // one scheduled by frequency ("twice a day") rather than by clock time —
+  // in all three cases the cancel above is the whole job.
+  //
+  // Frequency mode deliberately gets no reminder. Picking default times
+  // would have the app nudging an owner to give a drug at a time nobody
+  // prescribed; if they want reminding, they set real times.
+  if (!active || !remindersEnabled || !times || times.length === 0) return
 
   const display = await checkNotificationPermission()
   if (display !== 'granted') return
@@ -182,4 +187,21 @@ export async function scheduleMedicationReminders({ medicationId, medicationName
   })
 
   await LocalNotifications.schedule({ notifications })
+}
+
+// Ids of everything currently queued with the OS. Used to tell "this
+// reminder was never scheduled" apart from "this reminder is fine", so
+// rehydration can be a no-op on a normal launch instead of tearing down and
+// rebuilding every reminder each time the app opens.
+export async function getPendingNotificationIds() {
+  if (!Capacitor.isNativePlatform()) return []
+  try {
+    const { notifications } = await LocalNotifications.getPending()
+    return (notifications ?? []).map((notification) => Number(notification.id))
+  } catch {
+    // If we can't read the queue, report none pending. Rehydration then
+    // reschedules, which is wasteful but safe — the opposite mistake would
+    // leave a medication silently unreminded.
+    return []
+  }
 }

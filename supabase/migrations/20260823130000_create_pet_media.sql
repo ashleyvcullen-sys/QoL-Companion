@@ -64,14 +64,24 @@ on conflict (id) do nothing;
 -- pets.id::text rather than casting the segment to uuid: a malformed path
 -- would raise on the cast and abort the query, where a text comparison just
 -- fails to match and denies access, which is the behaviour we want.
+--
+-- NOTE THE ALIASES. An earlier version of this file wrote
+-- `storage.foldername(name)` with `from public.pets` unaliased. `pets` has a
+-- `name` column of its own, so Postgres bound the unqualified `name` to
+-- pets.name — the PET's name — instead of the storage object's. No error, no
+-- warning: the policy silently compared a pet id against the folder segments
+-- of a string like 'Milo', matched nothing, and denied every upload.
+--
+-- Hence `objects.name` and `pets p`: nothing here is resolvable to more than
+-- one column.
 
 create policy pet_media_objects_select on storage.objects for select
   using (
     bucket_id = 'pet-media'
     and exists (
-      select 1 from public.pets
-      where pets.id::text = (storage.foldername(name))[1]
-        and pets.user_id = auth.uid()
+      select 1 from public.pets p
+      where p.id::text = (storage.foldername(objects.name))[1]
+        and p.user_id = auth.uid()
     )
   );
 
@@ -79,9 +89,9 @@ create policy pet_media_objects_insert on storage.objects for insert
   with check (
     bucket_id = 'pet-media'
     and exists (
-      select 1 from public.pets
-      where pets.id::text = (storage.foldername(name))[1]
-        and pets.user_id = auth.uid()
+      select 1 from public.pets p
+      where p.id::text = (storage.foldername(objects.name))[1]
+        and p.user_id = auth.uid()
     )
   );
 
@@ -89,8 +99,8 @@ create policy pet_media_objects_delete on storage.objects for delete
   using (
     bucket_id = 'pet-media'
     and exists (
-      select 1 from public.pets
-      where pets.id::text = (storage.foldername(name))[1]
-        and pets.user_id = auth.uid()
+      select 1 from public.pets p
+      where p.id::text = (storage.foldername(objects.name))[1]
+        and p.user_id = auth.uid()
     )
   );
