@@ -5,6 +5,7 @@ import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import { usePets } from '../lib/PetsContext'
+import PetText from '../components/PetText'
 import { CONDITION_LIST } from '../lib/conditions'
 import { addPetCondition, usePetConditions } from '../lib/conditionsData'
 
@@ -32,10 +33,10 @@ export default function Conditions() {
       <HomeLink />
 
       <Card className="bcs-intro">
-        <SectionTitle>Monitoring Specific Diseases</SectionTitle>
+        <SectionTitle>Disease-Specific Monitoring</SectionTitle>
         <p>
           Track the things that matter for a condition {pet.name} has been diagnosed with,
-          alongside their general quality of life.
+          alongside <PetText template="{their}" pet={pet} /> general quality of life.
         </p>
         <p className="assessment-hint">
           This doesn't replace your vet's monitoring plan — it's a way to keep the record they
@@ -60,9 +61,6 @@ export default function Conditions() {
               </span>
               <span className="condition-tile-body">
                 <span className="condition-tile-label">{condition.label}</span>
-                {condition.summary && (
-                  <span className="assessment-hint">{condition.summary}</span>
-                )}
               </span>
               {disabled ? (
                 <span className="condition-tile-status"><Lock size={13} /> Coming soon</span>

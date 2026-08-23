@@ -1,29 +1,39 @@
 import { useState } from 'react'
-import { AlertTriangle, ChevronDown, Info } from 'lucide-react'
+import { AlertTriangle, Info } from 'lucide-react'
+import Btn from './Btn'
 import ChoiceButtons from './ChoiceButtons'
+import Modal from './Modal'
+import PetText from './PetText'
 import SeverityOptionList from './SeverityOptionList'
 import { SEVERITY, UNSURE, beapLevelsFor, evaluateParameter } from '../lib/conditions'
+import { fillPetText } from '../lib/petText'
 
 const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
 
-// Collapsed by default. The instructions matter enormously the first few
-// times and are noise thereafter, so they're one tap away rather than always
-// occupying the screen.
-function HowTo({ title, steps }) {
+// A button opening a dialog rather than an inline expander. The instructions
+// matter enormously the first few times and are noise thereafter, and an
+// expander pushes every question below it down the screen when opened — which
+// is exactly when the owner is trying to read it and count at the same time.
+function HowTo({ title, steps, pet }) {
   const [open, setOpen] = useState(false)
+  const heading = title ?? 'How to Measure This'
+
   return (
-    <div className="how-to">
-      <button type="button" className="how-to-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Info size={15} />
-        <span>{title ?? 'How to measure this'}</span>
-        <ChevronDown size={16} className={`chart-chevron ${open ? 'open' : ''}`.trim()} />
-      </button>
+    <>
+      <Btn type="button" variant="outline" className="how-to-button" onClick={() => setOpen(true)}>
+        <Info size={15} /> {heading}
+      </Btn>
       {open && (
-        <ol className="how-to-steps">
-          {steps.map((step, i) => <li key={i}>{step}</li>)}
-        </ol>
+        <Modal title={heading} onClose={() => setOpen(false)}>
+          <ol className="how-to-steps">
+            {steps.map((step, i) => (
+              <li key={i}><PetText template={step} pet={pet} /></li>
+            ))}
+          </ol>
+          <Btn type="button" className="btn-block" onClick={() => setOpen(false)}>Got it</Btn>
+        </Modal>
       )}
-    </div>
+    </>
   )
 }
 
@@ -48,7 +58,8 @@ function Verdict({ verdict }) {
   return null
 }
 
-export default function ConditionParameter({ parameter, values, species, onChange }) {
+export default function ConditionParameter({ parameter, values, pet, onChange }) {
+  const species = pet?.species
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
   const isUnsure = value === UNSURE
@@ -64,8 +75,12 @@ export default function ConditionParameter({ parameter, values, species, onChang
   return (
     <div className="condition-parameter">
       <span className="condition-parameter-label">{parameter.label}</span>
-      {parameter.why && <p className="assessment-hint">{parameter.why}</p>}
-      {parameter.howTo && <HowTo title={parameter.howToTitle} steps={parameter.howTo} />}
+      {parameter.why && (
+        <p className="assessment-hint"><PetText template={parameter.why} pet={pet} /></p>
+      )}
+      {parameter.howTo && (
+        <HowTo title={parameter.howToTitle} steps={parameter.howTo} pet={pet} />
+      )}
 
       {parameter.type === 'number' && (
         <>
@@ -129,7 +144,9 @@ export default function ConditionParameter({ parameter, values, species, onChang
 
       {followUpVisible && (
         <div className="condition-followup">
-          <span className="condition-parameter-label">{followUp.label}</span>
+          <span className="condition-parameter-label">
+            {fillPetText(followUp.label, pet)}
+          </span>
 
           {followUp.type === 'text' && (
             <textarea

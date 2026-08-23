@@ -39,31 +39,29 @@ export const UNSURE = 'unsure'
 export const CONDITIONS = {
   cardiac: {
     key: 'cardiac',
-    label: 'Heart disease',
+    label: 'Heart Disease',
     Icon: HeartOrganIcon,
     // Shown on the condition list to say what monitoring involves before
     // someone commits to it.
     summary: 'Breathing rate and effort, coughing, exercise tolerance, gum colour and more.',
     intro:
-      'Tracking a few things at home between visits shows how well treatment is holding, and can catch a change days before it becomes an emergency.',
+      'Monitoring parameters such as resting breathing rate and exercise tolerance can help catch subtle changes over time. Earlier detection often leads to earlier intervention and better outcomes.',
     parameters: [
       {
         key: 'resting_respiratory_rate',
-        label: 'Resting breathing rate',
+        label: 'Resting Respiratory (Breathing) Rate',
         type: 'number',
         unit: 'breaths/min',
         min: 1,
         max: 200,
         step: 1,
         why:
-          'This is the single most useful thing you can measure at home. In heart disease, fluid builds up in the lungs before an animal looks unwell, and the breathing rate rises first. A steady upward trend over a few days is often the earliest warning that treatment needs adjusting — usually before any coughing or distress appears.',
-        howToTitle: 'How to measure it',
+          '**This is one of the most subtle but useful things you can measure at home.** In many cases of heart disease, fluid can build up in the lungs, leading to an increased breathing rate at rest. This often occurs before more obvious signs of sickness. A resting respiratory rate (RRR) of **consistently more than 30 breaths per minute** warrants a vet visit sooner rather than later.',
+        howToTitle: 'How to Measure Resting Breathing Rate',
         howTo: [
-          'Wait until your pet is asleep, or fully settled and relaxed. Not just after a walk, a meal, or excitement.',
-          'Watch the chest. One breath is one rise AND fall together.',
+          'Ensure {name} is completely asleep and relaxed (i.e. not straight after a walk or excitement).',
+          'Watch the chest. One breath is the rise AND fall of the chest.',
           'Count the breaths for 30 seconds, then double it. That is the rate per minute.',
-          'Do not count while a dog is panting, or while a cat is purring — neither gives a true reading.',
-          'Measuring at roughly the same time each day makes a trend much easier to see.',
         ],
         // APPROVED — Ash Cullen (BVSc), 23 Aug 2026: 30 breaths/min for both
         // dogs and cats.
@@ -83,11 +81,39 @@ export const CONDITIONS = {
       },
       {
         key: 'respiratory_effort',
-        label: 'Breathing effort',
-        type: 'beap',
-        beapKey: 'breathing',
+        label: 'Breathing Effort',
+        // Its OWN levels rather than the BEAAAAPP breathing scale. That scale
+        // deliberately blends rate and effort ("faster", "quicker", "rapid"),
+        // which is right for a general assessment but wrong here: rate is
+        // already captured as a number directly above, so an owner would be
+        // answering the same question twice and the two could disagree.
+        // These describe work of breathing only — chest excursion, abdominal
+        // push, posture, open-mouth breathing.
+        //
+        // PENDING ASH — drafted, not yet reviewed. Same 6-level, 0-10 shape
+        // as BEAAAAPP, and the "(emergency)" marker is load-bearing: the
+        // picker reads it to flag those options.
+        type: 'scale',
+        levels: {
+          dog: [
+            'Effortless. The chest moves gently and evenly, mouth closed.',
+            'Slightly deeper chest movement, but still relaxed. No belly involvement.',
+            'Noticeable chest movement, with the belly occasionally helping.',
+            'Obvious effort — the belly pushes with each breath, nostrils may flare.',
+            'Laboured at rest — the belly heaves, elbows held away from the body, head and neck extended. (emergency)',
+            'Struggling — open-mouth gasping, unable to settle or lie down. Gums may appear white or blue. (emergency)',
+          ],
+          cat: [
+            'Effortless. The chest moves gently and evenly, mouth closed.',
+            'Slightly deeper chest movement, but still relaxed. No belly involvement.',
+            'Noticeable chest movement, with the belly occasionally helping.',
+            'Obvious effort — the belly pushes with each breath, may sit hunched with elbows out.',
+            'Open-mouth breathing with the belly heaving. Cats rarely breathe through the mouth unless they are in trouble. (emergency)',
+            'Struggling — gasping, head and neck extended, unable to settle. Gums may appear white or blue. (emergency)',
+          ],
+        },
         why:
-          'Rate tells you how fast; effort tells you how hard. Breathing that takes visible work — heaving sides, abdominal push, open-mouth breathing in a cat — matters even when the count looks acceptable.',
+          'Breathing effort tells us how hard {name} is working to get oxygen — not how fast, which you have already counted above. This does not need to be assessed while {name} is completely asleep but ideally should be done when {they} {are} relaxed.',
       },
       {
         key: 'coughing',
@@ -97,11 +123,11 @@ export const CONDITIONS = {
         why:
           'Coughing in a heart patient can mean fluid in the lungs, or an enlarged heart pressing on the airway. What it sounds like helps tell those apart.',
         concernMessage:
-          'Worth mentioning to your vet, particularly if it is new, more frequent, or happening at night.',
+          'Worth mentioning to your vet, particularly if it is new or more frequent.',
         followUp: {
           when: 'yes',
           key: 'cough_character',
-          label: 'What does the cough sound like?',
+          label: 'What Does the Cough Sound Like?',
           type: 'choice',
           allowOther: true,
           otherLabel: 'Describe it yourself',
@@ -113,10 +139,10 @@ export const CONDITIONS = {
       },
       {
         key: 'exercise_tolerance',
-        label: 'Exercise tolerance',
+        label: 'Exercise Tolerance',
         type: 'choice',
         why:
-          'Tiring sooner than usual, or stopping on a walk they would normally manage, is often the first thing an owner notices — and it tends to change before anything else does.',
+          'Tiring sooner than usual or stopping on a walk can be one of the earliest signs of heart disease.',
         options: [
           { value: 'normal', label: 'Normal', severity: SEVERITY.OK },
           { value: 'reduced', label: 'Reduced', severity: SEVERITY.CONCERN },
@@ -125,35 +151,35 @@ export const CONDITIONS = {
         followUp: {
           when: 'reduced',
           key: 'exercise_notes',
-          label: 'What have you noticed?',
+          label: 'What Have You Noticed?',
           type: 'text',
           placeholder: 'e.g. stopped halfway on the usual walk, lay down after five minutes',
         },
       },
       {
         key: 'syncope',
-        label: 'Fainting or collapsing',
+        label: 'Fainting or Collapsing',
         type: 'yesno',
         emergencyWhen: 'yes',
         why:
-          'A faint or collapse means the brain briefly lost its blood supply. In a heart patient this always needs veterinary attention, even if your pet seems completely normal afterwards.',
+          'This always requires prompt veterinary attention, especially with heart disease and even if {name} seems completely normal after.',
         emergencyMessage:
           'Contact your vet or an emergency service now. A collapse needs to be assessed today, even if your pet seems fine again.',
         followUp: {
           when: 'yes',
           key: 'syncope_notes',
-          label: 'What happened?',
+          label: 'What Happened?',
           type: 'text',
           placeholder: 'e.g. after excitement at the door, out for a few seconds, came round on their own',
         },
       },
       {
         key: 'mucous_membranes',
-        label: 'Gum colour',
+        label: 'Gum Colour',
         type: 'choice',
         why:
           'Gum colour reflects how well oxygenated blood is reaching the tissues. Pink is what you want. Blue or white means oxygen or circulation is failing.',
-        howToTitle: 'How to check',
+        howToTitle: 'How to Check Gum Colour',
         howTo: [
           'Lift the lip gently and look at the gum above the upper teeth.',
           'Check in good light — indoor lighting can make pink look pale.',
@@ -170,16 +196,16 @@ export const CONDITIONS = {
       },
       {
         key: 'abdominal_distension',
-        label: 'Swollen or bloated tummy',
+        label: 'Swollen or Bloated Tummy',
         type: 'yesno',
         concernWhen: 'yes',
         why:
-          'In right-sided heart failure, fluid can collect in the abdomen. It usually builds gradually, so it is easy to miss day to day and easier to spot when you are looking for it.',
+          'Sometimes fluid can accumulate in the abdomen of pets with heart disease. This often occurs gradually and can be easy to miss day-to-day, but is easier to spot when you are looking for it. If you suspect {name}\'s tummy appears or feels swollen or bloated, prompt veterinary attention is required.',
         concernMessage: 'Mention this to your vet, particularly if it is new or increasing.',
         followUp: {
           when: 'yes',
           key: 'distension_notes',
-          label: 'Anything to add?',
+          label: 'Anything to Add?',
           type: 'text',
           placeholder: 'e.g. noticeably rounder than last week, firm to touch',
         },
@@ -190,7 +216,7 @@ export const CONDITIONS = {
         type: 'beap',
         beapKey: 'appetite',
         why:
-          'Appetite often falls away as heart failure progresses, and some heart medications can affect it too. A sustained drop is worth raising.',
+          'Appetite can often reduce gradually as heart failure progresses.',
       },
     ],
   },
@@ -203,7 +229,7 @@ export const CONDITIONS = {
   // `comingSoon` is what stops them being openable.
   arthritis: {
     key: 'arthritis',
-    label: 'Arthritis and mobility',
+    label: 'Arthritis and Mobility',
     Icon: BoneOrganIcon,
     summary: 'Stiffness, lameness, willingness to move, and how pain relief is holding.',
     comingSoon: true,
@@ -212,7 +238,7 @@ export const CONDITIONS = {
 
   kidney: {
     key: 'kidney',
-    label: 'Kidney disease',
+    label: 'Kidney Disease',
     Icon: KidneyOrganIcon,
     summary: 'Appetite, weight, drinking and urination, nausea and vomiting.',
     comingSoon: true,
@@ -228,13 +254,23 @@ export function conditionByKey(key) {
   return CONDITIONS[key] ?? null
 }
 
-// BEAAAAPP levels for a parameter, in the right species' wording. Falls back
-// to dog the same way BeapCategoryPage does, so an unexpected species renders
-// something sensible rather than nothing.
-export function beapLevelsFor(parameter, species) {
+// The six option texts for a scale parameter, in the right species' wording.
+//
+// Two sources: 'beap' borrows a BEAAAAPP category so the wording can never
+// drift from the main assessment, and 'scale' carries its own because the
+// question is genuinely different. Both fall back to dog the same way
+// BeapCategoryPage does, so an unexpected species renders something sensible
+// rather than nothing.
+export function levelsFor(parameter, species) {
+  if (parameter.type === 'scale') {
+    return parameter.levels?.[species] ?? parameter.levels?.dog ?? []
+  }
   const scale = BEAP_SCALES[species] ?? BEAP_SCALES.dog
   return scale.find((entry) => entry.key === parameter.beapKey)?.levels ?? []
 }
+
+// Kept as the old name for existing callers.
+export const beapLevelsFor = levelsFor
 
 // A threshold may be a single number or keyed by species.
 function thresholdFor(threshold, species) {
@@ -348,4 +384,83 @@ export const SEVERITY_LABELS = {
   [SEVERITY.OK]: 'Nothing flagged',
   [SEVERITY.CONCERN]: 'Worth watching',
   [SEVERITY.EMERGENCY]: 'Needs attention',
+}
+
+// How a parameter is turned into something graphable.
+//
+// Four shapes behind one picker, each with its own axis and its own caption,
+// because pretending they share a scale would be worse than not charting
+// them. BEAAAAPP values are inverted so that, like every other chart in the
+// app, up means better — the raw scale runs the other way.
+export function chartConfigFor(parameter, entries, species) {
+  const read = (entry) => entry.values?.[parameter.key]
+
+  if (parameter.type === 'number') {
+    const points = entries
+      .map((entry) => ({ date: entry.date, value: Number(read(entry)) }))
+      .filter((point) => Number.isFinite(point.value))
+    if (points.length === 0) return null
+
+    const values = points.map((point) => point.value)
+    const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
+    const above = parameter.concernAbove
+    const threshold = above == null
+      ? null
+      : typeof above === 'number' ? above : (above[species] ?? above.dog ?? null)
+
+    return {
+      points,
+      domain: [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad],
+      unit: parameter.unit ? ` ${parameter.unit}` : undefined,
+      threshold,
+      caption: threshold != null
+        ? `The dashed line is ${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}. Readings above it are worth mentioning to your vet, especially if they stay there.`
+        : null,
+    }
+  }
+
+  if (parameter.type === 'beap' || parameter.type === 'scale') {
+    const points = entries
+      .map((entry) => ({ date: entry.date, value: 10 - Number(read(entry)) }))
+      .filter((point) => Number.isFinite(point.value))
+    if (points.length === 0) return null
+    return {
+      points,
+      domain: [0, 10],
+      caption: '10 is best, 0 is worst — the same direction as the other charts in the app.',
+    }
+  }
+
+  if (parameter.type === 'yesno') {
+    const points = entries
+      .map((entry) => ({ date: entry.date, value: read(entry) === 'yes' ? 1 : read(entry) === 'no' ? 0 : null }))
+      .filter((point) => point.value != null)
+    if (points.length === 0) return null
+    return {
+      points,
+      domain: [0, 1],
+      caption: 'The line sits at the top on days you answered yes, and at the bottom on days you answered no.',
+    }
+  }
+
+  if (parameter.type === 'choice') {
+    // Plotted by severity rather than by which option was chosen: the options
+    // are named states, and a line drawn between "pale pink" and "blue" as if
+    // they were adjacent numbers would invent a scale that doesn't exist.
+    const rank = { [SEVERITY.OK]: 0, [SEVERITY.CONCERN]: 1, [SEVERITY.EMERGENCY]: 2 }
+    const points = entries
+      .map((entry) => {
+        const option = parameter.options.find((o) => o.value === read(entry))
+        return option ? { date: entry.date, value: rank[option.severity] ?? 0 } : null
+      })
+      .filter(Boolean)
+    if (points.length === 0) return null
+    return {
+      points,
+      domain: [0, 2],
+      caption: '0 means nothing flagged, 1 worth watching, 2 needs attention.',
+    }
+  }
+
+  return null
 }

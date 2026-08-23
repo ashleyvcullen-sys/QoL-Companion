@@ -8,10 +8,19 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import TrendLineChart from '../components/TrendLineChart'
 import { usePets } from '../lib/PetsContext'
-import { SEVERITY, conditionByKey, evaluateParameter, summariseEntry } from '../lib/conditions'
+import {
+  SEVERITY,
+  SEVERITY_COLOURS,
+  SEVERITY_LABELS,
+  chartConfigFor,
+  conditionByKey,
+  evaluateParameter,
+  summariseEntry,
+} from '../lib/conditions'
 import ConditionParameter from '../components/ConditionParameter'
-import ConditionStatusTimeline from '../components/ConditionStatusTimeline'
+import MonthCalendar from '../components/MonthCalendar'
 import ConditionEvents from '../components/ConditionEvents'
+import PetText from '../components/PetText'
 import {
   removePetCondition,
   saveConditionEntry,
@@ -51,6 +60,7 @@ export default function ConditionMonitoring() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [chartKey, setChartKey] = useState(null)
 
   const today = todayIsoDate()
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
@@ -131,29 +141,47 @@ export default function ConditionMonitoring() {
       }))
   }
 
-  const numericParameters = definition?.parameters.filter((p) => p.type === 'number') ?? []
+  const summaryByDate = new Map(summaries.map((day) => [day.date, day]))
+
+  // Any parameter that can be turned into a series. Everything on the cardiac
+  // form qualifies, but each has its own axis — see chartConfigFor.
+  const graphable = (definition?.parameters ?? [])
+    .map((parameter) => ({ parameter, config: chartConfigFor(parameter, entries, pet?.species) }))
+    .filter((entry) => entry.config !== null)
+
+  const activeChart = graphable.find((entry) => entry.parameter.key === chartKey) ?? graphable[0] ?? null
+
 
   return (
     <div className="screen">
       <HomeLink />
 
-      <Link to="/conditions" className="subtle-link">← All conditions</Link>
+      <Link to="/conditions" className="subtle-link">← All Conditions</Link>
 
       {loading && <Card><p>Loading…</p></Card>}
 
       {!definition && !loading && (
         <Card>
-          <SectionTitle>Not found</SectionTitle>
+          <SectionTitle>Not Found</SectionTitle>
           <p>That condition isn't available.</p>
-          <Link to="/conditions" className="subtle-link">Back to all conditions</Link>
+          <Link to="/conditions" className="subtle-link">Back to All Conditions</Link>
         </Card>
       )}
 
       {definition && (
         <>
           <Card>
-            <SectionTitle>{definition.label} — today</SectionTitle>
-            {definition.intro && <p className="assessment-hint">{definition.intro}</p>}
+            <div className="condition-heading">
+              {definition.Icon && (
+                <span className="icon-badge condition-badge">
+                  <definition.Icon size={34} color="#fff" />
+                </span>
+              )}
+              <SectionTitle>{definition.label}</SectionTitle>
+            </div>
+            {definition.intro && (
+              <p className="assessment-hint"><PetText template={definition.intro} pet={pet} /></p>
+            )}
 
             {emergencies.length > 0 && (
               <p className="condition-emergency" role="alert">
@@ -167,7 +195,7 @@ export default function ConditionMonitoring() {
                 key={parameter.key}
                 parameter={parameter}
                 values={values}
-                species={pet?.species}
+                pet={pet}
                 onChange={setDraft}
               />
             ))}
@@ -195,14 +223,23 @@ export default function ConditionMonitoring() {
 
           {summaries.length > 0 && (
             <Card>
-              <SectionTitle>How {pet.name} has been</SectionTitle>
-              <ConditionStatusTimeline days={summaries} />
+              <SectionTitle>{pet.name}'s {definition.label} Summary</SectionTitle>
+              <MonthCalendar
+                dayFor={(dateKey) => {
+                  const day = summaryByDate.get(dateKey)
+                  if (!day?.severity) return null
+                  return {
+                    colour: SEVERITY_COLOURS[day.severity],
+                    title: `${SEVERITY_LABELS[day.severity]}${day.flags ? ` — ${day.flags} flagged` : ''}`,
+                  }
+                }}
+              />
             </Card>
           )}
 
           {summaries.length > 1 && (
             <Card>
-              <SectionTitle>Things flagged each day</SectionTitle>
+              <SectionTitle>Things Flagged Each Day</SectionTitle>
               <TrendLineChart
                 data={summaries}
                 dataKey="flags"
@@ -219,48 +256,40 @@ export default function ConditionMonitoring() {
             </Card>
           )}
 
-          {numericParameters.map((parameter) => {
-            // 'unsure' and free text can share a values object with numbers,
-            // so the series takes only what actually parses as one.
-            const series = entries
-              .map((entry) => ({ date: entry.date, value: Number(entry.values?.[parameter.key]) }))
-              .filter((point) => Number.isFinite(point.value))
+          {graphable.length > 0 && activeChart && (
+            <Card>
+              <SectionTitle>Graph a Parameter</SectionTitle>
 
-            if (series.length === 0) return null
-            const values = series.map((point) => point.value)
-            const above = parameter.concernAbove
-            const threshold = above == null
-              ? null
-              : typeof above === 'number'
-                ? above
-                : (above[pet?.species] ?? above.dog ?? null)
-            const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
+              <div className="field">
+                <label htmlFor="condition-chart-picker">Parameter</label>
+                <select
+                  id="condition-chart-picker"
+                  value={activeChart.parameter.key}
+                  onChange={(e) => setChartKey(e.target.value)}
+                >
+                  {graphable.map(({ parameter }) => (
+                    <option key={parameter.key} value={parameter.key}>{parameter.label}</option>
+                  ))}
+                </select>
+              </div>
 
-            return (
-              <Card key={parameter.key}>
-                <SectionTitle>{parameter.label} over time</SectionTitle>
-                <TrendLineChart
-                  data={series}
-                  dataKey="value"
-                  unit={parameter.unit ? ` ${parameter.unit}` : undefined}
-                  color="#8A5C6F"
-                  height={180}
-                  domain={[Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad]}
-                  markers={markersFor(series)}
-                  referenceValue={threshold}
-                  referenceLabel={threshold != null ? `${threshold}` : undefined}
-                  brush
-                />
-                {threshold != null && (
-                  <p className="assessment-hint">
-                    The dashed line is {threshold}{parameter.unit ? ` ${parameter.unit}` : ''} —
-                    readings above it are worth mentioning to your vet, especially if they stay
-                    there.
-                  </p>
-                )}
-              </Card>
-            )
-          })}
+              <TrendLineChart
+                data={activeChart.config.points}
+                dataKey="value"
+                unit={activeChart.config.unit}
+                color="#8A5C6F"
+                height={180}
+                domain={activeChart.config.domain}
+                markers={markersFor(activeChart.config.points)}
+                referenceValue={activeChart.config.threshold}
+                referenceLabel={activeChart.config.threshold != null ? `${activeChart.config.threshold}` : undefined}
+                brush
+              />
+              {activeChart.config.caption && (
+                <p className="assessment-hint">{activeChart.config.caption}</p>
+              )}
+            </Card>
+          )}
 
           <Card>
             <SectionTitle>Events</SectionTitle>
@@ -278,7 +307,7 @@ export default function ConditionMonitoring() {
           </Card>
 
           <Card>
-            <SectionTitle>Stop tracking</SectionTitle>
+            <SectionTitle>Stop Tracking</SectionTitle>
             <p className="assessment-hint">
               Removing {definition.label} deletes the readings and events recorded for it. Your
               general quality of life history isn't affected.

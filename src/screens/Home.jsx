@@ -203,7 +203,7 @@ export default function Home() {
             <span className="icon-badge">
               <Stethoscope size={22} strokeWidth={2} color="#fff" />
             </span>
-            <span className="icon-tile-label">Monitoring Specific Diseases</span>
+            <span className="icon-tile-label">Disease-Specific Monitoring</span>
           </Card>
         </Link>
 
