@@ -91,7 +91,10 @@ export default function TrendsCalendar({ generalEntries, painEntries = [] }) {
           }
           const result = resultByDate.get(dateKeyFor(day))
           const percent = result?.percent ?? null
-          const color = result ? result.color : 'var(--border)'
+          // null, not a CSS string — a non-empty string is truthy, so the
+          // `?? '#E5DEE1'` and dark-text fallbacks below never fired and an
+          // unassessed day rendered white text on a near-white background.
+          const color = result ? result.color : null
           return (
             <div
               key={day}

@@ -23,12 +23,13 @@ export function severityColorFromPercent(percent) {
 }
 
 // Each band carries its own severity/colour, so the label and the colour
-// can't drift apart. Previously the label came from these thresholds while
-// the colour came independently from severityFromPercent()'s 75/50 cutoffs,
-// which meant 75-89% rendered the green "good" colour next to the words
-// "Some impact". Note "Some impact" and "Moderate impact" deliberately
-// share the moderate colour — there are four bands but only three severity
-// colours, and only "Minimal impact" should read as unqualified good.
+// come from one place and can't drift apart (they were previously computed
+// from two independent threshold lists).
+//
+// "Minimal impact" and "Some impact" share the good/green colour, so green
+// starts at 75% — matching the colour thresholds this app used before bands
+// carried their own severity. Four bands, three colours. Note the *label*
+// still distinguishes 90+ from 75-89 even though the colour doesn't.
 //
 // severityFromPercent() above is left alone: it's the generic
 // percent-to-colour helper used for the 5 Overview pillar bars, which are a
@@ -36,7 +37,7 @@ export function severityColorFromPercent(percent) {
 // change to the overall-QoL banding.
 const GENERAL_QOL_BANDS = [
   { min: 90, label: 'Minimal impact', severity: SEVERITY.GOOD },
-  { min: 75, label: 'Some impact', severity: SEVERITY.MODERATE },
+  { min: 75, label: 'Some impact', severity: SEVERITY.GOOD },
   { min: 50, label: 'Moderate impact', severity: SEVERITY.MODERATE },
   { min: 0, label: 'Severe impact', severity: SEVERITY.SEVERE },
 ]
