@@ -5,7 +5,7 @@ import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
 import PetText from './PetText'
 import SeverityOptionList from './SeverityOptionList'
-import { SEVERITY, UNSURE, beapLevelsFor, evaluateParameter } from '../lib/conditions'
+import { SEVERITY, UNSURE, evaluateParameter, levelsFor } from '../lib/conditions'
 import { fillPetText } from '../lib/petText'
 
 const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
@@ -122,22 +122,24 @@ export default function ConditionParameter({ parameter, values, pet, onChange })
         />
       )}
 
-      {parameter.type === 'beap' && (
-        <SeverityOptionList
-          levels={beapLevelsFor(parameter, species)}
-          value={value === '' || isUnsure ? null : Number(value)}
-          onChange={(next) => set(parameter.key, next)}
-          species={species}
-          categoryKey={parameter.beapKey}
-        />
-      )}
-
-      {parameter.type === 'beap' && (
-        <ChoiceButtons
-          options={[UNSURE_OPTION]}
-          value={isUnsure ? UNSURE : null}
-          onChange={() => set(parameter.key, isUnsure ? '' : UNSURE)}
-        />
+      {(parameter.type === 'beap' || parameter.type === 'scale') && (
+        <>
+          <SeverityOptionList
+            levels={levelsFor(parameter, species)}
+            value={value === '' || isUnsure ? null : Number(value)}
+            onChange={(next) => set(parameter.key, next)}
+            // Thumbnails only where the option text came from a BEAAAAPP
+            // category, since that's where the photo set exists. A parameter
+            // with its own wording has no matching imagery.
+            species={parameter.type === 'beap' ? species : undefined}
+            categoryKey={parameter.type === 'beap' ? parameter.beapKey : undefined}
+          />
+          <ChoiceButtons
+            options={[UNSURE_OPTION]}
+            value={isUnsure ? UNSURE : null}
+            onChange={() => set(parameter.key, isUnsure ? '' : UNSURE)}
+          />
+        </>
       )}
 
       <Verdict verdict={verdict} />
