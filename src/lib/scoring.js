@@ -85,14 +85,26 @@ function scoreSlider(value) {
   return value === 'unsure' ? null : value
 }
 
-function scoreStoolOrHygiene(value, symptoms, { perSymptomPenalty, flatPenalty } = {}) {
+// Both stool and hygiene apply a single flat penalty when any symptom is
+// selected, capped regardless of how many are ticked.
+//
+// Hygiene used to stack -5 *per* symptom, uncapped, which saturated almost
+// immediately: any slider value with 2+ symptoms hit the Math.max(0, ...)
+// floor, so "mild matting and slight odour at 9/10" scored identically to
+// "severely soiled with open wounds at 0/10". Capping at a flat -5 lets the
+// slider carry the severity, with symptoms acting as a single qualifier on
+// top of it.
+//
+// Trade-off, deliberate and matching stool's existing behaviour: the
+// *number* of symptoms no longer affects the score beyond the first. The
+// symptoms themselves are still stored in full on the entry, so they remain
+// visible in reports and history even though they don't move the number.
+function scoreStoolOrHygiene(value, symptoms, { symptomPenalty = 5 } = {}) {
   // 'none' is stool-only ("No faeces today") — like 'unsure', there's no
   // quality to score, so it's excluded from the average rather than
   // penalized or treated as a perfect score.
   if (value === 'unsure' || value === 'none') return null
-  const penalty = flatPenalty != null
-    ? (symptoms.length > 0 ? flatPenalty : 0)
-    : symptoms.length * perSymptomPenalty
+  const penalty = symptoms.length > 0 ? symptomPenalty : 0
   return Math.max(0, value - penalty)
 }
 
@@ -144,8 +156,8 @@ function scoreBeapCategory(value) {
 // assessment isn't penalised for what it doesn't contain.
 export function computeGeneralQolResult(entry, beap) {
   const functionScores = [
-    scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { flatPenalty: 5 }),
-    scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { perSymptomPenalty: 5 }),
+    scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { symptomPenalty: 5 }),
+    scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { symptomPenalty: 5 }),
     scoreVomiting(entry.vomiting),
     scoreUrination(entry.urination),
     scoreWaterIntake(entry.waterIntake),
