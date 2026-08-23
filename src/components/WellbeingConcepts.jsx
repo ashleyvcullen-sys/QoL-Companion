@@ -20,7 +20,7 @@ export const WELLBEING_CONCEPTS = [
     Icon: AppetiteIcon,
     color: '#B5651D',
     tint: 'rgba(181, 101, 29, 0.14)',
-    definition: 'A healthy interest in eating and drinking, which is often one of the clearest signs of how your pet is really feeling.',
+    definition: 'A healthy interest in eating and drinking. This also includes healthy digestion.',
   },
   {
     key: 'sleep',
@@ -28,7 +28,7 @@ export const WELLBEING_CONCEPTS = [
     Icon: SleepIcon,
     color: '#5C6F8A',
     tint: 'rgba(92, 111, 138, 0.14)',
-    definition: 'Settled, restful sleep on a normal day-and-night pattern, rather than restless or disrupted rest.',
+    definition: 'Settled, restful sleep on a consistent day-and-night pattern.',
   },
   {
     key: 'curiosity',
@@ -36,7 +36,7 @@ export const WELLBEING_CONCEPTS = [
     Icon: CuriosityIcon,
     color: '#3D8259',
     tint: 'rgba(61, 130, 89, 0.14)',
-    definition: 'Interest in toys, people, surroundings, or play — a sign your pet still finds enjoyment in daily life.',
+    definition: 'Interest and engagement in play, people and surroundings.',
   },
   {
     key: 'connection',
@@ -44,7 +44,7 @@ export const WELLBEING_CONCEPTS = [
     Icon: ConnectionIcon,
     color: '#8A5C6F',
     tint: 'rgba(138, 92, 111, 0.14)',
-    definition: 'Wanting to be near you, responding to you, and engaging with family — the social and emotional side of wellbeing.',
+    definition: 'Engaging with you, responding positively to affection and wanting to be around others.',
   },
 ]
 
