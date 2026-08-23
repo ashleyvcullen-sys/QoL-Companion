@@ -182,7 +182,9 @@ export default function ConditionMonitoring() {
             {definition.intro && (
               <p className="assessment-hint"><PetText template={definition.intro} pet={pet} /></p>
             )}
+          </Card>
 
+          <Card>
             {emergencies.length > 0 && (
               <p className="condition-emergency" role="alert">
                 <AlertTriangle size={17} />
@@ -190,12 +192,13 @@ export default function ConditionMonitoring() {
               </p>
             )}
 
-            {definition.parameters.map((parameter) => (
+            {definition.parameters.map((parameter, index) => (
               <ConditionParameter
                 key={parameter.key}
                 parameter={parameter}
                 values={values}
                 pet={pet}
+                number={index + 1}
                 onChange={setDraft}
               />
             ))}

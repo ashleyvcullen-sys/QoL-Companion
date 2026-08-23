@@ -14,7 +14,7 @@ const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
 // matter enormously the first few times and are noise thereafter, and an
 // expander pushes every question below it down the screen when opened — which
 // is exactly when the owner is trying to read it and count at the same time.
-function HowTo({ title, steps, pet }) {
+function HowTo({ title, steps, footer, pet }) {
   const [open, setOpen] = useState(false)
   const heading = title ?? 'How to Measure This'
 
@@ -30,6 +30,9 @@ function HowTo({ title, steps, pet }) {
               <li key={i}><PetText template={step} pet={pet} /></li>
             ))}
           </ol>
+          {footer && (
+            <p className="how-to-footer"><PetText template={footer} pet={pet} /></p>
+          )}
           <Btn type="button" className="btn-block" onClick={() => setOpen(false)}>Got it</Btn>
         </Modal>
       )}
@@ -58,7 +61,7 @@ function Verdict({ verdict }) {
   return null
 }
 
-export default function ConditionParameter({ parameter, values, pet, onChange }) {
+export default function ConditionParameter({ parameter, values, pet, number, onChange }) {
   const species = pet?.species
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
@@ -74,12 +77,20 @@ export default function ConditionParameter({ parameter, values, pet, onChange })
 
   return (
     <div className="condition-parameter">
-      <span className="condition-parameter-label">{parameter.label}</span>
+      <span className="condition-parameter-label">
+        {number != null && <span className="condition-parameter-number">{number}.</span>}
+        <span>{parameter.label}</span>
+      </span>
       {parameter.why && (
         <p className="assessment-hint"><PetText template={parameter.why} pet={pet} /></p>
       )}
       {parameter.howTo && (
-        <HowTo title={parameter.howToTitle} steps={parameter.howTo} pet={pet} />
+        <HowTo
+          title={parameter.howToTitle}
+          steps={parameter.howTo}
+          footer={parameter.howToFooter}
+          pet={pet}
+        />
       )}
 
       {parameter.type === 'number' && (
@@ -93,7 +104,7 @@ export default function ConditionParameter({ parameter, values, pet, onChange })
               step={parameter.step ?? 1}
               value={isUnsure ? '' : value}
               disabled={isUnsure}
-              placeholder={isUnsure ? 'Not sure' : ''}
+              placeholder={isUnsure ? 'Not sure' : (parameter.placeholder ?? '')}
               onChange={(e) => set(parameter.key, e.target.value)}
             />
             {parameter.unit && <span className="input-unit">{parameter.unit}</span>}

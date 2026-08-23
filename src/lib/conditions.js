@@ -55,14 +55,23 @@ export const CONDITIONS = {
         min: 1,
         max: 200,
         step: 1,
+        placeholder: 'e.g. 24',
         why:
           '**This is one of the most subtle but useful things you can measure at home.** In many cases of heart disease, fluid can build up in the lungs, leading to an increased breathing rate at rest. This often occurs before more obvious signs of sickness. A resting respiratory rate (RRR) of **consistently more than 30 breaths per minute** warrants a vet visit sooner rather than later.',
-        howToTitle: 'How to Measure Resting Breathing Rate',
+        howToTitle: 'How to Measure RRR',
         howTo: [
           'Ensure {name} is completely asleep and relaxed (i.e. not straight after a walk or excitement).',
           'Watch the chest. One breath is the rise AND fall of the chest.',
-          'Count the breaths for 30 seconds, then double it. That is the rate per minute.',
+          'Count the number of breaths for 30 seconds, then double it to get the rate per minute.',
         ],
+        // Closing line, after the steps rather than as one of them — it is
+        // the conclusion to draw, not an action to take.
+        //
+        // NOTE: 30 now appears in three places — here, in `why` above, and in
+        // `concernAbove` below, which is the only one the app actually acts
+        // on. Change one, change all three.
+        howToFooter:
+          '**If the RRR is consistently greater than 30 breaths per minute, contact your veterinarian.**',
         // APPROVED — Ash Cullen (BVSc), 23 Aug 2026: 30 breaths/min for both
         // dogs and cats.
         //
@@ -94,6 +103,10 @@ export const CONDITIONS = {
         // as BEAAAAPP, and the "(emergency)" marker is load-bearing: the
         // picker reads it to flag those options.
         type: 'scale',
+        // Moderate (4) and Moderate-to-severe (6) mark the day amber. 8 and
+        // 10 carry the "(emergency)" marker in their text and are handled by
+        // that, below.
+        concernFrom: 4,
         levels: {
           dog: [
             'Effortless. The chest moves gently and evenly, mouth closed.',
@@ -196,7 +209,7 @@ export const CONDITIONS = {
       },
       {
         key: 'abdominal_distension',
-        label: 'Swollen or Bloated Tummy',
+        label: 'Swollen or Bloated Tummy (Ascites)',
         type: 'yesno',
         concernWhen: 'yes',
         why:
@@ -215,6 +228,12 @@ export const CONDITIONS = {
         label: 'Appetite',
         type: 'beap',
         beapKey: 'appetite',
+        // Charted the opposite way to breathing effort, on purpose. "More
+        // appetite is better" is how anyone reads an appetite graph, whereas
+        // "more breathing effort is better" would be nonsense. The stored
+        // value is the same BEAAAAPP severity either way — only the plotted
+        // direction differs, and each chart's caption says which it is.
+        chartHigherIsBetter: true,
         why:
           'Appetite can often reduce gradually as heart failure progresses.',
       },
@@ -326,9 +345,29 @@ export function evaluateParameter(parameter, value, species) {
     return { severity: SEVERITY.OK }
   }
 
-  // BEAAAAPP levels carry their own severity via the shared scoring bands and
-  // the "(emergency)" marker the assessment already uses, so nothing extra is
-  // layered on here.
+  if (parameter.type === 'beap' || parameter.type === 'scale') {
+    const score = Number(value)
+    if (!Number.isFinite(score)) return null
+
+    // The option text already says "(emergency)" — the same marker the main
+    // assessment uses to flag its worst two levels. Reading it back means the
+    // app can't tell an owner a finding is an emergency and then colour the
+    // day green, which is what happened before: these answers were recorded
+    // and then contributed nothing to the summary.
+    const level = levelsFor(parameter, species)[score / 2]
+    if (typeof level === 'string' && level.includes('(emergency)')) {
+      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+    }
+
+    // Opt-in per parameter, because how much of a scale counts as concerning
+    // is a clinical judgement rather than something to assume. See BEAP_BANDS
+    // in scoring.js: 4 is Moderate, 6 Moderate to severe.
+    if (parameter.concernFrom != null && score >= parameter.concernFrom) {
+      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+    }
+    return { severity: SEVERITY.OK }
+  }
+
   return null
 }
 
@@ -420,14 +459,27 @@ export function chartConfigFor(parameter, entries, species) {
   }
 
   if (parameter.type === 'beap' || parameter.type === 'scale') {
+    // Direction is per-parameter, not global.
+    //
+    // Stored values are always BEAAAAPP severity: 0 = no abnormalities,
+    // 10 = worst. Most parameters plot that raw, so the chart shows back the
+    // number the owner picked and a rising line means deterioration. Appetite
+    // sets chartHigherIsBetter, because a line that climbs as a pet stops
+    // eating reads backwards no matter how it is captioned.
+    const flip = parameter.chartHigherIsBetter === true
     const points = entries
-      .map((entry) => ({ date: entry.date, value: 10 - Number(read(entry)) }))
+      .map((entry) => {
+        const raw = Number(read(entry))
+        return { date: entry.date, value: flip ? 10 - raw : raw }
+      })
       .filter((point) => Number.isFinite(point.value))
     if (points.length === 0) return null
     return {
       points,
       domain: [0, 10],
-      caption: '10 is best, 0 is worst — the same direction as the other charts in the app.',
+      caption: flip
+        ? '10 is best, 0 is worst. A falling line means things are getting worse.'
+        : '0 is best, 10 is worst — the same scale you picked from above. A rising line means things are getting worse.',
     }
   }
 

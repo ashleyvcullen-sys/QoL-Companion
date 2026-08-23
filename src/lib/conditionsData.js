@@ -251,3 +251,50 @@ export function useConditionEvents(petId, conditionKey) {
 
   return { events, loading, refresh }
 }
+
+// Every condition entry for a pet in one query, grouped by condition.
+//
+// The per-condition hook can't be used here: the export screen needs several
+// conditions at once and React hooks can't be called in a loop that varies
+// with the data. One fetch, grouped client-side, is also fewer round trips
+// than one request per condition.
+export function useAllConditionEntries(petId) {
+  const [byCondition, setByCondition] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!petId) {
+      setByCondition({})
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+
+    supabase
+      .from('condition_entries')
+      .select('*')
+      .eq('pet_id', petId)
+      .order('entry_date', { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          console.error('Failed to load condition entries:', error.message)
+          setByCondition({})
+        } else {
+          const grouped = {}
+          for (const row of data ?? []) {
+            const entry = mapEntryRow(row)
+            ;(grouped[entry.conditionKey] ??= []).push(entry)
+          }
+          setByCondition(grouped)
+        }
+        setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [petId])
+
+  return { byCondition, loading }
+}

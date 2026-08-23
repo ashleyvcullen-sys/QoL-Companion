@@ -39,8 +39,8 @@ export default function Conditions() {
           alongside <PetText template="{their}" pet={pet} /> general quality of life.
         </p>
         <p className="assessment-hint">
-          This doesn't replace your vet's monitoring plan — it's a way to keep the record they
-          asked you to keep, and to have it with you at the next visit.
+          This doesn't replace your vet's monitoring plan but will help make monitoring at home
+          easier between visits.
         </p>
       </Card>
 

@@ -14,8 +14,15 @@ import TrendLineChart from '../components/TrendLineChart'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
-import { buildDailySeries } from '../lib/qolData'
-import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { buildDailySeries, buildMeasureSeries } from '../lib/qolData'
+import {
+  INDIVIDUAL_MEASURE_GROUPS,
+  computeGeneralQolResult,
+  computeOverviewCategories,
+  individualMeasureByKey,
+} from '../lib/scoring'
+import { chartConfigFor, conditionByKey } from '../lib/conditions'
+import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 
 function capitalize(value) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
@@ -23,7 +30,7 @@ function capitalize(value) {
 
 const PDF_MARGIN = 40
 
-async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs }) {
+async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs, selection }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -100,9 +107,11 @@ async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs
   addLine(`Sex: ${capitalize(pet.sex)}`)
   addSpacer()
 
-  addSectionHeader('Latest scores')
-  addLine(`General QoL: ${generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}`)
-  addSpacer()
+  if (selection.overall) {
+    addSectionHeader('Latest scores')
+    addLine(`Overall QoL: ${generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}`)
+    addSpacer()
+  }
 
   addSectionHeader('Notes')
   addLine(notesText)
@@ -118,11 +127,29 @@ async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs
   }
   addSpacer(20)
 
-  await addChartSection('Overview', chartRefs.overview.current)
-  await addChartSection('General QoL over time', chartRefs.general.current)
+  if (selection.overall) {
+    await addChartSection('Overview', chartRefs.overview.current)
+    await addChartSection('Overall QoL over time', chartRefs.general.current)
+  }
 
   for (const { key, label } of WELLBEING_CONCEPTS) {
+    if (!selection.pillars.includes(key)) continue
     await addChartSection(`${label} over time`, chartRefs.concepts.current[key])
+  }
+
+  for (const key of selection.measures) {
+    const measure = individualMeasureByKey(key)
+    await addChartSection(`${measure?.label ?? key} over time`, chartRefs.measures.current[key])
+  }
+
+  for (const conditionKey of selection.conditions) {
+    const definition = conditionByKey(conditionKey)
+    if (!definition) continue
+    addSectionHeader(definition.label)
+    for (const parameter of definition.parameters) {
+      const el = chartRefs.conditions.current[`${conditionKey}:${parameter.key}`]
+      if (el) await addChartSection(`${parameter.label} over time`, el)
+    }
   }
 
   return doc
@@ -136,9 +163,33 @@ export default function ExportReport() {
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
 
+  const { conditions } = usePetConditions(pet?.id)
+  const { byCondition } = useAllConditionEntries(pet?.id)
+
+  // Defaults reproduce what the report contained before this screen had any
+  // choices — overall score plus all five pillars — so anyone who ignores
+  // the picker gets exactly the report they used to get.
+  const [selection, setSelection] = useState({
+    overall: true,
+    pillars: WELLBEING_CONCEPTS.map((concept) => concept.key),
+    measures: [],
+    conditions: [],
+  })
+
+  function toggle(group, key) {
+    setSelection((current) => ({
+      ...current,
+      [group]: current[group].includes(key)
+        ? current[group].filter((entry) => entry !== key)
+        : [...current[group], key],
+    }))
+  }
+
   const overviewChartRef = useRef(null)
   const generalChartRef = useRef(null)
   const conceptChartRefs = useRef({})
+  const measureChartRefs = useRef({})
+  const conditionChartRefs = useRef({})
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -158,6 +209,20 @@ export default function ExportReport() {
   const notesText = latestGeneralEntry?.notes?.trim() ? latestGeneralEntry.notes : 'No notes added.'
 
   const hasChartHistory = dailySeries.length > 0
+  const measureSeries = buildMeasureSeries(generalEntries, painEntries)
+
+  // Only conditions actually being tracked, and only those whose definition
+  // still exists — a key left in the database for a condition since removed
+  // from the app would otherwise render an empty section.
+  const trackedConditions = conditions
+    .filter((entry) => entry.active && conditionByKey(entry.conditionKey))
+    .map((entry) => conditionByKey(entry.conditionKey))
+
+  const nothingSelected =
+    !selection.overall &&
+    selection.pillars.length === 0 &&
+    selection.measures.length === 0 &&
+    selection.conditions.length === 0
 
   async function handleExport() {
     if (!Capacitor.isNativePlatform()) {
@@ -174,7 +239,14 @@ export default function ExportReport() {
         generalResult,
         recent,
         notesText,
-        chartRefs: { overview: overviewChartRef, general: generalChartRef, concepts: conceptChartRefs },
+        chartRefs: {
+          overview: overviewChartRef,
+          general: generalChartRef,
+          concepts: conceptChartRefs,
+          measures: measureChartRefs,
+          conditions: conditionChartRefs,
+        },
+        selection,
       })
 
       const base64 = doc.output('datauristring').split(',')[1]
@@ -209,10 +281,91 @@ export default function ExportReport() {
             ? 'A summary and charts you can share, save, or print (via AirPrint) to bring to a vet visit.'
             : 'A summary you can print or save as a PDF to bring to a vet visit.'}
         </p>
-        <Btn type="button" className="no-print" onClick={handleExport} disabled={exporting}>
+        <Btn
+          type="button"
+          className="no-print"
+          onClick={handleExport}
+          disabled={exporting || nothingSelected}
+        >
           {exporting ? 'Generating…' : Capacitor.isNativePlatform() ? 'Share Report' : 'Print'}
         </Btn>
+        {nothingSelected && (
+          <p className="assessment-hint no-print">Choose at least one thing to include.</p>
+        )}
         {exportError && <p className="form-error" role="alert">{exportError}</p>}
+      </Card>
+
+      <Card className="no-print">
+        <SectionTitle>What to Include</SectionTitle>
+        <p className="assessment-hint">
+          Pick as many as you like. A vet visit about one problem is often better served by a
+          short report about that problem than by everything at once.
+        </p>
+
+        <div className="include-group">
+          <span className="include-group-label">Overall</span>
+          <div className="symptom-chips">
+            <button
+              type="button"
+              className={`chip ${selection.overall ? 'selected' : ''}`.trim()}
+              onClick={() => setSelection((c) => ({ ...c, overall: !c.overall }))}
+            >
+              Overall QoL
+            </button>
+          </div>
+        </div>
+
+        <div className="include-group">
+          <span className="include-group-label">Wellbeing pillars</span>
+          <div className="symptom-chips">
+            {WELLBEING_CONCEPTS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                className={`chip ${selection.pillars.includes(key) ? 'selected' : ''}`.trim()}
+                onClick={() => toggle('pillars', key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {INDIVIDUAL_MEASURE_GROUPS.map((group) => (
+          <div className="include-group" key={group.group}>
+            <span className="include-group-label">{group.group}</span>
+            <div className="symptom-chips">
+              {group.measures.map((measure) => (
+                <button
+                  key={measure.key}
+                  type="button"
+                  className={`chip ${selection.measures.includes(measure.key) ? 'selected' : ''}`.trim()}
+                  onClick={() => toggle('measures', measure.key)}
+                >
+                  {measure.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {trackedConditions.length > 0 && (
+          <div className="include-group">
+            <span className="include-group-label">Conditions</span>
+            <div className="symptom-chips">
+              {trackedConditions.map((condition) => (
+                <button
+                  key={condition.key}
+                  type="button"
+                  className={`chip ${selection.conditions.includes(condition.key) ? 'selected' : ''}`.trim()}
+                  onClick={() => toggle('conditions', condition.key)}
+                >
+                  {condition.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
 
       {loading && (
@@ -229,28 +382,32 @@ export default function ExportReport() {
             <div className="report-field-row"><span>Sex</span><strong>{capitalize(pet.sex)}</strong></div>
           </Card>
 
-          <Card>
-            <SectionTitle>Latest scores</SectionTitle>
-            <div className="report-field-row">
-              <span>General QoL</span>
-              <strong>{generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}</strong>
-            </div>
-          </Card>
+          {selection.overall && (
+            <Card>
+              <SectionTitle>Latest Scores</SectionTitle>
+              <div className="report-field-row">
+                <span>Overall QoL</span>
+                <strong>{generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}</strong>
+              </div>
+            </Card>
+          )}
 
           <Card>
             <SectionTitle>Notes</SectionTitle>
             <p>{notesText}</p>
           </Card>
 
-          <Card>
-            <SectionTitle>Overview</SectionTitle>
-            {WELLBEING_CONCEPTS.map(({ key, label }) => (
-              <div key={key} className="report-field-row">
-                <span>{label}</span>
-                <strong>{overview[key] != null ? `${Math.round(overview[key])}%` : '—'}</strong>
-              </div>
-            ))}
-          </Card>
+          {selection.pillars.length > 0 && (
+            <Card>
+              <SectionTitle>Overview</SectionTitle>
+              {WELLBEING_CONCEPTS.filter(({ key }) => selection.pillars.includes(key)).map(({ key, label }) => (
+                <div key={key} className="report-field-row">
+                  <span>{label}</span>
+                  <strong>{overview[key] != null ? `${Math.round(overview[key])}%` : '—'}</strong>
+                </div>
+              ))}
+            </Card>
+          )}
 
           <Card>
             <SectionTitle>Recent assessments</SectionTitle>
@@ -304,6 +461,51 @@ export default function ExportReport() {
             )}
           </div>
         ))}
+
+        {/* Only the SELECTED extras are rendered. The five pillars are cheap
+            and always mounted, but rendering all sixteen measures plus every
+            parameter of every condition on a screen nobody sees would be a
+            lot of charts to lay out for a report that may include none. */}
+        {selection.measures.map((key) => (
+          <div key={key} ref={(el) => { measureChartRefs.current[key] = el }} className="pdf-chart-block">
+            <TrendLineChart
+              data={measureSeries}
+              dataKey={key}
+              color={individualMeasureByKey(key)?.color ?? '#5C6F8A'}
+              height={200}
+              domain={[0, 10]}
+              isAnimationActive={false}
+            />
+          </div>
+        ))}
+
+        {selection.conditions.flatMap((conditionKey) => {
+          const definition = conditionByKey(conditionKey)
+          if (!definition) return []
+          const entries = byCondition[conditionKey] ?? []
+          return definition.parameters.map((parameter) => {
+            const config = chartConfigFor(parameter, entries, pet?.species)
+            if (!config) return null
+            return (
+              <div
+                key={`${conditionKey}:${parameter.key}`}
+                ref={(el) => { conditionChartRefs.current[`${conditionKey}:${parameter.key}`] = el }}
+                className="pdf-chart-block"
+              >
+                <TrendLineChart
+                  data={config.points}
+                  dataKey="value"
+                  unit={config.unit}
+                  color="#8A5C6F"
+                  height={200}
+                  domain={config.domain}
+                  referenceValue={config.threshold}
+                  isAnimationActive={false}
+                />
+              </div>
+            )
+          }).filter(Boolean)
+        })}
       </div>
 
       <Footer className="no-print" />

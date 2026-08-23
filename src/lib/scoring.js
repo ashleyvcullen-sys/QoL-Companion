@@ -26,7 +26,7 @@ export function severityColorFromPercent(percent) {
 // come from one place and can't drift apart (they were previously computed
 // from two independent threshold lists).
 //
-// "Minimal impact" and "Some impact" share the good/green colour, so green
+// "Good" and "Mildly reduced" share the good/green colour, so green
 // starts at 75% — matching the colour thresholds this app used before bands
 // carried their own severity. Four bands, three colours. Note the *label*
 // still distinguishes 90+ from 75-89 even though the colour doesn't.
@@ -35,11 +35,23 @@ export function severityColorFromPercent(percent) {
 // percent-to-colour helper used for the 5 Overview pillar bars, which are a
 // different measure on a different scale, and shouldn't be recoloured by a
 // change to the overall-QoL banding.
+// PENDING ASH — reworded, not yet reviewed.
+//
+// Two revisions on from "Minimal / Some / Moderate / Severe impact". The
+// problem with "impact" was that it graded an abstraction rather than the
+// animal — an owner reading "82% — Some impact" has to work out impact on
+// what. A first pass at plain language ("Doing well", "Struggling") fixed
+// that but read as emotional commentary, which is the wrong register for a
+// number that may be shown to a vet or used in an end-of-life discussion.
+//
+// These grade quality of life itself, in the language a clinician would use
+// in a record. The severity ladder is unambiguous, nothing is softened, and
+// nothing editorialises about how the owner should feel.
 const GENERAL_QOL_BANDS = [
-  { min: 90, label: 'Minimal impact', severity: SEVERITY.GOOD },
-  { min: 75, label: 'Some impact', severity: SEVERITY.GOOD },
-  { min: 50, label: 'Moderate impact', severity: SEVERITY.MODERATE },
-  { min: 0, label: 'Severe impact', severity: SEVERITY.SEVERE },
+  { min: 90, label: 'Good', severity: SEVERITY.GOOD },
+  { min: 75, label: 'Mildly reduced', severity: SEVERITY.GOOD },
+  { min: 50, label: 'Moderately reduced', severity: SEVERITY.MODERATE },
+  { min: 0, label: 'Severely reduced', severity: SEVERITY.SEVERE },
 ]
 
 const BAND_INDEX_MODERATE_IMPACT = 2
@@ -58,7 +70,7 @@ export function generalQolBandFromPercent(percent) {
 // BEAAAAPP category at 10 (e.g. "cannot breathe", which the assessment
 // itself flags as an emergency) moves the average by at most ~6 points, so
 // an otherwise-healthy pet in genuine crisis would still average into
-// "Minimal impact". This floor stops the headline band from reading better
+// "Good". This floor stops the headline band from reading better
 // than the worst single finding justifies, mirroring how triage works:
 // urgency is set by the worst problem, not the mean of all of them.
 //
@@ -79,7 +91,7 @@ function beapBandFloorIndex(beap) {
   // Feline Grimace Scale can produce an odd score (it sums five 0-2 action
   // units); every other category uses the even-only 0/2/4/6/8/10 picker and
   // so can never land on 9. Without this, a cat scoring 9 on Eyes/Face read
-  // as "marked Very severe ... reflects a Moderate impact", which looks
+  // as "marked Very severe ... recorded as Moderately reduced", which looks
   // self-contradictory even though both halves were correct.
   if (worst >= 9) return BAND_INDEX_SEVERE_IMPACT
   if (worst >= 8) return BAND_INDEX_MODERATE_IMPACT
@@ -280,7 +292,10 @@ export function describeBeapSeverityFloor(beap) {
     // 'Severe' (7-8) or 'Very severe' (9-10) — how the level was labelled
     // when the user picked it.
     severityLabel: beapSeverityLabel(worst),
-    // 'Moderate impact' or 'Severe impact' — the band this forces.
+    // 'Moderately reduced' or 'Severely reduced' — the band this forces.
+    // Still named impactLabel from when the bands were "... impact"; the
+    // value now grades quality of life, so callers read it as "recorded as
+    // Severely reduced".
     impactLabel: GENERAL_QOL_BANDS[floorIndex].label,
     color: SEVERITY_COLORS[GENERAL_QOL_BANDS[floorIndex].severity],
   }
