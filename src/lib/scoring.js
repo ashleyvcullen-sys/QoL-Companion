@@ -309,6 +309,81 @@ function invert(value) {
   return 100 - (value / 10) * 100
 }
 
+// The 16 individual data points that the overall QoL average is built from,
+// exposed one by one so a single measure can be charted on its own. The
+// rolled-up pillars in computeOverviewCategories() deliberately blur several
+// inputs together — useful for a summary, useless for "is the vomiting
+// getting worse?", which is exactly the question an owner brings to a vet.
+//
+// Grouped only for the picker's benefit. Every key here scores 0-10 on the
+// same higher-is-better scale as the average, and null when unanswered, so
+// they can all share one axis without further conversion.
+export const INDIVIDUAL_MEASURE_GROUPS = [
+  {
+    group: 'Everyday function',
+    color: '#5C6F8A',
+    measures: [
+      { key: 'stool', label: 'Stool' },
+      { key: 'hygiene', label: 'Hygiene' },
+      { key: 'vomiting', label: 'Vomiting' },
+      { key: 'urination', label: 'Urination' },
+      { key: 'waterIntake', label: 'Water intake' },
+      { key: 'vision', label: 'Vision' },
+      { key: 'hearing', label: 'Hearing' },
+      { key: 'sleep', label: 'Sleep' },
+    ],
+  },
+  {
+    group: 'Pain and comfort',
+    color: '#C97B8C',
+    measures: [
+      { key: 'breathing', label: 'Breathing' },
+      { key: 'eyes', label: 'Eyes' },
+      { key: 'ambulation', label: 'Ambulation' },
+      { key: 'activity', label: 'Activity' },
+      { key: 'appetite', label: 'Appetite' },
+      { key: 'attitude', label: 'Attitude' },
+      { key: 'posture', label: 'Posture' },
+      { key: 'palpation', label: 'Palpation' },
+    ],
+  },
+]
+
+export const INDIVIDUAL_MEASURES = INDIVIDUAL_MEASURE_GROUPS.flatMap((entry) =>
+  entry.measures.map((measure) => ({ ...measure, group: entry.group, color: entry.color })),
+)
+
+export function individualMeasureByKey(key) {
+  return INDIVIDUAL_MEASURES.find((measure) => measure.key === key) ?? null
+}
+
+// The eight function keys and the eight BEAAAAPP keys don't overlap, so this
+// flattens to 16 distinct entries with no prefixing needed.
+export function computeIndividualMeasures(entry, beap) {
+  const fromEntry = entry
+    ? {
+        stool: scoreStoolOrHygiene(entry.scores?.stool, entry.stoolSymptoms, { symptomPenalty: 5 }),
+        hygiene: scoreStoolOrHygiene(entry.scores?.hygiene, entry.hygieneSymptoms, { symptomPenalty: 5 }),
+        // These three read fields straight off their sub-object, so a row
+        // saved before the question existed (or a partial save) would throw
+        // rather than score. Missing means unanswered, which is null — NOT
+        // the 10 that `!vomiting.hasVomited` would otherwise produce.
+        vomiting: entry.vomiting ? scoreVomiting(entry.vomiting) : null,
+        urination: entry.urination ? scoreUrination(entry.urination) : null,
+        waterIntake: entry.waterIntake ? scoreWaterIntake(entry.waterIntake) : null,
+        vision: scoreSlider(entry.scores?.vision),
+        hearing: scoreSlider(entry.scores?.hearing),
+        sleep: scoreSlider(entry.scores?.sleep),
+      }
+    : {}
+
+  const fromBeap = Object.fromEntries(
+    BEAP_CATEGORIES.map((category) => [category, scoreBeapCategory(beap?.[category])]),
+  )
+
+  return { ...fromEntry, ...fromBeap }
+}
+
 export function computeOverviewCategories(latestGeneralQolEntry, latestPainLogEntry) {
   const beap = latestPainLogEntry?.beap
   // A stored beapWorst of null is a real "nothing answered" rather than a

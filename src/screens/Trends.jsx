@@ -6,13 +6,18 @@ import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
+import ChoiceButtons from '../components/ChoiceButtons'
 import TrendLineChart from '../components/TrendLineChart'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
-import { computeOverviewCategories } from '../lib/scoring'
-import { buildDailySeries } from '../lib/qolData'
+import {
+  computeOverviewCategories,
+  INDIVIDUAL_MEASURE_GROUPS,
+  individualMeasureByKey,
+} from '../lib/scoring'
+import { buildDailySeries, buildMeasureSeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
 import { BCS_MIN, BCS_MAX } from '../lib/bcsScale'
 import TrendsCalendar from './trends/TrendsCalendar'
@@ -29,6 +34,8 @@ export default function Trends() {
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
+  const [bodyMetric, setBodyMetric] = useState('score')
+  const [measureKey, setMeasureKey] = useState('vomiting')
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -36,6 +43,27 @@ export default function Trends() {
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const hasHistory = dailySeries.length > 0
+
+  // Weight is optional on a BCS entry, so the weight series is only the
+  // subset of entries that actually carried one. Plotting every entry and
+  // letting the line bridge the gaps would imply weights that were never
+  // recorded.
+  const weightEntries = bcsEntries.filter((entry) => entry.weightKg != null)
+  const weights = weightEntries.map((entry) => entry.weightKg)
+  // Unlike BCS, weight has no fixed clinical range, so the axis follows the
+  // data with a little padding either side.
+  const weightDomain = weights.length
+    ? [Math.max(0, Math.min(...weights) - 0.5), Math.max(...weights) + 0.5]
+    : [0, 1]
+
+  // One series holding all 16 measures per date, so switching the picker is
+  // just a different dataKey rather than a recompute.
+  const measureSeries = buildMeasureSeries(generalEntries, painEntries)
+  const activeMeasure = individualMeasureByKey(measureKey)
+  // A measure only answered as "Not sure", or never reached in the wizard,
+  // scores null on every date — charting that draws an empty box, so check
+  // there is something to plot before rendering one.
+  const measureHasData = measureSeries.some((row) => row[measureKey] != null)
 
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
@@ -118,27 +146,111 @@ export default function Trends() {
       ))}
 
       <Card>
-        <SectionTitle>Body Condition Score over time</SectionTitle>
-        {bcsLoading && <p>Loading…</p>}
-        {!bcsLoading && bcsEntries.length === 0 && <p>No body condition scores logged yet.</p>}
-        {!bcsLoading && bcsEntries.length > 0 && (
+        <SectionTitle>Single measure over time</SectionTitle>
+        <p className="assessment-hint">
+          The charts above roll several answers together. This one graphs a single question
+          from the assessment on its own.
+        </p>
+
+        <div className="field">
+          <label htmlFor="measure-picker">Measure</label>
+          <select
+            id="measure-picker"
+            value={measureKey}
+            onChange={(e) => setMeasureKey(e.target.value)}
+          >
+            {INDIVIDUAL_MEASURE_GROUPS.map((entry) => (
+              <optgroup key={entry.group} label={entry.group}>
+                {entry.measures.map((measure) => (
+                  <option key={measure.key} value={measure.key}>{measure.label}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        {loading && <p>Loading…</p>}
+        {!loading && !measureHasData && (
+          <p>No {activeMeasure?.label.toLowerCase()} answers logged yet.</p>
+        )}
+        {!loading && measureHasData && (
           <>
-            {/* Fixed 1-9 domain rather than an auto-scaled axis: BCS is a
-                fixed clinical scale, and letting it rescale would make a
-                move from 5 to 6 look like a dramatic swing. */}
+            {/* Fixed 0-10 so switching measures doesn't rescale the axis —
+                otherwise a measure that never moved off 10 would look as
+                dramatic as one that collapsed to 2. */}
             <TrendLineChart
-              data={bcsEntries}
-              dataKey="score"
-              color="#5C6F8A"
+              data={measureSeries}
+              dataKey={measureKey}
+              color={activeMeasure?.color ?? '#5C6F8A'}
               height={180}
-              domain={[BCS_MIN, BCS_MAX]}
+              domain={[0, 10]}
               brush
             />
             <p className="assessment-hint">
-              4–5 is ideal. Both lower and higher scores move away from ideal, so this chart
-              reads differently to the others — the middle is best, not the top.
+              10 is best, 0 is worst — the same direction as the other charts. Days you didn't
+              answer this question are skipped rather than counted as zero.
             </p>
           </>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>Body Condition / Weight over time</SectionTitle>
+        <ChoiceButtons
+          options={[
+            { value: 'score', label: 'Body condition' },
+            { value: 'weight', label: 'Weight' },
+          ]}
+          value={bodyMetric}
+          onChange={setBodyMetric}
+        />
+
+        {bcsLoading && <p>Loading…</p>}
+
+        {!bcsLoading && bodyMetric === 'score' && (
+          bcsEntries.length === 0 ? (
+            <p>No body condition scores logged yet.</p>
+          ) : (
+            <>
+              {/* Fixed 1-9 domain rather than an auto-scaled axis: BCS is a
+                  fixed clinical scale, and letting it rescale would make a
+                  move from 5 to 6 look like a dramatic swing. */}
+              <TrendLineChart
+                data={bcsEntries}
+                dataKey="score"
+                color="#5C6F8A"
+                height={180}
+                domain={[BCS_MIN, BCS_MAX]}
+                brush
+              />
+              <p className="assessment-hint">
+                4–5 is ideal. Both lower and higher scores move away from ideal, so this chart
+                reads differently to the others — the middle is best, not the top.
+              </p>
+            </>
+          )
+        )}
+
+        {!bcsLoading && bodyMetric === 'weight' && (
+          weightEntries.length === 0 ? (
+            <p>No weights logged yet. Weight is optional when you record a body condition score.</p>
+          ) : (
+            <>
+              <TrendLineChart
+                data={weightEntries}
+                dataKey="weightKg"
+                unit=" kg"
+                color="#7A9A7E"
+                height={180}
+                domain={weightDomain}
+                brush
+              />
+              <p className="assessment-hint">
+                Only days you recorded a weight appear here. Weight and body condition can move
+                independently — a steady score while weight drops is worth raising with your vet.
+              </p>
+            </>
+          )
         )}
       </Card>
 

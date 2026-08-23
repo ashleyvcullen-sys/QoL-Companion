@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { computeGeneralQolResult, computeOverviewCategories } from './scoring'
+import { computeGeneralQolResult, computeIndividualMeasures, computeOverviewCategories } from './scoring'
 
 function mapGeneralQolRow(row) {
   return {
@@ -71,6 +71,22 @@ export async function fetchPainLogEntries(petId) {
 
   if (error) throw error
   return (data ?? []).map(mapPainLogRow)
+}
+
+// Kept separate from buildDailySeries rather than folded into it: the daily
+// series already spreads the overview pillars in, and two of those (appetite,
+// sleep) share a name with an individual measure while meaning something
+// different. Two arrays, no collision, and nothing about the existing charts
+// changes.
+export function buildMeasureSeries(generalEntries, painEntries) {
+  const generalByDate = new Map(generalEntries.map((entry) => [entry.date, entry]))
+  const painByDate = new Map(painEntries.map((entry) => [entry.date, entry]))
+  const allDates = Array.from(new Set([...generalByDate.keys(), ...painByDate.keys()])).sort()
+
+  return allDates.map((date) => ({
+    date,
+    ...computeIndividualMeasures(generalByDate.get(date) ?? null, painByDate.get(date)?.beap),
+  }))
 }
 
 export function buildDailySeries(generalEntries, painEntries) {
