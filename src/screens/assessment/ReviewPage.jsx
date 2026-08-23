@@ -1,10 +1,26 @@
 import SectionTitle from '../../components/SectionTitle'
-import { computeGeneralQolResult } from '../../lib/scoring'
+import { computeGeneralQolResult, describeBeapSeverityFloor } from '../../lib/scoring'
+import { beapCategoryDisplayName } from '../../lib/beapScales'
 
-export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
+// "A", "A and B", "A, B and C"
+function formatList(items) {
+  if (items.length <= 1) return items[0] ?? ''
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}
+
+export default function ReviewPage({ entry, onNotesChange, errorMessage, species }) {
   const generalResult = computeGeneralQolResult(entry, entry.beap)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
+
+  // Only present when the worst single finding forced the band below what
+  // the average alone would have given — otherwise a high percentage sitting
+  // next to a severe band looks like a bug rather than a deliberate safety
+  // override.
+  const floor = describeBeapSeverityFloor(entry.beap)
+  const floorCategoryNames = floor
+    ? floor.categories.map((key) => beapCategoryDisplayName(species, key))
+    : []
 
   return (
     <div className="assessment-page">
@@ -15,6 +31,14 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
           <span>General QoL</span>
           <strong>{generalResult.percent}% — {generalResult.band}</strong>
         </div>
+        {floor && (
+          <p className="review-summary-floor-note" style={{ color: floor.color }}>
+            ⚠️ Because <strong>{formatList(floorCategoryNames)}</strong>{' '}
+            {floorCategoryNames.length > 1 ? 'were' : 'was'} marked{' '}
+            <strong>{floor.severityLabel}</strong>, this assessment automatically reflects a{' '}
+            <strong>{floor.impactLabel}</strong> on quality of life, regardless of the overall average.
+          </p>
+        )}
       </div>
 
       <div className="field">

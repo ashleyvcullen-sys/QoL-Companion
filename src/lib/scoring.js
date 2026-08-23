@@ -74,7 +74,14 @@ function beapBandFloorIndex(beap) {
   if (answered.length === 0) return 0
 
   const worst = Math.max(...answered)
-  if (worst >= 10) return BAND_INDEX_SEVERE_IMPACT
+  // >= 9 rather than == 10 so the floor tier lines up with the band labels
+  // BEAP_BANDS uses: 7-8 is "Severe", 9-10 is "Very severe". Only the
+  // Feline Grimace Scale can produce an odd score (it sums five 0-2 action
+  // units); every other category uses the even-only 0/2/4/6/8/10 picker and
+  // so can never land on 9. Without this, a cat scoring 9 on Eyes/Face read
+  // as "marked Very severe ... reflects a Moderate impact", which looks
+  // self-contradictory even though both halves were correct.
+  if (worst >= 9) return BAND_INDEX_SEVERE_IMPACT
   if (worst >= 8) return BAND_INDEX_MODERATE_IMPACT
   return 0
 }
@@ -248,6 +255,35 @@ export function computeBeapWorst(beap) {
 
 export function beapSeverityLabel(score) {
   return BEAP_BANDS[beapBandIndexForScore(score)].shortLabel
+}
+
+// Describes *why* the severity floor fired, for UI that needs to explain a
+// band that looks inconsistent with a high percentage. Returns null when no
+// floor was triggered.
+//
+// Only the categories at the single worst score are named — those are the
+// ones that actually set the floor. If breathing is 10 and posture is 8,
+// breathing alone determines the Severe floor (an 8 by itself would only
+// reach Moderate), so naming posture too would overstate its part.
+export function describeBeapSeverityFloor(beap) {
+  const floorIndex = beapBandFloorIndex(beap)
+  if (floorIndex === 0) return null
+
+  const answered = BEAP_CATEGORIES
+    .map((category) => beap[category])
+    .filter((value) => value != null)
+  const worst = Math.max(...answered)
+
+  return {
+    categories: BEAP_CATEGORIES.filter((category) => beap[category] === worst),
+    worst,
+    // 'Severe' (7-8) or 'Very severe' (9-10) — how the level was labelled
+    // when the user picked it.
+    severityLabel: beapSeverityLabel(worst),
+    // 'Moderate impact' or 'Severe impact' — the band this forces.
+    impactLabel: GENERAL_QOL_BANDS[floorIndex].label,
+    color: SEVERITY_COLORS[GENERAL_QOL_BANDS[floorIndex].severity],
+  }
 }
 
 export function computeDiseaseInstrumentResult(scoresByDomain) {

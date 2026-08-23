@@ -397,6 +397,7 @@ export default function QualityOfLifeAssessment() {
       entry={entry}
       onNotesChange={(v) => updateField('notes', v)}
       errorMessage={errorMessage}
+      species={pet.species}
     />,
   ]
 

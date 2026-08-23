@@ -1,3 +1,14 @@
+// Short, prose-friendly name for a category. The full labels carry
+// parenthetical clarifications ("Ambulation (walking, stairs & jumping)")
+// that are useful as headings but unreadable mid-sentence, so those are
+// stripped. Names without a parenthetical (e.g. cat "Eyes / Face") are
+// already short and pass through unchanged.
+export function beapCategoryDisplayName(species, key) {
+  const category = BEAP_SCALES[species]?.find((c) => c.key === key)
+  if (!category) return key
+  return category.label.split('(')[0].trim()
+}
+
 export const BEAP_SCALES = {
   dog: [
     { key: "breathing", letter: "B", label: "Breathing", levels: [

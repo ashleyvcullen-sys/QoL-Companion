@@ -733,6 +733,16 @@ code {
   color: var(--text-h);
 }
 
+/* Colour is set inline from the floored band's severity, so only layout
+   lives here. */
+.review-summary-floor-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(201, 123, 140, 0.2);
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
