@@ -149,7 +149,7 @@ const SECTIONS = [
 
 export default function Privacy() {
   return (
-    <div className="screen">
+    <div className="screen legal-doc">
       <HomeLink />
 
       <Card>

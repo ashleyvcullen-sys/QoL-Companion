@@ -42,13 +42,20 @@ create table if not exists public.medication_doses (
 create index if not exists medication_doses_medication_date_idx
   on public.medication_doses (medication_id, dose_date);
 
--- One dose per scheduled slot per day, so ticking twice can't double-log —
--- but PARTIAL, so as-needed doses (dose_time null) can be logged as often as
--- they are actually given. A plain unique constraint would treat every NULL
--- as distinct anyway; being explicit documents the intent.
+-- One dose per scheduled slot per day, so ticking twice can't double-log.
+--
+-- NOT partial, and that matters. This started as a partial index (`where
+-- dose_time is not null`) to let as-needed doses repeat within a day — but
+-- Postgres will not use a partial index to resolve ON CONFLICT unless the
+-- statement repeats the same WHERE clause, which PostgREST cannot express.
+-- Every upsert failed with "no unique or exclusion constraint matching the
+-- ON CONFLICT specification".
+--
+-- The partial clause was never needed: Postgres treats NULLs as distinct in
+-- a unique index, so as-needed doses (dose_time null) already never collide
+-- with each other, while real slots still can't be logged twice.
 create unique index if not exists medication_doses_slot_idx
-  on public.medication_doses (medication_id, dose_date, dose_time)
-  where dose_time is not null;
+  on public.medication_doses (medication_id, dose_date, dose_time);
 
 alter table public.medications enable row level security;
 alter table public.medication_doses enable row level security;

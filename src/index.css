@@ -481,6 +481,40 @@ code {
   flex-shrink: 0;
 }
 
+/* --- Privacy Policy and Terms ---------------------------------------
+   Reference documents, not things anyone reads front to back. At the app's
+   normal 16-18px body size they run to a punishing length, and the size
+   signals "read me" when the honest signal is "here if you need it".
+   Scoped to these two screens so nothing else shrinks. */
+.legal-doc p,
+.legal-doc li {
+  font-size: 14px;
+  line-height: 155%;
+  /* One colour for every piece of prose. These screens previously mixed
+     three — body text, muted hints and list items all landed slightly
+     differently, which reads as sloppy rather than as hierarchy. */
+  color: var(--text);
+}
+
+.legal-doc .section-title {
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.legal-doc .emergency-list {
+  gap: 7px;
+}
+
+/* Tighter cards too: full padding around 14px text leaves each clause
+   marooned in whitespace and makes the scroll longer than the text warrants. */
+.legal-doc .card {
+  padding: 20px 18px;
+}
+
+.legal-doc {
+  gap: 12px;
+}
+
 .concept-row {
   display: flex;
   justify-content: space-between;
