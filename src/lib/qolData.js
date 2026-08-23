@@ -38,6 +38,19 @@ export async function fetchLatestGeneralQolEntry(petId) {
   return data ? mapGeneralQolRow(data) : null
 }
 
+export async function fetchLatestPainLogEntry(petId) {
+  const { data, error } = await supabase
+    .from('pain_log_entries')
+    .select('*')
+    .eq('pet_id', petId)
+    .order('entry_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data ? mapPainLogRow(data) : null
+}
+
 export async function fetchGeneralQolEntries(petId) {
   const { data, error } = await supabase
     .from('general_qol_entries')
@@ -68,7 +81,8 @@ export function buildDailySeries(generalEntries, painEntries) {
   return allDates.map((date) => {
     const generalEntry = generalByDate.get(date) ?? null
     const painEntry = painByDate.get(date) ?? null
-    const generalResult = generalEntry ? computeGeneralQolResult(generalEntry) : null
+    // Same-date pain entry feeds the BEAAAAPP half of the overall score.
+    const generalResult = generalEntry ? computeGeneralQolResult(generalEntry, painEntry?.beap) : null
     const categories = computeOverviewCategories(generalEntry, painEntry)
 
     return {

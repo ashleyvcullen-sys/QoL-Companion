@@ -2,7 +2,7 @@ import SectionTitle from '../../components/SectionTitle'
 import { computeGeneralQolResult } from '../../lib/scoring'
 
 export default function ReviewPage({ entry, onNotesChange, errorMessage }) {
-  const generalResult = computeGeneralQolResult(entry)
+  const generalResult = computeGeneralQolResult(entry, entry.beap)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
 

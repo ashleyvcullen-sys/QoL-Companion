@@ -22,15 +22,60 @@ export function severityColorFromPercent(percent) {
   return SEVERITY_COLORS[severityFromPercent(percent)]
 }
 
+// Each band carries its own severity/colour, so the label and the colour
+// can't drift apart. Previously the label came from these thresholds while
+// the colour came independently from severityFromPercent()'s 75/50 cutoffs,
+// which meant 75-89% rendered the green "good" colour next to the words
+// "Some impact". Note "Some impact" and "Moderate impact" deliberately
+// share the moderate colour — there are four bands but only three severity
+// colours, and only "Minimal impact" should read as unqualified good.
+//
+// severityFromPercent() above is left alone: it's the generic
+// percent-to-colour helper used for the 5 Overview pillar bars, which are a
+// different measure on a different scale, and shouldn't be recoloured by a
+// change to the overall-QoL banding.
 const GENERAL_QOL_BANDS = [
-  { min: 90, label: 'Minimal impact' },
-  { min: 75, label: 'Some impact' },
-  { min: 50, label: 'Moderate impact' },
-  { min: 0, label: 'Severe impact' },
+  { min: 90, label: 'Minimal impact', severity: SEVERITY.GOOD },
+  { min: 75, label: 'Some impact', severity: SEVERITY.MODERATE },
+  { min: 50, label: 'Moderate impact', severity: SEVERITY.MODERATE },
+  { min: 0, label: 'Severe impact', severity: SEVERITY.SEVERE },
 ]
 
+const BAND_INDEX_MODERATE_IMPACT = 2
+const BAND_INDEX_SEVERE_IMPACT = 3
+
+function generalQolBandIndexFromPercent(percent) {
+  const index = GENERAL_QOL_BANDS.findIndex((band) => percent >= band.min)
+  return index === -1 ? GENERAL_QOL_BANDS.length - 1 : index
+}
+
 export function generalQolBandFromPercent(percent) {
-  return GENERAL_QOL_BANDS.find((band) => percent >= band.min).label
+  return GENERAL_QOL_BANDS[generalQolBandIndexFromPercent(percent)].label
+}
+
+// A flat 16-point average dilutes any single catastrophic finding — one
+// BEAAAAPP category at 10 (e.g. "cannot breathe", which the assessment
+// itself flags as an emergency) moves the average by at most ~6 points, so
+// an otherwise-healthy pet in genuine crisis would still average into
+// "Minimal impact". This floor stops the headline band from reading better
+// than the worst single finding justifies, mirroring how triage works:
+// urgency is set by the worst problem, not the mean of all of them.
+//
+// The percentage itself is deliberately left untouched — only the band and
+// its colour are floored, so the underlying average stays honest and
+// comparable over time.
+function beapBandFloorIndex(beap) {
+  if (!beap) return 0
+
+  const answered = BEAP_CATEGORIES
+    .map((category) => beap[category])
+    .filter((value) => value != null)
+  if (answered.length === 0) return 0
+
+  const worst = Math.max(...answered)
+  if (worst >= 10) return BAND_INDEX_SEVERE_IMPACT
+  if (worst >= 8) return BAND_INDEX_MODERATE_IMPACT
+  return 0
 }
 
 const VOMIT_DAILY_THRESHOLD = 2
@@ -74,8 +119,31 @@ function scoreWaterIntake(waterIntake) {
   return 5
 }
 
-export function computeGeneralQolResult(entry) {
-  const sectionScores = [
+// BEAAAAPP categories are scored 0 = no abnormalities .. 10 = very severe,
+// i.e. the opposite direction to the everyday-function questions, where 10
+// is best. Flipping to `10 - score` puts them on the same 0-10
+// higher-is-better scale so all 16 data points can go into one flat
+// average. (Equivalent to the percentage-based invert() used for the
+// Overview pillars, just kept on the 0-10 scale the rest of this function
+// already works in.)
+function scoreBeapCategory(value) {
+  if (value == null) return null
+  return 10 - value
+}
+
+// Overall QoL: a single flat average of up to 16 individual data points —
+// the 8 everyday-function questions plus the 8 BEAAAAPP pain categories,
+// each weighted equally. Deliberately NOT a two-group (function vs. pain)
+// average.
+//
+// `beap` is passed separately because it lives in its own table
+// (pain_log_entries) rather than on the general entry; callers pair the two
+// by date. Any data point that's unanswered — "Not sure" on a function
+// question, or a missing/incomplete BEAAAAPP category — is excluded from
+// the average entirely rather than counted as zero, so a partial
+// assessment isn't penalised for what it doesn't contain.
+export function computeGeneralQolResult(entry, beap) {
+  const functionScores = [
     scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { flatPenalty: 5 }),
     scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { perSymptomPenalty: 5 }),
     scoreVomiting(entry.vomiting),
@@ -86,17 +154,31 @@ export function computeGeneralQolResult(entry) {
     scoreSlider(entry.scores.sleep),
   ]
 
-  const scored = sectionScores.filter((score) => score !== null)
+  const painScores = BEAP_CATEGORIES.map((category) => scoreBeapCategory(beap?.[category]))
+
+  const scored = [...functionScores, ...painScores].filter((score) => score !== null)
   const total = scored.reduce((sum, score) => sum + score, 0)
   const max = scored.length * 10
   const percent = max === 0 ? 0 : Math.round((total / max) * 100)
+
+  // The band is whichever is worse: what the average alone suggests, or the
+  // floor imposed by the single worst BEAAAAPP finding.
+  const bandIndex = Math.max(
+    generalQolBandIndexFromPercent(percent),
+    beapBandFloorIndex(beap),
+  )
+  const band = GENERAL_QOL_BANDS[bandIndex]
 
   return {
     total,
     max,
     percent,
-    band: generalQolBandFromPercent(percent),
-    color: severityColorFromPercent(percent),
+    band: band.label,
+    color: SEVERITY_COLORS[band.severity],
+    // True when the worst BEAAAAPP finding pulled the band below what the
+    // average alone would have given — lets the UI explain the discrepancy
+    // rather than looking simply inconsistent.
+    bandFlooredBySeverity: bandIndex > generalQolBandIndexFromPercent(percent),
   }
 }
 

@@ -142,7 +142,16 @@ export default function ExportReport() {
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
-  const generalResult = latestGeneralEntry ? computeGeneralQolResult(latestGeneralEntry) : null
+  // Paired by date rather than just taking the latest of each — the two
+  // tables can be a day out of step (e.g. an abandoned assessment that
+  // saved one but not the other), and mixing two different days' data into
+  // a single score would be wrong.
+  const painForLatestGeneral = latestGeneralEntry
+    ? painEntries.find((p) => p.date === latestGeneralEntry.date) ?? null
+    : null
+  const generalResult = latestGeneralEntry
+    ? computeGeneralQolResult(latestGeneralEntry, painForLatestGeneral?.beap)
+    : null
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const recent = dailySeries.slice(-10).reverse()

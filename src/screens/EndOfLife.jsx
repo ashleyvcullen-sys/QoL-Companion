@@ -23,11 +23,11 @@ function renderInlineText(text) {
 export default function EndOfLife() {
   const { selectedPet } = usePets()
   const pet = selectedPet
-  const { entry: latestEntry, loading } = useLatestGeneralQol(pet?.id)
+  const { entry: latestEntry, beap: latestBeap, loading } = useLatestGeneralQol(pet?.id)
   const [activeTopicKey, setActiveTopicKey] = useState(null)
 
   const activeTopic = END_OF_LIFE_TOPICS.find((topic) => topic.key === activeTopicKey)
-  const latestResult = latestEntry ? computeGeneralQolResult(latestEntry) : null
+  const latestResult = latestEntry ? computeGeneralQolResult(latestEntry, latestBeap) : null
 
   return (
     <div className="screen">

@@ -85,7 +85,7 @@ export default function Trends() {
 
       <Card>
         <SectionTitle>Good / bad days</SectionTitle>
-        <TrendsCalendar generalEntries={generalEntries} />
+        <TrendsCalendar generalEntries={generalEntries} painEntries={painEntries} />
         <p className="assessment-hint">
           A good quality of life means having more good days than bad.
         </p>
@@ -144,9 +144,10 @@ export default function Trends() {
 
       {showScoringExplainer && (
         <Modal title="How does QoL Companion calculate quality of life?" onClose={() => setShowScoringExplainer(false)}>
-          <p>Your Overview scores and your General QoL score are calculated a little differently, and both matter.</p>
-          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) are built from your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework. For cats, the Comfort score also draws on the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
-          <p>Your overall General QoL score is based on everyday function — things like appetite, hydration, hygiene, and senses — reflecting how your pet is managing day to day, separate from pain scoring specifically.</p>
+          <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) draw on your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework — broken out individually rather than averaged, so you can see which specific aspects of wellbeing are changing. For cats, the Comfort score also draws on the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
+          <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more) and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
+          <p>Because an average can hide a single serious problem, one severe finding in the pain assessment will hold the overall rating down on its own — so a pet with one urgent issue won't be shown as doing well just because everything else looks fine.</p>
           <p>Together, these give you a fuller picture than either could alone. The scoring rules themselves are fixed and transparent — built using adaptations of these clinical frameworks alongside veterinary clinical expertise, not judged case-by-case or influenced by AI.</p>
         </Modal>
       )}
