@@ -34,7 +34,7 @@ const SECTIONS = [
   {
     heading: 'Copyright & attribution',
     paragraphs: [
-      "The BEAAAAPP pain-scale concept referenced in this app is adapted from work by Dr. Shea Cox. The cat eyes/face scoring draws on the Feline Grimace Scale (Evangelista MC, Watanabe R, Leung VSY, Monteiro BP, O'Toole E, Pang DSJ, Steagall PV. \"Facial expressions of pain in cats: the development and validation of a Feline Grimace Scale.\" Scientific Reports, 2019;9:19128). The \"How children grieve\" guidance is adapted from material by Kristi Lehman, MSW, LISW, DVM Center. Life-stage / human-year equivalents reference published AAHA and AAFP guidelines.",
+      "The BEAAAAPP pain-scale concept referenced in this app is adapted from work by Dr. Shea Cox. The cat eyes/face scoring draws on the Feline Grimace Scale (Evangelista MC, Watanabe R, Leung VSY, Monteiro BP, O'Toole E, Pang DSJ, Steagall PV. \"Facial expressions of pain in cats: the development and validation of a Feline Grimace Scale.\" Scientific Reports, 2019;9:19128). The \"How children grieve\" guidance is adapted from material by Kristi Lehman, MSW, LISW, DVM Center. Body Condition Score based on the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina). Life-stage / human-year equivalents reference published AAHA and AAFP guidelines.",
       "All other text, design, and code in this app are original to this app unless otherwise credited.",
     ],
   },

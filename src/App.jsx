@@ -17,6 +17,7 @@ import Schedule from './screens/Schedule'
 import ExportReport from './screens/ExportReport'
 import About from './screens/About'
 import Paywall from './screens/Paywall'
+import BodyConditionScore from './screens/BodyConditionScore'
 import Legal from './screens/Legal'
 import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
@@ -94,6 +95,7 @@ function App() {
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
         <Route path="/paywall" element={<Paywall />} />
+        <Route path="/body-condition" element={<BodyConditionScore />} />
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>

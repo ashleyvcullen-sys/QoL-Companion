@@ -13,6 +13,8 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
 import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
+import { useBcsHistory } from '../lib/bcsData'
+import { BCS_MIN, BCS_MAX } from '../lib/bcsScale'
 import TrendsCalendar from './trends/TrendsCalendar'
 
 function formatDateDDMMYYYY(dateStr) {
@@ -25,6 +27,7 @@ export default function Trends() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
+  const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
@@ -113,6 +116,31 @@ export default function Trends() {
           )}
         </Card>
       ))}
+
+      <Card>
+        <SectionTitle>Body Condition Score over time</SectionTitle>
+        {bcsLoading && <p>Loading…</p>}
+        {!bcsLoading && bcsEntries.length === 0 && <p>No body condition scores logged yet.</p>}
+        {!bcsLoading && bcsEntries.length > 0 && (
+          <>
+            {/* Fixed 1-9 domain rather than an auto-scaled axis: BCS is a
+                fixed clinical scale, and letting it rescale would make a
+                move from 5 to 6 look like a dramatic swing. */}
+            <TrendLineChart
+              data={bcsEntries}
+              dataKey="score"
+              color="#5C6F8A"
+              height={180}
+              domain={[BCS_MIN, BCS_MAX]}
+              brush
+            />
+            <p className="assessment-hint">
+              4–5 is ideal. Both lower and higher scores move away from ideal, so this chart
+              reads differently to the others — the middle is best, not the top.
+            </p>
+          </>
+        )}
+      </Card>
 
       <Card>
         <SectionTitle>History</SectionTitle>

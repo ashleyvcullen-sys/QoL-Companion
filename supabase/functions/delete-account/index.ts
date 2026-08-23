@@ -82,6 +82,16 @@ Deno.serve(async (req) => {
         .in('pet_id', petIds)
       if (painError) throw painError
 
+      // bcs_entries has `on delete cascade` on pet_id, so deleting the pets
+      // below would remove these anyway — deleted explicitly regardless, so
+      // this function stays a complete, self-evident record of everything
+      // an account deletion removes rather than relying on schema details.
+      const { error: bcsError } = await adminClient
+        .from('bcs_entries')
+        .delete()
+        .in('pet_id', petIds)
+      if (bcsError) throw bcsError
+
       const { error: petsDeleteError } = await adminClient
         .from('pets')
         .delete()
