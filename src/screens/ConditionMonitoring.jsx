@@ -6,7 +6,6 @@ import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
-import ChoiceButtons from '../components/ChoiceButtons'
 import TrendLineChart from '../components/TrendLineChart'
 import { usePets } from '../lib/PetsContext'
 import { SEVERITY, conditionByKey, evaluateParameter, summariseEntry } from '../lib/conditions'
@@ -14,7 +13,6 @@ import ConditionParameter from '../components/ConditionParameter'
 import ConditionStatusTimeline from '../components/ConditionStatusTimeline'
 import ConditionEvents from '../components/ConditionEvents'
 import {
-  addPetCondition,
   removePetCondition,
   saveConditionEntry,
   todayIsoDate,
