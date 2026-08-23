@@ -36,7 +36,7 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
             ⚠️ Because <strong>{formatList(floorCategoryNames)}</strong>{' '}
             {floorCategoryNames.length > 1 ? 'were' : 'was'} marked{' '}
             <strong>{floor.severityLabel}</strong>, this assessment is recorded as{' '}
-            <strong>{floor.impactLabel}</strong>, regardless of the overall average.
+            <strong>{floor.bandLabel}</strong>, regardless of the overall average.
           </p>
         )}
       </div>

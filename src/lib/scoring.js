@@ -292,11 +292,9 @@ export function describeBeapSeverityFloor(beap) {
     // 'Severe' (7-8) or 'Very severe' (9-10) — how the level was labelled
     // when the user picked it.
     severityLabel: beapSeverityLabel(worst),
-    // 'Moderately reduced' or 'Severely reduced' — the band this forces.
-    // Still named impactLabel from when the bands were "... impact"; the
-    // value now grades quality of life, so callers read it as "recorded as
-    // Severely reduced".
-    impactLabel: GENERAL_QOL_BANDS[floorIndex].label,
+    // 'Moderately reduced' or 'Severely reduced' — the band this floor
+    // forces, whatever the average would otherwise have given.
+    bandLabel: GENERAL_QOL_BANDS[floorIndex].label,
     color: SEVERITY_COLORS[GENERAL_QOL_BANDS[floorIndex].severity],
   }
 }
