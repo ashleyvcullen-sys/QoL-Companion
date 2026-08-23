@@ -147,10 +147,19 @@ code {
    look like a heading uses this rather than styling its own. */
 .section-title {
   font-family: var(--heading);
+  font-size: 20px;
   font-weight: 600;
+  line-height: 130%;
+  letter-spacing: -0.2px;
   color: var(--text-h);
   margin: 0 0 12px;
   text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .section-title {
+    font-size: 18px;
+  }
 }
 
 .form {
@@ -445,6 +454,31 @@ code {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 145%;
+}
+
+/* Sub-label inside the assessment pages — a field label, not a section
+   heading, so it stays left-aligned and small. Moved out of inline styles:
+   it hardcoded #3D2B30 and #C97B8C, which meant it was the one piece of the
+   app that wouldn't follow a change to the design tokens. */
+.icon-label-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.icon-label-header-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(201, 123, 140, 0.12);
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .concept-row {

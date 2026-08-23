@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, LineChart } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -7,7 +7,6 @@ import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
-import ChoiceButtons from '../components/ChoiceButtons'
 import TrendLineChart from '../components/TrendLineChart'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
@@ -23,6 +22,19 @@ import { useBcsHistory } from '../lib/bcsData'
 import { BCS_MIN, BCS_MAX } from '../lib/bcsScale'
 import TrendsCalendar from './trends/TrendsCalendar'
 
+// Body condition and weight aren't assessment answers, so they don't belong
+// in scoring.js's list of the 16 — but from the user's point of view they're
+// just two more things to graph. Composed here rather than in either source,
+// so the picker can offer them together without scoring.js having to know
+// what a kilogram is.
+const BODY_MEASURE_GROUP = {
+  group: 'Body condition',
+  measures: [
+    { key: 'bcs_score', label: 'Body condition score' },
+    { key: 'bcs_weight', label: 'Body weight' },
+  ],
+}
+
 function formatDateDDMMYYYY(dateStr) {
   if (!dateStr) return dateStr
   const [year, month, day] = dateStr.split('-')
@@ -35,7 +47,6 @@ export default function Trends() {
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
-  const [bodyMetric, setBodyMetric] = useState('score')
   const [measureKey, setMeasureKey] = useState('vomiting')
   // Charts start collapsed. Seven full-height charts stacked made the screen
   // a long scroll where nothing was findable; collapsed, the page is a list
@@ -73,6 +84,46 @@ export default function Trends() {
   // scores null on every date — charting that draws an empty box, so check
   // there is something to plot before rendering one.
   const measureHasData = measureSeries.some((row) => row[measureKey] != null)
+
+  const measureGroups = [...INDIVIDUAL_MEASURE_GROUPS, BODY_MEASURE_GROUP]
+
+  // Which series, axis, colour and caption the one chart uses. Three sources
+  // behind a single picker: the 16 assessment measures share a fixed 0-10
+  // axis, body condition has its own fixed 1-9 clinical scale, and weight has
+  // no fixed range at all.
+  const chart = measureKey === 'bcs_score'
+    ? {
+        data: bcsEntries,
+        dataKey: 'score',
+        domain: [BCS_MIN, BCS_MAX],
+        color: '#5C6F8A',
+        loading: bcsLoading,
+        hasData: bcsEntries.length > 0,
+        empty: 'No body condition scores logged yet.',
+        hint: '4–5 is ideal. Both lower and higher scores move away from ideal, so this chart reads differently to the others — the middle is best, not the top.',
+      }
+    : measureKey === 'bcs_weight'
+      ? {
+          data: weightEntries,
+          dataKey: 'weightKg',
+          unit: ' kg',
+          domain: weightDomain,
+          color: '#7A9A7E',
+          loading: bcsLoading,
+          hasData: weightEntries.length > 0,
+          empty: 'No weights logged yet. Weight is optional when you record a body condition score.',
+          hint: 'Only days you recorded a weight appear here. Weight and body condition can move independently — a steady score while weight drops is worth raising with your vet.',
+        }
+      : {
+          data: measureSeries,
+          dataKey: measureKey,
+          domain: [0, 10],
+          color: activeMeasure?.color ?? '#5C6F8A',
+          loading,
+          hasData: measureHasData,
+          empty: `No ${activeMeasure?.label.toLowerCase()} answers logged yet.`,
+          hint: "10 is best, 0 is worst — the same direction as the other charts. Days you didn't answer this question are skipped rather than counted as zero.",
+        }
 
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
@@ -124,7 +175,7 @@ export default function Trends() {
       </Card>
 
       <Card>
-        <SectionTitle>General QoL over time</SectionTitle>
+        <SectionTitle>Overall QoL over time</SectionTitle>
         {!hasHistory ? (
           <p>No assessments logged yet.</p>
         ) : (
@@ -178,126 +229,73 @@ export default function Trends() {
       })}
 
       <Card>
-        <h2 className="section-title chart-collapse-heading">
-          <button
-            type="button"
-            className="chart-collapse"
-            aria-expanded={Boolean(expandedCharts.measure)}
-            onClick={() => toggleChart('measure')}
-          >
-            <span>Single measure over time</span>
-            <ChevronDown size={18} className={`chart-chevron ${expandedCharts.measure ? 'open' : ''}`.trim()} />
-          </button>
-        </h2>
-
-        {expandedCharts.measure && (
-        <>
-        <p className="assessment-hint">
-          The charts above roll several answers together. This one graphs a single question
-          from the assessment on its own.
-        </p>
-
-        <div className="field">
-          <label htmlFor="measure-picker">Measure</label>
-          <select
-            id="measure-picker"
-            value={measureKey}
-            onChange={(e) => setMeasureKey(e.target.value)}
-          >
-            {INDIVIDUAL_MEASURE_GROUPS.map((entry) => (
-              <optgroup key={entry.group} label={entry.group}>
-                {entry.measures.map((measure) => (
-                  <option key={measure.key} value={measure.key}>{measure.label}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+        <div className="chart-title">
+          {/* Static badge, not a button — the pillar cards use their icon to
+              open a definition, but this card has no single concept to
+              define. It takes the colour of whatever measure is selected, so
+              the header matches the line below it. */}
+          <span className="chart-title-icon" style={{ background: chart.color }} aria-hidden="true">
+            <LineChart size={14} color="#fff" />
+          </span>
+          <h2 className="section-title chart-collapse-heading">
+            <button
+              type="button"
+              className="chart-collapse"
+              aria-expanded={Boolean(expandedCharts.measure)}
+              onClick={() => toggleChart('measure')}
+            >
+              <span>Single measure over time</span>
+              <ChevronDown size={18} className={`chart-chevron ${expandedCharts.measure ? 'open' : ''}`.trim()} />
+            </button>
+          </h2>
         </div>
 
-        {loading && <p>Loading…</p>}
-        {!loading && !measureHasData && (
-          <p>No {activeMeasure?.label.toLowerCase()} answers logged yet.</p>
-        )}
-        {!loading && measureHasData && (
+        {expandedCharts.measure && (
           <>
-            {/* Fixed 0-10 so switching measures doesn't rescale the axis —
-                otherwise a measure that never moved off 10 would look as
-                dramatic as one that collapsed to 2. */}
-            <TrendLineChart
-              data={measureSeries}
-              dataKey={measureKey}
-              color={activeMeasure?.color ?? '#5C6F8A'}
-              height={180}
-              domain={[0, 10]}
-              brush
-            />
             <p className="assessment-hint">
-              10 is best, 0 is worst — the same direction as the other charts. Days you didn't
-              answer this question are skipped rather than counted as zero.
+              The charts above roll several answers together. This one graphs a single thing on
+              its own — any question from the assessment, or body condition and weight.
             </p>
+
+            <div className="field">
+              <label htmlFor="measure-picker">Measure</label>
+              <select
+                id="measure-picker"
+                value={measureKey}
+                onChange={(e) => setMeasureKey(e.target.value)}
+              >
+                {measureGroups.map((entry) => (
+                  <optgroup key={entry.group} label={entry.group}>
+                    {entry.measures.map((measure) => (
+                      <option key={measure.key} value={measure.key}>{measure.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            {chart.loading && <p>Loading…</p>}
+            {!chart.loading && !chart.hasData && <p>{chart.empty}</p>}
+            {!chart.loading && chart.hasData && (
+              <>
+                {/* Fixed axes wherever the measure has a real range, so
+                    switching measures doesn't rescale — otherwise one that
+                    never moved off 10 would look as dramatic as one that
+                    collapsed to 2. Weight is the exception: it has no fixed
+                    range, so it follows the data. */}
+                <TrendLineChart
+                  data={chart.data}
+                  dataKey={chart.dataKey}
+                  unit={chart.unit}
+                  color={chart.color}
+                  height={180}
+                  domain={chart.domain}
+                  brush
+                />
+                <p className="assessment-hint">{chart.hint}</p>
+              </>
+            )}
           </>
-        )}
-        </>
-        )}
-      </Card>
-
-      <Card>
-        <SectionTitle>Body Condition / Weight over time</SectionTitle>
-        <ChoiceButtons
-          options={[
-            { value: 'score', label: 'Body condition' },
-            { value: 'weight', label: 'Weight' },
-          ]}
-          value={bodyMetric}
-          onChange={setBodyMetric}
-        />
-
-        {bcsLoading && <p>Loading…</p>}
-
-        {!bcsLoading && bodyMetric === 'score' && (
-          bcsEntries.length === 0 ? (
-            <p>No body condition scores logged yet.</p>
-          ) : (
-            <>
-              {/* Fixed 1-9 domain rather than an auto-scaled axis: BCS is a
-                  fixed clinical scale, and letting it rescale would make a
-                  move from 5 to 6 look like a dramatic swing. */}
-              <TrendLineChart
-                data={bcsEntries}
-                dataKey="score"
-                color="#5C6F8A"
-                height={180}
-                domain={[BCS_MIN, BCS_MAX]}
-                brush
-              />
-              <p className="assessment-hint">
-                4–5 is ideal. Both lower and higher scores move away from ideal, so this chart
-                reads differently to the others — the middle is best, not the top.
-              </p>
-            </>
-          )
-        )}
-
-        {!bcsLoading && bodyMetric === 'weight' && (
-          weightEntries.length === 0 ? (
-            <p>No weights logged yet. Weight is optional when you record a body condition score.</p>
-          ) : (
-            <>
-              <TrendLineChart
-                data={weightEntries}
-                dataKey="weightKg"
-                unit=" kg"
-                color="#7A9A7E"
-                height={180}
-                domain={weightDomain}
-                brush
-              />
-              <p className="assessment-hint">
-                Only days you recorded a weight appear here. Weight and body condition can move
-                independently — a steady score while weight drops is worth raising with your vet.
-              </p>
-            </>
-          )
         )}
       </Card>
 

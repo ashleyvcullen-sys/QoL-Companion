@@ -12,6 +12,19 @@ export function PetsProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [petsError, setPetsError] = useState(null)
 
+  // Which user the current `pets` array was actually fetched for.
+  //
+  // On a cold start `refresh` runs once with no user (auth hasn't resolved),
+  // takes the early-return branch below, and sets loading FALSE with an
+  // empty list. Auth then resolves. For one render the app therefore sees a
+  // signed-in user, loading complete, and zero pets — and RequireOnboardedPet
+  // redirects to onboarding before the real fetch has even started. That is
+  // the "app always opens on Add Another Pet" bug.
+  //
+  // Comparing against the current user id closes the gap: an empty list left
+  // over from the no-user pass no longer counts as a finished result.
+  const [fetchedForUserId, setFetchedForUserId] = useState(null)
+
   const [selectedPetId, setSelectedPetId] = useState(null)
   // Tracked separately from `loading` but folded into it below: rendering a
   // pet-specific screen before the persisted selection has been read would
@@ -23,6 +36,7 @@ export function PetsProvider({ children }) {
       setPets([])
       setLoading(false)
       setPetsError(null)
+      setFetchedForUserId(null)
       return
     }
 
@@ -50,6 +64,9 @@ export function PetsProvider({ children }) {
       setPets([])
       setPetsError(err.message || 'Failed to load your pet data.')
     } finally {
+      // Set on failure too, not just success — otherwise a fetch error would
+      // leave the app loading forever instead of showing petsError.
+      setFetchedForUserId(user.id)
       setLoading(false)
     }
   }, [user])
@@ -105,11 +122,17 @@ export function PetsProvider({ children }) {
     [user?.id],
   )
 
+  // True only once this user's own pets have come back. Guards the render
+  // where auth has resolved but the pets fetch for that user hasn't run yet.
+  const petsFetchedForCurrentUser = !user || fetchedForUserId === user.id
+
   const value = {
     pets,
     // Kept true until the persisted selection is known too, so consumers
-    // never render against a provisional pet.
-    loading: loading || selectionLoading,
+    // never render against a provisional pet — and until this user's pets
+    // have actually been fetched, so an empty list from the no-user pass is
+    // never mistaken for "this account has no pets".
+    loading: loading || selectionLoading || !petsFetchedForCurrentUser,
     petsError,
     refresh,
     selectedPet,
