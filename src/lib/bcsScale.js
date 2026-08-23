@@ -1,17 +1,35 @@
 // Body Condition Score — the standard 9-point veterinary scale.
 //
-// PENDING CLINICAL SIGN-OFF: this wording is a placeholder drafted from the
-// Association for Pet Obesity Prevention's published dog and cat charts
-// (which render the WSAVA/Purina 9-point system). It has NOT yet been
-// checked against the official WSAVA chart. Ash is reviewing it against his
-// own reference before this feature is considered launch-ready — do not
-// treat this text as final clinical content until that review is done.
+// CLINICAL WORDING: reviewed and signed off by Ash, 23 Aug 2026.
+//
+// The nine labels below (Emaciated / Very thin / Thin / Lean (ideal) / Ideal
+// / Above ideal / Overweight / Obese / Grossly obese) and the 4-5 ideal band
+// match the WSAVA chart the illustrations in public/images/bcs are sliced
+// from, so label and artwork share a source and cannot drift apart. The
+// descriptive `text` bodies were drafted from the APOP charts rather than
+// transcribed from WSAVA's own criteria wording — recorded here as a fact
+// about their origin, not as an outstanding action.
 //
 // Dogs and cats have separate charts with genuinely different criteria, so
 // this is species-keyed like BEAP_SCALES.
 
 export const BCS_CITATION =
   'Body Condition Score based on the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).'
+
+// Kept separate from BCS_CITATION on purpose. The scale is WSAVA's and is
+// cited as such; the artwork in public/images/bcs is NOT WSAVA's, so its
+// credit has to sit next to the images rather than blur into the scale
+// citation above them.
+//
+// PROVENANCE: these illustrations were generated with AI, modelled on the
+// WSAVA chart — they are an adaptation, not the official artwork, and the
+// spacing between adjacent scores has not been checked against the source.
+// An earlier generated set placed Ideal at 4 and Overweight at 5, a full step
+// off WSAVA, so this pipeline is known to produce miscalibrated charts. The
+// labels here are verified correct; the gradations are not. Worth checking
+// each silhouette against the WSAVA PDF before launch.
+export const BCS_IMAGE_CREDIT =
+  'Illustrations adapted from the WSAVA Body Condition Score chart.'
 
 export const BCS_MIN = 1
 export const BCS_MAX = 9
@@ -59,6 +77,16 @@ export function bcsSeverityColor(score) {
   return '#A33A2E' // 1, 8, 9
 }
 
+// Single place the dog fallback lives, so the scale text and the image path
+// can never disagree about which species is being rendered.
+export function bcsSpeciesKey(species) {
+  return BCS_SCALES[species] ? species : 'dog'
+}
+
 export function bcsLevelsFor(species) {
-  return BCS_SCALES[species] ?? BCS_SCALES.dog
+  return BCS_SCALES[bcsSpeciesKey(species)]
+}
+
+export function bcsImageSrc(species, score) {
+  return `/images/bcs/${bcsSpeciesKey(species)}_${score}.jpg`
 }

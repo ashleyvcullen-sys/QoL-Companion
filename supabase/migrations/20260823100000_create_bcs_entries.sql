@@ -24,26 +24,44 @@ create index if not exists bcs_entries_pet_id_entry_date_idx
 
 alter table public.bcs_entries enable row level security;
 
--- IMPORTANT: confirm this matches the policy already on
--- general_qol_entries before running — see the note in the commit message.
--- Check with:
---   select tablename, policyname, cmd, qual, with_check
---   from pg_policies
---   where schemaname = 'public' and tablename = 'general_qol_entries';
--- If the existing policy differs, mirror that one instead of this.
-create policy "Users manage BCS for their own pets"
-  on public.bcs_entries for all
+-- Four per-command policies, mirroring general_qol_entries exactly (verified
+-- against pg_policies on 23 Aug 2026). An earlier draft used a single
+-- `for all` policy — functionally equivalent, but it did not match the
+-- pattern used everywhere else, which makes the access rules harder to audit
+-- side by side. The ownership test is identical in all four: the row's pet
+-- must belong to the calling user.
+--
+-- INSERT and UPDATE are both required: the app writes via upsert, which is
+-- INSERT ... ON CONFLICT DO UPDATE and is checked against both.
+
+create policy bcs_select_own on public.bcs_entries for select
   using (
     exists (
       select 1 from public.pets
-      where pets.id = bcs_entries.pet_id
-        and pets.user_id = auth.uid()
+      where pets.id = bcs_entries.pet_id and pets.user_id = auth.uid()
     )
-  )
+  );
+
+create policy bcs_insert_own on public.bcs_entries for insert
   with check (
     exists (
       select 1 from public.pets
-      where pets.id = bcs_entries.pet_id
-        and pets.user_id = auth.uid()
+      where pets.id = bcs_entries.pet_id and pets.user_id = auth.uid()
+    )
+  );
+
+create policy bcs_update_own on public.bcs_entries for update
+  using (
+    exists (
+      select 1 from public.pets
+      where pets.id = bcs_entries.pet_id and pets.user_id = auth.uid()
+    )
+  );
+
+create policy bcs_delete_own on public.bcs_entries for delete
+  using (
+    exists (
+      select 1 from public.pets
+      where pets.id = bcs_entries.pet_id and pets.user_id = auth.uid()
     )
   );

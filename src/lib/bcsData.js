@@ -6,6 +6,7 @@ function mapBcsRow(row) {
     id: row.id,
     date: row.entry_date,
     score: row.score,
+    weightKg: row.weight_kg == null ? null : Number(row.weight_kg),
     notes: row.notes,
   }
 }
@@ -23,7 +24,11 @@ export async function fetchBcsEntries(petId) {
 
 // One entry per pet per day, same convention as general_qol_entries — a
 // second save on the same date replaces the first rather than stacking.
-export async function saveBcsEntry({ petId, score, notes, entryDate }) {
+// weightKg is optional and independent of the score — an owner with no scales
+// still gets a usable BCS entry. Passing undefined leaves the stored value
+// alone is NOT how upsert works, so callers must pass the existing weight
+// through explicitly when they aren't changing it.
+export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate }) {
   const { error } = await supabase
     .from('bcs_entries')
     .upsert(
@@ -31,6 +36,7 @@ export async function saveBcsEntry({ petId, score, notes, entryDate }) {
         pet_id: petId,
         entry_date: entryDate ?? new Date().toISOString().slice(0, 10),
         score,
+        weight_kg: weightKg ?? null,
         notes: notes || null,
       },
       { onConflict: 'pet_id,entry_date' },

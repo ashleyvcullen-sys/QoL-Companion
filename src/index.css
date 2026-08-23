@@ -716,6 +716,89 @@ code {
   flex-shrink: 0;
 }
 
+/* BCS reference art is a wide top-view + side-view strip, so it stacks above
+   the text at full card width instead of sitting beside it as a 48px thumb. */
+.severity-option.wide-image {
+  align-items: stretch;
+}
+
+.severity-option.wide-image .severity-option-content {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.severity-option-wide-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* Collapsed rows carry the illustration and its band label only, so they can
+   sit tighter than a row that is also showing a paragraph of description. */
+.severity-option.label-only {
+  padding: 10px 16px 12px;
+}
+
+.severity-option.label-only .severity-option-content {
+  gap: 8px;
+}
+
+/* The BCS intro card is centred as a block. Centring only the title and the
+   body copy would strand the citation left-aligned between two centred
+   elements, so the whole card is treated as one unit. .section-title sets
+   text-align: left explicitly, hence the descendant override. */
+.card.bcs-intro {
+  text-align: center;
+}
+
+.card.bcs-intro .section-title {
+  text-align: center;
+}
+
+/* Both source lines sit together at the foot of the screen and share one
+   size, colour and alignment. They used to be split — the scale citation at
+   12px italic under the title, the image credit under the picker — which put
+   three type sizes in the intro card and separated two related credits. */
+.bcs-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 8px 0;
+}
+
+.bcs-sources p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 150%;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Number input with a trailing unit. The unit is padding inside the field
+   rather than a sibling beside it, so the box lines up with the other
+   controls in the form instead of being narrower by the width of "kg". */
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-unit input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.input-unit {
+  position: absolute;
+  right: 14px;
+  font-size: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 .review-summary {
   display: flex;
   flex-direction: column;

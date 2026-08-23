@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { to: '/trends', label: 'Trends', Icon: TrendingUp },
   // Plus-tier feature, currently ungated for testing — see the note on the
   // Add Another Pet tile below for how to re-gate on hasPlusAccess().
-  { to: '/body-condition', label: 'Body Condition Score', Icon: Scale },
+  { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
   { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
   { to: '/schedule', label: 'Schedule', Icon: Bell },
   { to: '/export-report', label: 'Export Report', Icon: FileDown },

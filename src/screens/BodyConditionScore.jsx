@@ -8,7 +8,7 @@ import Footer from '../components/Footer'
 import SeverityOptionList from '../components/SeverityOptionList'
 import { usePets } from '../lib/PetsContext'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
-import { BCS_CITATION, bcsLevelsFor, bcsSeverityColor } from '../lib/bcsScale'
+import { BCS_CITATION, BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey } from '../lib/bcsScale'
 
 function formatDateDDMMYYYY(dateStr) {
   if (!dateStr) return dateStr
@@ -27,6 +27,9 @@ export default function BodyConditionScore() {
   const latestEntry = entries[entries.length - 1] ?? null
 
   const [score, setScore] = useState(null)
+  // null means "untouched", so the field can fall back to whatever is stored
+  // for today while still letting the user clear it back to empty.
+  const [weight, setWeight] = useState(null)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -35,10 +38,28 @@ export default function BodyConditionScore() {
   // screen shows the current answer rather than a blank slate.
   const selectedScore = score ?? todaysEntry?.score ?? null
 
-  const levels = bcsLevelsFor(pet.species)
+  const weightValue =
+    weight ?? (todaysEntry?.weightKg != null ? String(todaysEntry.weightKg) : '')
+  const trimmedWeight = weightValue.trim()
+  const parsedWeight = trimmedWeight === '' ? null : Number(trimmedWeight)
+  const weightInvalid =
+    parsedWeight !== null && (!Number.isFinite(parsedWeight) || parsedWeight <= 0 || parsedWeight >= 500)
+
+  // Most recent entry that actually carried a weight, so the hint stays useful
+  // even when the last few entries were score-only.
+  const lastWeighed = [...entries].reverse().find((entry) => entry.weightKg != null) ?? null
+
+  const speciesKey = bcsSpeciesKey(pet.species)
+  const levels = bcsLevelsFor(speciesKey)
 
   async function handleSave() {
     if (selectedScore == null || saving) return
+
+    if (weightInvalid) {
+      setErrorMessage('Enter a weight in kilograms, or leave it blank.')
+      return
+    }
+
     setSaving(true)
     setErrorMessage('')
 
@@ -46,6 +67,9 @@ export default function BodyConditionScore() {
       await saveBcsEntry({
         petId: pet.id,
         score: selectedScore,
+        // Upsert replaces the whole row, so an untouched weight has to be
+        // passed back explicitly or saving a score would wipe it.
+        weightKg: parsedWeight,
         notes: notes || todaysEntry?.notes || '',
       })
       refresh()
@@ -60,13 +84,16 @@ export default function BodyConditionScore() {
     <div className="screen">
       <HomeLink />
 
-      <Card>
-        <SectionTitle>Body Condition Score</SectionTitle>
-        <p className="beap-citation">{BCS_CITATION}</p>
+      <Card className="bcs-intro">
+        <SectionTitle>Body Condition / Weight</SectionTitle>
         <p>
           A 9-point scale for how much body fat {pet.name} is carrying. Feel the ribs, look
           from above for a waist, and look from the side for an abdominal tuck — then pick
           the description that fits best. 4–5 is ideal.
+        </p>
+        <p className="assessment-hint">
+          Each illustration shows the view from above on the left and the view from the side
+          on the right.
         </p>
         {!loading && latestEntry && (
           <p className="assessment-hint">
@@ -83,7 +110,33 @@ export default function BodyConditionScore() {
           scores={levels.map((level) => level.score)}
           bandLabels={levels.map((level) => `${level.score} — ${level.label}`)}
           colorForIndex={(i) => bcsSeverityColor(levels[i].score)}
+          imageSrcFor={(score) => bcsImageSrc(speciesKey, score)}
+          imageAltFor={(score) => `Body condition score ${score} of 9 — view from above and from the side`}
+          imageLayout="wide"
+          descriptionOnSelect
         />
+
+        <div className="field">
+          <label htmlFor="bcs-weight">Body weight (optional)</label>
+          <div className="input-with-unit">
+            <input
+              id="bcs-weight"
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              min="0"
+              placeholder="e.g. 4.8"
+              value={weightValue}
+              onChange={(e) => setWeight(e.target.value)}
+            />
+            <span className="input-unit">kg</span>
+          </div>
+          {lastWeighed && (
+            <p className="assessment-hint">
+              Last weighed: {lastWeighed.weightKg} kg on {formatDateDDMMYYYY(lastWeighed.date)}.
+            </p>
+          )}
+        </div>
 
         <div className="field">
           <label htmlFor="bcs-notes">Notes (optional)</label>
@@ -95,11 +148,16 @@ export default function BodyConditionScore() {
           />
         </div>
 
-        <Btn type="button" className="btn-block" onClick={handleSave} disabled={selectedScore == null || saving}>
+        <Btn type="button" className="btn-block" onClick={handleSave} disabled={selectedScore == null || saving || weightInvalid}>
           {saving ? 'Saving…' : todaysEntry ? 'Update today’s score' : 'Save score'}
         </Btn>
         {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
       </Card>
+
+      <div className="bcs-sources">
+        <p>{BCS_CITATION}</p>
+        <p>{BCS_IMAGE_CREDIT}</p>
+      </div>
 
       <Footer />
     </div>
