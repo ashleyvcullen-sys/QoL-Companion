@@ -34,12 +34,6 @@ export default function Trends() {
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const hasHistory = dailySeries.length > 0
 
-  // No dedicated "baseline" flag on entries — the chronologically earliest
-  // general/pain entry (arrays are fetched sorted ascending) serves as the
-  // baseline for comparison.
-  const hasBaseline = generalEntries.length > 0 || painEntries.length > 0
-  const baselineOverview = computeOverviewCategories(generalEntries[0] ?? null, painEntries[0] ?? null)
-
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
 
@@ -71,8 +65,6 @@ export default function Trends() {
             <OverviewBars
               concepts={WELLBEING_CONCEPTS}
               overview={overview}
-              baselineOverview={baselineOverview}
-              hasBaseline={hasBaseline}
               onIconClick={overviewToggle.toggle}
             />
             <ConceptDefinition concept={activeOverviewConcept} />

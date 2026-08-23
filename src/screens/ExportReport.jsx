@@ -157,8 +157,6 @@ export default function ExportReport() {
   const recent = dailySeries.slice(-10).reverse()
   const notesText = latestGeneralEntry?.notes?.trim() ? latestGeneralEntry.notes : 'No notes added.'
 
-  const hasBaseline = generalEntries.length > 0 || painEntries.length > 0
-  const baselineOverview = computeOverviewCategories(generalEntries[0] ?? null, painEntries[0] ?? null)
   const hasChartHistory = dailySeries.length > 0
 
   async function handleExport() {
@@ -278,8 +276,6 @@ export default function ExportReport() {
           <OverviewBars
             concepts={WELLBEING_CONCEPTS}
             overview={overview}
-            baselineOverview={baselineOverview}
-            hasBaseline={hasBaseline}
             compact
           />
         </div>

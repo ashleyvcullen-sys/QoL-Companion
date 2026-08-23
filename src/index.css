@@ -871,12 +871,6 @@ code {
   gap: 10px;
 }
 
-.overview-bar-diff {
-  font-size: 11px;
-  font-weight: 600;
-  margin-left: 38px;
-}
-
 .overview-bar-icon {
   width: 28px;
   height: 28px;
@@ -942,11 +936,6 @@ code {
 
 .overview-bar-percent--compact {
   font-size: 9px;
-}
-
-.overview-bar-diff--compact {
-  font-size: 7px;
-  margin-left: 22px;
 }
 
 .calendar {
