@@ -83,10 +83,30 @@ p {
    gain uneven top and bottom whitespace. */
 .card p + p,
 .card p + ul,
-.card ul + p,
-.card p + .field,
-.card .field + p {
+.card ul + p {
   margin-top: 12px;
+}
+
+/* Form controls need more room than prose. A labelled input is already a
+   two-line block (label + field), so stacking several with prose-sized gaps
+   makes the label of one crowd the input above it and the whole form reads
+   as a single grey mass. 16px is enough for each label to visibly belong to
+   the control beneath it.
+   Written as sibling gaps rather than margins on .field itself, so the first
+   and last control still sit flush against the card's own padding. */
+.card .field + .field,
+.card .field + .med-frequency-row,
+.card .med-frequency-row + .field,
+.card .field + .med-reminder-toggle,
+.card .med-reminder-toggle + p,
+.card .med-frequency-row + p,
+.card p + .field,
+.card .field + p,
+.card .field + .btn,
+.card p + .btn,
+.card .btn + .subtle-link,
+.card .field + .subtle-link {
+  margin-top: 16px;
 }
 
 code,
@@ -122,12 +142,15 @@ code {
   box-sizing: border-box;
 }
 
+/* One definition for every card heading in the app: same family, weight,
+   colour, size (inherited from h2) and alignment. Anything that wants to
+   look like a heading uses this rather than styling its own. */
 .section-title {
   font-family: var(--heading);
   font-weight: 600;
   color: var(--text-h);
   margin: 0 0 12px;
-  text-align: left;
+  text-align: center;
 }
 
 .form {
@@ -328,11 +351,7 @@ code {
   margin-bottom: 8px;
 }
 
-.home-subtitle {
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 145%;
-}
+
 
 .icon-grid {
   display: grid;
@@ -418,9 +437,14 @@ code {
   text-align: left;
 }
 
-.assessment-hint {
+/* Supporting text under a heading. .home-subtitle is the same thing under a
+   different name (kept for the screens already using it), so they share a
+   definition rather than drifting apart. */
+.assessment-hint,
+.home-subtitle {
   color: var(--text-muted);
   font-size: 14px;
+  line-height: 145%;
 }
 
 .concept-row {
@@ -784,13 +808,7 @@ code {
   margin: 4px 8px 0;
 }
 
-.bcs-sources p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 150%;
-  color: var(--text-muted);
-  text-align: center;
-}
+
 
 /* Number input with a trailing unit. The unit is padding inside the field
    rather than a sibling beside it, so the box lines up with the other
@@ -1324,9 +1342,57 @@ code {
 }
 
 .chart-title {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 28px;
+}
+
+/* Taken out of flow deliberately. Left in the flex row it would shove the
+   heading sideways, so a "centred" title would sit visibly off-centre by the
+   width of the icon — and by a different amount on cards that have no icon. */
+.chart-title .chart-title-icon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* The heading is the collapse control, so it takes the remaining width and
+   the whole row is a tap target rather than just the chevron. */
+.chart-collapse-heading {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  /* Room for the absolutely-positioned icon on the left, mirrored on the
+     right so the centred text stays optically centred rather than nudged. */
+  padding: 0 34px;
+}
+
+.chart-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.chart-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 150ms ease;
+}
+
+.chart-chevron.open {
+  transform: rotate(180deg);
 }
 
 .chart-title .section-title {
@@ -1343,13 +1409,17 @@ code {
   flex-shrink: 0;
 }
 
-.beap-citation {
-  font-size: 12px;
+/* Source credits, wherever they appear — BEAAAAPP, the Feline Grimace Scale,
+   the WSAVA body condition chart. Was 12px italic here and 13px roman at the
+   foot of Body Condition, so the same kind of statement looked like two
+   different things depending on the screen. One style now. */
+.beap-citation,
+.bcs-sources p {
+  font-size: 13px;
+  line-height: 150%;
   color: var(--text-muted);
-  font-style: italic;
-  /* Was -8px top, pulling it tight under a heading that then sat only 4px
-     away. The heading now provides that space itself, so the negative
-     margin would just undo it. */
+  font-style: normal;
+  text-align: center;
   margin: 0;
 }
 

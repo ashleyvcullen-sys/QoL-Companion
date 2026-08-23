@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -36,6 +37,14 @@ export default function Trends() {
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   const [bodyMetric, setBodyMetric] = useState('score')
   const [measureKey, setMeasureKey] = useState('vomiting')
+  // Charts start collapsed. Seven full-height charts stacked made the screen
+  // a long scroll where nothing was findable; collapsed, the page is a list
+  // of what's trackable and you open the one you came for.
+  const [expandedCharts, setExpandedCharts] = useState({})
+
+  function toggleChart(key) {
+    setExpandedCharts((current) => ({ ...current, [key]: !current[key] }))
+  }
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -123,30 +132,66 @@ export default function Trends() {
         )}
       </Card>
 
-      {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => (
-        <Card key={key}>
-          <div className="chart-title">
-            <button
-              type="button"
-              className="chart-title-icon"
-              style={{ background: color }}
-              onClick={() => chartToggle.toggle(key)}
-            >
-              <Icon size={14} color="#fff" />
-            </button>
-            <SectionTitle>{label} over time</SectionTitle>
-          </div>
-          {chartToggle.activeKey === key && <ConceptDefinition concept={activeChartConcept} />}
-          {!hasHistory ? (
-            <p>No assessments logged yet.</p>
-          ) : (
-            <TrendLineChart data={dailySeries} dataKey={key} color={color} height={180} domain={[0, 100]} brush />
-          )}
-        </Card>
-      ))}
+      {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => {
+        const expanded = Boolean(expandedCharts[key])
+        return (
+          <Card key={key}>
+            <div className="chart-title">
+              {/* Two separate controls, deliberately. The coloured icon opens
+                  the explanation of what this pillar means; the heading opens
+                  the chart. Nesting one inside the other would be invalid
+                  markup and would fire both on every tap. */}
+              <button
+                type="button"
+                className="chart-title-icon"
+                style={{ background: color }}
+                aria-label={`What does ${label} mean?`}
+                onClick={() => chartToggle.toggle(key)}
+              >
+                <Icon size={14} color="#fff" />
+              </button>
+              {/* Heading wraps the button rather than the other way round, so
+                  the section still appears in a screen reader's heading list
+                  while the whole row stays tappable. */}
+              <h2 className="section-title chart-collapse-heading">
+                <button
+                  type="button"
+                  className="chart-collapse"
+                  aria-expanded={expanded}
+                  onClick={() => toggleChart(key)}
+                >
+                  <span>{label} over time</span>
+                  <ChevronDown size={18} className={`chart-chevron ${expanded ? 'open' : ''}`.trim()} />
+                </button>
+              </h2>
+            </div>
+            {chartToggle.activeKey === key && <ConceptDefinition concept={activeChartConcept} />}
+            {expanded && (
+              !hasHistory ? (
+                <p>No assessments logged yet.</p>
+              ) : (
+                <TrendLineChart data={dailySeries} dataKey={key} color={color} height={180} domain={[0, 100]} brush />
+              )
+            )}
+          </Card>
+        )
+      })}
 
       <Card>
-        <SectionTitle>Single measure over time</SectionTitle>
+        <h2 className="section-title chart-collapse-heading">
+          <button
+            type="button"
+            className="chart-collapse"
+            aria-expanded={Boolean(expandedCharts.measure)}
+            onClick={() => toggleChart('measure')}
+          >
+            <span>Single measure over time</span>
+            <ChevronDown size={18} className={`chart-chevron ${expandedCharts.measure ? 'open' : ''}`.trim()} />
+          </button>
+        </h2>
+
+        {expandedCharts.measure && (
+        <>
         <p className="assessment-hint">
           The charts above roll several answers together. This one graphs a single question
           from the assessment on its own.
@@ -191,6 +236,8 @@ export default function Trends() {
               answer this question are skipped rather than counted as zero.
             </p>
           </>
+        )}
+        </>
         )}
       </Card>
 
