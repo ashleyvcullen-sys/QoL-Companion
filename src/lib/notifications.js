@@ -18,16 +18,30 @@ const LEGACY_SHARED_REMINDER_ID = 1001
 // on one account would mean one silently replacing the other's reminder,
 // but across a 2.1-billion-value space and a handful of pets per account
 // that's vanishingly unlikely.
-export function qolReminderIdForPet(petId) {
+function hashToNotificationId(seed) {
   let hash = 0x811c9dc5
-  for (let i = 0; i < petId.length; i += 1) {
-    hash ^= petId.charCodeAt(i)
+  for (let i = 0; i < seed.length; i += 1) {
+    hash ^= seed.charCodeAt(i)
     hash = Math.imul(hash, 0x01000193)
   }
 
   const id = ((hash >>> 0) % 0x7ffffffe) + 1
   // Never collide with the legacy id, which is cancelled independently.
   return id === LEGACY_SHARED_REMINDER_ID ? id + 1 : id
+}
+
+// Unchanged output: still hashes the bare pet id, so reminders already
+// pending on an existing install keep the same id and are still cancellable.
+export function qolReminderIdForPet(petId) {
+  return hashToNotificationId(petId)
+}
+
+// One id per medication per time slot, so a three-times-a-day drug holds
+// three independent reminders and editing one time doesn't disturb the
+// others. Namespaced with 'med:' so a medication uuid can never collide
+// with a pet uuid hashed for its QoL reminder.
+export function medicationReminderId(medicationId, timeIndex) {
+  return hashToNotificationId(`med:${medicationId}:${timeIndex}`)
 }
 
 export async function checkNotificationPermission() {
@@ -116,4 +130,56 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, fromDat
       },
     ],
   })
+}
+
+// Medication reminders repeat natively at a fixed wall-clock time, which is
+// the opposite choice to scheduleQolReminder above — and deliberately so. A
+// QoL check-in is due a set interval after the *last* one, so it has to be
+// re-issued from each completion. A tablet at 8am is due at 8am regardless
+// of whether yesterday's was given, so a native daily repeat is both correct
+// and survives the app never being opened.
+//
+// MAX_SLOTS caps how many pending ids one medication can leave behind.
+// Cancelling has to cover every slot the medication might previously have
+// had, not just the ones it has now — otherwise reducing a drug from three
+// doses a day to one would leave the other two firing forever.
+const MAX_MEDICATION_SLOTS = 12
+
+export async function cancelMedicationReminders(medicationId) {
+  if (!medicationId) return
+  const notifications = Array.from({ length: MAX_MEDICATION_SLOTS }, (_, index) => ({
+    id: medicationReminderId(medicationId, index),
+  }))
+  try {
+    await LocalNotifications.cancel({ notifications })
+  } catch {
+    // Cancelling ids that were never scheduled is a no-op on both platforms;
+    // never let it break a reschedule.
+  }
+}
+
+export async function scheduleMedicationReminders({ medicationId, medicationName, petName, dose, times, active }) {
+  if (!medicationId) return
+
+  await cancelMedicationReminders(medicationId)
+
+  // An inactive course, or an as-needed medication with no fixed times, has
+  // nothing to schedule — the cancel above is the whole job.
+  if (!active || !times || times.length === 0) return
+
+  const display = await checkNotificationPermission()
+  if (display !== 'granted') return
+
+  const notifications = times.slice(0, MAX_MEDICATION_SLOTS).map((time, index) => {
+    const [hour, minute] = time.split(':').map(Number)
+    return {
+      id: medicationReminderId(medicationId, index),
+      title: `${medicationName} for ${petName}`,
+      body: dose ? `${dose} — due now` : 'Due now',
+      schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
+      extra: { screen: 'medications', medicationId },
+    }
+  })
+
+  await LocalNotifications.schedule({ notifications })
 }

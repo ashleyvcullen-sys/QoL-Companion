@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOut, PawPrint, Stethoscope, Scale } from 'lucide-react'
+import { AlertTriangle, Bell, Camera, FileDown, Heart, HeartHandshake, LogOut, PawPrint, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
 import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
@@ -25,6 +25,12 @@ const NAV_ITEMS = [
   // Plus-tier feature, currently ungated for testing — see the note on the
   // Add Another Pet tile below for how to re-gate on hasPlusAccess().
   { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
+  // PRO-tier feature (not Plus), currently ungated for testing. Gate on
+  // hasMedicationsAccess(customerInfo) when the products are live.
+  { to: '/medications', label: 'Medications', Icon: Pill },
+  // Plus-tier feature, currently ungated for testing. Gate on
+  // hasMediaAccess(customerInfo) when the products are live.
+  { to: '/media', label: 'Photos & Videos', Icon: Camera },
   { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
   { to: '/schedule', label: 'Schedule', Icon: Bell },
   { to: '/export-report', label: 'Export Report', Icon: FileDown },

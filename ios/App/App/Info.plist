@@ -60,5 +60,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>QoL Companion uses the camera so you can photograph or film your pet — a wound, their posture, or how they are walking or breathing — and keep it with their health record to show your vet.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>QoL Companion records audio as part of any video you film of your pet, so sounds like laboured breathing or coughing are captured for your vet.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>QoL Companion lets you choose photos and videos of your pet from your library to add to their health record.</string>
 </dict>
 </plist>
