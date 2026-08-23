@@ -18,7 +18,7 @@ export const HYGIENE_SYMPTOM_OPTIONS = [
   'Matting',
   'Odour',
   'Pressure sores',
-  'Greasy skin',
+  'Greasy coat',
   'Dry skin',
   'Soiling',
   'Open wounds',
