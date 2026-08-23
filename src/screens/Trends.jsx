@@ -22,8 +22,8 @@ function formatDateDDMMYYYY(dateStr) {
 }
 
 export default function Trends() {
-  const { pets } = usePets()
-  const pet = pets[0]
+  const { selectedPet } = usePets()
+  const pet = selectedPet
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
 

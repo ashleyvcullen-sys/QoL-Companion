@@ -116,8 +116,8 @@ function entryFromServerRows(generalRow, painRow) {
 }
 
 export default function QualityOfLifeAssessment() {
-  const { pets } = usePets()
-  const pet = pets[0]
+  const { selectedPet } = usePets()
+  const pet = selectedPet
   const navigate = useNavigate()
 
   // Loads lazily and defaults to the normal intro copy until it resolves —

@@ -1,9 +1,15 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
-// Single pet per account (enforced elsewhere), so there's only ever one QoL
-// reminder in flight — a fixed id lets us always cancel-and-reschedule
-// rather than tracking ids per pet.
+// KNOWN MULTI-PET LIMITATION: this id is fixed, which dates from when an
+// account could only ever have one pet. Now that multi-pet is supported,
+// scheduling a reminder for one pet cancels-and-replaces the reminder for
+// every other pet — an account with several pets effectively gets a single
+// shared reminder, belonging to whichever pet's schedule was saved last.
+//
+// Fixing it needs a per-pet id (a stable number derived from the pet's
+// UUID) plus per-pet cancellation, and a product decision about whether
+// several pets should produce several separate daily notifications.
 export const QOL_REMINDER_ID = 1001
 
 export async function checkNotificationPermission() {

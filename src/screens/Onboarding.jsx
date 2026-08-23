@@ -3,10 +3,8 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { usePets } from '../lib/PetsContext'
-import { useRevenueCat } from '../lib/RevenueCatContext'
 import { WEIGHT_RANGES, AGE_OPTIONS } from '../lib/petOptions'
 import { humanYearsForAge } from '../lib/humanYears'
-import { hasMultiPetAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -25,8 +23,7 @@ const SEX_OPTIONS = [
 
 export default function Onboarding() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
-  const { pets, loading: petsLoading, petsError, refresh } = usePets()
-  const { customerInfo } = useRevenueCat()
+  const { pets, loading: petsLoading, petsError, refresh, selectPet } = usePets()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -46,8 +43,13 @@ export default function Onboarding() {
     return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={refresh} />
   }
   if (petsLoading) return <p>Loading…</p>
-  // Only one pet is allowed per account until multi-pet access is entitled.
-  if (pets.length > 0 && !hasMultiPetAccess(customerInfo)) return <Navigate to="/" replace />
+
+  // Multi-pet is currently ungated — the entitlement check that used to
+  // live here (pets.length > 0 && !hasMultiPetAccess(customerInfo)) is
+  // deliberately removed for now, to be reinstated once the `multi_pet`
+  // RevenueCat entitlement and its product actually exist. Until then it
+  // would always evaluate false and make adding a second pet impossible.
+  const isAddingAnother = pets.length > 0
 
   const weightOptions = WEIGHT_RANGES[species]
   const humanYears = humanYearsForAge(species, weightRangeKey, ageLabel)
@@ -62,38 +64,59 @@ export default function Onboarding() {
     setSubmitting(true)
     setErrorMessage('')
 
-    const { error } = await supabase.from('pets').insert({
-      user_id: user.id,
-      name,
-      species,
-      weight_range_key: weightRangeKey || null,
-      age_label: ageLabel || null,
-      sex,
-    })
+    const { data: created, error } = await supabase
+      .from('pets')
+      .insert({
+        user_id: user.id,
+        name,
+        species,
+        weight_range_key: weightRangeKey || null,
+        age_label: ageLabel || null,
+        sex,
+        // Additional pets skip the first-run experiences — the user has
+        // already seen both, and leaving these false would bounce them
+        // straight back into the Welcome walkthrough (and re-trigger the
+        // Home tour) just for adding a pet.
+        ...(isAddingAnother ? { has_seen_welcome: true, has_seen_app_tour: true } : {}),
+      })
+      .select()
+      .single()
 
     if (error) {
+      // 23505 used to be swallowed here and treated as "already onboarded,
+      // go home" — a workaround for the old one-pet-per-account unique
+      // constraint. That constraint is now dropped (see
+      // supabase/migrations/20260823000000_drop_pets_user_id_unique.sql),
+      // so a duplicate-key error here is a genuine failure and must be
+      // surfaced rather than silently looking like success.
       if (error.code === '23505') {
-        // A pet row already exists for this user (e.g. a duplicate submit, or
-        // this screen was reached after onboarding already completed) — just
-        // pick up the existing pet instead of showing a raw DB error.
-        await refresh()
-        navigate('/')
-        return
+        setErrorMessage(
+          "Couldn't add this pet — the database still has the one-pet-per-account restriction in place. " +
+          'If you have just added multi-pet support, run the pending database migration and try again.',
+        )
+      } else {
+        setErrorMessage(error.message)
       }
-      setErrorMessage(error.message)
       setSubmitting(false)
       return
     }
 
     await refresh()
+    // Switch to the pet that was just created, rather than leaving the user
+    // on whichever pet they were viewing before.
+    if (created?.id) selectPet(created.id)
     navigate('/')
   }
 
   return (
     <div className="screen">
       <Card>
-        <SectionTitle>Welcome — Let's Add Your First Pet</SectionTitle>
-        <p className="home-subtitle">Set up a QoL record for a pet — you can add more later.</p>
+        <SectionTitle>{isAddingAnother ? 'Add Another Pet' : "Welcome — Let's Add Your First Pet"}</SectionTitle>
+        <p className="home-subtitle">
+          {isAddingAnother
+            ? 'Set up a separate QoL record for another pet. Each pet has their own assessments, trends, and reminders — switch between them any time from the Home screen.'
+            : 'Set up a QoL record for a pet — you can add more later.'}
+        </p>
         <form onSubmit={handleSubmit} className="form">
           <div className="field">
             <label htmlFor="pet-name">Name</label>
@@ -183,6 +206,13 @@ export default function Onboarding() {
           <Btn type="submit" className="btn-block" disabled={submitting}>
             {submitting ? 'Saving…' : 'Save'}
           </Btn>
+          {/* Only when adding an extra pet — during genuine first-run
+              onboarding there's no Home to go back to yet. */}
+          {isAddingAnother && (
+            <button type="button" className="subtle-link" onClick={() => navigate('/')} disabled={submitting}>
+              Cancel
+            </button>
+          )}
           {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
         </form>
       </Card>

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { supabase } from './supabase'
 import { useAuth } from './AuthContext'
 import { logStartupIssue } from './diagnostics'
+import { loadSelectedPetId, saveSelectedPetId } from './selectedPetStorage'
 
 const PetsContext = createContext(undefined)
 
@@ -10,6 +11,12 @@ export function PetsProvider({ children }) {
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
   const [petsError, setPetsError] = useState(null)
+
+  const [selectedPetId, setSelectedPetId] = useState(null)
+  // Tracked separately from `loading` but folded into it below: rendering a
+  // pet-specific screen before the persisted selection has been read would
+  // briefly show the wrong pet's data and then swap under the user.
+  const [selectionLoading, setSelectionLoading] = useState(true)
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -51,11 +58,66 @@ export function PetsProvider({ children }) {
     refresh()
   }, [refresh])
 
-  return (
-    <PetsContext.Provider value={{ pets, loading, petsError, refresh }}>
-      {children}
-    </PetsContext.Provider>
+  // Restore the persisted selection whenever the signed-in user changes.
+  useEffect(() => {
+    let cancelled = false
+    setSelectionLoading(true)
+
+    if (!user?.id) {
+      setSelectedPetId(null)
+      setSelectionLoading(false)
+      return
+    }
+
+    loadSelectedPetId(user.id).then((storedId) => {
+      if (cancelled) return
+      setSelectedPetId(storedId)
+      setSelectionLoading(false)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
+
+  // `pets` is ordered newest-first, so pets[0] is the default when there's
+  // no valid stored selection. A stored id can go stale — the pet was
+  // deleted here, or on another device — in which case fall back rather
+  // than leaving the app pointing at a pet that no longer exists.
+  const selectedPet = pets.find((pet) => pet.id === selectedPetId) ?? pets[0] ?? null
+
+  // If the stored id didn't resolve to a real pet but we did fall back to
+  // one, write that correction back so the stale id doesn't linger.
+  useEffect(() => {
+    if (loading || selectionLoading) return
+    if (!selectedPet) return
+    if (selectedPet.id === selectedPetId) return
+
+    setSelectedPetId(selectedPet.id)
+    saveSelectedPetId(user?.id, selectedPet.id)
+  }, [loading, selectionLoading, selectedPet, selectedPetId, user?.id])
+
+  const selectPet = useCallback(
+    (petId) => {
+      setSelectedPetId(petId)
+      saveSelectedPetId(user?.id, petId)
+    },
+    [user?.id],
   )
+
+  const value = {
+    pets,
+    // Kept true until the persisted selection is known too, so consumers
+    // never render against a provisional pet.
+    loading: loading || selectionLoading,
+    petsError,
+    refresh,
+    selectedPet,
+    selectedPetId: selectedPet?.id ?? null,
+    selectPet,
+  }
+
+  return <PetsContext.Provider value={value}>{children}</PetsContext.Provider>
 }
 
 export function usePets() {

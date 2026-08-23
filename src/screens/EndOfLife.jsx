@@ -21,8 +21,8 @@ function renderInlineText(text) {
 }
 
 export default function EndOfLife() {
-  const { pets } = usePets()
-  const pet = pets[0]
+  const { selectedPet } = usePets()
+  const pet = selectedPet
   const { entry: latestEntry, loading } = useLatestGeneralQol(pet?.id)
   const [activeTopicKey, setActiveTopicKey] = useState(null)
 

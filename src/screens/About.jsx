@@ -18,8 +18,8 @@ const FEATURE_ITEMS = [
 ]
 
 export default function About() {
-  const { pets } = usePets()
-  const pet = pets[0]
+  const { selectedPet } = usePets()
+  const pet = selectedPet
 
   return (
     <div className="screen">

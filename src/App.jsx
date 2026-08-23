@@ -25,7 +25,7 @@ import StartupErrorScreen from './components/StartupErrorScreen'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
-  const { pets, loading: petsLoading, petsError, refresh: retryPets } = usePets()
+  const { pets, loading: petsLoading, petsError, refresh: retryPets, selectedPet } = usePets()
 
   // Checked before the loading states below — a failed or timed-out check
   // would otherwise leave authLoading/petsLoading permanently true, and the
@@ -40,7 +40,11 @@ function RequireOnboardedPet() {
   }
   if (petsLoading) return <p>Loading…</p>
   if (pets.length === 0) return <Navigate to="/onboarding" replace />
-  if (!pets[0].has_seen_welcome) return <Navigate to="/welcome" replace />
+  // Scoped to the selected pet, not pets[0]. Pets added *after* the first
+  // are created with has_seen_welcome already true (see Onboarding), so
+  // adding a second pet never re-triggers the walkthrough — but if a pet
+  // somehow does need it, it's the one actually being viewed that decides.
+  if (!selectedPet.has_seen_welcome) return <Navigate to="/welcome" replace />
 
   return <Outlet />
 }

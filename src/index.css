@@ -272,6 +272,40 @@ code {
   text-align: center;
 }
 
+.pet-switcher {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 2px 0 6px;
+  /* Scrolls horizontally when a user has more pets than fit on one line,
+     rather than wrapping and pushing the header taller. */
+  scrollbar-width: none;
+}
+
+.pet-switcher::-webkit-scrollbar {
+  display: none;
+}
+
+.pet-switcher-option {
+  flex: 0 0 auto;
+  background: #FFFBFC;
+  border: 1px solid #EAC6CE;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.pet-switcher-option.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .logo-placeholder {
   width: 120px;
   height: auto;

@@ -129,8 +129,8 @@ async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs
 }
 
 export default function ExportReport() {
-  const { pets } = usePets()
-  const pet = pets[0]
+  const { selectedPet } = usePets()
+  const pet = selectedPet
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
 
   const [exporting, setExporting] = useState(false)

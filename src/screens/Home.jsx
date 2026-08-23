@@ -5,7 +5,7 @@ import { usePets } from '../lib/PetsContext'
 import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
-import { hasMultiPetAccess, hasDiseaseMonitoringAccess } from '../lib/entitlements'
+import { hasDiseaseMonitoringAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
@@ -13,6 +13,7 @@ import Modal from '../components/Modal'
 import Btn from '../components/Btn'
 import ComingSoonModal from '../components/ComingSoonModal'
 import Footer from '../components/Footer'
+import PetSwitcher from '../components/PetSwitcher'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 import AboutIcon from '../components/icons/AboutIcon'
 
@@ -28,9 +29,9 @@ const NAV_ITEMS = [
 ]
 
 export default function Home() {
-  const { pets, refresh } = usePets()
+  const { pets, refresh, selectedPet, selectPet } = usePets()
   const { customerInfo } = useRevenueCat()
-  const pet = pets[0]
+  const pet = selectedPet
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
   const location = useLocation()
@@ -48,7 +49,6 @@ export default function Home() {
   const [deleteAccountError, setDeleteAccountError] = useState('')
 
   const [showDiseaseMonitoringPreview, setShowDiseaseMonitoringPreview] = useState(false)
-  const [showAddPetPreview, setShowAddPetPreview] = useState(false)
 
   const tourSteps = NAV_ITEMS.map(({ to, label }) => ({ to, label, message: HOME_TOUR_MESSAGES[to] }))
 
@@ -103,11 +103,24 @@ export default function Home() {
       return
     }
 
+    // Work out the replacement *before* refreshing, while `pets` still
+    // includes the one just deleted.
+    const remaining = pets.filter((p) => p.id !== pet.id)
+
     setShowDeleteConfirm(false)
     setDeleting(false)
-    // Deleting the last pet drops pets to an empty array, and the
+
+    if (remaining.length > 0) {
+      // Multi-pet: switch to another pet rather than bouncing the user to
+      // onboarding. PetsContext would fall back to pets[0] on its own once
+      // the selected id goes stale, but selecting explicitly also persists
+      // the choice, so it survives a restart.
+      selectPet(remaining[0].id)
+    }
+
+    // If nothing remains, pets drops to an empty array and the
     // RequireOnboardedPet route guard in App.jsx redirects to /onboarding
-    // as soon as it sees pets.length === 0 — no manual navigate needed here.
+    // as soon as it sees pets.length === 0 — no manual navigate needed.
     await refresh()
   }
 
@@ -149,6 +162,7 @@ export default function Home() {
           Here to support and help you navigate {petName}'s quality of life and wellbeing
           every step of the way.
         </p>
+        <PetSwitcher />
       </Card>
 
       <div className="icon-grid">
@@ -186,25 +200,18 @@ export default function Home() {
           </Card>
         </button>
 
-        {/* TODO: multi-pet support isn't built yet — this tile is a placeholder.
-            Replace with a real "add pet" flow once multi-pet support ships;
-            the granted branch below already routes there instead of the
-            preview modal once hasMultiPetAccess() starts returning true. */}
-        <button
-          type="button"
-          className="icon-tile-link"
-          onClick={() => {
-            if (!hasMultiPetAccess(customerInfo)) setShowAddPetPreview(true)
-          }}
-        >
-          <Card className="icon-tile icon-tile-disabled">
-            <span className="icon-badge icon-badge-disabled">
+        {/* Multi-pet is currently ungated — this routes straight to the
+            add-pet flow. To put it behind the paywall later, gate this on
+            hasMultiPetAccess(customerInfo) and fall back to the
+            ComingSoon/paywall path when not entitled. */}
+        <Link to="/onboarding" className="icon-tile-link">
+          <Card className="icon-tile">
+            <span className="icon-badge">
               <PawPrint size={22} strokeWidth={2} color="#fff" />
             </span>
             <span className="icon-tile-label">Add Another Pet</span>
-            <span className="icon-tile-sublabel">Coming soon</span>
           </Card>
-        </button>
+        </Link>
       </div>
 
       <button type="button" className="sign-out-button" onClick={handleSignOut}>
@@ -242,15 +249,6 @@ export default function Home() {
           // products exist in App Store Connect / RevenueCat. Paywall screen
           // and RevenueCat integration are untouched, just unreachable from
           // the UI for now so App Review doesn't see an empty paywall.
-        />
-      )}
-
-      {showAddPetPreview && (
-        <ComingSoonModal
-          title="Add Another Pet"
-          message="Support for tracking more than one pet on the same account is coming soon."
-          onClose={() => setShowAddPetPreview(false)}
-          // showPlansLink temporarily omitted — see note above.
         />
       )}
 

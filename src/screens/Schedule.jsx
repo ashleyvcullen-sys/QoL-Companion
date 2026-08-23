@@ -69,8 +69,8 @@ function ScheduleRow({ label, lastDate, cadenceDays, onCadenceChange }) {
 }
 
 export default function Schedule() {
-  const { pets, refresh } = usePets()
-  const pet = pets[0]
+  const { refresh, selectedPet } = usePets()
+  const pet = selectedPet
   const { generalEntries, loading } = useQolHistory(pet?.id)
   const [showFrequencyInfo, setShowFrequencyInfo] = useState(false)
   const [notifStatus, setNotifStatus] = useState(null)

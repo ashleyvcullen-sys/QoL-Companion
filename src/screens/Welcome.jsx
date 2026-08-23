@@ -14,7 +14,7 @@ import WelcomeSlide5 from './welcome/WelcomeSlide5'
 
 export default function Welcome() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
-  const { pets, loading: petsLoading, petsError, refresh } = usePets()
+  const { pets, loading: petsLoading, petsError, refresh, selectedPet } = usePets()
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -30,7 +30,7 @@ export default function Welcome() {
   if (petsLoading) return <p>Loading…</p>
   if (pets.length === 0) return <Navigate to="/onboarding" replace />
 
-  const pet = pets[0]
+  const pet = selectedPet
 
   if (pet.has_seen_welcome) return <Navigate to="/" replace />
 
