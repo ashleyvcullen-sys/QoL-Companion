@@ -218,8 +218,19 @@ export function beapBandIndexForScore(score) {
   return index === -1 ? BEAP_BANDS.length - 1 : index
 }
 
+// Unanswered categories are excluded rather than counted, matching
+// computeGeneralQolResult's "exclude, don't penalise" rule. Without the
+// filter, a null coerced to 0 ("no abnormalities") and silently understated
+// the worst finding. Returns null when nothing has been answered at all,
+// rather than Math.max()'s -Infinity for an empty list.
 export function computeBeapWorst(beap) {
-  return Math.max(...BEAP_CATEGORIES.map((category) => beap[category]))
+  if (!beap) return null
+
+  const answered = BEAP_CATEGORIES
+    .map((category) => beap[category])
+    .filter((value) => value != null)
+
+  return answered.length > 0 ? Math.max(...answered) : null
 }
 
 export function beapSeverityLabel(score) {
@@ -240,20 +251,31 @@ export function computeDiseaseInstrumentResult(scoresByDomain) {
   }
 }
 
+// Null-safe by design: an unanswered category returns null (excluded, shown
+// as "no data") rather than a value. Previously `beap ? invert(beap.x) : null`
+// only checked the beap object existed, so an unanswered category fell
+// through to invert(null) -> 100 - (0/10)*100 -> a perfect 100% pillar.
 function invert(value) {
+  if (value == null) return null
   return 100 - (value / 10) * 100
 }
 
 export function computeOverviewCategories(latestGeneralQolEntry, latestPainLogEntry) {
   const beap = latestPainLogEntry?.beap
-  const beapWorst = latestPainLogEntry?.beapWorst ?? (beap ? computeBeapWorst(beap) : null)
+  // A stored beapWorst of null is a real "nothing answered" rather than a
+  // missing field, so only fall back to recomputing when it's absent
+  // entirely (?? handles null/undefined identically, hence the explicit
+  // 'beapWorst' in check).
+  const hasStoredWorst =
+    latestPainLogEntry != null && 'beapWorst' in latestPainLogEntry && latestPainLogEntry.beapWorst != null
+  const beapWorst = hasStoredWorst ? latestPainLogEntry.beapWorst : computeBeapWorst(beap)
   const sleepScore = latestGeneralQolEntry?.scores?.sleep
 
   return {
-    comfort: beapWorst != null ? invert(beapWorst) : null,
-    appetite: beap ? invert(beap.appetite) : null,
+    comfort: invert(beapWorst),
+    appetite: invert(beap?.appetite),
     sleep: typeof sleepScore === 'number' ? sleepScore * 10 : null,
-    curiosity: beap ? invert(beap.activity) : null,
-    connection: beap ? invert(beap.attitude) : null,
+    curiosity: invert(beap?.activity),
+    connection: invert(beap?.attitude),
   }
 }
