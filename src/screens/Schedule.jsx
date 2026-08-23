@@ -106,11 +106,12 @@ export default function Schedule() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || notifStatus !== 'granted' || loading) return
     scheduleQolReminder({
+      petId: pet.id,
       petName: pet.name,
       cadenceDays,
       fromDate: latestGeneralDate ?? new Date(),
     })
-  }, [notifStatus, loading, cadenceDays, latestGeneralDate, pet.name])
+  }, [notifStatus, loading, cadenceDays, latestGeneralDate, pet.id, pet.name])
 
   async function updateCadence(days) {
     const nextSchedule = { ...pet.schedule, qol: days }

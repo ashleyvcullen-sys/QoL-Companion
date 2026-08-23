@@ -1,16 +1,34 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
-// KNOWN MULTI-PET LIMITATION: this id is fixed, which dates from when an
-// account could only ever have one pet. Now that multi-pet is supported,
-// scheduling a reminder for one pet cancels-and-replaces the reminder for
-// every other pet — an account with several pets effectively gets a single
-// shared reminder, belonging to whichever pet's schedule was saved last.
+// The single fixed id every reminder used before multi-pet support, when
+// an account could only ever have one pet. Nothing schedules under it any
+// more, but an existing install can still have a pending notification
+// carrying it (and the wrong pet's name), so it gets cancelled alongside
+// any reschedule — see cancelLegacySharedReminder().
+const LEGACY_SHARED_REMINDER_ID = 1001
+
+// Notification ids have to be integers (Android backs them with Java ints),
+// while pet ids are UUID strings — so each pet's reminder id is a stable
+// hash of its uuid. Same pet always maps to the same id, so a reschedule
+// reliably replaces that pet's own pending reminder and leaves every other
+// pet's untouched.
 //
-// Fixing it needs a per-pet id (a stable number derived from the pet's
-// UUID) plus per-pet cancellation, and a product decision about whether
-// several pets should produce several separate daily notifications.
-export const QOL_REMINDER_ID = 1001
+// FNV-1a, folded into a positive 31-bit range. A collision between two pets
+// on one account would mean one silently replacing the other's reminder,
+// but across a 2.1-billion-value space and a handful of pets per account
+// that's vanishingly unlikely.
+export function qolReminderIdForPet(petId) {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < petId.length; i += 1) {
+    hash ^= petId.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+
+  const id = ((hash >>> 0) % 0x7ffffffe) + 1
+  // Never collide with the legacy id, which is cancelled independently.
+  return id === LEGACY_SHARED_REMINDER_ID ? id + 1 : id
+}
 
 export async function checkNotificationPermission() {
   const { display } = await LocalNotifications.checkPermissions()
@@ -41,21 +59,40 @@ export async function requestExactAlarmPermission() {
   return exact_alarm
 }
 
-export async function cancelQolReminder() {
-  await LocalNotifications.cancel({ notifications: [{ id: QOL_REMINDER_ID }] })
+// Cancels just this pet's reminder — every other pet's stays scheduled.
+export async function cancelQolReminder(petId) {
+  if (!petId) return
+  await LocalNotifications.cancel({ notifications: [{ id: qolReminderIdForPet(petId) }] })
 }
 
+// One-off cleanup for installs that predate per-pet ids. Harmless no-op
+// once there's nothing pending under the old id.
+async function cancelLegacySharedReminder() {
+  try {
+    await LocalNotifications.cancel({ notifications: [{ id: LEGACY_SHARED_REMINDER_ID }] })
+  } catch {
+    // Cancelling something that isn't scheduled shouldn't ever break a
+    // reschedule.
+  }
+}
+
+// Each pet gets its own independent reminder on its own cadence, keyed by
+// qolReminderIdForPet — scheduling one never disturbs another's.
+//
 // Always a one-shot notification, cancelled and re-issued from `fromDate`
 // (either "now" when the cadence itself changes, or the just-completed
 // entry's date on save) rather than relying on the plugin's own repeating
 // schedule — a fixed native repeat has no idea when the user actually did
 // the assessment, so it would drift out of sync with real completions
 // instead of counting fresh from each one.
-export async function scheduleQolReminder({ petName, cadenceDays, fromDate }) {
+export async function scheduleQolReminder({ petId, petName, cadenceDays, fromDate }) {
+  if (!petId) return
+
   const display = await checkNotificationPermission()
   if (display !== 'granted') return
 
-  await cancelQolReminder()
+  await cancelLegacySharedReminder()
+  await cancelQolReminder(petId)
 
   const nextDate = new Date(fromDate)
   nextDate.setDate(nextDate.getDate() + cadenceDays)
@@ -68,11 +105,14 @@ export async function scheduleQolReminder({ petName, cadenceDays, fromDate }) {
   await LocalNotifications.schedule({
     notifications: [
       {
-        id: QOL_REMINDER_ID,
+        id: qolReminderIdForPet(petId),
         title: 'Quality of Life check-in',
         body: `Time for ${petName}'s quality of life check-in`,
         schedule: { at: nextDate },
-        extra: { screen: 'assessment' },
+        // petId rides along so tapping the notification can open the
+        // assessment for the pet it was actually about, rather than
+        // whichever pet happens to be selected at the time.
+        extra: { screen: 'assessment', petId },
       },
     ],
   })

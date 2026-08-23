@@ -51,6 +51,7 @@ function RequireOnboardedPet() {
 
 function App() {
   const navigate = useNavigate()
+  const { selectPet } = usePets()
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -58,7 +59,12 @@ function App() {
     const listenerPromise = LocalNotifications.addListener(
       'localNotificationActionPerformed',
       (action) => {
-        if (action.notification?.extra?.screen === 'assessment') {
+        const extra = action.notification?.extra
+        if (extra?.screen === 'assessment') {
+          // Reminders are per-pet, so open the assessment for the pet the
+          // notification was actually about rather than whichever pet
+          // happened to be selected.
+          if (extra.petId) selectPet(extra.petId)
           navigate('/assessment')
         }
       }
@@ -67,7 +73,7 @@ function App() {
     return () => {
       listenerPromise.then((listener) => listener.remove())
     }
-  }, [navigate])
+  }, [navigate, selectPet])
 
   return (
     <Routes>

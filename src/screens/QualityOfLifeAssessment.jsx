@@ -293,7 +293,7 @@ export default function QualityOfLifeAssessment() {
     // keeps the reminder counting from when the pet was actually last
     // checked on rather than drifting from whenever the cadence was set.
     const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
-    scheduleQolReminder({ petName: pet.name, cadenceDays, fromDate: entryDate }).catch((error) => {
+    scheduleQolReminder({ petId: pet.id, petName: pet.name, cadenceDays, fromDate: entryDate }).catch((error) => {
       console.error('Failed to reschedule QoL reminder:', error.message)
     })
 

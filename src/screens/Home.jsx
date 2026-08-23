@@ -6,6 +6,7 @@ import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
 import { hasDiseaseMonitoringAccess } from '../lib/entitlements'
+import { cancelQolReminder } from '../lib/notifications'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
@@ -102,6 +103,13 @@ export default function Home() {
       setDeleting(false)
       return
     }
+
+    // Reminders are now per-pet, so this pet's own scheduled reminder has
+    // to go with it — otherwise it keeps firing for a pet that no longer
+    // exists. Other pets' reminders are keyed separately and unaffected.
+    cancelQolReminder(pet.id).catch((err) => {
+      console.error('Failed to cancel reminder for deleted pet:', err.message)
+    })
 
     // Work out the replacement *before* refreshing, while `pets` still
     // includes the one just deleted.
