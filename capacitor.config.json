@@ -1,12 +1,5 @@
 {
   "appId": "com.qolcompanion.app",
   "appName": "QoL Companion",
-  "webDir": "dist",
-  "experimental": {
-    "ios": {
-      "spm": {
-        "swiftToolsVersion": "6.0"
-      }
-    }
-  }
+  "webDir": "dist"
 }
