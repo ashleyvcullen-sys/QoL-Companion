@@ -4,28 +4,25 @@ import { AlertTriangle, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
+import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
-import TrendLineChart from '../components/TrendLineChart'
+import ChartView from '../components/ChartView'
 import { usePets } from '../lib/PetsContext'
-import {
-  SEVERITY,
-  SEVERITY_COLOURS,
-  SEVERITY_LABELS,
-  chartConfigFor,
-  conditionByKey,
-  evaluateParameter,
-  summariseEntry,
-} from '../lib/conditions'
+import { SEVERITY, askedParameters, conditionByKey, evaluateParameter } from '../lib/conditions'
+import { chartsForCondition, chartByKey } from '../lib/charts'
+import { useQolHistory } from '../lib/useQolHistory'
+import { buildDailySeries } from '../lib/qolData'
+import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
+import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
-import MonthCalendar from '../components/MonthCalendar'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
 import {
+  addPetCondition,
   removePetCondition,
   saveConditionEntry,
   todayIsoDate,
-  eventTypeByValue,
   useConditionEntries,
   useConditionEvents,
   usePetConditions,
@@ -42,12 +39,25 @@ export default function ConditionMonitoring() {
   const pet = selectedPet
   const { conditions, loading, refresh } = usePetConditions(pet?.id)
 
+  // Loaded for one reason: a referenced parameter is charted from the daily
+  // assessment rather than from this condition's own entries. A condition
+  // with nothing referenced never reads it, and the extra fetch costs one
+  // query on a page that is already fetching three.
+  const { generalEntries, painEntries } = useQolHistory(pet?.id)
+  const dailySeries = buildDailySeries(generalEntries, painEntries)
+
   // Which condition is determined by the URL, so each one is a real page you
   // can navigate back to rather than a tab inside a single screen.
   const navigate = useNavigate()
   const { conditionKey } = useParams()
   const currentKey = conditionKey ?? null
   const definition = conditionByKey(currentKey)
+
+  // The row for THIS condition, which carries the per-pet config. Only a
+  // composed condition (cancer) uses it; for everything else it is `{}` and
+  // resolving is a no-op.
+  const petCondition = conditions.find((entry) => entry.conditionKey === currentKey) ?? null
+  const config = petCondition?.config ?? {}
 
   const { entries, loading: entriesLoading, refresh: refreshEntries } =
     useConditionEntries(pet?.id, currentKey)
@@ -61,8 +71,28 @@ export default function ConditionMonitoring() {
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [chartKey, setChartKey] = useState(null)
+  // Confirmation exists because this now genuinely deletes the readings. It
+  // did not before — the button used to remove the condition and silently
+  // leave every entry behind, so a mis-tap was recoverable by re-adding it.
+  // It no longer is.
+  const [confirmRemove, setConfirmRemove] = useState(null)
 
   const today = todayIsoDate()
+
+  // How often this condition is worth filling in. Absent means daily, which
+  // is how every condition behaved before arthritis.
+  const cadence = definition?.cadence ?? null
+
+  // Whole days between the last entry and today. Parsed as UTC midnight on
+  // both sides so a clock change cannot make this off by one.
+  function daysSince(dateIso) {
+    if (!dateIso) return null
+    const ms = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${dateIso}T00:00:00Z`)
+    return Number.isFinite(ms) ? Math.floor(ms / 86400000) : null
+  }
+
+  const sinceLast = daysSince(latestEntry?.date)
+  const dueIn = cadence && sinceLast != null ? cadence.days - sinceLast : null
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
   const latestEntry = entries[entries.length - 1] ?? null
 
@@ -71,18 +101,53 @@ export default function ConditionMonitoring() {
   // Any emergency answer anywhere in the condition, surfaced at the top of
   // the card as well as beside the question — an owner scrolling to save
   // shouldn't be able to miss it.
-  const emergencies = (definition?.parameters ?? [])
+  // For a fixed condition this is definition.parameters; for cancer it is
+  // composed from the owner's module selection and their list of masses.
+  // A composed condition shows no questions until setup has been done. The
+  // core parameters exist regardless of configuration, so testing
+  // parameters.length here would always pass and the form would appear
+  // before the owner had told us anything about the diagnosis.
+  const needsSetup = Boolean(definition?.composed) && !isCancerConfigured(config)
+  // Asked parameters only. A referenced one (cardiac appetite) belongs to the
+  // condition and is charted below, but the owner already answered it in the
+  // daily assessment and is not asked again here.
+  const parameters = needsSetup
+    ? []
+    : askedParameters(parametersFor(definition, config, pet?.species))
+
+  // Days since the last treatment, derived from the event the owner already
+  // logs rather than asked. "Lethargic on day 8" is a different question to
+  // "lethargic generally" — that is when a neutropenic patient gets into
+  // trouble — so the form says which day it is above the questions.
+  // The note belongs to the module, but the daily form works from a flat
+  // parameter list — so this maps an instance type back to the module that
+  // owns it.
+  function instanceNoteFor(instanceType) {
+    const module = SIGN_MODULE_LIST.find((m) => m.perInstance === instanceType)
+    return module?.instanceNote?.[pet?.species] ?? null
+  }
+
+  const treatmentModule = definition?.composed ? treatmentModuleByKey(config?.treatment) : null
+  const treatmentDay = treatmentModule?.usesTreatmentDay
+    ? daysSinceTreatment(events, today)
+    : null
+
+  const emergencies = parameters
     .map((parameter) => evaluateParameter(parameter, values[parameter.key], pet?.species))
     .filter((verdict) => verdict?.severity === SEVERITY.EMERGENCY)
 
   async function handleRemove(condition) {
     setErrorMessage('')
+    setBusy(true)
     try {
-      await removePetCondition(condition.id)
+      await removePetCondition(condition)
+      setConfirmRemove(null)
       refresh()
       navigate('/conditions')
     } catch (error) {
       setErrorMessage(error.message || 'Could not remove that condition.')
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -101,6 +166,14 @@ export default function ConditionMonitoring() {
         stored[key] = raw
       }
 
+      // Saving an assessment is what starts monitoring. The row is created
+      // here rather than when the owner tapped in, so that reading about a
+      // condition and backing out leaves no trace. Upsert on
+      // (pet_id, condition_key), so doing this on every save is harmless.
+      if (!petCondition) {
+        await addPetCondition({ petId: pet.id, conditionKey: definition.key })
+      }
+
       await saveConditionEntry({
         petId: pet.id,
         conditionKey: definition.key,
@@ -110,6 +183,7 @@ export default function ConditionMonitoring() {
       setDraft(null)
       setNotes('')
       refreshEntries()
+      refresh()
     } catch (error) {
       setErrorMessage(error.message || 'Could not save that entry.')
     } finally {
@@ -117,39 +191,27 @@ export default function ConditionMonitoring() {
     }
   }
 
-  // One summary per logged day, oldest first — feeds both the timeline and
-  // the concern-count chart from a single pass.
-  const summaries = definition
-    ? entries.map((entry) => ({
-        date: entry.date,
-        ...summariseEntry(definition, entry.values, pet?.species),
-      }))
-    : []
+  // Every chart for this condition — the calendar, the concern count, and one
+  // per graphable parameter — described in lib/charts.js so the report draws
+  // exactly the same things from exactly the same descriptors.
+  const charts = chartsForCondition({
+    definition,
+    entries,
+    events,
+    // Needed for referenced parameters only — a chart this condition shows
+    // but does not collect. Loaded here rather than threaded down from Trends
+    // because this page is reached directly.
+    dailySeries,
+    species: pet?.species,
+    config,
+  })
 
-  // Recharts can only place a vertical line on an x value present in the
-  // series, so an event on a day with no reading simply isn't drawn. It still
-  // appears in the list below — the chart is a bonus, not the record.
-  function markersFor(series) {
-    const dates = new Set(series.map((point) => point.date))
-    return events
-      .filter((event) => dates.has(event.date))
-      .map((event) => ({
-        date: event.date,
-        label: event.title,
-        short: eventTypeByValue(event.type)?.value === 'medication_started' ? 'Rx' : '',
-        colour: eventTypeByValue(event.type)?.colour,
-      }))
-  }
-
-  const summaryByDate = new Map(summaries.map((day) => [day.date, day]))
-
-  // Any parameter that can be turned into a series. Everything on the cardiac
-  // form qualifies, but each has its own axis — see chartConfigFor.
-  const graphable = (definition?.parameters ?? [])
-    .map((parameter) => ({ parameter, config: chartConfigFor(parameter, entries, pet?.species) }))
-    .filter((entry) => entry.config !== null)
-
-  const activeChart = graphable.find((entry) => entry.parameter.key === chartKey) ?? graphable[0] ?? null
+  const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
+  const flagsChart = definition ? chartByKey(charts, `${definition.key}:flags`) : null
+  // Only the per-parameter charts belong in the picker: the calendar and the
+  // concern count have their own cards above it.
+  const parameterCharts = charts.filter((chart) => chart.parameterKey)
+  const activeChart = chartByKey(parameterCharts, chartKey) ?? parameterCharts[0] ?? null
 
 
   return (
@@ -180,10 +242,34 @@ export default function ConditionMonitoring() {
               <SectionTitle>{definition.label}</SectionTitle>
             </div>
             {definition.intro && (
-              <p className="assessment-hint"><PetText template={definition.intro} pet={pet} /></p>
+              <p className="assessment-hint condition-intro">
+                <PetText template={definition.intro} pet={pet} />
+              </p>
+            )}
+            {definition.citation && (
+              <p className="beap-citation">{definition.citation}</p>
             )}
           </Card>
 
+          {/* A composed condition with nothing selected has no questions to
+              show, so the daily form would be an empty card. Sending the
+              owner to setup is the only useful thing this screen can do
+              until they have chosen something. */}
+          {needsSetup && (
+            <Card>
+              <SectionTitle>Start With The Diagnosis</SectionTitle>
+              <p className="assessment-hint">
+                Cancer looks different in every patient, so tell us what {pet.name} has been
+                diagnosed with — or that you're still waiting to find out — and we'll ask about
+                the right things.
+              </p>
+              <Btn type="button" className="btn-block" onClick={() => navigate(`/conditions/${definition.key}/setup`)}>
+                Choose diagnosis
+              </Btn>
+            </Card>
+          )}
+
+          {!needsSetup && (
           <Card>
             {emergencies.length > 0 && (
               <p className="condition-emergency" role="alert">
@@ -192,15 +278,37 @@ export default function ConditionMonitoring() {
               </p>
             )}
 
-            {definition.parameters.map((parameter, index) => (
-              <ConditionParameter
-                key={parameter.key}
-                parameter={parameter}
-                values={values}
-                pet={pet}
-                number={index + 1}
-                onChange={setDraft}
-              />
+            {treatmentDay != null && (
+              <p className="condition-flag" role="status">
+                <span>
+                  Day {treatmentDay} after {pet.name}'s last treatment.
+                </span>
+              </p>
+            )}
+
+            {parameters.map((parameter, index) => (
+              <div key={parameter.key}>
+                {/* A heading each time the group changes, so one lump's
+                    questions read as a block rather than three unrelated
+                    questions with the same name repeated in each label. */}
+                {parameter.groupLabel && parameter.groupLabel !== parameters[index - 1]?.groupLabel && (
+                  <h3 className="condition-group-heading">{parameter.groupLabel}</h3>
+                )}
+                {/* Once, above the first instance of its kind — this is the
+                    moment an owner is being asked for a number they may not
+                    be able to give. */}
+                {parameter.instanceType && parameter.instanceType !== parameters[index - 1]?.instanceType && instanceNoteFor(parameter.instanceType) && (
+                  <p className="assessment-hint">
+                    <PetText template={instanceNoteFor(parameter.instanceType)} pet={pet} />
+                  </p>
+                )}                <ConditionParameter
+                  parameter={parameter}
+                  values={values}
+                  pet={pet}
+                  number={index + 1}
+                  onChange={setDraft}
+                />
+              </div>
             ))}
 
             <div className="field">
@@ -220,46 +328,44 @@ export default function ConditionMonitoring() {
             {!entriesLoading && latestEntry && (
               <p className="assessment-hint">
                 Last recorded {formatDateDDMMYYYY(latestEntry.date)}.
+                {cadence && dueIn != null && (
+                  dueIn > 1
+                    ? ` Next one due in ${dueIn} days.`
+                    : dueIn === 1
+                      ? ' Next one due tomorrow.'
+                      : ' Due now.'
+                )}
               </p>
             )}
-          </Card>
 
-          {summaries.length > 0 && (
+            {!entriesLoading && !latestEntry && cadence && (
+              <p className="assessment-hint">
+                This one is worth filling in {cadence.label} rather than every day.
+              </p>
+            )}
+            {definition.composed && (
+              <Link to={`/conditions/${definition.key}/setup`} className="subtle-link">
+                Change what you're monitoring
+              </Link>
+            )}
+          </Card>
+          )}
+
+          {calendarChart && (
             <Card>
               <SectionTitle>{pet.name}'s {definition.label} Summary</SectionTitle>
-              <MonthCalendar
-                dayFor={(dateKey) => {
-                  const day = summaryByDate.get(dateKey)
-                  if (!day?.severity) return null
-                  return {
-                    colour: SEVERITY_COLOURS[day.severity],
-                    title: `${SEVERITY_LABELS[day.severity]}${day.flags ? ` — ${day.flags} flagged` : ''}`,
-                  }
-                }}
-              />
+              <ChartView chart={calendarChart} />
             </Card>
           )}
 
-          {summaries.length > 1 && (
+          {flagsChart && (
             <Card>
-              <SectionTitle>Things Flagged Each Day</SectionTitle>
-              <TrendLineChart
-                data={summaries}
-                dataKey="flags"
-                color="#C97A2E"
-                height={160}
-                domain={[0, Math.max(2, definition.parameters.length)]}
-                brush
-              />
-              <p className="assessment-hint">
-                How many findings were flagged on each day. A colour tells you something was
-                wrong; this tells you how much — one thing off and four things off look very
-                different on a chart, and the difference matters.
-              </p>
+              <SectionTitle>{flagsChart.title}</SectionTitle>
+              <ChartView chart={flagsChart} />
             </Card>
           )}
 
-          {graphable.length > 0 && activeChart && (
+          {activeChart && (
             <Card>
               <SectionTitle>Graph a Parameter</SectionTitle>
 
@@ -267,30 +373,16 @@ export default function ConditionMonitoring() {
                 <label htmlFor="condition-chart-picker">Parameter</label>
                 <select
                   id="condition-chart-picker"
-                  value={activeChart.parameter.key}
+                  value={activeChart.key}
                   onChange={(e) => setChartKey(e.target.value)}
                 >
-                  {graphable.map(({ parameter }) => (
-                    <option key={parameter.key} value={parameter.key}>{parameter.label}</option>
+                  {parameterCharts.map((chart) => (
+                    <option key={chart.key} value={chart.key}>{chart.label}</option>
                   ))}
                 </select>
               </div>
 
-              <TrendLineChart
-                data={activeChart.config.points}
-                dataKey="value"
-                unit={activeChart.config.unit}
-                color="#8A5C6F"
-                height={180}
-                domain={activeChart.config.domain}
-                markers={markersFor(activeChart.config.points)}
-                referenceValue={activeChart.config.threshold}
-                referenceLabel={activeChart.config.threshold != null ? `${activeChart.config.threshold}` : undefined}
-                brush
-              />
-              {activeChart.config.caption && (
-                <p className="assessment-hint">{activeChart.config.caption}</p>
-              )}
+              <ChartView chart={activeChart} />
             </Card>
           )}
 
@@ -323,7 +415,7 @@ export default function ConditionMonitoring() {
                   type="button"
                   variant="danger"
                   className="btn-block"
-                  onClick={() => handleRemove(condition)}
+                  onClick={() => setConfirmRemove(condition)}
                 >
                   <Trash2 size={16} /> Stop tracking {definition.label}
                 </Btn>
@@ -331,6 +423,37 @@ export default function ConditionMonitoring() {
           </Card>
 
         </>
+      )}
+
+      {confirmRemove && (
+        <Modal
+          title={`Stop tracking ${definition.label}?`}
+          onClose={() => setConfirmRemove(null)}
+        >
+          <p>
+            This deletes every reading and event you've recorded for {definition.label}
+            {entries.length > 0 && ` — ${entries.length} ${entries.length === 1 ? 'day' : 'days'} of readings`}
+            {events.length > 0 && ` and ${events.length} ${events.length === 1 ? 'event' : 'events'}`}.
+            It can't be undone.
+          </p>
+          <p className="assessment-hint">
+            {pet.name}'s general quality of life history, body condition and photos aren't affected.
+          </p>
+          <div className="modal-confirm-actions">
+            <Btn type="button" variant="outline" onClick={() => setConfirmRemove(null)}>
+              Keep tracking
+            </Btn>
+            <Btn
+              type="button"
+              variant="danger"
+              disabled={busy}
+              onClick={() => handleRemove(confirmRemove)}
+            >
+              {busy ? 'Deleting…' : 'Delete and stop'}
+            </Btn>
+          </div>
+          {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
+        </Modal>
       )}
 
       <Footer />

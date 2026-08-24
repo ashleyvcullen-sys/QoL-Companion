@@ -21,6 +21,8 @@ import BodyConditionScore from './screens/BodyConditionScore'
 import Medications from './screens/Medications'
 import PetMedia from './screens/PetMedia'
 import ConditionMonitoring from './screens/ConditionMonitoring'
+import ConditionSetup from './screens/ConditionSetup'
+import CancerContentReview from './screens/CancerContentReview'
 import Conditions from './screens/Conditions'
 import Legal from './screens/Legal'
 import Terms from './screens/Terms'
@@ -112,6 +114,9 @@ function App() {
         <Route path="/media" element={<PetMedia />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/conditions/:conditionKey" element={<ConditionMonitoring />} />
+        <Route path="/conditions/:conditionKey/setup" element={<ConditionSetup />} />
+        {/* Unlinked. Reachable by URL only — see the note in the file. */}
+        <Route path="/conditions/cancer/review" element={<CancerContentReview />} />
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>

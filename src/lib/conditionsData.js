@@ -14,6 +14,10 @@ function mapConditionRow(row) {
     diagnosedOn: row.diagnosed_on,
     notes: row.notes,
     active: row.active,
+    // Per-pet parameter selection, for conditions composed rather than
+    // declared. Empty for every condition with a fixed parameter list, which
+    // is all of them except cancer.
+    config: row.config ?? {},
   }
 }
 
@@ -58,13 +62,60 @@ export async function addPetCondition({ petId, conditionKey, diagnosedOn, notes 
   return mapConditionRow(data)
 }
 
+// Saved on its own rather than through addPetCondition, because changing what
+// you monitor is a different action to starting to monitor. An owner adding a
+// second lump three weeks in should not touch diagnosed_on or notes.
+export async function saveConditionConfig(conditionId, config) {
+  const { error } = await supabase
+    .from('pet_conditions')
+    .update({ config })
+    .eq('id', conditionId)
+  if (error) throw error
+}
+
 export async function setConditionActive(conditionId, active) {
   const { error } = await supabase.from('pet_conditions').update({ active }).eq('id', conditionId)
   if (error) throw error
 }
 
-export async function removePetCondition(conditionId) {
-  const { error } = await supabase.from('pet_conditions').delete().eq('id', conditionId)
+// Stopping monitoring deletes the readings and events too.
+//
+// It used to delete only the pet_conditions row. condition_entries and
+// condition_events are keyed by (pet_id, condition_key) rather than by
+// pet_conditions.id — deliberately, so a condition can be re-added without a
+// foreign key to migrate — which means nothing cascades and every reading
+// survived. Two things went wrong with that: the screen told the owner their
+// readings had been deleted when they had not, and re-adding the condition
+// resurrected months of old data as though it had never been removed.
+//
+// Children first, the pet_conditions row last. If a delete fails halfway the
+// condition still shows as tracked, which the owner can see and retry —
+// whereas the other order would leave orphaned readings with nothing in the
+// interface pointing at them.
+export async function removePetCondition(condition) {
+  const id = condition?.id
+  const petId = condition?.petId
+  const conditionKey = condition?.conditionKey
+
+  if (!id || !petId || !conditionKey) {
+    throw new Error('Could not remove that condition: missing id, pet or condition key.')
+  }
+
+  const { error: entriesError } = await supabase
+    .from('condition_entries')
+    .delete()
+    .eq('pet_id', petId)
+    .eq('condition_key', conditionKey)
+  if (entriesError) throw entriesError
+
+  const { error: eventsError } = await supabase
+    .from('condition_events')
+    .delete()
+    .eq('pet_id', petId)
+    .eq('condition_key', conditionKey)
+  if (eventsError) throw eventsError
+
+  const { error } = await supabase.from('pet_conditions').delete().eq('id', id)
   if (error) throw error
 }
 
@@ -287,6 +338,51 @@ export function useAllConditionEntries(petId) {
           for (const row of data ?? []) {
             const entry = mapEntryRow(row)
             ;(grouped[entry.conditionKey] ??= []).push(entry)
+          }
+          setByCondition(grouped)
+        }
+        setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [petId])
+
+  return { byCondition, loading }
+}
+
+// Every event for a pet, grouped by condition — the events counterpart to
+// useAllConditionEntries. The report needs these: without them the exported
+// parameter charts lose the event markers the on-screen ones carry, which is
+// exactly the divergence lib/charts.js exists to prevent.
+export function useAllConditionEvents(petId) {
+  const [byCondition, setByCondition] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!petId) {
+      setByCondition({})
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setLoading(true)
+
+    supabase
+      .from('condition_events')
+      .select('*')
+      .eq('pet_id', petId)
+      .order('event_date', { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error) {
+          console.error('Failed to load condition events:', error.message)
+          setByCondition({})
+        } else {
+          const grouped = {}
+          for (const row of data ?? []) {
+            const event = mapEventRow(row)
+            ;(grouped[event.conditionKey] ??= []).push(event)
           }
           setByCondition(grouped)
         }

@@ -10,19 +10,32 @@ import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import OverviewBars from '../components/OverviewBars'
-import TrendLineChart from '../components/TrendLineChart'
+import ChartView from '../components/ChartView'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
-import { buildDailySeries, buildMeasureSeries } from '../lib/qolData'
+import { buildDailySeries } from '../lib/qolData'
+import { useBcsHistory } from '../lib/bcsData'
+import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { conditionByKey } from '../lib/conditions'
 import {
-  INDIVIDUAL_MEASURE_GROUPS,
-  computeGeneralQolResult,
-  computeOverviewCategories,
-  individualMeasureByKey,
-} from '../lib/scoring'
-import { chartConfigFor, conditionByKey } from '../lib/conditions'
-import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+  CHART_GROUPS,
+  buildChartRegistry,
+  configsByCondition,
+  groupCharts,
+  resolveTrackedConditions,
+} from '../lib/charts'
+import {
+  useAllConditionEntries,
+  useAllConditionEvents,
+  usePetConditions,
+} from '../lib/conditionsData'
+import { usePetMedia } from '../lib/mediaData'
+
+// What the report contains when the owner never touches the picker: the
+// overall score and all five wellbeing pillars, which is exactly what it
+// contained before this screen had any choices at all.
+const DEFAULT_CHART_KEYS = ['overall', ...WELLBEING_CONCEPTS.map((c) => `pillar:${c.key}`)]
 
 function capitalize(value) {
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : value
@@ -30,7 +43,39 @@ function capitalize(value) {
 
 const PDF_MARGIN = 40
 
-async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs, selection }) {
+// Dismissing the share sheet REJECTS rather than resolving, so a cancel
+// arrives here looking exactly like a failure — which is why backing out of
+// the share dialog used to leave "Something went wrong generating the
+// report" on screen after a report that had generated perfectly well.
+//
+// There is no error code to test, so this matches on the message. Both
+// spellings appear across platforms, and AbortError is what the web Share
+// API throws for the same gesture.
+function isShareCancellation(error) {
+  if (!error) return false
+  if (error.name === 'AbortError') return true
+  const message = String(error.message ?? error).toLowerCase()
+  return (
+    message.includes('cancel') ||
+    message.includes('canceled') ||
+    message.includes('cancelled') ||
+    message.includes('abort') ||
+    message.includes('dismiss')
+  )
+}
+
+
+async function buildReportPdf({
+  pet,
+  generalResult,
+  recent,
+  notes,
+  media,
+  chartRefs,
+  charts,
+  includeOverall,
+  includeMedia,
+}) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
@@ -107,14 +152,26 @@ async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs
   addLine(`Sex: ${capitalize(pet.sex)}`)
   addSpacer()
 
-  if (selection.overall) {
+  if (includeOverall) {
     addSectionHeader('Latest scores')
     addLine(`Overall QoL: ${generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}`)
     addSpacer()
   }
 
   addSectionHeader('Notes')
-  addLine(notesText)
+  if (notes.length === 0) {
+    addLine('No notes recorded.')
+  } else {
+    // Every note with its date, newest first. The report used to carry only
+    // the most recent one, which is the least useful version: the note
+    // written the day something changed is what a vet wants to read, and it
+    // stops being the latest as soon as anything else is logged.
+    notes.forEach((note) => {
+      addLine(`${note.date} - ${note.source}`)
+      addLine(note.text)
+      addSpacer(6)
+    })
+  }
   addSpacer()
 
   addSectionHeader('Recent assessments')
@@ -127,32 +184,86 @@ async function buildReportPdf({ pet, generalResult, recent, notesText, chartRefs
   }
   addSpacer(20)
 
-  if (selection.overall) {
-    await addChartSection('Overview', chartRefs.overview.current)
-    await addChartSection('Overall QoL over time', chartRefs.general.current)
+  // The overview bars aren't a chart in the registry — they're a snapshot of
+  // the latest assessment rather than a series — so they're captured
+  // separately, under their own key.
+  if (includeOverall) {
+    await addChartSection('Overview', chartRefs.current.__overview)
   }
 
-  for (const { key, label } of WELLBEING_CONCEPTS) {
-    if (!selection.pillars.includes(key)) continue
-    await addChartSection(`${label} over time`, chartRefs.concepts.current[key])
+  // Everything else comes out of the registry, in registry order, drawn from
+  // the same descriptors the screen uses. A heading is emitted when the
+  // condition changes, so a report covering two conditions reads as two
+  // labelled blocks rather than one undifferentiated run of charts. Overall
+  // and the pillars need no heading — their chart titles already say it.
+  let lastGroup = null
+  for (const chart of charts) {
+    if (chart.groupLabel !== lastGroup) {
+      if (chart.group === CHART_GROUPS.CONDITION) addSectionHeader(chart.groupLabel)
+      lastGroup = chart.groupLabel
+    }
+    await addChartSection(chart.title, chartRefs.current[chart.key])
   }
 
-  for (const key of selection.measures) {
-    const measure = individualMeasureByKey(key)
-    await addChartSection(`${measure?.label ?? key} over time`, chartRefs.measures.current[key])
-  }
+  if (includeMedia && media.length > 0) {
+    addSectionHeader('Photos and videos')
+    for (const item of media) {
+      // A video can't be embedded in a PDF, so it is listed rather than
+      // shown. Saying so explicitly beats silently omitting it and leaving
+      // the owner wondering whether the export worked.
+      if (item.mediaType === 'video') {
+        addLine(`${item.takenOn} - video${item.caption ? `: ${item.caption}` : ''} (not included in PDF)`)
+        continue
+      }
+      if (!item.dataUrl) continue
 
-  for (const conditionKey of selection.conditions) {
-    const definition = conditionByKey(conditionKey)
-    if (!definition) continue
-    addSectionHeader(definition.label)
-    for (const parameter of definition.parameters) {
-      const el = chartRefs.conditions.current[`${conditionKey}:${parameter.key}`]
-      if (el) await addChartSection(`${parameter.label} over time`, el)
+      const ratio = item.width && item.height ? item.height / item.width : 0.75
+      const imgWidth = Math.min(contentWidth, 300)
+      const imgHeight = imgWidth * ratio
+
+      ensureSpace(imgHeight + 28)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.text(`${item.takenOn}${item.caption ? ` - ${item.caption}` : ''}`, PDF_MARGIN, cursorY)
+      cursorY += 12
+      doc.addImage(item.dataUrl, 'JPEG', PDF_MARGIN, cursorY, imgWidth, imgHeight)
+      cursorY += imgHeight + 14
     }
   }
 
   return doc
+}
+
+// Photos live behind short-lived signed URLs, which a PDF can't reference,
+// so each is fetched and inlined as data. Done at export time rather than on
+// load: most reports won't include photos, and pulling every image every time
+// someone opens this screen would be a lot of data for nothing.
+async function loadMediaForPdf(items, urls) {
+  const loaded = []
+  for (const item of items) {
+    if (item.mediaType === 'video') { loaded.push(item); continue }
+    const url = urls[item.storagePath]
+    if (!url) continue
+    try {
+      const blob = await fetch(url).then((response) => response.blob())
+      const dataUrl = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.readAsDataURL(blob)
+      })
+      const size = await new Promise((resolve) => {
+        const img = new Image()
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+        img.onerror = () => resolve({})
+        img.src = dataUrl
+      })
+      loaded.push({ ...item, dataUrl, ...size })
+    } catch {
+      // One unreadable photo shouldn't abort the whole report.
+      loaded.push(item)
+    }
+  }
+  return loaded
 }
 
 export default function ExportReport() {
@@ -165,31 +276,33 @@ export default function ExportReport() {
 
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
+  const { byCondition: eventsByCondition } = useAllConditionEvents(pet?.id)
+  const { entries: bcsEntries } = useBcsHistory(pet?.id)
+  const { items: mediaItems, urls: mediaUrls } = usePetMedia(pet?.id)
 
-  // Defaults reproduce what the report contained before this screen had any
-  // choices — overall score plus all five pillars — so anyone who ignores
-  // the picker gets exactly the report they used to get.
-  const [selection, setSelection] = useState({
-    overall: true,
-    pillars: WELLBEING_CONCEPTS.map((concept) => concept.key),
-    measures: [],
-    conditions: [],
-  })
+  // null means "the owner hasn't touched the picker", which is not the same
+  // as "the owner deselected everything" — the first gets the default report,
+  // the second is told to pick something. Resolving lazily rather than
+  // seeding state in an effect also avoids a first render where the report
+  // claims to contain nothing because the charts haven't loaded yet.
+  const [selectedKeys, setSelectedKeys] = useState(null)
+  // Off by default: photos make the file much larger and are not wanted for
+  // most visits.
+  const [includeMedia, setIncludeMedia] = useState(false)
 
-  function toggle(group, key) {
-    setSelection((current) => ({
-      ...current,
-      [group]: current[group].includes(key)
-        ? current[group].filter((entry) => entry !== key)
-        : [...current[group], key],
-    }))
+  const activeKeys = selectedKeys ?? DEFAULT_CHART_KEYS
+
+  function toggleChart(key) {
+    setSelectedKeys(
+      activeKeys.includes(key)
+        ? activeKeys.filter((entry) => entry !== key)
+        : [...activeKeys, key],
+    )
   }
 
-  const overviewChartRef = useRef(null)
-  const generalChartRef = useRef(null)
-  const conceptChartRefs = useRef({})
-  const measureChartRefs = useRef({})
-  const conditionChartRefs = useRef({})
+  // One ref per chart, keyed the same way the registry is, so the PDF builder
+  // can find a chart's captured DOM node by its key alone.
+  const chartRefs = useRef({})
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -206,23 +319,50 @@ export default function ExportReport() {
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
   const recent = dailySeries.slice(-10).reverse()
-  const notesText = latestGeneralEntry?.notes?.trim() ? latestGeneralEntry.notes : 'No notes added.'
+  // Every note the app holds, from wherever it was written, newest first.
+  // Assessment notes and condition notes answer different questions and a
+  // vet reading the report benefits from both, so they are merged and
+  // labelled by source rather than kept apart.
+  const notes = [
+    ...generalEntries
+      .filter((entry) => entry.notes?.trim())
+      .map((entry) => ({ date: entry.date, source: 'Assessment', text: entry.notes.trim() })),
+    ...Object.entries(byCondition).flatMap(([conditionKey, entries]) =>
+      entries
+        .filter((entry) => entry.notes?.trim())
+        .map((entry) => ({
+          date: entry.date,
+          source: conditionByKey(conditionKey)?.label ?? conditionKey,
+          text: entry.notes.trim(),
+        })),
+    ),
+  ].sort((a, b) => b.date.localeCompare(a.date))
 
-  const hasChartHistory = dailySeries.length > 0
-  const measureSeries = buildMeasureSeries(generalEntries, painEntries)
+  const trackedConditions = resolveTrackedConditions(conditions)
 
-  // Only conditions actually being tracked, and only those whose definition
-  // still exists — a key left in the database for a condition since removed
-  // from the app would otherwise render an empty section.
-  const trackedConditions = conditions
-    .filter((entry) => entry.active && conditionByKey(entry.conditionKey))
-    .map((entry) => conditionByKey(entry.conditionKey))
+  // Everything this pet has that could go in a report. Built from the same
+  // function the screens use, so the picker can never offer a chart the app
+  // can't draw, and can never miss one it can.
+  const charts = buildChartRegistry({
+    generalEntries,
+    painEntries,
+    dailySeries,
+    bcsEntries,
+    trackedConditions,
+    entriesByCondition: byCondition,
+    eventsByCondition,
+    configByCondition: configsByCondition(conditions),
+    species: pet?.species,
+  })
 
-  const nothingSelected =
-    !selection.overall &&
-    selection.pillars.length === 0 &&
-    selection.measures.length === 0 &&
-    selection.conditions.length === 0
+  const chartGroups = groupCharts(charts)
+  const selectedCharts = charts.filter((chart) => activeKeys.includes(chart.key))
+  const includeOverall = activeKeys.includes('overall')
+  const selectedPillarKeys = WELLBEING_CONCEPTS
+    .map((concept) => concept.key)
+    .filter((key) => activeKeys.includes(`pillar:${key}`))
+
+  const nothingSelected = selectedCharts.length === 0 && !includeMedia
 
   async function handleExport() {
     if (!Capacitor.isNativePlatform()) {
@@ -234,19 +374,18 @@ export default function ExportReport() {
     setExportError('')
 
     try {
+      const media = includeMedia ? await loadMediaForPdf(mediaItems, mediaUrls) : []
+
       const doc = await buildReportPdf({
         pet,
         generalResult,
         recent,
-        notesText,
-        chartRefs: {
-          overview: overviewChartRef,
-          general: generalChartRef,
-          concepts: conceptChartRefs,
-          measures: measureChartRefs,
-          conditions: conditionChartRefs,
-        },
-        selection,
+        notes,
+        media,
+        chartRefs,
+        charts: selectedCharts,
+        includeOverall,
+        includeMedia,
       })
 
       const base64 = doc.output('datauristring').split(',')[1]
@@ -264,6 +403,11 @@ export default function ExportReport() {
         dialogTitle: 'Share report',
       })
     } catch (error) {
+      // Changing your mind is not an error. The file is already written and
+      // the owner chose not to send it, so there is nothing to report and
+      // nothing to retry.
+      if (isShareCancellation(error)) return
+
       console.error('Failed to generate/share report PDF:', error)
       setExportError('Something went wrong generating the report. Please try again.')
     } finally {
@@ -302,68 +446,52 @@ export default function ExportReport() {
           short report about that problem than by everything at once.
         </p>
 
-        <div className="include-group">
-          <span className="include-group-label">Overall</span>
-          <div className="symptom-chips">
-            <button
-              type="button"
-              className={`chip ${selection.overall ? 'selected' : ''}`.trim()}
-              onClick={() => setSelection((c) => ({ ...c, overall: !c.overall }))}
-            >
-              Overall QoL
-            </button>
-          </div>
-        </div>
-
-        <div className="include-group">
-          <span className="include-group-label">Wellbeing pillars</span>
-          <div className="symptom-chips">
-            {WELLBEING_CONCEPTS.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                className={`chip ${selection.pillars.includes(key) ? 'selected' : ''}`.trim()}
-                onClick={() => toggle('pillars', key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {INDIVIDUAL_MEASURE_GROUPS.map((group) => (
-          <div className="include-group" key={group.group}>
-            <span className="include-group-label">{group.group}</span>
+        {/* One group per registry group, one chip per chart. The picker is
+            generated rather than written out, so a chart that exists on a
+            screen can't be missing from the report — which is how body
+            condition, weight and the day-by-day calendars came to be
+            unexportable in the first place. */}
+        {chartGroups.map((group) => (
+          <div key={group.label} className="include-group">
+            <span className="include-group-label">{group.label}</span>
             <div className="symptom-chips">
-              {group.measures.map((measure) => (
+              {group.charts.map((chart) => (
                 <button
-                  key={measure.key}
+                  key={chart.key}
                   type="button"
-                  className={`chip ${selection.measures.includes(measure.key) ? 'selected' : ''}`.trim()}
-                  onClick={() => toggle('measures', measure.key)}
+                  className={`chip ${activeKeys.includes(chart.key) ? 'selected' : ''}`.trim()}
+                  onClick={() => toggleChart(chart.key)}
                 >
-                  {measure.label}
+                  {chart.label}
                 </button>
               ))}
             </div>
           </div>
         ))}
 
-        {trackedConditions.length > 0 && (
+        {chartGroups.length === 0 && (
+          <p className="assessment-hint">
+            Nothing to report on yet. Log an assessment and the things you can include will
+            appear here.
+          </p>
+        )}
+
+        {mediaItems.length > 0 && (
           <div className="include-group">
-            <span className="include-group-label">Conditions</span>
+            <span className="include-group-label">Photos and videos</span>
             <div className="symptom-chips">
-              {trackedConditions.map((condition) => (
-                <button
-                  key={condition.key}
-                  type="button"
-                  className={`chip ${selection.conditions.includes(condition.key) ? 'selected' : ''}`.trim()}
-                  onClick={() => toggle('conditions', condition.key)}
-                >
-                  {condition.label}
-                </button>
-              ))}
+              <button
+                type="button"
+                className={`chip ${includeMedia ? 'selected' : ''}`.trim()}
+                onClick={() => setIncludeMedia((current) => !current)}
+              >
+                Include {mediaItems.length} {mediaItems.length === 1 ? 'item' : 'items'}
+              </button>
             </div>
+            <p className="assessment-hint">
+              Photos are added to the end of the report. Videos can't be put inside a PDF, so
+              they're listed by date and caption instead.
+            </p>
           </div>
         )}
       </Card>
@@ -382,7 +510,7 @@ export default function ExportReport() {
             <div className="report-field-row"><span>Sex</span><strong>{capitalize(pet.sex)}</strong></div>
           </Card>
 
-          {selection.overall && (
+          {includeOverall && (
             <Card>
               <SectionTitle>Latest Scores</SectionTitle>
               <div className="report-field-row">
@@ -394,13 +522,22 @@ export default function ExportReport() {
 
           <Card>
             <SectionTitle>Notes</SectionTitle>
-            <p>{notesText}</p>
+            {notes.length === 0 ? (
+              <p>No notes recorded.</p>
+            ) : (
+              notes.map((note, i) => (
+                <div key={`${note.date}-${note.source}-${i}`} className="report-note">
+                  <span className="assessment-hint">{note.date} — {note.source}</span>
+                  <p>{note.text}</p>
+                </div>
+              ))
+            )}
           </Card>
 
-          {selection.pillars.length > 0 && (
+          {selectedPillarKeys.length > 0 && (
             <Card>
               <SectionTitle>Overview</SectionTitle>
-              {WELLBEING_CONCEPTS.filter(({ key }) => selection.pillars.includes(key)).map(({ key, label }) => (
+              {WELLBEING_CONCEPTS.filter(({ key }) => selectedPillarKeys.includes(key)).map(({ key, label }) => (
                 <div key={key} className="report-field-row">
                   <span>{label}</span>
                   <strong>{overview[key] != null ? `${Math.round(overview[key])}%` : '—'}</strong>
@@ -429,83 +566,38 @@ export default function ExportReport() {
           Kept mounted (not display:none) so recharts' ResponsiveContainer can
           measure real layout dimensions — just positioned off-screen. */}
       <div className="pdf-chart-capture" aria-hidden="true">
-        <div ref={overviewChartRef} className="pdf-chart-block">
+        <div ref={(el) => { chartRefs.current.__overview = el }} className="pdf-chart-block">
           <OverviewBars
             concepts={WELLBEING_CONCEPTS}
             overview={overview}
             compact
           />
         </div>
-        <div ref={generalChartRef} className="pdf-chart-block">
-          {hasChartHistory && (
-            <TrendLineChart
-              data={dailySeries}
-              dataKey="generalTotal"
-              color="#C97B8C"
-              height={220}
-              isAnimationActive={false}
-            />
-          )}
-        </div>
-        {WELLBEING_CONCEPTS.map(({ key, color }) => (
-          <div key={key} ref={(el) => { conceptChartRefs.current[key] = el }} className="pdf-chart-block">
-            {hasChartHistory && (
-              <TrendLineChart
-                data={dailySeries}
-                dataKey={key}
-                color={color}
-                height={200}
-                domain={[0, 100]}
-                isAnimationActive={false}
-              />
-            )}
-          </div>
-        ))}
 
-        {/* Only the SELECTED extras are rendered. The five pillars are cheap
-            and always mounted, but rendering all sixteen measures plus every
-            parameter of every condition on a screen nobody sees would be a
-            lot of charts to lay out for a report that may include none. */}
-        {selection.measures.map((key) => (
-          <div key={key} ref={(el) => { measureChartRefs.current[key] = el }} className="pdf-chart-block">
-            <TrendLineChart
-              data={measureSeries}
-              dataKey={key}
-              color={individualMeasureByKey(key)?.color ?? '#5C6F8A'}
-              height={200}
-              domain={[0, 10]}
+        {/* Only the SELECTED charts are mounted — every chart of every
+            condition would be a lot to lay out on a screen nobody sees, for a
+            report that may include none of them.
+
+            Each goes through ChartView exactly as the screen does, so the
+            captured image is the same chart the owner was looking at. The
+            brush is dropped (a drag handle means nothing in a static image)
+            and the animation disabled (it would otherwise be captured
+            mid-flight); the caption is dropped because the PDF puts its own
+            heading above each chart. */}
+        {selectedCharts.map((chart) => (
+          <div
+            key={chart.key}
+            ref={(el) => { chartRefs.current[chart.key] = el }}
+            className="pdf-chart-block"
+          >
+            <ChartView
+              chart={chart}
+              brush={false}
               isAnimationActive={false}
+              showCaption={false}
             />
           </div>
         ))}
-
-        {selection.conditions.flatMap((conditionKey) => {
-          const definition = conditionByKey(conditionKey)
-          if (!definition) return []
-          const entries = byCondition[conditionKey] ?? []
-          return definition.parameters.map((parameter) => {
-            const config = chartConfigFor(parameter, entries, pet?.species)
-            if (!config) return null
-            return (
-              <div
-                key={`${conditionKey}:${parameter.key}`}
-                ref={(el) => { conditionChartRefs.current[`${conditionKey}:${parameter.key}`] = el }}
-                className="pdf-chart-block"
-              >
-                <TrendLineChart
-                  data={config.points}
-                  dataKey="value"
-                  unit={config.unit}
-                  color="#8A5C6F"
-                  height={200}
-                  domain={config.domain}
-                  referenceValue={config.threshold}
-                  isAnimationActive={false}
-                />
-              </div>
-            )
-          }).filter(Boolean)
-        })}
       </div>
 
       <Footer className="no-print" />

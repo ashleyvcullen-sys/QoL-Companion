@@ -5,7 +5,16 @@ import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
 import PetText from './PetText'
 import SeverityOptionList from './SeverityOptionList'
-import { SEVERITY, UNSURE, evaluateParameter, levelsFor } from '../lib/conditions'
+import {
+  NOT_APPLICABLE,
+  SEVERITY,
+  UNSURE,
+  VCOG_GRADE_LABELS,
+  VCOG_SCORES,
+  evaluateParameter,
+  levelsFor,
+  vcogColourForIndex,
+} from '../lib/conditions'
 import { fillPetText } from '../lib/petText'
 
 const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
@@ -66,20 +75,46 @@ export default function ConditionParameter({ parameter, values, pet, number, onC
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
   const isUnsure = value === UNSURE
+  const isNotApplicable = value === NOT_APPLICABLE
+  // Both sentinels blank the input, but they mean different things and are
+  // stored differently — see NOT_APPLICABLE in conditions.js.
+  const isBlanked = isUnsure || isNotApplicable
+  const naOption = parameter.notApplicableLabel
+    ? { value: NOT_APPLICABLE, label: parameter.notApplicableLabel }
+    : null
 
   function set(key, next) {
     onChange({ ...values, [key]: next })
   }
 
+  // Option text goes through the same templating as `why` and the labels, so
+  // a level reading "{they} {are} still eating" renders as "she is still
+  // eating" rather than showing the braces. Done here rather than inside
+  // SeverityOptionList because that component is shared with BCS, which has
+  // no pet-specific wording and no pet to hand.
+  const optionTexts = levelsFor(parameter, species).map((text) => fillPetText(text, pet))
+
   const followUp = parameter.followUp
-  const followUpVisible = followUp && value === followUp.when
+  // `when` matches one exact answer, which is right for yes/no and choice.
+  // A graded scale needs a threshold instead — "tell us where" should appear
+  // for every score at or above the concerning level, not only for one of
+  // them. UNSURE and blank both fail the comparison, which is what we want.
+  const followUpVisible = Boolean(
+    followUp &&
+      (followUp.whenAtLeast != null
+        ? value !== '' && value !== UNSURE && Number(value) >= followUp.whenAtLeast
+        : value === followUp.when),
+  )
   const followUpValue = followUp ? (values[followUp.key] ?? '') : ''
 
   return (
     <div className="condition-parameter">
       <span className="condition-parameter-label">
         {number != null && <span className="condition-parameter-number">{number}.</span>}
-        <span>{parameter.label}</span>
+        {/* Templated like the follow-up label already was. Without this a
+            label reading "How lame is {name}?" renders the braces literally,
+            which is the kind of thing that only shows up on a real pet. */}
+        <span>{fillPetText(parameter.label, pet)}</span>
       </span>
       {parameter.why && (
         <p className="assessment-hint"><PetText template={parameter.why} pet={pet} /></p>
@@ -102,17 +137,23 @@ export default function ConditionParameter({ parameter, values, pet, number, onC
               min={parameter.min}
               max={parameter.max}
               step={parameter.step ?? 1}
-              value={isUnsure ? '' : value}
-              disabled={isUnsure}
-              placeholder={isUnsure ? 'Not sure' : (parameter.placeholder ?? '')}
+              value={isBlanked ? '' : value}
+              disabled={isBlanked}
+              placeholder={
+                isNotApplicable
+                  ? parameter.notApplicableLabel
+                  : isUnsure
+                    ? 'Not sure'
+                    : (parameter.placeholder ?? '')
+              }
               onChange={(e) => set(parameter.key, e.target.value)}
             />
             {parameter.unit && <span className="input-unit">{parameter.unit}</span>}
           </div>
           <ChoiceButtons
-            options={[UNSURE_OPTION]}
-            value={isUnsure ? UNSURE : null}
-            onChange={() => set(parameter.key, isUnsure ? '' : UNSURE)}
+            options={naOption ? [naOption, UNSURE_OPTION] : [UNSURE_OPTION]}
+            value={isBlanked ? value : null}
+            onChange={(next) => set(parameter.key, value === next ? '' : next)}
           />
         </>
       )}
@@ -133,17 +174,40 @@ export default function ConditionParameter({ parameter, values, pet, number, onC
         />
       )}
 
+      {/* Same picker as BEAAAAPP and BCS, given the VCOG scale instead: five
+          grades scored 0-4 rather than six scored 0/2/4/6/8/10, labelled
+          "Grade 0".."Grade 4" and coloured on the oncology cut rather than
+          the BEAAAAPP bands. The owner reads a plain description and picks
+          it; what gets stored, charted and printed is the grade. */}
+      {parameter.type === 'vcog' && (
+        <>
+          <SeverityOptionList
+            levels={optionTexts}
+            value={value === '' || isUnsure ? null : Number(value)}
+            onChange={(next) => set(parameter.key, next)}
+            scores={VCOG_SCORES}
+            bandLabels={VCOG_GRADE_LABELS}
+            colorForIndex={vcogColourForIndex}
+          />
+          <ChoiceButtons
+            options={[UNSURE_OPTION]}
+            value={isUnsure ? UNSURE : null}
+            onChange={() => set(parameter.key, isUnsure ? '' : UNSURE)}
+          />
+        </>
+      )}
+
       {(parameter.type === 'beap' || parameter.type === 'scale') && (
         <>
           <SeverityOptionList
-            levels={levelsFor(parameter, species)}
+            levels={optionTexts}
             value={value === '' || isUnsure ? null : Number(value)}
             onChange={(next) => set(parameter.key, next)}
             // Thumbnails only where the option text came from a BEAAAAPP
             // category, since that's where the photo set exists. A parameter
             // with its own wording has no matching imagery.
-            species={parameter.type === 'beap' ? species : undefined}
-            categoryKey={parameter.type === 'beap' ? parameter.beapKey : undefined}
+            species={parameter.type === 'beap' && !parameter.hideImages ? species : undefined}
+            categoryKey={parameter.type === 'beap' && !parameter.hideImages ? parameter.beapKey : undefined}
           />
           <ChoiceButtons
             options={[UNSURE_OPTION]}

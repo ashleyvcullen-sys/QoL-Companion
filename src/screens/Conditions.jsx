@@ -7,24 +7,42 @@ import Footer from '../components/Footer'
 import { usePets } from '../lib/PetsContext'
 import PetText from '../components/PetText'
 import { CONDITION_LIST } from '../lib/conditions'
-import { addPetCondition, usePetConditions } from '../lib/conditionsData'
+import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import { isCancerConfigured } from '../lib/cancerConfig'
 
 export default function Conditions() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
-  const { conditions, loading, refresh } = usePetConditions(pet?.id)
+  const { conditions, loading } = usePetConditions(pet?.id)
+  const { byCondition } = useAllConditionEntries(pet?.id)
 
-  const monitoredKeys = new Set(conditions.map((entry) => entry.conditionKey))
+  // "Tracking" means readings have been logged, NOT that a row exists in
+  // pet_conditions. Looking someone up is not the same as monitoring them:
+  // tapping in to read what a condition involves, or getting as far as
+  // choosing a diagnosis and stopping, should not tick the badge. Only a
+  // saved assessment does that.
+  const trackedKeys = new Set(
+    Object.entries(byCondition)
+      .filter(([, entries]) => entries.length > 0)
+      .map(([key]) => key),
+  )
 
-  async function open(condition) {
-    // Tapping a condition that isn't being monitored yet starts monitoring it
-    // and goes straight in. An "add" step first would be a screen whose only
-    // content is a confirm button.
-    if (!monitoredKeys.has(condition.key)) {
-      await addPetCondition({ petId: pet.id, conditionKey: condition.key }).catch(() => {})
-      refresh()
+  function open(condition) {
+    // Deliberately no write here. The pet_conditions row is created on the
+    // first save — of an assessment, or of a cancer setup — so that backing
+    // out of a condition leaves nothing behind.
+    const existing = conditions.find((entry) => entry.conditionKey === condition.key) ?? null
+
+    // A composed condition has no questions until the owner says what they
+    // are dealing with, so the first visit goes to setup rather than to a
+    // form. Sending someone to "how much is she eating?" before they have
+    // told us anything about the diagnosis is the wrong first screen.
+    if (condition.composed && !isCancerConfigured(existing?.config)) {
+      navigate(`/conditions/${condition.key}/setup`)
+      return
     }
+
     navigate(`/conditions/${condition.key}`)
   }
 
@@ -47,7 +65,7 @@ export default function Conditions() {
       <div className="condition-grid">
         {CONDITION_LIST.map((condition) => {
           const { Icon } = condition
-          const monitored = monitoredKeys.has(condition.key)
+          const monitored = trackedKeys.has(condition.key)
           const disabled = condition.comingSoon
 
           const inner = (
@@ -61,6 +79,9 @@ export default function Conditions() {
               </span>
               <span className="condition-tile-body">
                 <span className="condition-tile-label">{condition.label}</span>
+                {condition.summary && (
+                  <span className="assessment-hint">{condition.summary}</span>
+                )}
               </span>
               {disabled ? (
                 <span className="condition-tile-status"><Lock size={13} /> Coming soon</span>

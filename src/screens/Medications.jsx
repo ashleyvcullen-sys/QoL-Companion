@@ -79,6 +79,12 @@ export default function Medications() {
   // a back-and-forward doesn't reopen a form they already dealt with.
   const location = useLocation()
   const navigate = useNavigate()
+  // Captured on first render, not read live: the effect below clears router
+  // state once the prefill has been consumed, which would take this with it
+  // and strand the owner here with no way back to what they were doing.
+  const [returnTo] = useState(() => location.state?.returnTo ?? null)
+  const [returnLabel] = useState(() => location.state?.returnLabel ?? 'where you were')
+
   const prefillName = location.state?.newMedicationName
 
   useEffect(() => {
@@ -332,6 +338,12 @@ export default function Medications() {
   return (
     <div className="screen">
       <HomeLink />
+
+      {returnTo && (
+        <button type="button" className="subtle-link" onClick={() => navigate(returnTo)}>
+          ← Back to {returnLabel}
+        </button>
+      )}
 
       <Card className="bcs-intro">
         <SectionTitle>Medications</SectionTitle>

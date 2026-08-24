@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { ChevronDown, LineChart } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ChevronDown, FileDown } from 'lucide-react'
+import Btn from '../components/Btn'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -7,33 +9,16 @@ import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
-import TrendLineChart from '../components/TrendLineChart'
+import ChoiceButtons from '../components/ChoiceButtons'
+import ChartView from '../components/ChartView'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
-import {
-  computeOverviewCategories,
-  INDIVIDUAL_MEASURE_GROUPS,
-  individualMeasureByKey,
-} from '../lib/scoring'
-import { buildDailySeries, buildMeasureSeries } from '../lib/qolData'
+import { computeOverviewCategories } from '../lib/scoring'
+import { buildDailySeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
-import { BCS_MIN, BCS_MAX } from '../lib/bcsScale'
-import TrendsCalendar from './trends/TrendsCalendar'
-
-// Body condition and weight aren't assessment answers, so they don't belong
-// in scoring.js's list of the 16 — but from the user's point of view they're
-// just two more things to graph. Composed here rather than in either source,
-// so the picker can offer them together without scoring.js having to know
-// what a kilogram is.
-const BODY_MEASURE_GROUP = {
-  group: 'Body condition',
-  measures: [
-    { key: 'bcs_score', label: 'Body condition score' },
-    { key: 'bcs_weight', label: 'Body weight' },
-  ],
-}
+import { buildChartRegistry, chartByKey } from '../lib/charts'
 
 function formatDateDDMMYYYY(dateStr) {
   if (!dateStr) return dateStr
@@ -44,13 +29,14 @@ function formatDateDDMMYYYY(dateStr) {
 export default function Trends() {
   const { selectedPet } = usePets()
   const pet = selectedPet
+  const navigate = useNavigate()
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
-  const [measureKey, setMeasureKey] = useState('vomiting')
   // Charts start collapsed. Seven full-height charts stacked made the screen
   // a long scroll where nothing was findable; collapsed, the page is a list
   // of what's trackable and you open the one you came for.
+  const [bodyMetric, setBodyMetric] = useState('body:score')
   const [expandedCharts, setExpandedCharts] = useState({})
 
   function toggleChart(key) {
@@ -62,74 +48,28 @@ export default function Trends() {
   const hasLatestData = latestGeneralEntry || latestPainEntry
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
-  const hasHistory = dailySeries.length > 0
 
-  // Weight is optional on a BCS entry, so the weight series is only the
-  // subset of entries that actually carried one. Plotting every entry and
-  // letting the line bridge the gaps would imply weights that were never
-  // recorded.
-  const weightEntries = bcsEntries.filter((entry) => entry.weightKg != null)
-  const weights = weightEntries.map((entry) => entry.weightKg)
-  // Unlike BCS, weight has no fixed clinical range, so the axis follows the
-  // data with a little padding either side.
-  const weightDomain = weights.length
-    ? [Math.max(0, Math.min(...weights) - 0.5), Math.max(...weights) + 0.5]
-    : [0, 1]
+  // Every chart this screen can draw, described in one place. Trends decides
+  // the layout — which cards, which collapse — but not what a chart IS.
+  // Conditions are deliberately left out of this call: they have their own
+  // pages, and the registry is filtered rather than rebuilt to exclude them.
+  const charts = buildChartRegistry({
+    generalEntries,
+    painEntries,
+    dailySeries,
+    bcsEntries,
+    species: pet?.species,
+  })
 
-  // One series holding all 16 measures per date, so switching the picker is
-  // just a different dataKey rather than a recompute.
-  const measureSeries = buildMeasureSeries(generalEntries, painEntries)
-  const activeMeasure = individualMeasureByKey(measureKey)
-  // A measure only answered as "Not sure", or never reached in the wizard,
-  // scores null on every date — charting that draws an empty box, so check
-  // there is something to plot before rendering one.
-  const measureHasData = measureSeries.some((row) => row[measureKey] != null)
-
-  const measureGroups = [...INDIVIDUAL_MEASURE_GROUPS, BODY_MEASURE_GROUP]
-
-  // Which series, axis, colour and caption the one chart uses. Three sources
-  // behind a single picker: the 16 assessment measures share a fixed 0-10
-  // axis, body condition has its own fixed 1-9 clinical scale, and weight has
-  // no fixed range at all.
-  const chart = measureKey === 'bcs_score'
-    ? {
-        data: bcsEntries,
-        dataKey: 'score',
-        domain: [BCS_MIN, BCS_MAX],
-        color: '#5C6F8A',
-        loading: bcsLoading,
-        hasData: bcsEntries.length > 0,
-        empty: 'No body condition scores logged yet.',
-        hint: '4–5 is ideal. Both lower and higher scores move away from ideal, so this chart reads differently to the others — the middle is best, not the top.',
-      }
-    : measureKey === 'bcs_weight'
-      ? {
-          data: weightEntries,
-          dataKey: 'weightKg',
-          unit: ' kg',
-          domain: weightDomain,
-          color: '#7A9A7E',
-          loading: bcsLoading,
-          hasData: weightEntries.length > 0,
-          empty: 'No weights logged yet. Weight is optional when you record a body condition score.',
-          hint: 'Only days you recorded a weight appear here. Weight and body condition can move independently — a steady score while weight drops is worth raising with your vet.',
-        }
-      : {
-          data: measureSeries,
-          dataKey: measureKey,
-          domain: [0, 10],
-          color: activeMeasure?.color ?? '#5C6F8A',
-          loading,
-          hasData: measureHasData,
-          empty: `No ${activeMeasure?.label.toLowerCase()} answers logged yet.`,
-          hint: "10 is best, 0 is worst — the same direction as the other charts. Days you didn't answer this question are skipped rather than counted as zero.",
-        }
+  const overallChart = chartByKey(charts, 'overall')
+  const goodBadDays = chartByKey(charts, 'good-bad-days')
+  const bcsChart = chartByKey(charts, 'body:score')
+  const weightChart = chartByKey(charts, 'body:weight')
+  const activeBodyChart = chartByKey(charts, bodyMetric)
+  const hasBodyCharts = Boolean(bcsChart || weightChart)
 
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
-
-  const chartToggle = useConceptToggle()
-  const activeChartConcept = WELLBEING_CONCEPTS.find((c) => c.key === chartToggle.activeKey)
 
   const notesHistory = [...generalEntries]
     .reverse()
@@ -145,6 +85,14 @@ export default function Trends() {
           Visual trends make gradual change easier to spot than single numbers — and are
           useful to bring to a vet visit.
         </p>
+        {/* Lives here rather than as its own home-screen tile: exporting is
+            something you do TO this data, so it belongs beside it. A full
+            button rather than a quiet link, because taking a report to a vet
+            visit is the single most valuable thing an owner does with this
+            screen and it was previously the least visible thing on it. */}
+        <Btn type="button" className="btn-block" onClick={() => navigate('/export-report')}>
+          <FileDown size={17} /> Export A Report For Your Vet
+        </Btn>
       </Card>
 
       <Card>
@@ -162,138 +110,73 @@ export default function Trends() {
             <p className="assessment-hint">
               From {formatDateDDMMYYYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
             </p>
+            {/* The five pillars used to have a collapsed chart each, stacked
+                down this screen. Five headings you had to open one at a time
+                is a poor way to find anything, and most owners never opened
+                them — so the charts moved to the report, where you pick the
+                ones the visit is actually about. */}
+            <p className="assessment-hint">
+              Want to see a pillar over time? Pick it in the report — you can choose any
+              combination there.
+            </p>
           </>
         )}
       </Card>
 
       <Card>
-        <SectionTitle>Good / bad days</SectionTitle>
-        <TrendsCalendar generalEntries={generalEntries} painEntries={painEntries} />
-        <p className="assessment-hint">
-          A good quality of life means having more good days than bad.
-        </p>
+        <SectionTitle>{goodBadDays?.title ?? 'Good / Bad Days'}</SectionTitle>
+        {goodBadDays ? <ChartView chart={goodBadDays} /> : <p>No assessments logged yet.</p>}
       </Card>
 
       <Card>
-        <SectionTitle>Overall QoL over time</SectionTitle>
-        {!hasHistory ? (
-          <p>No assessments logged yet.</p>
-        ) : (
-          <TrendLineChart data={dailySeries} dataKey="generalTotal" color="#C97B8C" height={200} brush />
-        )}
+        <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
+        {overallChart ? <ChartView chart={overallChart} /> : <p>No assessments logged yet.</p>}
       </Card>
 
-      {WELLBEING_CONCEPTS.map(({ key, label, Icon, color }) => {
-        const expanded = Boolean(expandedCharts[key])
-        return (
-          <Card key={key}>
-            <div className="chart-title">
-              {/* Two separate controls, deliberately. The coloured icon opens
-                  the explanation of what this pillar means; the heading opens
-                  the chart. Nesting one inside the other would be invalid
-                  markup and would fire both on every tap. */}
-              <button
-                type="button"
-                className="chart-title-icon"
-                style={{ background: color }}
-                aria-label={`What does ${label} mean?`}
-                onClick={() => chartToggle.toggle(key)}
-              >
-                <Icon size={14} color="#fff" />
-              </button>
-              {/* Heading wraps the button rather than the other way round, so
-                  the section still appears in a screen reader's heading list
-                  while the whole row stays tappable. */}
-              <h2 className="section-title chart-collapse-heading">
-                <button
-                  type="button"
-                  className="chart-collapse"
-                  aria-expanded={expanded}
-                  onClick={() => toggleChart(key)}
-                >
-                  <span>{label} over time</span>
-                  <ChevronDown size={18} className={`chart-chevron ${expanded ? 'open' : ''}`.trim()} />
-                </button>
-              </h2>
-            </div>
-            {chartToggle.activeKey === key && <ConceptDefinition concept={activeChartConcept} />}
-            {expanded && (
-              !hasHistory ? (
-                <p>No assessments logged yet.</p>
-              ) : (
-                <TrendLineChart data={dailySeries} dataKey={key} color={color} height={180} domain={[0, 100]} brush />
-              )
-            )}
-          </Card>
-        )
-      })}
-
       <Card>
-        <div className="chart-title">
-          {/* Static badge, not a button — the pillar cards use their icon to
-              open a definition, but this card has no single concept to
-              define. It takes the colour of whatever measure is selected, so
-              the header matches the line below it. */}
-          <span className="chart-title-icon" style={{ background: chart.color }} aria-hidden="true">
-            <LineChart size={14} color="#fff" />
-          </span>
-          <h2 className="section-title chart-collapse-heading">
-            <button
-              type="button"
-              className="chart-collapse"
-              aria-expanded={Boolean(expandedCharts.measure)}
-              onClick={() => toggleChart('measure')}
-            >
-              <span>Single measure over time</span>
-              <ChevronDown size={18} className={`chart-chevron ${expandedCharts.measure ? 'open' : ''}`.trim()} />
-            </button>
-          </h2>
-        </div>
+        <h2 className="section-title chart-collapse-heading">
+          <button
+            type="button"
+            className="chart-collapse"
+            aria-expanded={Boolean(expandedCharts.body)}
+            onClick={() => toggleChart('body')}
+          >
+            <span>Body Condition / Weight Over Time</span>
+            <ChevronDown size={18} className={`chart-chevron ${expandedCharts.body ? 'open' : ''}`.trim()} />
+          </button>
+        </h2>
 
-        {expandedCharts.measure && (
+        {expandedCharts.body && (
           <>
-            <p className="assessment-hint">
-              The charts above roll several answers together. This one graphs a single thing on
-              its own — any question from the assessment, or body condition and weight.
-            </p>
+            {bcsLoading && <p>Loading…</p>}
 
-            <div className="field">
-              <label htmlFor="measure-picker">Measure</label>
-              <select
-                id="measure-picker"
-                value={measureKey}
-                onChange={(e) => setMeasureKey(e.target.value)}
-              >
-                {measureGroups.map((entry) => (
-                  <optgroup key={entry.group} label={entry.group}>
-                    {entry.measures.map((measure) => (
-                      <option key={measure.key} value={measure.key}>{measure.label}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
+            {!bcsLoading && !hasBodyCharts && (
+              <p>No body condition scores logged yet.</p>
+            )}
 
-            {chart.loading && <p>Loading…</p>}
-            {!chart.loading && !chart.hasData && <p>{chart.empty}</p>}
-            {!chart.loading && chart.hasData && (
-              <>
-                {/* Fixed axes wherever the measure has a real range, so
-                    switching measures doesn't rescale — otherwise one that
-                    never moved off 10 would look as dramatic as one that
-                    collapsed to 2. Weight is the exception: it has no fixed
-                    range, so it follows the data. */}
-                <TrendLineChart
-                  data={chart.data}
-                  dataKey={chart.dataKey}
-                  unit={chart.unit}
-                  color={chart.color}
-                  height={180}
-                  domain={chart.domain}
-                  brush
-                />
-                <p className="assessment-hint">{chart.hint}</p>
-              </>
+            {/* The metric switcher is only worth showing once there is more
+                than one metric to switch between — with weight never recorded
+                it would be a two-button control where one button always says
+                "nothing here". */}
+            {!bcsLoading && bcsChart && weightChart && (
+              <ChoiceButtons
+                options={[bcsChart, weightChart].map((chart) => ({
+                  value: chart.key,
+                  label: chart.label,
+                }))}
+                value={bodyMetric}
+                onChange={setBodyMetric}
+              />
+            )}
+
+            {!bcsLoading && hasBodyCharts && (
+              <ChartView chart={activeBodyChart ?? bcsChart ?? weightChart} />
+            )}
+
+            {!bcsLoading && bcsChart && !weightChart && (
+              <p className="assessment-hint">
+                No weights logged yet. Weight is optional when you record a body condition score.
+              </p>
             )}
           </>
         )}

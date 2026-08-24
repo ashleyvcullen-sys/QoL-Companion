@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Bell, Camera, FileDown, Heart, HeartHandshake, LogOut, PawPrint, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Bell, Camera, Heart, HeartHandshake, LogOut, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
@@ -13,27 +13,49 @@ import Btn from '../components/Btn'
 import Footer from '../components/Footer'
 import PetSwitcher from '../components/PetSwitcher'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
-import AboutIcon from '../components/icons/AboutIcon'
 
-const NAV_ITEMS = [
-  { to: '/about', label: 'About', Icon: AboutIcon },
-  { to: '/assessment', label: 'Quality Of Life Assessment', Icon: Heart },
-  { to: '/trends', label: 'Trends', Icon: TrendingUp },
-  // Plus-tier feature, currently ungated for testing — see the note on the
-  // Add Another Pet tile below for how to re-gate on hasPlusAccess().
-  { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
-  // PRO-tier feature (not Plus), currently ungated for testing. Gate on
-  // hasMedicationsAccess(customerInfo) when the products are live.
-  { to: '/medications', label: 'Medications', Icon: Pill },
-  // Plus-tier feature, currently ungated for testing. Gate on
-  // hasMediaAccess(customerInfo) when the products are live.
-  { to: '/media', label: 'Photos & Videos', Icon: Camera },
-  { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
-  { to: '/schedule', label: 'Schedule', Icon: Bell },
-  { to: '/export-report', label: 'Export Report', Icon: FileDown },
-  { to: '/end-of-life', label: 'End Of Life', Icon: HeartHandshake },
-  { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
+// Grouped rather than one flat grid. Thirteen equal tiles gave no hint of
+// what belongs together or what to do first; two labelled groups let the eye
+// skip straight to the half of the screen it needs.
+//
+// Four things left the grid entirely because they were never features:
+//   About and Schedule    -> secondary links at the foot of the screen
+//   Add Another Pet       -> the pet switcher, which is the control for pets
+//   Export Report         -> a button on Trends, which is the data it exports
+const NAV_SECTIONS = [
+  {
+    title: 'Monitor',
+    items: [
+      { to: '/assessment', label: 'Quality Of Life Assessment', Icon: Heart },
+      { to: '/trends', label: 'Trends', Icon: TrendingUp },
+      // Plus-tier feature, currently ungated for testing. Gate on
+      // hasBcsAccess(customerInfo) when the products are live.
+      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
+      // PRO-tier feature (not Plus). Gate on hasMedicationsAccess().
+      { to: '/medications', label: 'Medications', Icon: Pill },
+      // PRO-tier feature. Gate on hasDiseaseMonitoringAccess().
+      { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope },
+      // Plus-tier feature. Gate on hasMediaAccess().
+      { to: '/media', label: 'Photos & Videos', Icon: Camera },
+    ],
+  },
+  {
+    title: 'Support',
+    items: [
+      // Emergencies first, deliberately. Someone reaching for this section
+      // in a hurry should not have to read past two other tiles to find it.
+      { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
+      { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
+      { to: '/end-of-life', label: 'End Of Life', Icon: HeartHandshake },
+      // Promoted from a quiet link at the foot of the page. Reminders are
+      // what make a daily habit stick, so burying them under "About" was
+      // working against the thing the app is for.
+      { to: '/schedule', label: 'Reminders', Icon: Bell },
+    ],
+  },
 ]
+
+const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items)
 
 export default function Home() {
   const { pets, refresh, selectedPet, selectPet } = usePets()
@@ -177,48 +199,32 @@ export default function Home() {
         <PetSwitcher />
       </Card>
 
-      <div className="icon-grid">
-        {NAV_ITEMS.map(({ to, label, Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            ref={(el) => { tileRefs.current[to] = el }}
-            className="icon-tile-link"
-          >
-            <Card className="icon-tile">
-              <span className="icon-badge">
-                <Icon size={22} strokeWidth={2} color="#fff" />
-              </span>
-              <span className="icon-tile-label">{label}</span>
-            </Card>
-          </Link>
-        ))}
+      {NAV_SECTIONS.map((section) => (
+        <div key={section.title} className="nav-section">
+          <span className="nav-section-title">{section.title}</span>
+          <div className="icon-grid">
+            {section.items.map(({ to, label, Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                ref={(el) => { tileRefs.current[to] = el }}
+                className="icon-tile-link"
+              >
+                <Card className="icon-tile">
+                  <span className="icon-badge">
+                    <Icon size={22} strokeWidth={2} color="#fff" />
+                  </span>
+                  <span className="icon-tile-label">{label}</span>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
 
-        {/* PRO-tier feature, currently ungated for testing. Gate on
-            hasDiseaseMonitoringAccess(customerInfo) when the products are
-            live — the preview modal below is what a non-entitled user should
-            see once it is. */}
-        <Link to="/conditions" className="icon-tile-link">
-          <Card className="icon-tile">
-            <span className="icon-badge">
-              <Stethoscope size={22} strokeWidth={2} color="#fff" />
-            </span>
-            <span className="icon-tile-label">Disease-Specific Monitoring</span>
-          </Card>
-        </Link>
-
-        {/* Multi-pet is currently ungated — this routes straight to the
-            add-pet flow. To put it behind the paywall later, gate this on
-            hasMultiPetAccess(customerInfo) and fall back to the
-            ComingSoon/paywall path when not entitled. */}
-        <Link to="/onboarding" className="icon-tile-link">
-          <Card className="icon-tile">
-            <span className="icon-badge">
-              <PawPrint size={22} strokeWidth={2} color="#fff" />
-            </span>
-            <span className="icon-tile-label">Add Another Pet</span>
-          </Card>
-        </Link>
+      {/* Not features, so not tiles. Kept reachable but quiet. */}
+      <div className="home-secondary-links">
+        <Link to="/about" className="subtle-link">About</Link>
       </div>
 
       <button type="button" className="sign-out-button" onClick={handleSignOut}>

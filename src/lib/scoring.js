@@ -397,6 +397,14 @@ export function computeIndividualMeasures(entry, beap) {
   return { ...fromEntry, ...fromBeap }
 }
 
+// The five keys computeOverviewCategories() returns, and therefore the five
+// series buildDailySeries() carries per day. Named here rather than only in
+// WellbeingConcepts.jsx because two things outside the UI need the list: the
+// condition page, which can only plot a referenced parameter from one of
+// these, and the overlap check, which refuses a `reference` naming anything
+// else. Must stay in step with the object returned below.
+export const OVERVIEW_PILLAR_KEYS = ['comfort', 'appetite', 'sleep', 'curiosity', 'connection']
+
 export function computeOverviewCategories(latestGeneralQolEntry, latestPainLogEntry) {
   const beap = latestPainLogEntry?.beap
   // A stored beapWorst of null is a real "nothing answered" rather than a

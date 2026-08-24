@@ -8,6 +8,11 @@
   --text: #7A5B63;
   --text-muted: #9C7C86;
   --border: #F5DFE4;
+  /* A stronger border and an off-white fill, for controls that need to read
+     as pressable against the page. Both were loose hexes in ScoreSlider. */
+  --border-strong: #EAC6CE;
+  --surface: #FFFBFC;
+  --accent-tint: #FBEFF1;
 
   --severity-good: #3D8259;
   --severity-moderate: #C97A2E;
@@ -16,6 +21,24 @@
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: 'Fraunces', Georgia, serif;
   --mono: ui-monospace, Consolas, monospace;
+
+  /* Type scale. Six roles, each with exactly one size, so a new component
+     picks a role rather than inventing a size. Before this, "the name of an
+     item in a list" was variously 13px, 14px, 15px and an inherited 18px
+     depending on which screen it was on.
+
+       heading  card titles                       (.section-title)
+       item     the name of a row in a list       (medication, event, condition)
+       tile     label inside a home-screen tile   (short, needs to fit)
+       support  explanation under a heading       (.assessment-hint)
+       meta     dates, credits, counts, legends
+       label    uppercase group dividers            */
+  --type-heading: 20px;
+  --type-item: 15px;
+  --type-tile: 13px;
+  --type-support: 14px;
+  --type-meta: 13px;
+  --type-label: 12px;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -29,6 +52,7 @@
 
   @media (max-width: 1024px) {
     font-size: 16px;
+    --type-heading: 18px;
   }
 }
 
@@ -147,19 +171,13 @@ code {
    look like a heading uses this rather than styling its own. */
 .section-title {
   font-family: var(--heading);
-  font-size: 20px;
+  font-size: var(--type-heading);
   font-weight: 600;
   line-height: 130%;
   letter-spacing: -0.2px;
   color: var(--text-h);
   margin: 0 0 12px;
   text-align: center;
-}
-
-@media (max-width: 1024px) {
-  .section-title {
-    font-size: 18px;
-  }
 }
 
 .form {
@@ -315,10 +333,6 @@ code {
   gap: 4px;
 }
 
-.home-header .section-title {
-  text-align: center;
-}
-
 .pet-switcher {
   display: flex;
   gap: 8px;
@@ -336,8 +350,8 @@ code {
 
 .pet-switcher-option {
   flex: 0 0 auto;
-  background: #FFFBFC;
-  border: 1px solid #EAC6CE;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   border-radius: 20px;
   padding: 6px 14px;
   font: inherit;
@@ -361,6 +375,42 @@ code {
 }
 
 
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Quiet by design. The heading is there to let the eye skip a whole group,
+   not to compete with the tiles for attention. */
+.nav-section-title {
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-left: 2px;
+}
+
+.home-secondary-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.pet-switcher-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-decoration: none;
+}
 
 .icon-grid {
   display: grid;
@@ -433,7 +483,7 @@ code {
 }
 
 .icon-tile-label {
-  font-size: 13px;
+  font-size: var(--type-tile);
   font-weight: 500;
   color: var(--text-h);
   line-height: 130%;
@@ -452,7 +502,7 @@ code {
 .assessment-hint,
 .home-subtitle {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 145%;
 }
 
@@ -519,7 +569,7 @@ code {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 15px;
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -598,6 +648,22 @@ code {
 
 /* The heading row on a condition page: icon beside the title rather than
    above it, so the page identifies itself in one line. */
+/* The condition page centres its intro and its option buttons, matching the
+   centred heading above them. Scoped to this screen so the assessment
+   wizard's left-aligned forms are untouched. */
+.condition-intro {
+  text-align: center;
+}
+
+.condition-parameter .choice-buttons,
+.condition-parameter .symptom-chips {
+  justify-content: center;
+}
+
+.condition-parameter .how-to-button {
+  align-self: center;
+}
+
 .condition-heading {
   display: flex;
   align-items: center;
@@ -637,7 +703,7 @@ code {
 
 .condition-tile {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   padding: 18px 16px;
 }
@@ -653,13 +719,13 @@ code {
 .condition-tile-body {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 3px;
+  gap: 4px;
   flex: 1;
   min-width: 0;
 }
 
 .condition-tile-label {
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -668,7 +734,7 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
   flex-shrink: 0;
   white-space: nowrap;
@@ -714,6 +780,7 @@ code {
 }
 
 .event-title {
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -751,7 +818,7 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
 }
 
@@ -770,7 +837,7 @@ code {
   border-radius: 12px;
   background: rgba(201, 123, 140, 0.1);
   color: var(--text-h);
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 150%;
 }
 
@@ -780,7 +847,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 150%;
   color: var(--text);
 }
@@ -914,8 +981,13 @@ code {
   background: #fff;
   color: var(--text);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--type-meta);
+  line-height: 135%;
   cursor: pointer;
+  /* Long labels wrap rather than stretching the row. "Lung tumour or cancer
+     that has spread to the lungs" is a legitimate chip; without a line-height
+     it sets solid across two lines inside a pill. */
+  text-align: center;
 }
 
 .chip.selected {
@@ -933,7 +1005,7 @@ code {
 }
 
 .field-hint {
-  font-size: 12.5px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
   margin: -4px 0 0;
 }
@@ -982,18 +1054,6 @@ code {
   text-align: center;
 }
 
-/* .section-title's own text-align: left wins over inheriting center from
-   .welcome-slide above — direct rules on an element always beat inherited
-   ones, regardless of the parent. align-items: center only centers the
-   heading's box, which looks fine for a single line but goes visibly
-   left-ragged the moment a heading wraps to two lines (as "Welcome To
-   Quality Of Life Companion" reliably does on real phone widths). This
-   overrides the actual text-align for headings in this context specifically,
-   rather than changing .section-title's default for every other screen. */
-.welcome-slide .section-title {
-  text-align: center;
-}
-
 .welcome-illustration {
   width: 150px;
   height: auto;
@@ -1011,6 +1071,37 @@ code {
   margin: 0;
   font-size: 14px;
   color: var(--text);
+}
+
+/* The tinted "Did you know?" panel on the pet details step. Was an inline
+   style object with its own hexes and a 12.5px size; it is the same kind of
+   thing as .welcome-callout, so it now reads from the same tokens. */
+.tip-callout {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--accent-tint);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.tip-callout p {
+  margin: 0;
+  font-size: var(--type-meta);
+  line-height: 150%;
+  color: var(--text);
+}
+
+.tip-callout strong {
+  color: var(--text-h);
+}
+
+.tip-callout-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 .welcome-footnote {
@@ -1171,13 +1262,8 @@ code {
 
 /* The BCS intro card is centred as a block. Centring only the title and the
    body copy would strand the citation left-aligned between two centred
-   elements, so the whole card is treated as one unit. .section-title sets
-   text-align: left explicitly, hence the descendant override. */
+   elements, so the whole card is treated as one unit. */
 .card.bcs-intro {
-  text-align: center;
-}
-
-.card.bcs-intro .section-title {
   text-align: center;
 }
 
@@ -1236,12 +1322,13 @@ code {
 }
 
 .med-name {
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
 }
 
 .med-dose {
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
 }
 
@@ -1408,7 +1495,7 @@ code {
 }
 
 .media-date {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -1449,7 +1536,7 @@ code {
 /* Colour is set inline from the floored band's severity, so only layout
    lives here. */
 .review-summary-floor-note {
-  font-size: 12.5px;
+  font-size: var(--type-meta);
   line-height: 1.5;
   margin: 0;
   padding-top: 10px;
@@ -1674,7 +1761,7 @@ code {
 }
 
 .calendar-month-label {
-  font-size: 14px;
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -1799,7 +1886,7 @@ code {
    different things depending on the screen. One style now. */
 .beap-citation,
 .bcs-sources p {
-  font-size: 13px;
+  font-size: var(--type-meta);
   line-height: 150%;
   color: var(--text-muted);
   font-style: normal;
@@ -1886,8 +1973,8 @@ code {
 }
 
 .schedule-row-label {
+  font-size: var(--type-item);
   font-weight: 600;
-  font-size: 15px;
   color: var(--text-h);
 }
 
@@ -1916,11 +2003,23 @@ code {
 }
 
 .include-group-label {
-  font-size: 13px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+}
+
+.report-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-note:last-of-type {
+  border-bottom: 0;
 }
 
 .report-field-row {
@@ -1965,7 +2064,7 @@ code {
 }
 
 .history-date {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
   color: var(--text-h);
   margin: 0 0 4px;
@@ -2011,7 +2110,7 @@ code {
 
 .home-tour-title {
   font-family: var(--heading);
-  font-size: 20px;
+  font-size: var(--type-heading);
   color: var(--text-h);
   margin: 0 0 4px;
 }
@@ -2081,7 +2180,7 @@ code {
   display: inline-block;
   width: auto;
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--type-label);
   white-space: nowrap;
 }
 
@@ -2097,7 +2196,7 @@ code {
 
 .paywall-package-title {
   font-weight: 600;
-  font-size: 15px;
+  font-size: var(--type-item);
   margin: 0 0 2px;
 }
 
@@ -2206,4 +2305,172 @@ code {
 .welcome-slide-icon {
   align-self: center;
   margin-bottom: 12px;
+}
+
+/* Score slider. Every one of these rules used to be an inline style object in
+   ScoreSlider.jsx with hardcoded hexes (#3D2B30, #B79AA0, #EAC6CE...) and sizes
+   invented on the spot (11.5px, 12.5px), which meant the single most-used
+   control in the app was also the one piece that wouldn't follow a change to
+   the design tokens. */
+.score-slider {
+  margin-bottom: 16px;
+}
+
+.score-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.score-slider-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.score-slider-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.score-slider-value {
+  color: var(--text-h);
+}
+
+.score-slider-value-max {
+  font-size: var(--type-label);
+  color: var(--text-muted);
+}
+
+.score-slider-prompt {
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.score-slider-scale {
+  display: flex;
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.score-slider-step {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--type-label);
+  font-weight: 700;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* --score-colour is set per-step in JSX, because which severity a step means
+   depends on where it falls on the scale. */
+.score-slider-step.is-selected {
+  border-color: var(--score-colour);
+  background: var(--score-colour);
+  color: #fff;
+}
+
+.score-slider-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.score-slider-scale-label {
+  font-size: var(--type-label);
+  color: var(--text-muted);
+  max-width: 34%;
+}
+
+.score-slider-scale-label.is-middle {
+  max-width: 28%;
+  text-align: center;
+}
+
+.score-slider-scale-label.is-end {
+  text-align: right;
+}
+
+.score-slider-options {
+  display: flex;
+  gap: 8px;
+}
+
+.score-slider-options.is-spaced {
+  margin-top: 8px;
+}
+
+.score-slider-option {
+  font-size: var(--type-label);
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+.score-slider-option.is-selected {
+  border-color: var(--text-muted);
+  background: var(--text-muted);
+  color: #fff;
+}
+
+/* Heading above a group of questions that belong to one thing — today, the
+   measures for a single lump. Sits between the section title and an item
+   name in weight, because it divides questions rather than naming one. */
+.condition-group-heading {
+  font-size: var(--type-item);
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 20px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.condition-parameter:first-of-type .condition-group-heading {
+  margin-top: 0;
+}
+
+/* The two buttons at the foot of a confirmation dialog. Used by the delete
+   confirms on Home and by "stop tracking" on a condition — all of which were
+   relying on this class existing when it never had a rule, so the buttons
+   stacked full-width and the destructive one sat directly under the cancel.
+   Side by side, with the safe option first: on a phone the thumb rests
+   nearer the left, and the cancel should be the easy reach. */
+.modal-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.modal-confirm-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 380px) {
+  /* Below this the two labels wrap mid-word and read as gibberish. */
+  .modal-confirm-actions {
+    flex-direction: column;
+  }
 }

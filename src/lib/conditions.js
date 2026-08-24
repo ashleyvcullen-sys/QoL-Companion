@@ -29,12 +29,201 @@
 
 // Imported as named components rather than built here: this file is .js, and
 // Vite does not transform JSX in a .js file.
-import { BoneOrganIcon, HeartOrganIcon, KidneyOrganIcon } from '../components/icons/OrganIcon'
+import {
+  BoneOrganIcon,
+  CancerOrganIcon,
+  CognitiveOrganIcon,
+  GutOrganIcon,
+  HeartOrganIcon,
+  KidneyOrganIcon,
+  SeizureOrganIcon,
+} from '../components/icons/OrganIcon'
 import { BEAP_SCALES } from './beapScales'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
 export const UNSURE = 'unsure'
+
+// "This doesn't apply" — distinct from "I'm not sure".
+//
+// Feline lymphoma is why this exists: a cat with lymphoma often has lymph
+// nodes you cannot feel at all, and an owner asked to measure one has a
+// third honest answer beyond a number and a shrug. Recording that as UNSURE
+// would file a normal, expected finding as uncertainty.
+//
+// Like UNSURE it is excluded from scoring and from charts — there is no
+// number to plot — but it is stored, so "not enlarged today" stays in the
+// record rather than looking like a question nobody answered.
+export const NOT_APPLICABLE = 'na'
+
+// --- Overlap with the daily assessment -------------------------------------
+//
+// Several condition questions measure something the daily wellbeing
+// assessment already measures. Sometimes that is duplication: Heart Disease
+// asked the BEAAAAPP appetite scale a second time, so an owner graded
+// appetite twice on the same day — three times if the pet also had cancer —
+// and nothing stopped the answers disagreeing. Sometimes the overlap is
+// deliberate and worth keeping: a cough is not breathing effort, and a cat
+// who cannot turn round to groom is not the same question as a cat who is
+// dirty.
+//
+// The rule is that no overlap gets to be undeclared. A parameter that touches
+// a daily measure names it in `covers` and says what it is doing about it in
+// `relationship`:
+//
+//   reference   Not asked here at all. The daily assessment's answer is what
+//               this condition charts. Removes a question from the form.
+//   supersedes  Asked here, in more detail or in a context the daily
+//               assessment does not cover. Both answers are kept; neither is
+//               derived from the other.
+//   distinct    A genuinely different question that happens to sit in the
+//               same domain. The comment above it has to say how — `why` is
+//               owner-facing text and is not the place for it.
+//
+// Only `reference` changes behaviour today. The other two are declarations —
+// they exist so scripts/check-parameter-overlap.mjs can fail when a NEW
+// parameter quietly overlaps a daily measure and says nothing about it, which
+// is exactly how the appetite duplication got in.
+//
+// `covers` names a key from INDIVIDUAL_MEASURES in scoring.js. A `reference`
+// additionally has to name one of OVERVIEW_PILLAR_KEYS, because those are the
+// only series the condition page can currently plot from — the check enforces
+// that too, so a reference cannot silently lose its chart.
+export const RELATIONSHIP = {
+  REFERENCE: 'reference',
+  SUPERSEDES: 'supersedes',
+  DISTINCT: 'distinct',
+}
+
+// Whether the owner is actually asked this. A referenced parameter still
+// belongs to the condition — it is charted on the condition page and offered
+// in the report — it just is not a question on the form.
+export function isAsked(parameter) {
+  return parameter?.relationship !== RELATIONSHIP.REFERENCE
+}
+
+export function askedParameters(parameters = []) {
+  return parameters.filter(isAsked)
+}
+
+// --- Shared parameters -----------------------------------------------------
+//
+// Questions that mean the same thing in more than one condition. Gum colour
+// is gum colour whether you are watching a heart or a spleen: the same
+// instruction for lifting the lip, the same four options, the same reason
+// white or blue is an emergency.
+//
+// Defined once so there is ONE place to edit the wording. The alternative —
+// a copy per condition — drifts within weeks, and the copies that drift are
+// the ones nobody remembers to update.
+//
+// Consumers may override any field (a condition-specific `why`, say) while
+// keeping the measurement itself identical.
+export const SHARED_PARAMETERS = {
+  gum_colour: {
+    key: 'mucous_membranes',
+    label: 'Gum Colour',
+    type: 'choice',
+    why:
+      'Gum colour reflects how well oxygenated blood is reaching the tissues. Pink is what you want. Blue or white means oxygen or circulation is failing.',
+    howToTitle: 'How to Check Gum Colour',
+    howTo: [
+      'Lift the lip gently and look at the gum above the upper teeth.',
+      'Check in good light — indoor lighting can make pink look pale.',
+      'Some pets have naturally pigmented (black) gums. If so, the inside of the lower eyelid works instead.',
+    ],
+    options: [
+      { value: 'pink', label: 'Pink', severity: SEVERITY.OK },
+      { value: 'pale_pink', label: 'Pale pink', severity: SEVERITY.OK },
+      { value: 'white', label: 'White', severity: SEVERITY.EMERGENCY },
+      { value: 'blue', label: 'Blue or grey', severity: SEVERITY.EMERGENCY },
+    ],
+    emergencyMessage:
+      'This needs veterinary attention now. Contact your vet or an emergency service immediately.',
+  },
+
+  // Cancer's wording, adopted by Heart Disease too — Ash's call, 24 Aug.
+  // The cancer levels describe the WORK of breathing in fewer words; the
+  // cardiac ones carried extra detail (flaring nostrils, elbows held out,
+  // head and neck extended, gums possibly white or blue) that is real but
+  // reads as a lot to hold in your head while watching an animal breathe.
+  //
+  // The key stays `respiratory_effort`, which is what Heart Disease has been
+  // storing against. Renaming it to match the cancer draft's
+  // `breathing_effort` would have orphaned every reading already logged.
+  //
+  // The "(emergency)" marker is load-bearing on a `scale`: the picker reads
+  // it to draw the hazard icon AND evaluateParameter reads it to flag the
+  // day. Removing it from a level silently downgrades that level.
+  breathing_effort: {
+    key: 'respiratory_effort',
+    label: 'Breathing Effort',
+    type: 'scale',
+    // The same domain as the daily assessment's breathing category, asked in
+    // more detail: six levels written for a patient being watched for this
+    // specifically, with the top two marked as emergencies. Both are kept —
+    // deriving one from the other is deliberately not done, because the two
+    // are answered in different frames of mind on different days.
+    covers: 'breathing',
+    relationship: RELATIONSHIP.SUPERSEDES,
+    // Moderate (4) and moderate-to-severe (6) mark the day amber. 8 and 10
+    // carry the "(emergency)" marker and are handled by that.
+    concernFrom: 4,
+    levels: {
+      dog: [
+        'Effortless. The chest moves gently and evenly, mouth closed.',
+        'Slightly deeper chest movement, but still relaxed.',
+        'Chest movement is easy to see, and the tummy sometimes moves with it.',
+        'Obvious effort — the tummy pushes in and out with each breath.',
+        'Laboured at rest — the tummy heaves with every breath. (emergency)',
+        'Struggling — open-mouth gasping, unable to settle. (emergency)',
+      ],
+      cat: [
+        'Effortless. The chest moves gently and evenly, mouth closed.',
+        'Slightly deeper chest movement, but still relaxed.',
+        'Chest movement is easy to see, and the tummy sometimes moves with it.',
+        'Obvious effort — the tummy pushes in and out, may sit hunched.',
+        'Open-mouth breathing with the tummy heaving. (emergency)',
+        'Struggling — gasping, unable to settle. (emergency)',
+      ],
+    },
+  },
+
+  // Coughing, with the "what does it sound like" follow-up. Shared because
+  // the question and its options are the same wherever it is asked — only
+  // the reason it matters differs, which is what the `why` override is for.
+  coughing: {
+    key: 'coughing',
+    label: 'Coughing',
+    type: 'yesno',
+    // Sits in the breathing domain but is not breathing effort: a pet can
+    // cough all week and breathe effortlessly in between, and the daily
+    // assessment would record that as normal.
+    covers: 'breathing',
+    relationship: RELATIONSHIP.DISTINCT,
+    concernWhen: 'yes',
+    concernMessage:
+      'Worth mentioning to your vet, particularly if it is new or more frequent.',
+    followUp: {
+      when: 'yes',
+      key: 'cough_character',
+      label: 'What Does the Cough Sound Like?',
+      type: 'choice',
+      allowOther: true,
+      otherLabel: 'Describe it yourself',
+      options: [
+        { value: 'moist', label: 'Moist or wet', severity: SEVERITY.CONCERN },
+        { value: 'dry', label: 'Dry or hacking', severity: SEVERITY.CONCERN },
+      ],
+    },
+  },
+}
+
+export function sharedParameter(key, overrides = {}) {
+  const base = SHARED_PARAMETERS[key]
+  if (!base) return null
+  return { ...base, ...overrides }
+}
 
 export const CONDITIONS = {
   cardiac: {
@@ -43,19 +232,25 @@ export const CONDITIONS = {
     Icon: HeartOrganIcon,
     // Shown on the condition list to say what monitoring involves before
     // someone commits to it.
-    summary: 'Breathing rate and effort, coughing, exercise tolerance, gum colour and more.',
+    summary:
+      'Includes conditions such as myxomatous mitral valve disease (MMVD), dilated cardiomyopathy (DCM) and hypertrophic cardiomyopathy (HCM).',
     intro:
       'Monitoring parameters such as resting breathing rate and exercise tolerance can help catch subtle changes over time. Earlier detection often leads to earlier intervention and better outcomes.',
     parameters: [
       {
         key: 'resting_respiratory_rate',
-        label: 'Resting Respiratory (Breathing) Rate',
+        label: 'Resting Respiratory (Breathing) Rate (RRR)',
         type: 'number',
         unit: 'breaths/min',
         min: 1,
         max: 200,
         step: 1,
         placeholder: 'e.g. 24',
+        // Rate, not effort. The daily assessment grades how hard {name} is
+        // working to breathe; nothing in it counts breaths, and a normal
+        // effort with a rate of 44 is the finding this question exists for.
+        covers: 'breathing',
+        relationship: RELATIONSHIP.DISTINCT,
         why:
           '**This is one of the most subtle but useful things you can measure at home.** In many cases of heart disease, fluid can build up in the lungs, leading to an increased breathing rate at rest. This often occurs before more obvious signs of sickness. A resting respiratory rate (RRR) of **consistently more than 30 breaths per minute** warrants a vet visit sooner rather than later.',
         howToTitle: 'How to Measure RRR',
@@ -88,72 +283,28 @@ export const CONDITIONS = {
         concernMessage:
           'This is higher than the usual resting range. One high reading can happen — but if it stays above this over several readings, or your pet also seems unsettled or is breathing harder, contact your vet.',
       },
-      {
-        key: 'respiratory_effort',
-        label: 'Breathing Effort',
-        // Its OWN levels rather than the BEAAAAPP breathing scale. That scale
-        // deliberately blends rate and effort ("faster", "quicker", "rapid"),
-        // which is right for a general assessment but wrong here: rate is
-        // already captured as a number directly above, so an owner would be
-        // answering the same question twice and the two could disagree.
-        // These describe work of breathing only — chest excursion, abdominal
-        // push, posture, open-mouth breathing.
-        //
-        // PENDING ASH — drafted, not yet reviewed. Same 6-level, 0-10 shape
-        // as BEAAAAPP, and the "(emergency)" marker is load-bearing: the
-        // picker reads it to flag those options.
-        type: 'scale',
-        // Moderate (4) and Moderate-to-severe (6) mark the day amber. 8 and
-        // 10 carry the "(emergency)" marker in their text and are handled by
-        // that, below.
-        concernFrom: 4,
-        levels: {
-          dog: [
-            'Effortless. The chest moves gently and evenly, mouth closed.',
-            'Slightly deeper chest movement, but still relaxed. The tummy stays still.',
-            'Chest movement is easy to see, and the tummy sometimes moves with it.',
-            'Obvious effort — the tummy pushes in and out with each breath, nostrils may flare.',
-            'Laboured at rest — the tummy heaves with every breath, elbows held away from the body, head and neck extended. (emergency)',
-            'Struggling — open-mouth gasping, unable to settle or lie down. Gums may appear white or blue. (emergency)',
-          ],
-          cat: [
-            'Effortless. The chest moves gently and evenly, mouth closed.',
-            'Slightly deeper chest movement, but still relaxed. The tummy stays still.',
-            'Chest movement is easy to see, and the tummy sometimes moves with it.',
-            'Obvious effort — the tummy pushes in and out with each breath, may sit hunched with elbows out.',
-            'Open-mouth breathing with the tummy heaving. Cats rarely breathe through the mouth unless they are in trouble. (emergency)',
-            'Struggling — gasping, head and neck extended, unable to settle. Gums may appear white or blue. (emergency)',
-          ],
-        },
+      sharedParameter('breathing_effort', {
+        // Overridden, not shared: this sentence refers to the resting
+        // respiratory rate question directly above it on the cardiac form,
+        // which the cancer module has no equivalent of.
         why:
           'Breathing effort tells us how hard {name} is working to get oxygen — not how fast, which you have already counted above. This does not need to be assessed while {name} is completely asleep but ideally should be done when {they} {are} relaxed.',
-      },
-      {
-        key: 'coughing',
-        label: 'Coughing',
-        type: 'yesno',
-        concernWhen: 'yes',
+      }),
+      sharedParameter('coughing', {
+        // Overridden, not shared: why a cough matters differs by disease.
         why:
           'Coughing in a heart patient can mean fluid in the lungs, or an enlarged heart pressing on the airway. What it sounds like helps tell those apart.',
-        concernMessage:
-          'Worth mentioning to your vet, particularly if it is new or more frequent.',
-        followUp: {
-          when: 'yes',
-          key: 'cough_character',
-          label: 'What Does the Cough Sound Like?',
-          type: 'choice',
-          allowOther: true,
-          otherLabel: 'Describe it yourself',
-          options: [
-            { value: 'moist', label: 'Moist or wet', severity: SEVERITY.CONCERN },
-            { value: 'dry', label: 'Dry or hacking', severity: SEVERITY.CONCERN },
-          ],
-        },
-      },
+      }),
       {
         key: 'exercise_tolerance',
         label: 'Exercise Tolerance',
         type: 'choice',
+        // The daily assessment grades activity as a whole. This asks about
+        // exertion specifically — a dog can be bright and busy around the
+        // house and still stop halfway up the same hill it managed last week,
+        // and in heart disease that is the earlier signal of the two.
+        covers: 'activity',
+        relationship: RELATIONSHIP.DISTINCT,
         why:
           'Tiring sooner than usual or stopping on a walk can be one of the earliest signs of heart disease.',
         options: [
@@ -186,27 +337,7 @@ export const CONDITIONS = {
           placeholder: 'e.g. after excitement at the door, out for a few seconds, came round on their own',
         },
       },
-      {
-        key: 'mucous_membranes',
-        label: 'Gum Colour',
-        type: 'choice',
-        why:
-          'Gum colour reflects how well oxygenated blood is reaching the tissues. Pink is what you want. Blue or white means oxygen or circulation is failing.',
-        howToTitle: 'How to Check Gum Colour',
-        howTo: [
-          'Lift the lip gently and look at the gum above the upper teeth.',
-          'Check in good light — indoor lighting can make pink look pale.',
-          'Some pets have naturally pigmented (black) gums. If so, the inside of the lower eyelid works instead.',
-        ],
-        options: [
-          { value: 'pink', label: 'Pink', severity: SEVERITY.OK },
-          { value: 'pale_pink', label: 'Pale pink', severity: SEVERITY.OK },
-          { value: 'white', label: 'White', severity: SEVERITY.EMERGENCY },
-          { value: 'blue', label: 'Blue or grey', severity: SEVERITY.EMERGENCY },
-        ],
-        emergencyMessage:
-          'This needs veterinary attention now. Contact your vet or an emergency service immediately.',
-      },
+      sharedParameter('gum_colour'),
       {
         key: 'abdominal_distension',
         label: 'Swollen or Bloated Tummy (Ascites)',
@@ -223,17 +354,18 @@ export const CONDITIONS = {
           placeholder: 'e.g. noticeably rounder than last week, firm to touch',
         },
       },
+      // Referenced, not asked.
+      //
+      // This was the BEAAAAPP appetite scale a second time — same six levels,
+      // same wording, on a form filled in on the same day as the assessment
+      // that already asks it. Removing it removes a question, not a measure:
+      // the appetite trend on this page is now drawn from the daily
+      // assessment, which is where the number was coming from anyway.
       {
         key: 'appetite',
         label: 'Appetite',
-        type: 'beap',
-        beapKey: 'appetite',
-        // Charted the opposite way to breathing effort, on purpose. "More
-        // appetite is better" is how anyone reads an appetite graph, whereas
-        // "more breathing effort is better" would be nonsense. The stored
-        // value is the same BEAAAAPP severity either way — only the plotted
-        // direction differs, and each chart's caption says which it is.
-        chartHigherIsBetter: true,
+        relationship: RELATIONSHIP.REFERENCE,
+        covers: 'appetite',
         why:
           'Appetite can often reduce gradually as heart failure progresses.',
       },
@@ -246,31 +378,374 @@ export const CONDITIONS = {
   // one. Deliberately carry NO clinical content: no parameters, no
   // thresholds, no wording that could be mistaken for reviewed guidance.
   // `comingSoon` is what stops them being openable.
-  arthritis: {
-    key: 'arthritis',
-    label: 'Arthritis and Mobility',
-    Icon: BoneOrganIcon,
-    summary: 'Stiffness, lameness, willingness to move, and how pain relief is holding.',
+  seizures: {
+    key: 'seizures',
+    label: 'Seizures',
+    Icon: SeizureOrganIcon,
+    summary:
+      'Includes seizures caused by primary epilepsy, brain lesions, metabolic disease and infection.',
     comingSoon: true,
     parameters: [],
+  },
+
+  // Composed rather than declared. `composed: true` is what tells the app to
+  // resolve this pet's parameter list from their config (see cancerConfig.js)
+  // instead of reading a fixed `parameters` array. The array below stays
+  // empty on purpose — a cancer patient's questions depend on which signs
+  // their owner is actually watching.
+  cancer: {
+    key: 'cancer',
+    label: 'Cancer',
+    Icon: CancerOrganIcon,
+    composed: true,
+    summary:
+      'There are many different types of cancer and they cause different symptoms. This makes it easier to keep track of the ones that matter for your pet.',
+    intro:
+      'Cancer looks different in every patient. Your vet may have told you exactly what to watch for; if you are still waiting on results, start with the basics and add to it later.',
+    // Credited once, at the top of the assessment, the same way the app
+    // credits BEAAAAPP and the WSAVA body condition chart — rather than
+    // explaining the provenance again inside every graded question.
+    // PENDING ASH — confirm the version to cite and the exact wording.
+    citation:
+      'Adapted from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
+    parameters: [],
+  },
+
+  gastrointestinal: {
+    key: 'gastrointestinal',
+    label: 'Gastrointestinal Disease',
+    Icon: GutOrganIcon,
+    summary:
+      'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else, like Addison\'s disease or pancreatitis.',
+    comingSoon: true,
+    parameters: [],
+  },
+
+  cognitive: {
+    key: 'cognitive',
+    label: 'Cognitive Decline',
+    Icon: CognitiveOrganIcon,
+    // PENDING ASH — written by me, not reviewed.
+    summary:
+      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called canine or feline dementia.',
+    comingSoon: true,
+    parameters: [],
+  },
+
+  arthritis: {
+    key: 'arthritis',
+    label: 'Arthritis and Mobility Issues',
+    Icon: BoneOrganIcon,
+    summary:
+      'Stiffness, lameness and willingness to move, and how well pain relief is holding.',
+    intro:
+      'Arthritis changes slowly, so this one is worth filling in about once a week rather than every day. The questions differ for dogs and cats because the two show it differently — a cat rarely limps, but stops jumping.',
+    // How often this is worth filling in. Conditions without a cadence are
+    // daily by default, which is what every other one has been until now.
+    // Arthritis moves over weeks, not days: a daily prompt would train
+    // owners to tick through it without really looking, and seven near-
+    // identical entries say no more than one.
+    cadence: { days: 7, label: 'weekly', noun: 'week' },
+    // PENDING ASH — confirm both instruments and the exact wording. Neither
+    // is reproduced here; the parameters follow their domains and the owner
+    // wording below is drafted.
+    citation:
+      'Adapted from the Liverpool Osteoarthritis in Dogs (LOAD) and the Feline Musculoskeletal Pain Index (FMPI).',
+    parameters: [
+      // The BEAAAAPP category rather than a scale of its own, so the two can
+      // never disagree about the same day. Ambulation IS the central
+      // arthritis measure and the daily assessment already collects it with
+      // six species-specific levels.
+      //
+      // Asked here rather than referenced from the daily assessment, which is
+      // what Heart Disease does with appetite. The difference is cadence:
+      // Heart Disease is filled in daily, alongside the assessment, so
+      // referencing it costs nothing. Arthritis is weekly, and an owner who
+      // did not happen to do the daily assessment that week would be left
+      // with an arthritis entry missing the one measure that matters most.
+      {
+        key: 'ambulation',
+        label: 'Getting About',
+        type: 'beap',
+        beapKey: 'ambulation',
+        hideImages: true,
+        covers: 'ambulation',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        concernFrom: 4, // PENDING ASH
+        why:
+          'The same question as in the daily assessment, kept here because it is the one that matters most for arthritis.', // PENDING ASH
+      },
+      {
+        key: 'stiffness_after_rest',
+        label: 'Stiffness After Resting',
+        type: 'scale',
+        // Not the same question as getting about. This is about the first
+        // minute after standing up, which is when arthritis shows and when
+        // nobody is watching a walk.
+        covers: 'ambulation',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Gets up and moves off normally.',
+            'Very slightly slow to get going, loose within a few steps.',
+            'Stiff for the first minute or so after getting up.',
+            'Clearly stiff for several minutes, and needs to warm up before moving freely.',
+            'Stiff for a long time after resting, and never fully loosens up.',
+            'Struggles to get up at all, or cannot without help. (emergency)',
+          ],
+          cat: [
+            'Gets up and moves off normally.',
+            'Very slightly slow to get going, loose within a few steps.',
+            'Stiff for the first minute or so after getting up.',
+            'Clearly stiff for several minutes, and moves carefully before settling again.',
+            'Stiff for a long time after resting, and never fully loosens up.',
+            'Struggles to get up at all, or cannot without help. (emergency)',
+          ],
+        },
+        why:
+          'Stiffness after rest is often the first thing owners notice, and it comes on before any limp does.', // PENDING ASH
+      },
+      {
+        key: 'pain_relief_effect',
+        label: 'How Well Is The Pain Relief Working?',
+        type: 'choice',
+        options: [
+          { value: 'not_on_any', label: 'Not on any', severity: SEVERITY.OK },
+          { value: 'well', label: 'Working well', severity: SEVERITY.OK },
+          { value: 'wearing_off', label: 'Wears off before the next dose', severity: SEVERITY.CONCERN },
+          { value: 'not_helping', label: 'Not helping much', severity: SEVERITY.CONCERN },
+        ],
+        concernMessage:
+          'Worth raising with your vet — the dose, the timing or the medication itself may need changing.', // PENDING ASH
+        why:
+          'How well pain relief is holding is the thing your vet most wants to know at a recheck, and it is easy to lose track of between visits.', // PENDING ASH
+      },
+      // The BEAAAAPP palpation category rather than a yes/no of its own.
+      // Same reasoning as ambulation above: the daily assessment already
+      // grades response to touch on six species-specific levels, and a
+      // separate arthritis version would sit beside it free to disagree.
+      //
+      // The "where?" follow-up is the one thing BEAAAAPP does not ask and
+      // arthritis needs — which joint is sore is what changes the vet's
+      // examination.
+      {
+        key: 'palpation',
+        label: 'Response To Touch',
+        type: 'beap',
+        beapKey: 'palpation',
+        hideImages: true,
+        // Same category as the daily assessment, asked with the one thing it
+        // does not ask: where. Kept rather than referenced for the same
+        // cadence reason as ambulation above.
+        covers: 'palpation',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        concernFrom: 4, // PENDING ASH
+        followUp: {
+          key: 'palpation_where',
+          // A threshold, not an exact score — asked at every level from
+          // "flinches or pulls away" upwards.
+          whenAtLeast: 4, // PENDING ASH
+          type: 'text',
+          label: 'Where Is {name} Sore?',
+          placeholder: 'Hips, lower back, a particular leg…',
+        },
+        why:
+          'Gently running your hands over {them} tells you things watching cannot — and where {they} {are} sore is what your vet will want to examine.', // PENDING ASH
+      },
+
+      // --- Dogs only ------------------------------------------------------
+      {
+        key: 'walk_tolerance',
+        species: 'dog',
+        label: 'Walks',
+        type: 'scale',
+        // Stamina on a walk, against a distance this dog does every day —
+        // a comparison the daily activity grade has no way to make.
+        covers: 'activity',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Walks as far as ever and comes home keen.',
+            'Walks the usual distance but is a little slower at the end.',
+            'Slows down or lags before the end of the usual walk.',
+            'Needs the walk cut short, or is sore afterwards.',
+            'Manages only a short, slow walk.',
+            'Unwilling to walk at all.',
+          ],
+        },
+      },
+      {
+        key: 'cold_or_damp',
+        species: 'dog',
+        label: 'Worse In Cold Or Damp Weather',
+        type: 'yesno',
+        // Informational: weather is not deterioration, and flagging it amber
+        // every wet week would drag the trend down for something that
+        // reverses on its own.
+        informational: true,
+      },
+
+      // --- Cats only ------------------------------------------------------
+      {
+        key: 'jump_height',
+        species: 'cat',
+        label: 'Jumping Up',
+        type: 'choice',
+        // A specific loss the daily ambulation grade misses entirely: a cat
+        // who has quietly stopped using the windowsill still walks normally.
+        covers: 'ambulation',
+        relationship: RELATIONSHIP.DISTINCT,
+        options: [
+          { value: 'as_before', label: 'Gets to all the usual places', severity: SEVERITY.OK },
+          { value: 'hesitates', label: 'Gets there, but hesitates first', severity: SEVERITY.CONCERN },
+          { value: 'lower_only', label: 'Only jumps to lower places now', severity: SEVERITY.CONCERN },
+          { value: 'stopped', label: 'Has stopped jumping up', severity: SEVERITY.CONCERN },
+        ],
+        concernMessage: 'PENDING ASH',
+        why:
+          'Cats rarely limp. Choosing a lower windowsill, or taking the sofa in two steps instead of one, is usually the first sign.', // PENDING ASH
+      },
+      {
+        key: 'grooming',
+        species: 'cat',
+        label: 'Grooming',
+        type: 'scale',
+        // The daily assessment scores hygiene — whether {name} is clean. This
+        // asks whether {they} can still reach, which is a mobility question
+        // wearing a coat. A cat groomed by an owner scores well on one and
+        // badly on the other, and that gap is the finding.
+        covers: 'hygiene',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Coat is well kept all over.',
+            'Very slightly less tidy than usual.',
+            'Some untidy patches, usually over the back or hips.',
+            'Coat is matted or greasy where {they} cannot reach.',
+            'Has largely stopped grooming.',
+            'Coat is badly matted and {they} {are} not grooming at all.',
+          ],
+        },
+        why:
+          'A cat who cannot turn comfortably stops grooming the places that need turning — over the back, the hips and the base of the tail.', // PENDING ASH
+      },
+      {
+        key: 'litter_tray',
+        species: 'cat',
+        label: 'Using The Litter Tray',
+        type: 'choice',
+        // About climbing in, not about what comes out. The daily urination
+        // question is unchanged by a cat who cannot get over the side.
+        covers: 'urination',
+        relationship: RELATIONSHIP.DISTINCT,
+        options: [
+          { value: 'normal', label: 'Uses it normally', severity: SEVERITY.OK },
+          { value: 'awkward', label: 'Climbs in and out awkwardly', severity: SEVERITY.CONCERN },
+          { value: 'accidents', label: 'Sometimes goes just outside it', severity: SEVERITY.CONCERN },
+          { value: 'avoiding', label: 'Avoiding it altogether', severity: SEVERITY.CONCERN },
+        ],
+        concernMessage:
+          'A high-sided tray can be hard to climb into with sore joints. A lower one, or a second tray closer by, often helps.', // PENDING ASH
+      },
+    ],
   },
 
   kidney: {
     key: 'kidney',
     label: 'Kidney Disease',
     Icon: KidneyOrganIcon,
-    summary: 'Appetite, weight, drinking and urination, nausea and vomiting.',
+    summary:
+      'Appetite, weight, drinking and urination, nausea and vomiting.',
     comingSoon: true,
     parameters: [],
   },
 }
 
-export const CONDITION_LIST = Object.values(CONDITIONS)
+// Alphabetical by the label the owner actually reads, not by registry key
+// (which would put 'cardiac' before 'cognitive' and read as arbitrary). Sorted
+// here rather than in the screen so every consumer gets the same order.
+export const CONDITION_LIST = Object.values(CONDITIONS).sort((a, b) =>
+  a.label.localeCompare(b.label),
+)
 
 export const AVAILABLE_CONDITIONS = CONDITION_LIST.filter((entry) => !entry.comingSoon)
 
 export function conditionByKey(key) {
   return CONDITIONS[key] ?? null
+}
+
+// --- VCOG-CTCAE ------------------------------------------------------------
+//
+// The Veterinary Cooperative Oncology Group's Common Terminology Criteria for
+// Adverse Events: the standard way a veterinary oncologist grades treatment
+// side effects. Grades run 0 (none) to 4 (life-threatening). Grade 5 exists
+// in the published criteria and means death, so nothing in an app an owner
+// fills in daily should offer it.
+//
+// Two reasons this is its own type rather than a `scale`:
+//
+//   1. `scale` is BEAAAAPP-shaped — six levels scored 0/2/4/6/8/10, plotted on
+//      a fixed 0-10 axis. VCOG grades plotted on that axis would sit in the
+//      bottom half of every chart and read as trivial.
+//   2. The report has to print "Grade 2", because that is the number that
+//      means something to an oncologist. A 0-10 severity score does not.
+//
+// The owner never sees the published criteria, which are written for
+// clinicians ("increase of N stools per day over baseline") and would be
+// misgraded by anyone counting at home. Each grade instead carries an
+// owner-facing description; the owner picks the description, the app stores
+// and charts the grade.
+export const VCOG_MIN_GRADE = 0
+export const VCOG_MAX_GRADE = 4
+export const VCOG_SCORES = [0, 1, 2, 3, 4]
+
+export const VCOG_GRADE_LABELS = ['Grade 0', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4']
+
+// Deliberately NOT the BEAAAAPP band colours. Those run across six levels;
+// these run across five, and grade 3 is the conventional point at which an
+// oncologist wants to hear from the owner.
+export const VCOG_GRADE_COLOURS = [
+  '#3D8259',
+  '#3D8259',
+  '#C97A2E',
+  '#A33A2E',
+  '#A33A2E',
+]
+
+export function vcogColourForIndex(index) {
+  return VCOG_GRADE_COLOURS[index] ?? VCOG_GRADE_COLOURS[VCOG_GRADE_COLOURS.length - 1]
+}
+
+// Appetite, derived from the VCOG inappetence grade rather than asked twice.
+//
+// A cancer patient answers ONE question about eating: the VCOG-graded
+// inappetence question, which is the more precise instrument and the one an
+// oncologist needs in the report. Everywhere else in the app that wants a
+// familiar 0-10 appetite score reads it from that grade instead of putting a
+// second appetite question in front of the owner on the same day — two
+// answers about the same meal that can disagree.
+//
+// Direction matches the everyday-function questions, NOT BEAAAAPP severity:
+// 10 is eating normally, 0 is eating nothing. That is what the general
+// assessment's appetite slider means, so a derived value can stand in for a
+// recorded one without inverting.
+//
+// PENDING ASH — the mapping is mine, not reviewed. Index is the VCOG grade.
+export const APPETITE_SCORE_BY_VCOG_GRADE = [10, 8, 5, 2, 0]
+
+export function appetiteScoreFromVcogGrade(grade) {
+  const index = Number(grade)
+  if (!Number.isFinite(index)) return null
+  return APPETITE_SCORE_BY_VCOG_GRADE[index] ?? null
+}
+
+// Owner-facing text for each grade, lowest first. Falls back to an empty list
+// so a parameter still under authoring renders nothing rather than throwing.
+export function vcogLevelsFor(parameter) {
+  return (parameter.grades ?? []).map((entry) => entry.owner ?? '')
 }
 
 // The six option texts for a scale parameter, in the right species' wording.
@@ -281,6 +756,9 @@ export function conditionByKey(key) {
 // BeapCategoryPage does, so an unexpected species renders something sensible
 // rather than nothing.
 export function levelsFor(parameter, species) {
+  if (parameter.type === 'vcog') {
+    return vcogLevelsFor(parameter)
+  }
   if (parameter.type === 'scale') {
     return parameter.levels?.[species] ?? parameter.levels?.dog ?? []
   }
@@ -305,7 +783,16 @@ function thresholdFor(threshold, species) {
 // never imply a reading is fine when it simply has no rule to judge it by.
 // 'unsure' is never an answer, so it never triggers anything.
 export function evaluateParameter(parameter, value, species) {
-  if (value == null || value === '' || value === UNSURE) return null
+  if (value == null || value === '' || value === UNSURE || value === NOT_APPLICABLE) return null
+
+  // Informational parameters are recorded but never judged. The palliative
+  // medication module is the reason this exists: drinking more, urinating
+  // more and panting are EXPECTED on steroids, and scoring them as concerns
+  // would flag a comfortable, well-palliated patient amber every single day
+  // and drag their quality of life trend down for something benign. The
+  // readings are still logged, charted and exported — a steadily climbing
+  // water intake is worth showing a vet — they just aren't deterioration.
+  if (parameter.informational) return null
 
   if (parameter.type === 'number') {
     const numeric = Number(value)
@@ -340,6 +827,23 @@ export function evaluateParameter(parameter, value, species) {
       return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
     }
     if (parameter.concernWhen != null && value === parameter.concernWhen) {
+      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+    }
+    return { severity: SEVERITY.OK }
+  }
+
+  if (parameter.type === 'vcog') {
+    const grade = Number(value)
+    if (!Number.isFinite(grade)) return null
+
+    // Both cuts are opt-in per parameter. Where grade 3 sits between "manage
+    // at home" and "ring the practice" differs by category — grade 3 vomiting
+    // and grade 3 lethargy are not the same phone call — so neither is
+    // assumed here.
+    if (parameter.emergencyFromGrade != null && grade >= parameter.emergencyFromGrade) {
+      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+    }
+    if (parameter.concernFromGrade != null && grade >= parameter.concernFromGrade) {
       return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
     }
     return { severity: SEVERITY.OK }
@@ -383,15 +887,40 @@ export function evaluateParameter(parameter, value, species) {
 // The counts sit alongside because severity alone can't distinguish "one
 // thing is off" from "four things are off", and that difference is often the
 // trend an owner and vet actually want to see.
+// The parameter list to judge an entry against.
+//
+// For a condition with a fixed list this is just `condition.parameters`. For
+// one composed per pet (cancer), the caller resolves the list first with
+// parametersFor() and passes `{ ...definition, parameters: resolved }` — so
+// this reads whatever it is handed rather than assuming the static list, and
+// a definition carrying no static parameters at all summarises as empty
+// instead of throwing.
+function parametersOf(condition) {
+  return condition?.parameters ?? []
+}
+
 export function summariseEntry(condition, values, species) {
   let emergencies = 0
   let concerns = 0
   let answered = 0
   let unsure = 0
 
-  for (const parameter of condition.parameters) {
+  for (const parameter of parametersOf(condition)) {
+    // Skipped before the answered count, not just before the flag count. A
+    // day where the owner filled in nothing but the steroid module has not
+    // been assessed for concern, and colouring it green would say it had.
+    if (parameter.informational) continue
+
+    // A referenced parameter is never answered on this form, so it can
+    // neither flag a day nor count towards the day having been assessed.
+    if (!isAsked(parameter)) continue
+
     const value = values?.[parameter.key]
     if (value == null || value === '') continue
+    // Not counted as answered OR as unsure. A lymph node that cannot be felt
+    // is a normal finding with no number behind it, so it neither flags the
+    // day nor marks it as something the owner was unsure about.
+    if (value === NOT_APPLICABLE) continue
     if (value === UNSURE) { unsure += 1; continue }
     answered += 1
 
@@ -455,6 +984,28 @@ export function chartConfigFor(parameter, entries, species) {
       caption: threshold != null
         ? `The dashed line is ${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}. Readings above it are worth mentioning to your vet, especially if they stay there.`
         : null,
+    }
+  }
+
+  if (parameter.type === 'vcog') {
+    const points = entries
+      .map((entry) => ({ date: entry.date, value: Number(read(entry)) }))
+      .filter((point) => Number.isFinite(point.value))
+    if (points.length === 0) return null
+
+    return {
+      points,
+      // Fixed 0-4, never fitted to the data. A patient who has only ever been
+      // grade 0 and grade 1 would otherwise get a chart where grade 1 touches
+      // the top of the axis and looks like the worst thing that can happen.
+      domain: [VCOG_MIN_GRADE, VCOG_MAX_GRADE],
+      threshold: parameter.concernFromGrade ?? null,
+      // Where the scale came from is credited ONCE at the top of the
+      // assessment, the same way BEAAAAPP and the WSAVA chart are. Repeating
+      // it under every chart is noise on a screen an owner reads daily.
+      caption: parameter.concernFromGrade != null
+        ? `Graded 0 to 4. A rising line means worsening. The dashed line is grade ${parameter.concernFromGrade}.`
+        : 'Graded 0 to 4. A rising line means worsening.',
     }
   }
 

@@ -1,17 +1,23 @@
+import { Link } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
 
-// Horizontal row of the account's pets, for switching which one the whole
-// app is showing. Renders nothing for single-pet accounts — a "switcher"
-// with one option is just noise, and this keeps the Home header identical
-// to how it looked before multi-pet support for everyone who only has one.
+// Horizontal row of the account's pets, plus the control for adding one.
+//
+// Adding a pet lives here rather than as a home-screen tile because this IS
+// the pet control — someone looking to add a second pet looks where they
+// switch between them. It also means a one-off action stopped taking up a
+// slot in a grid of things people use daily.
+//
+// Renders for single-pet accounts too, unlike before: the switcher chips are
+// still hidden (a switcher with one option is noise), but the add control has
+// to be reachable or a one-pet account can never become a two-pet account.
 export default function PetSwitcher() {
   const { pets, selectedPetId, selectPet } = usePets()
 
-  if (pets.length < 2) return null
-
   return (
     <div className="pet-switcher" role="group" aria-label="Select pet">
-      {pets.map((pet) => (
+      {pets.length > 1 && pets.map((pet) => (
         <button
           key={pet.id}
           type="button"
@@ -22,6 +28,12 @@ export default function PetSwitcher() {
           {pet.name}
         </button>
       ))}
+
+      {/* Plus-tier feature, currently ungated for testing. Gate on
+          hasMultiPetAccess(customerInfo) when the products are live. */}
+      <Link to="/onboarding" className="pet-switcher-add">
+        <Plus size={14} /> Add a pet
+      </Link>
     </div>
   )
 }

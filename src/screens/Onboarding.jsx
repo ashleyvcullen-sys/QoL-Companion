@@ -177,10 +177,10 @@ export default function Onboarding() {
           </div>
 
           {humanYears != null && (
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 14px", borderRadius: 10, background: "#FBEFF1", border: "1px solid #F0DCE1", marginBottom: 14 }}>
-              <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>💡</span>
-              <p style={{ fontSize: 12.5, color: "#7A5B63", margin: 0, lineHeight: 1.5 }}>
-                <strong style={{ color: "#3D2B30" }}>Did you know?</strong> At {ageLabel}, {name || 'your pet'} is approximately <strong>{humanYears} in human years</strong> — based on AAHA/AAFP life stage guidelines.
+            <div className="tip-callout">
+              <span className="tip-callout-icon">💡</span>
+              <p>
+                <strong>Did you know?</strong> At {ageLabel}, {name || 'your pet'} is approximately <strong>{humanYears} in human years</strong> — based on AAHA/AAFP life stage guidelines.
               </p>
             </div>
           )}

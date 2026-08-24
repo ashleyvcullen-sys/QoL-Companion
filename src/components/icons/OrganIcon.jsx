@@ -41,3 +41,8 @@ export const BoneOrganIcon = (props) => <OrganIcon name="bone" {...props} />
 export const BrainOrganIcon = (props) => <OrganIcon name="brain" {...props} />
 export const EyeOrganIcon = (props) => <OrganIcon name="eye" {...props} />
 export const GutOrganIcon = (props) => <OrganIcon name="gut" {...props} />
+export const SeizureOrganIcon = (props) => <OrganIcon name="seizure" {...props} />
+export const CognitiveOrganIcon = (props) => <OrganIcon name="cognitive" {...props} />
+// Cancer has no single organ, so it borrows the cell-division glyph rather
+// than picking one site and implying the others don't count.
+export const CancerOrganIcon = (props) => <OrganIcon name="cancer" {...props} />

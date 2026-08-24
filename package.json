@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:overlap": "node --import ./scripts/register-audit-loader.mjs scripts/check-parameter-overlap.mjs",
+    "prebuild": "npm run check:overlap",
     "lint": "oxlint",
     "preview": "vite preview"
   },

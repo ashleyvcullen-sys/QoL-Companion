@@ -1,0 +1,42 @@
+-- Per-pet configuration for a monitored condition.
+--
+-- Every condition until now has had ONE fixed parameter list: a cardiac
+-- patient answers the same eight questions as every other cardiac patient.
+-- Cancer breaks that. There is no set of questions common to a lymphoma
+-- patient, an osteosarcoma patient and a cat with a nasal tumour, and
+-- structuring by tumour type would mean a new condition definition per
+-- diagnosis — twenty of them, each needing clinical authoring before
+-- anything ships.
+--
+-- So a cancer patient's parameter list is composed per pet, from sign
+-- modules the owner selects, and this column holds that selection.
+--
+-- jsonb rather than columns, for the same reason condition_entries.values is
+-- jsonb: which modules exist, what they contain and what they are called all
+-- live in app code (src/lib/cancerModules.js), versioned with the app. A
+-- column per module would make adding one a migration rather than a data
+-- edit.
+--
+-- Shape:
+--   {
+--     "preset":    "mast_cell",        -- what the vet diagnosed; metadata only
+--     "modules":   ["mass", "gi"],     -- sign modules the owner selected
+--     "treatment": "chemo",            -- one treatment module, or null
+--     "masses": [                      -- see below
+--       { "id": "m1", "label": "Left flank", "firstSeen": "2026-08-01" }
+--     ]
+--   }
+--
+-- `masses` is the one genuinely new shape. A mast cell patient can have
+-- three lumps, each needing its own size series and photo thread, so a mass
+-- is an INSTANCE that generates parameters (mass:m1:size_mm, ...) rather than
+-- a parameter itself. Entry values are keyed the same way, so
+-- condition_entries needs no change at all.
+--
+-- Empty default: every existing row is a condition with a fixed parameter
+-- list, and an empty config resolves to exactly that. Nothing to back-fill.
+--
+-- Run this once in the Supabase Dashboard SQL Editor. See README.md.
+
+alter table public.pet_conditions
+  add column if not exists config jsonb not null default '{}'::jsonb;
