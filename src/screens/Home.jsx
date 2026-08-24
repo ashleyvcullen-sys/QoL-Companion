@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertTriangle, Heart, TrendingUp, Bell, HeartHandshake, FileDown, LogOut, PawPrint, Stethoscope } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
-import { useRevenueCat } from '../lib/RevenueCatContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
-import { hasMultiPetAccess, hasDiseaseMonitoringAccess } from '../lib/entitlements'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
@@ -29,7 +27,6 @@ const NAV_ITEMS = [
 
 export default function Home() {
   const { pets, refresh } = usePets()
-  const { customerInfo } = useRevenueCat()
   const pet = pets[0]
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
@@ -171,11 +168,7 @@ export default function Home() {
         <button
           type="button"
           className="icon-tile-link"
-          onClick={() => {
-            // Once disease monitoring is a real, buildable feature, the
-            // granted branch routes to it instead of the preview modal.
-            if (!hasDiseaseMonitoringAccess(customerInfo)) setShowDiseaseMonitoringPreview(true)
-          }}
+          onClick={() => setShowDiseaseMonitoringPreview(true)}
         >
           <Card className="icon-tile icon-tile-disabled">
             <span className="icon-badge icon-badge-disabled">
@@ -186,16 +179,12 @@ export default function Home() {
           </Card>
         </button>
 
-        {/* TODO: multi-pet support isn't built yet — this tile is a placeholder.
-            Replace with a real "add pet" flow once multi-pet support ships;
-            the granted branch below already routes there instead of the
-            preview modal once hasMultiPetAccess() starts returning true. */}
+        {/* Placeholder tile: multi-pet isn't part of this build. Tapping it
+            explains that rather than doing nothing. */}
         <button
           type="button"
           className="icon-tile-link"
-          onClick={() => {
-            if (!hasMultiPetAccess(customerInfo)) setShowAddPetPreview(true)
-          }}
+          onClick={() => setShowAddPetPreview(true)}
         >
           <Card className="icon-tile icon-tile-disabled">
             <span className="icon-badge icon-badge-disabled">
@@ -238,10 +227,6 @@ export default function Home() {
           title="Monitoring Specific Diseases"
           message="Specific quality-of-life tracking for diagnosed conditions like arthritis, cardiac disease, kidney disease, and more — coming soon."
           onClose={() => setShowDiseaseMonitoringPreview(false)}
-          // showPlansLink temporarily omitted — re-add once real subscription
-          // products exist in App Store Connect / RevenueCat. Paywall screen
-          // and RevenueCat integration are untouched, just unreachable from
-          // the UI for now so App Review doesn't see an empty paywall.
         />
       )}
 
@@ -250,7 +235,6 @@ export default function Home() {
           title="Add Another Pet"
           message="Support for tracking more than one pet on the same account is coming soon."
           onClose={() => setShowAddPetPreview(false)}
-          // showPlansLink temporarily omitted — see note above.
         />
       )}
 

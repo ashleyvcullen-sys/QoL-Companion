@@ -17,7 +17,6 @@
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/share": "^8.0.1",
-    "@revenuecat/purchases-capacitor": "^13.4.0",
     "@supabase/supabase-js": "^2.110.8",
     "capacitor-native-settings": "^8.2.0",
     "html2canvas": "^1.4.1",

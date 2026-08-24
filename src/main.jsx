@@ -6,7 +6,6 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/AuthContext'
 import { PetsProvider } from './lib/PetsContext'
-import { RevenueCatProvider } from './lib/RevenueCatContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -18,9 +17,7 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <AuthProvider>
           <PetsProvider>
-            <RevenueCatProvider>
-              <App />
-            </RevenueCatProvider>
+            <App />
           </PetsProvider>
         </AuthProvider>
       </BrowserRouter>
