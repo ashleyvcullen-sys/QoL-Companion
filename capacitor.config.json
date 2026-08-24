@@ -2,9 +2,6 @@
   "appId": "com.qolcompanion.app",
   "appName": "QoL Companion",
   "webDir": "dist",
-  "ios": {
-    "webContentsDebuggingEnabled": true
-  },
   "experimental": {
     "ios": {
       "spm": {
