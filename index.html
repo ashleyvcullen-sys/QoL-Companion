@@ -5,6 +5,134 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>QoL Companion</title>
+
+    <!--
+      DIAGNOSTIC: last-resort crash reporter.
+
+      A plain (non-module) inline script, deliberately placed before the app
+      script and written in ES5 with no imports, so it is registered and
+      usable no matter what happens afterwards.
+
+      This exists because a try/catch inside main.jsx cannot catch the most
+      likely cause of a white screen: a throw while the bundle's modules are
+      still being *evaluated*. In that case main.jsx's own body never runs, so
+      nothing inside it can report anything. window.onerror fires for those,
+      and for async failures a try/catch would also miss.
+
+      Renders the error as plain, selectable text over the page so it can be
+      read or screenshotted on a device with no debugger attached.
+    -->
+    <script>
+      (function () {
+        var shown = 0
+
+        function render(title, name, message, stack, extra) {
+          try {
+            shown += 1
+            // Only the first error takes over the screen — a cascade of
+            // follow-on errors would otherwise bury the original cause.
+            if (shown > 1) return
+
+            var wrap = document.createElement('div')
+            wrap.setAttribute(
+              'style',
+              'position:fixed;inset:0;z-index:2147483647;overflow:auto;' +
+                'background:#fff;color:#000;' +
+                'padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);' +
+                '-webkit-user-select:text;user-select:text;' +
+                'font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;'
+            )
+
+            function line(text, weight, size) {
+              var el = document.createElement('div')
+              el.setAttribute(
+                'style',
+                'white-space:pre-wrap;word-break:break-word;margin:0 0 10px;' +
+                  'font-weight:' + (weight || 'normal') + ';font-size:' + (size || 13) + 'px;'
+              )
+              el.textContent = text
+              wrap.appendChild(el)
+            }
+
+            line(title, 'bold', 15)
+            line('NAME:    ' + (name || '(none)'))
+            line('MESSAGE: ' + (message || '(none)'))
+            if (extra) line(extra)
+            line('STACK:\n' + (stack || '(no stack)'))
+            line('WHEN:    ' + new Date().toISOString())
+            line('URL:     ' + String(window.location.href))
+            line('UA:      ' + String(navigator.userAgent))
+
+            // Replacing children rather than document.write, which would be
+            // ignored this late in the document lifecycle.
+            if (document.body) {
+              document.body.appendChild(wrap)
+            } else {
+              document.addEventListener('DOMContentLoaded', function () {
+                document.body.appendChild(wrap)
+              })
+            }
+          } catch (e) {
+            // The reporter must never itself blank the screen. Fall back to
+            // the crudest possible output.
+            try {
+              document.body.innerText = 'Fatal error, and the error reporter also failed: ' + e
+            } catch (ignored) {
+              /* nothing left to try */
+            }
+          }
+        }
+
+        // Exposed so main.jsx can reuse the same renderer for a synchronous
+        // render failure, rather than duplicating it.
+        window.__qolShowFatalError = function (label, err) {
+          render(
+            label || 'App failed to start',
+            err && err.name,
+            err && err.message ? err.message : String(err),
+            err && err.stack
+          )
+        }
+
+        window.addEventListener('error', function (event) {
+          // Resource load failures (a missing script/css/image) surface here
+          // too, but carry no Error object — worth reporting distinctly,
+          // since a bundle that 404s is its own kind of white screen.
+          if (event && !event.error && event.target && event.target !== window) {
+            var el = event.target
+            render(
+              'Failed to load a required file',
+              'ResourceError',
+              String(el.src || el.href || '(unknown URL)'),
+              '(no stack — resource load failure)',
+              'TAG:     ' + String(el.tagName || '')
+            )
+            return
+          }
+
+          var err = event && event.error
+          render(
+            'Uncaught error during startup',
+            err && err.name,
+            err && err.message ? err.message : event && event.message,
+            err && err.stack,
+            event && event.filename
+              ? 'SOURCE:  ' + event.filename + ':' + event.lineno + ':' + event.colno
+              : null
+          )
+        }, true) // capture phase, so resource errors (which don't bubble) are seen
+
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event && event.reason
+          render(
+            'Unhandled promise rejection',
+            reason && reason.name,
+            reason && reason.message ? reason.message : String(reason),
+            reason && reason.stack
+          )
+        })
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
