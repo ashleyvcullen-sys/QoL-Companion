@@ -46,8 +46,63 @@ echo "Using npm:  $(command -v npm) ($(npm -v))"
 echo "=== npm install ==="
 npm install
 
+# --- .env for Vite -----------------------------------------------------
+#
+# .env is gitignored, so a clean Xcode Cloud checkout has none. Vite inlines
+# import.meta.env.VITE_* at BUILD time, so without this every VITE_ value is
+# undefined in the bundle. src/lib/supabase.js calls createClient() at module
+# top level, which then throws "supabaseUrl is required." while the bundle is
+# still evaluating — before React mounts, so no error boundary can catch it.
+# The result is a white screen on launch. That is the bug this fixes.
+#
+# Values come from Xcode Cloud's own environment variables, set on the
+# workflow in App Store Connect. Written before `npm run build` because that
+# is when Vite reads them.
+echo "=== writing .env from Xcode Cloud environment ==="
+
+missing=""
+[ -z "${VITE_SUPABASE_URL:-}" ] && missing="$missing VITE_SUPABASE_URL"
+[ -z "${VITE_SUPABASE_ANON_KEY:-}" ] && missing="$missing VITE_SUPABASE_ANON_KEY"
+
+if [ -n "$missing" ]; then
+  echo "error: required environment variable(s) not set:$missing" >&2
+  echo "       Set them on the workflow in App Store Connect:" >&2
+  echo "       Xcode Cloud > Manage Workflows > (workflow) > Environment > Environment Variables" >&2
+  echo "       Without them the build produces an app that white-screens on launch." >&2
+  exit 1
+fi
+
+# Values are never echoed — Xcode Cloud build logs are readable by anyone
+# with access to the App Store Connect record.
+{
+  echo "VITE_SUPABASE_URL=${VITE_SUPABASE_URL}"
+  echo "VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}"
+  if [ -n "${VITE_REVENUECAT_API_KEY:-}" ]; then
+    echo "VITE_REVENUECAT_API_KEY=${VITE_REVENUECAT_API_KEY}"
+  fi
+} > .env
+
+echo "Wrote .env with $(wc -l < .env | tr -d ' ') variable(s)."
+if [ -z "${VITE_REVENUECAT_API_KEY:-}" ]; then
+  # Not fatal: RevenueCatContext logs and sets configureError rather than
+  # throwing, so the app still starts — purchases just stay unavailable.
+  echo "note: VITE_REVENUECAT_API_KEY not set — in-app purchases will be inactive in this build."
+fi
+
 echo "=== npm run build ==="
 npm run build
+
+# Fail loudly rather than shipping a silently broken bundle. If the value did
+# not get inlined, the app would white-screen on launch exactly as before —
+# far better to break the build here, where the reason is obvious.
+echo "=== verifying Supabase config was inlined into the bundle ==="
+if grep -rqF "${VITE_SUPABASE_URL}" dist/assets/*.js; then
+  echo "Supabase URL found in the built bundle."
+else
+  echo "error: the Supabase URL is not present in dist/assets — Vite did not inline it." >&2
+  echo "       The resulting app would white-screen on launch. Failing the build." >&2
+  exit 1
+fi
 
 echo "=== npx cap sync ios ==="
 npx cap sync ios
