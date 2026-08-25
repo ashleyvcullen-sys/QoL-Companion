@@ -77,11 +77,14 @@ export default function Conditions() {
               <span className={`icon-badge condition-badge ${disabled ? 'icon-badge-disabled' : ''}`.trim()}>
                 {Icon && <Icon size={34} color="#fff" />}
               </span>
+              {/* Label only. The summary — what a condition covers, which
+                  diseases fall under it — used to sit here, and turned the
+                  list into eight paragraphs to read before you could choose
+                  anything. It now appears on the condition's own page, where
+                  it is the answer to "is this the right one?" rather than a
+                  wall of text in front of the question. */}
               <span className="condition-tile-body">
                 <span className="condition-tile-label">{condition.label}</span>
-                {condition.summary && (
-                  <span className="assessment-hint">{condition.summary}</span>
-                )}
               </span>
               {disabled ? (
                 <span className="condition-tile-status"><Lock size={13} /> Coming soon</span>

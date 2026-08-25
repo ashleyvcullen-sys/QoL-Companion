@@ -15,7 +15,13 @@ import SliderOnlyPage from './assessment/SliderOnlyPage'
 import BeapCategoryPage from './assessment/BeapCategoryPage'
 import FelineGrimacePage from './assessment/FelineGrimacePage'
 import ReviewPage from './assessment/ReviewPage'
-import { STOOL_SYMPTOM_OPTIONS, HYGIENE_SYMPTOM_OPTIONS, STOOL_NONE_TODAY_OPTION } from '../lib/assessmentOptions'
+import {
+  STOOL_SYMPTOM_OPTIONS,
+  HYGIENE_SYMPTOM_OPTIONS,
+  STOOL_NONE_TODAY_OPTION,
+  STOOL_EMERGENCY,
+  SLEEP_NOTES,
+} from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
 import { usePets } from '../lib/PetsContext'
@@ -316,6 +322,7 @@ export default function QualityOfLifeAssessment() {
       icon={PooIcon}
       scaleLabels={['Watery / diarrhoea', 'Mixed', 'Well formed']}
       extraOption={STOOL_NONE_TODAY_OPTION}
+      emergency={STOOL_EMERGENCY}
     />,
     <VomitingPage
       key="vomiting"
@@ -371,6 +378,7 @@ export default function QualityOfLifeAssessment() {
       value={entry.scores.sleep}
       onChange={(v) => updateScore('sleep', v)}
       icon={SleepIcon}
+      description={SLEEP_NOTES[pet.species] ?? SLEEP_NOTES.dog}
       scaleLabels={['Restless, disrupted, or reversed day/night pattern', 'Some restless nights', 'Settles and sleeps normally']}
     />,
     ...BEAP_CATEGORIES.map((category) =>

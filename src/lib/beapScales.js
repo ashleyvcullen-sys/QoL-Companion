@@ -44,12 +44,12 @@ export const BEAP_SCALES = {
       "Won't get up at all.",
     ] },
     { key: "appetite", letter: "A", label: "Appetite", levels: [
-      "Eating and drinking normally.",
+      "Eating normally.",
       "Slightly slower to eat.",
       "A bit picky, some hesitancy.",
       "Eating noticeably less; only wants treats or human food.",
-      "Little interest in food or water, even treats. (emergency)",
-      "Refusing food and water. (emergency)",
+      "Little interest in food, even treats. (emergency)",
+      "Refusing food. (emergency)",
     ] },
     { key: "attitude", letter: "A", label: "Attitude", levels: [
       "Happy, interested, seeks attention.",
@@ -57,7 +57,7 @@ export const BEAP_SCALES = {
       "Somewhat subdued or less interested.",
       "Withdrawn, less interested in family.",
       "Avoids interaction, anxious or irritable. Hides often.",
-      "Unresponsive or clearly distressed. Constantly hiding or withdrawn.",
+      "Unresponsive or clearly distressed. Constantly hiding or withdrawn. (emergency)",
     ] },
     { key: "posture", letter: "P", label: "Posture", levels: [
       "Relaxed at rest and during play; tail moving normally.",
@@ -65,7 +65,7 @@ export const BEAP_SCALES = {
       "Slightly tense or restless; tail lower. Seems reluctant to lay down or relax.",
       "Tense, guarded, reluctant to lie down; tail tucked.",
       "Hunched, tucked tail, odd position. Can't seem to get comfortable.",
-      "Rigid and trembling/shaking, can't seem to get comfortable.",
+      "Rigid and trembling/shaking, can't seem to get comfortable. (emergency)",
     ] },
     { key: "palpation", letter: "P", label: "Palpation (response to touch)", levels: [
       "Enjoys touch, no tension.",
@@ -110,12 +110,12 @@ export const BEAP_SCALES = {
       "Withdrawn and hiding, won't engage; incontinence.",
     ] },
     { key: "appetite", letter: "A", label: "Appetite", levels: [
-      "Eating and drinking normally.",
+      "Eating normally.",
       "Slightly slower to eat.",
       "A bit picky, some hesitancy.",
       "Eating noticeably less; only wants treats or human food.",
-      "Little interest in food or water, even treats. (emergency)",
-      "Refusing food and water. (emergency)",
+      "Little interest in food, even treats. (emergency)",
+      "Refusing food. (emergency)",
     ] },
     { key: "attitude", letter: "A", label: "Attitude", levels: [
       "Sociable, curious, seeks attention.",
@@ -123,7 +123,7 @@ export const BEAP_SCALES = {
       "Somewhat subdued or less interested.",
       "Withdrawn, hides more, less interested in family.",
       "Avoids interaction, anxious or irritable.",
-      "Unresponsive or clearly distressed.",
+      "Unresponsive or clearly distressed. (emergency)",
     ] },
     { key: "posture", letter: "P", label: "Posture", levels: [
       "Relaxed at rest; tail moving normally.",
@@ -131,7 +131,7 @@ export const BEAP_SCALES = {
       "Sits hunched or tense ('loaf') more than usual; tail flicking more.",
       "Hunched 'loaf' posture for long periods; tail low or tucked.",
       "Tightly hunched, tucked in, won't move from position.",
-      "Rigid, trembling, can't get comfortable.",
+      "Rigid, trembling, can't get comfortable. (emergency)",
     ] },
     { key: "palpation", letter: "P", label: "Palpation (response to touch)", levels: [
       "Enjoys touch, no tension.",

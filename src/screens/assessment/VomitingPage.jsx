@@ -27,7 +27,7 @@ export default function VomitingPage({ value, onChange, icon, species }) {
     <div className="assessment-page">
       <SectionTitle>Vomiting</SectionTitle>
       <IconLabelHeader icon={icon} label="Vomiting" />
-      <p>Has your pet been vomiting recently?</p>
+      <p>Has your pet been vomiting?</p>
       <ChoiceButtons
         options={VOMITING_HAS_VOMITED_OPTIONS}
         value={hasVomited}

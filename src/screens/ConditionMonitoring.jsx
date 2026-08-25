@@ -246,6 +246,15 @@ export default function ConditionMonitoring() {
               )}
               <SectionTitle>{definition.label}</SectionTitle>
             </div>
+            {/* Summary first, then intro: what this condition covers, then
+                what monitoring it involves. The summary moved here from the
+                condition list, where it was being read before anyone had
+                chosen anything. */}
+            {definition.summary && (
+              <p className="assessment-hint condition-intro">
+                <PetText template={definition.summary} pet={pet} />
+              </p>
+            )}
             {definition.intro && (
               <p className="assessment-hint condition-intro">
                 <PetText template={definition.intro} pet={pet} />
