@@ -4,7 +4,7 @@ import WellbeingConcepts from '../../components/WellbeingConcepts'
 export default function IntroPage({ petName, isFirstAssessment }) {
   return (
     <div className="assessment-page">
-      <SectionTitle>Quality Of Life Assessment</SectionTitle>
+      <SectionTitle>Overall Quality of Life Assessment</SectionTitle>
       {isFirstAssessment ? (
         <p>
           Let's establish what's normal for {petName}. This first assessment becomes

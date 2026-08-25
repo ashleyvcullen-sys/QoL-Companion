@@ -60,6 +60,40 @@ const WEEKDAY_OPTIONS = [
 // the 31st — and an owner would have no way of knowing.
 const MONTH_DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }))
 
+// What the reminders will actually do, in words, for the line under the time
+// picker. It used to say "Once a month" whatever the frequency, which was
+// wrong the moment anyone chose twice a month — and wrong in the direction
+// that matters, since it described fewer reminders than they would get.
+//
+// Daily is the odd one out and says so: one reminder covers the whole day's
+// doses rather than one per dose, because there is no way to know how the
+// owner spaces them.
+function describeReminderPlan(form) {
+  const count = Number(form.frequencyCount) || 1
+  const chosen = (form.reminderDays ?? []).length
+
+  if (form.frequencyPeriod === 'day') {
+    return count === 1
+      ? 'One reminder each day, at this time.'
+      : `One reminder each day at this time, mentioning all ${count} doses.`
+  }
+
+  const period = form.frequencyPeriod === 'week' ? 'week' : 'month'
+  const anchor = form.frequencyPeriod === 'week'
+    ? 'the same weekday the course started'
+    : 'the same date the course started'
+
+  if (chosen === 0) {
+    return count === 1
+      ? `One reminder each ${period}, on ${anchor}.`
+      : `${count} doses a ${period}, but one reminder — on ${anchor}. Pick days below to be reminded for each.`
+  }
+
+  return chosen === 1
+    ? `One reminder each ${period}, on the day picked below.`
+    : `${chosen} reminders each ${period}, on the days picked below.`
+}
+
 const MODE_OPTIONS = [
   { value: 'times', label: 'At set times' },
   { value: 'frequency', label: 'A number of times' },
@@ -158,11 +192,26 @@ export default function Medications() {
 
   function toggleReminderDay(day) {
     const chosen = form.reminderDays ?? []
+    if (chosen.includes(day)) {
+      setForm({ ...form, reminderDays: chosen.filter((entry) => entry !== day) })
+      return
+    }
+    // Capped at the number of doses. Three reminders for a medication given
+    // twice a week would have the app telling an owner to give a dose that
+    // was never prescribed — the one kind of wrong a medication reminder
+    // must not be.
+    if (chosen.length >= (Number(form.frequencyCount) || 1)) return
+    setForm({ ...form, reminderDays: [...chosen, day].sort((a, b) => a - b) })
+  }
+
+  // Lowering the count has to drop days that no longer fit, or the form would
+  // sit in a state its own rule forbids.
+  function setFrequencyCount(raw) {
+    const count = Number(raw) || 1
     setForm({
       ...form,
-      reminderDays: chosen.includes(day)
-        ? chosen.filter((entry) => entry !== day)
-        : [...chosen, day].sort((a, b) => a - b),
+      frequencyCount: raw,
+      reminderDays: (form.reminderDays ?? []).slice(0, count),
     })
   }
 
@@ -579,7 +628,7 @@ export default function Medications() {
                       min="1"
                       max="12"
                       value={form.frequencyCount}
-                      onChange={(e) => setForm({ ...form, frequencyCount: e.target.value })}
+                      onChange={(e) => setFrequencyCount(e.target.value)}
                     />
                   </div>
                   <div className="field">
@@ -621,13 +670,7 @@ export default function Medications() {
                     value={form.reminderTime}
                     onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
                   />
-                  <p className="assessment-hint">
-                    {form.frequencyPeriod === 'week'
-                      ? 'Once a week, on the same weekday the course started.'
-                      : form.frequencyPeriod === 'month'
-                        ? 'Once a month, on the same date the course started.'
-                        : 'Once a day, at this time.'}
-                  </p>
+                  <p className="assessment-hint">{describeReminderPlan(form)}</p>
                   {!isNative && (
                     <p className="assessment-hint">
                       Reminders only work in the app on your phone, not in a browser.
@@ -652,6 +695,10 @@ export default function Medications() {
                           key={option.value}
                           type="button"
                           className={`chip ${(form.reminderDays ?? []).includes(option.value) ? 'selected' : ''}`.trim()}
+                          disabled={
+                            !(form.reminderDays ?? []).includes(option.value)
+                            && (form.reminderDays ?? []).length >= (Number(form.frequencyCount) || 1)
+                          }
                           onClick={() => toggleReminderDay(option.value)}
                         >
                           {option.label}
@@ -659,19 +706,18 @@ export default function Medications() {
                       ))}
                     </div>
                     <p className="assessment-hint">
+                      {(form.reminderDays ?? []).length}/{Number(form.frequencyCount) || 1} picked.
+                      {' '}
                       {(form.reminderDays ?? []).length === 0
                         ? 'Pick nothing and you\'ll be reminded on the same day the course started.'
-                        : form.frequencyPeriod === 'month'
-                          ? 'Dates stop at the 28th, so a reminder never falls on a date some months do not have.'
-                          : 'One reminder on each day you have picked.'}
+                        : (form.reminderDays ?? []).length >= (Number(form.frequencyCount) || 1)
+                          ? 'That is all the doses accounted for. Untick one to change it.'
+                          : 'You can pick more, or leave it here if some doses fall on the same day.'}
                     </p>
-                    {(form.reminderDays ?? []).length > 0
-                      && (form.reminderDays ?? []).length !== Number(form.frequencyCount) && (
+                    {form.frequencyPeriod === 'month' && (
                       <p className="assessment-hint">
-                        You have picked {(form.reminderDays ?? []).length}{' '}
-                        {(form.reminderDays ?? []).length === 1 ? 'day' : 'days'} for a medication given{' '}
-                        {form.frequencyCount}× per {form.frequencyPeriod}. That may be exactly what you
-                        want — it is only worth a second look.
+                        Dates stop at the 28th, so a reminder never falls on a date some months
+                        do not have.
                       </p>
                     )}
                   </div>

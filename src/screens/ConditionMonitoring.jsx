@@ -89,6 +89,10 @@ export default function ConditionMonitoring() {
   // leave every entry behind, so a mis-tap was recoverable by re-adding it.
   // It no longer is.
   const [confirmRemove, setConfirmRemove] = useState(null)
+  // Shown after a successful save. Until now the form gave no answer at all
+  // when it worked — the page simply sat there, which reads as "nothing
+  // happened" and invites a second tap on Save.
+  const [justSaved, setJustSaved] = useState(false)
 
   const today = todayIsoDate()
 
@@ -278,6 +282,7 @@ export default function ConditionMonitoring() {
       // The same answer, kept the same in both places. Only categories the
       // owner actually answered here, and only where the value has moved —
       // an unchanged answer needs no write, and 'unsure' is not a score.
+      let syncFailed = false
       try {
         for (const parameter of parameters) {
           if (parameter.scoreKey) {
@@ -310,6 +315,7 @@ export default function ConditionMonitoring() {
       } catch (syncError) {
         // The condition entry itself saved. Say precisely that, rather than
         // letting the outer catch report a failure that did not happen.
+        syncFailed = true
         setErrorMessage(
           `Saved here, but today's assessment could not be updated to match: ${syncError.message}`,
         )
@@ -319,6 +325,11 @@ export default function ConditionMonitoring() {
       setNotes('')
       refreshEntries()
       refresh()
+      // A local flag rather than reading errorMessage: setState above does
+      // not change the value this closure captured, so testing the state here
+      // would always see the message as empty and pop the modal over the top
+      // of a failure.
+      if (!syncFailed) setJustSaved(true)
     } catch (error) {
       setErrorMessage(error.message || 'Could not save that entry.')
     } finally {
@@ -388,11 +399,17 @@ export default function ConditionMonitoring() {
                 <PetText template={definition.summary} pet={pet} />
               </p>
             )}
-            {definition.intro && (
-              <p className="assessment-hint condition-intro">
-                <PetText template={definition.intro} pet={pet} />
-              </p>
-            )}
+            {/* A string or a list of them. Cognitive decline needs two: a
+                caution that sends someone to a vet, and separately how to use
+                the section. Run together in one block, the caution reads as
+                preamble to the instructions rather than as the point. */}
+            {(Array.isArray(definition.intro) ? definition.intro : [definition.intro])
+              .filter(Boolean)
+              .map((paragraph, index) => (
+                <p key={index} className="assessment-hint condition-intro">
+                  <PetText template={paragraph} pet={pet} />
+                </p>
+              ))}
             {definition.citation && (
               <p className="beap-citation">{definition.citation}</p>
             )}
@@ -494,7 +511,7 @@ export default function ConditionMonitoring() {
                   pet={pet}
                   note={
                     assessmentValueFor(parameter) != null
-                      ? "Filled in from today's Quality Of Life Assessment, because this is the same question. You can change it — it will change in both places."
+                      ? "Filled in from today's Overall Quality of Life Assessment, because this is the same question. You can change it — it will change in both places."
                       : null
                   }
                   number={index + 1}
@@ -638,6 +655,32 @@ export default function ConditionMonitoring() {
           </Card>
 
         </>
+      )}
+
+      {justSaved && (
+        <Modal title="Saved" onClose={() => setJustSaved(false)}>
+          <p>
+            Today's {definition.label} assessment is recorded for {pet.name}.
+          </p>
+          <p className="assessment-hint">
+            You can change today's answers any time — coming back to this page and saving
+            again replaces them rather than adding a second entry.
+          </p>
+          <div className="modal-confirm-actions">
+            <Btn type="button" variant="outline" onClick={() => setJustSaved(false)}>
+              Stay here
+            </Btn>
+            <Btn
+              type="button"
+              onClick={() => {
+                setJustSaved(false)
+                navigate('/conditions')
+              }}
+            >
+              Back to conditions
+            </Btn>
+          </div>
+        </Modal>
       )}
 
       {confirmRemove && (

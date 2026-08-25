@@ -3,7 +3,7 @@ import SectionTitle from '../../components/SectionTitle'
 import HomeCareTipsIcon from '../../components/icons/HomeCareTipsIcon'
 
 const HELP_ITEMS = [
-  { Icon: Heart, label: 'Quality Of Life Assessments' },
+  { Icon: Heart, label: 'Overall Quality of Life Assessments' },
   { Icon: TrendingUp, label: 'Trends Over Time' },
   { Icon: HomeCareTipsIcon, label: 'Advice For Home Care' },
   { Icon: FileDown, label: 'Summaries For Your Vet' },

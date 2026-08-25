@@ -239,7 +239,7 @@ export function sharedParameter(key, overrides = {}) {
 //
 // PENDING ASH — drafted by me.
 export const SAME_AS_ASSESSMENT =
-  'This is the same question as in the daily assessment. Answering it in one place fills it in the other, and you can change it in either.'
+  'This is the same question as in the Overall Quality of Life Assessment. Answering it in one place fills it in the other, and you can change it in either.'
 
 export const CONDITIONS = {
   cardiac: {
@@ -468,7 +468,7 @@ export const CONDITIONS = {
     // "canine" or "feline" from the pet's species, so a dog owner reads
     // "canine dementia" rather than being asked to pick their half of it.
     summary:
-      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called {canineOrFeline} dementia.',
+      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called **{canineOrFeline} dementia**.',
     // PENDING ASH — confirm the instrument and the exact wording. Nothing from
     // DISHAA is reproduced here; the domains are followed and the owner
     // wording is drafted.
@@ -482,8 +482,10 @@ export const CONDITIONS = {
     //
     // PENDING ASH — the first two sentences are mine. The rest is yours,
     // approved 25 Aug 2026.
-    intro:
-      '**Many signs of cognitive decline can also be signs of illness.** A veterinary assessment is important to rule out other causes before assuming cognitive decline. Cognitive decline usually happens gradually, which makes the small changes easy to miss. Regular check ins and filling out this questionnaire can help to highlight any trends or consistent changes worth flagging with your vet.',
+    intro: [
+      '**Many signs of cognitive decline can also be signs of illness.** A veterinary assessment is important to rule out other causes before assuming cognitive decline.',
+      'Cognitive decline usually happens gradually, which makes the small changes easy to miss. Regular check ins and filling out this questionnaire can help to highlight any trends or consistent changes worth flagging with your vet.',
+    ],
     parameters: [
       // --- Disorientation -------------------------------------------------
       {
@@ -537,15 +539,18 @@ export const CONDITIONS = {
         // fall away first: the greeting at the door, asking to be stroked.
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        why:
+          'All dogs interact differently, and some are naturally more independent than others. The main thing is to know what is normal for {name}, and to notice a change from that.',
         concernFrom: 4, // PENDING ASH
         levels: {
           dog: [
-            'Greets you, seeks attention and enjoys being stroked as always.',
-            'Slightly less inclined to come and find you.',
-            'Greets you less often, and asks for attention less than {they} used to.',
-            'Rarely greets you, and often moves away when stroked.',
-            'Seldom interacts, and does not seem to recognise family members every time.',
-            'No longer greets or seeks contact, and may not recognise familiar people.',
+            'Greets you, seeks attention and enjoys interacting with you as {they} normally {do}.',
+            'Slightly less inclined to interact with you than normal.',
+            'Notably less interactive than normal.',
+            'Rarely interacts with you and may even move away or avoid interaction.',
+            'Rarely interacts with you, and acts as if {they} {do} not recognise you or other family members.',
+            'No longer seeks contact or interaction. May not recognise familiar people.',
           ],
         },
       },
@@ -735,9 +740,18 @@ export const CONDITIONS = {
           'Ears held back, tail tucked, body held low.',
           'Hiding, or pressing hard against you.',
           'Barking, whining or howling, particularly when left alone.',
-          'Chewing, scratching at doors, or toileting indoors when left.',
+          'Chewing, scratching at doors, or toileting indoors when left alone.',
           'Turning down food that would normally be taken.',
         ],
+        // The same caution the condition's introduction opens with, repeated
+        // here because this list is behind a button — an owner who taps
+        // straight into it may never have read the top of the screen, and
+        // this is the list most likely to have them conclude "it's just
+        // anxiety" about a sign that is pain, illness or a drug side effect.
+        //
+        // PENDING ASH — drafted by me.
+        howToFooter:
+          '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
         concernFrom: 4, // PENDING ASH
         levels: {
           dog: [
@@ -777,6 +791,15 @@ export const CONDITIONS = {
           'Eating less, or only eating when nobody else is in the room.',
           'Toileting outside the litter tray, or spraying indoors.',
         ],
+        // The same caution the condition's introduction opens with, repeated
+        // here because this list is behind a button — an owner who taps
+        // straight into it may never have read the top of the screen, and
+        // this is the list most likely to have them conclude "it's just
+        // anxiety" about a sign that is pain, illness or a drug side effect.
+        //
+        // PENDING ASH — drafted by me.
+        howToFooter:
+          '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         levels: {

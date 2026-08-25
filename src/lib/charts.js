@@ -263,7 +263,7 @@ function referencedChart(parameter, dailySeries, definition) {
     domain: [0, 100],
     height: 180,
     caption:
-      'Taken from your daily assessment rather than asked again here. A higher line is better.',
+      'Taken from your Overall Quality of Life Assessment rather than asked again here. A higher line is better.',
   }
 }
 

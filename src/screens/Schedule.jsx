@@ -190,7 +190,7 @@ export default function Schedule() {
           <p>Loading…</p>
         ) : (
           <ScheduleRow
-            label="Quality of Life assessment"
+            label="Overall Quality of Life Assessment"
             lastDate={latestGeneralDate}
             cadenceDays={cadenceDays}
             onCadenceChange={updateCadence}

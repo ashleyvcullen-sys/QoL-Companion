@@ -137,7 +137,7 @@ export default function CancerContentReview() {
 
       <Block
         title="Core — always asked"
-        subtitle="Asked for every cancer patient, whatever they have. Deliberately short: appetite, pain, activity and demeanour already come from the daily assessment."
+        subtitle="Asked for every cancer patient, whatever they have. Deliberately short: appetite, pain, activity and demeanour already come from the Overall Quality of Life Assessment."
         parameters={CORE_PARAMETERS}
         pet={previewPet}
         values={values}

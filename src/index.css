@@ -1001,6 +1001,15 @@ code {
   text-align: center;
 }
 
+/* An unpickable option, rather than a missing one. The medication day picker
+   caps choices at the number of doses, and a disabled chip shows the day is
+   still there to be had once another is unticked — where hiding it would
+   read as the app having lost Thursday. */
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .chip.selected {
   background: var(--accent);
   border-color: var(--accent);

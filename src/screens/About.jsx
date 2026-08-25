@@ -10,7 +10,7 @@ import WelcomeSlide5 from './welcome/WelcomeSlide5'
 import { usePets } from '../lib/PetsContext'
 
 const FEATURE_ITEMS = [
-  { Icon: Heart, label: 'Quality Of Life Assessments', to: '/assessment' },
+  { Icon: Heart, label: 'Overall Quality of Life Assessments', to: '/assessment' },
   { Icon: TrendingUp, label: 'Trends Over Time', to: '/trends' },
   { Icon: HomeCareTipsIcon, label: 'Advice For Home Care', to: '/home-care-tips' },
   { Icon: FileDown, label: 'Summaries For Your Vet', to: '/export-report' },

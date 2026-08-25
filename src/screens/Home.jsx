@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
   {
     title: 'Monitor',
     items: [
-      { to: '/assessment', label: 'Quality Of Life Assessment', Icon: Heart },
+      { to: '/assessment', label: 'Overall Quality of Life Assessment', Icon: Heart },
       { to: '/trends', label: 'Trends', Icon: TrendingUp },
       // Plus-tier feature, currently ungated for testing. Gate on
       // hasBcsAccess(customerInfo) when the products are live.

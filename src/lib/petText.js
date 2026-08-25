@@ -6,11 +6,11 @@
 // fallback rather than as a compromise everyone gets.
 
 const PRONOUNS = {
-  male: { they: 'he', them: 'him', their: 'his', theirs: 'his', are: 'is', were: 'was', have: 'has', s: 's' },
-  female: { they: 'she', them: 'her', their: 'her', theirs: 'hers', are: 'is', were: 'was', have: 'has', s: 's' },
+  male: { they: 'he', them: 'him', their: 'his', theirs: 'his', are: 'is', were: 'was', have: 'has', do: 'does', s: 's' },
+  female: { they: 'she', them: 'her', their: 'her', theirs: 'hers', are: 'is', were: 'was', have: 'has', do: 'does', s: 's' },
   // 'they' takes plural agreement, hence `are`/`were`/`have` and the empty
   // verb-s — "they seem" against "he seems".
-  unknown: { they: 'they', them: 'them', their: 'their', theirs: 'theirs', are: 'are', were: 'were', have: 'have', s: '' },
+  unknown: { they: 'they', them: 'them', their: 'their', theirs: 'theirs', are: 'are', were: 'were', have: 'have', do: 'do', s: '' },
 }
 
 export function petPronouns(pet) {
@@ -32,7 +32,10 @@ export function petSpeciesWords(pet) {
   return SPECIES_WORDS[pet?.species] ?? { species: 'pet', canineOrFeline: 'canine or feline' }
 }
 
-// Fills {name}, {they}, {their}, {them}, {are}, {have}, {s}, {species},
+// {do} exists because the verb-s token cannot make it: "do" + "s" is "dos".
+// Any other irregular verb needs the same treatment rather than {s}.
+//
+// Fills {name}, {they}, {their}, {them}, {are}, {have}, {do}, {s}, {species},
 // {canineOrFeline} and their capitalised forms ({They}, {Their}). Leaves anything it doesn't recognise
 // alone rather than blanking it, so a typo in a template shows up as itself
 // instead of vanishing.
