@@ -75,12 +75,20 @@ function App() {
       'localNotificationActionPerformed',
       (action) => {
         const extra = action.notification?.extra
+        // Every reminder is per-pet, so switch to the pet the notification
+        // was actually about before opening anything, rather than showing
+        // whichever pet happened to be selected.
+        if (extra?.petId) selectPet(extra.petId)
+
         if (extra?.screen === 'assessment') {
-          // Reminders are per-pet, so open the assessment for the pet the
-          // notification was actually about rather than whichever pet
-          // happened to be selected.
-          if (extra.petId) selectPet(extra.petId)
           navigate('/assessment')
+        } else if (extra?.screen === 'condition' && extra.conditionKey) {
+          navigate(`/conditions/${extra.conditionKey}`)
+        } else if (extra?.screen === 'medications') {
+          // Medication reminders have carried this since they were built and
+          // nothing was listening for it, so tapping one opened the app to
+          // wherever it was last left.
+          navigate('/medications')
         }
       }
     )

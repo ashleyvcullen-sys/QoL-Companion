@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BellOff, Check, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { BellOff, Check, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
-import ChoiceButtons from '../components/ChoiceButtons'
+import ReminderDayPicker from '../components/ReminderDayPicker'
 import { usePets } from '../lib/PetsContext'
 import {
   createMedication,
@@ -31,7 +31,7 @@ import {
 const EMPTY_FORM = {
   name: '',
   dose: '',
-  scheduleMode: 'times',
+  scheduleMode: 'frequency',
   times: ['08:00'],
   frequencyCount: 2,
   frequencyPeriod: 'day',
@@ -42,23 +42,6 @@ const EMPTY_FORM = {
   startedOn: '',
   endedOn: '',
 }
-
-// Monday first, the way a week is read here. Values are JavaScript weekday
-// numbers so nothing has to translate them on the way to a notification.
-const WEEKDAY_OPTIONS = [
-  { value: 1, label: 'Mon' },
-  { value: 2, label: 'Tue' },
-  { value: 3, label: 'Wed' },
-  { value: 4, label: 'Thu' },
-  { value: 5, label: 'Fri' },
-  { value: 6, label: 'Sat' },
-  { value: 0, label: 'Sun' },
-]
-
-// Stops at 28. A reminder set for the 29th, 30th or 31st simply would not
-// fire in the months that have no such date — silently, five times a year for
-// the 31st — and an owner would have no way of knowing.
-const MONTH_DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }))
 
 // What the reminders will actually do, in words, for the line under the time
 // picker. It used to say "Once a month" whatever the frequency, which was
@@ -93,12 +76,6 @@ function describeReminderPlan(form) {
     ? `One reminder each ${period}, on the day picked below.`
     : `${chosen} reminders each ${period}, on the days picked below.`
 }
-
-const MODE_OPTIONS = [
-  { value: 'times', label: 'At set times' },
-  { value: 'frequency', label: 'A number of times' },
-  { value: 'as_needed', label: 'As needed' },
-]
 
 function formatTime(time) {
   const [hour, minute] = time.split(':').map(Number)
@@ -190,20 +167,6 @@ export default function Medications() {
     && notifStatus !== 'granted'
     && active.some((m) => m.scheduleMode !== 'as_needed' && m.remindersEnabled)
 
-  function toggleReminderDay(day) {
-    const chosen = form.reminderDays ?? []
-    if (chosen.includes(day)) {
-      setForm({ ...form, reminderDays: chosen.filter((entry) => entry !== day) })
-      return
-    }
-    // Capped at the number of doses. Three reminders for a medication given
-    // twice a week would have the app telling an owner to give a dose that
-    // was never prescribed — the one kind of wrong a medication reminder
-    // must not be.
-    if (chosen.length >= (Number(form.frequencyCount) || 1)) return
-    setForm({ ...form, reminderDays: [...chosen, day].sort((a, b) => a - b) })
-  }
-
   // Lowering the count has to drop days that no longer fit, or the form would
   // sit in a state its own rule forbids.
   function setFrequencyCount(raw) {
@@ -230,9 +193,15 @@ export default function Medications() {
       reminderTime: medication.reminderTime ?? '08:00',
       reminderDays: medication.reminderDays ?? [],
       endedOn: medication.endedOn ?? '',
-      scheduleMode: medication.scheduleMode,
+      // Medications saved before the mode buttons were removed open as
+      // what they always were: three times of day IS three times a day. The
+      // times themselves are kept on the record, so the doses already ticked
+      // off against them still line up.
+      scheduleMode: medication.scheduleMode === 'as_needed' ? 'as_needed' : 'frequency',
       times: medication.times.length > 0 ? [...medication.times] : ['08:00'],
-      frequencyCount: medication.frequencyCount ?? 2,
+      frequencyCount: medication.scheduleMode === 'times' && medication.times.length > 0
+        ? medication.times.length
+        : medication.frequencyCount ?? 2,
       frequencyPeriod: medication.frequencyPeriod ?? 'day',
       remindersEnabled: medication.remindersEnabled,
       notes: medication.notes ?? '',
@@ -268,10 +237,6 @@ export default function Medications() {
     const name = form.name.trim()
     if (!name) {
       setErrorMessage('Give the medication a name.')
-      return
-    }
-    if (form.scheduleMode === 'times' && form.times.filter(Boolean).length === 0) {
-      setErrorMessage('Add at least one time, or choose a different schedule.')
       return
     }
 
@@ -558,95 +523,56 @@ export default function Medications() {
               </p>
             </div>
 
-            <div className="field">
-              <label>How is it given?</label>
-              <ChoiceButtons
-                options={MODE_OPTIONS}
-                value={form.scheduleMode}
-                onChange={(scheduleMode) => setForm({ ...form, scheduleMode })}
+            {/* One question instead of a mode to pick first. Choosing
+                between "at set times", "a number of times" and "as needed"
+                asked the owner to classify the medication before they could
+                describe it — and the two scheduled answers collected the same
+                thing in the end. How often it is given is the question; "as
+                needed" is the one answer that means there is no how often. */}
+            <label className="med-reminder-toggle">
+              <input
+                type="checkbox"
+                checked={form.scheduleMode === 'as_needed'}
+                onChange={(e) => setForm({
+                  ...form,
+                  scheduleMode: e.target.checked ? 'as_needed' : 'frequency',
+                })}
               />
-            </div>
+              <span>Given as needed</span>
+            </label>
 
-            {form.scheduleMode === 'times' && (
+            {form.scheduleMode !== 'as_needed' && (
               <>
+                {/* One question, answered on one line: "2 per day". It was
+                    two stacked fields labelled "How many times" and "Per",
+                    which asked the same thing the heading asks and split the
+                    answer across two columns to do it. */}
                 <div className="field">
-                  <label>Times of day</label>
-                  {form.times.map((time, index) => (
-                    <div key={index} className="med-time-edit">
-                      <input
-                        type="time"
-                        value={time}
-                        onChange={(e) => {
-                          const times = [...form.times]
-                          times[index] = e.target.value
-                          setForm({ ...form, times })
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="med-time-remove"
-                        aria-label="Remove this time"
-                        onClick={() => setForm({ ...form, times: form.times.filter((_, i) => i !== index) })}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="subtle-link"
-                    onClick={() => setForm({ ...form, times: [...form.times, '08:00'] })}
-                  >
-                    <Plus size={14} /> Add a time
-                  </button>
-                </div>
-
-                <label className="med-reminder-toggle">
-                  <input
-                    type="checkbox"
-                    checked={form.remindersEnabled}
-                    onChange={(e) => setForm({ ...form, remindersEnabled: e.target.checked })}
-                  />
-                  <span>Remind me at these times</span>
-                </label>
-                <p className="assessment-hint">
-                  {isNative
-                    ? 'A notification will arrive on this device at each time above.'
-                    : 'Reminders only work in the app on your phone, not in a browser.'}
-                </p>
-              </>
-            )}
-
-            {form.scheduleMode === 'frequency' && (
-              <>
-                <div className="med-frequency-row">
-                  <div className="field">
-                    <label htmlFor="med-freq-count">How many times</label>
+                  <label htmlFor="med-freq-count">How often?</label>
+                  <div className="med-frequency-row">
                     <input
                       id="med-freq-count"
+                      className="med-freq-count"
                       type="number"
                       min="1"
                       max="12"
                       value={form.frequencyCount}
                       onChange={(e) => setFrequencyCount(e.target.value)}
                     />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="med-freq-period">Per</label>
+                    <span className="med-frequency-per">per</span>
                     <select
                       id="med-freq-period"
                       value={form.frequencyPeriod}
                       onChange={(e) => setForm({ ...form, frequencyPeriod: e.target.value })}
                     >
-                      <option value="day">Day</option>
-                      <option value="week">Week</option>
-                      <option value="month">Month</option>
+                      <option value="day">day</option>
+                      <option value="week">week</option>
+                      <option value="month">month</option>
                     </select>
                   </div>
                 </div>
                 <p className="assessment-hint">
-                  You'll get a tick box per dose to mark off. Choose "At set times" instead if
-                  each dose is due at a particular time of day.
+                  You'll get a tick box per dose to mark off.
                 </p>
 
                 <label className="med-reminder-toggle">
@@ -689,22 +615,19 @@ export default function Medications() {
                     <label>
                       {form.frequencyPeriod === 'week' ? 'Which days?' : 'Which dates?'}
                     </label>
-                    <div className="symptom-chips">
-                      {(form.frequencyPeriod === 'week' ? WEEKDAY_OPTIONS : MONTH_DAY_OPTIONS).map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`chip ${(form.reminderDays ?? []).includes(option.value) ? 'selected' : ''}`.trim()}
-                          disabled={
-                            !(form.reminderDays ?? []).includes(option.value)
-                            && (form.reminderDays ?? []).length >= (Number(form.frequencyCount) || 1)
-                          }
-                          onClick={() => toggleReminderDay(option.value)}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* A real calendar rather than a strip of numbers. The
+                        dates now sit under the weekdays they actually fall
+                        on, and a month shows its own number of days — which
+                        is the difference between "the 14th" and "the second
+                        Saturday", and the difference between a September
+                        that has a 31st and one that does not. */}
+                    <ReminderDayPicker
+                      mode={form.frequencyPeriod === 'week' ? 'week' : 'month'}
+                      value={form.reminderDays ?? []}
+                      max={Number(form.frequencyCount) || 1}
+                      fromIso={form.startedOn || null}
+                      onChange={(days) => setForm({ ...form, reminderDays: days })}
+                    />
                     <p className="assessment-hint">
                       {(form.reminderDays ?? []).length}/{Number(form.frequencyCount) || 1} picked.
                       {' '}
@@ -714,12 +637,6 @@ export default function Medications() {
                           ? 'That is all the doses accounted for. Untick one to change it.'
                           : 'You can pick more, or leave it here if some doses fall on the same day.'}
                     </p>
-                    {form.frequencyPeriod === 'month' && (
-                      <p className="assessment-hint">
-                        Dates stop at the 28th, so a reminder never falls on a date some months
-                        do not have.
-                      </p>
-                    )}
                   </div>
                 )}
               </>

@@ -192,9 +192,13 @@ export default function Home() {
           className="logo-placeholder"
         />
         <SectionTitle>{pet ? `${petName}'s Quality Of Life Companion` : 'Your Quality Of Life Companion'}</SectionTitle>
+        {/* One line, not two. The credit is folded into the subtext rather
+            than stacked above it — who made it and what it is for are the
+            same sentence, and two lines of supporting text under one heading
+            read as a preamble nobody finishes. */}
         <p className="home-subtitle">
-          Here to support and help you navigate {petName}'s quality of life and wellbeing
-          every step of the way.
+          Designed by a veterinarian to support and help you navigate {petName}'s quality
+          of life and wellbeing every step of the way.
         </p>
         <PetSwitcher />
       </Card>

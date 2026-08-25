@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pencil, Pill, Stethoscope } from 'lucide-react'
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
@@ -9,7 +9,7 @@ const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 //
 // The caller supplies `dayFor(dateKey)`, returning { colour, title } for a
 // day with data or null for one without. Nothing about scoring lives here.
-export default function MonthCalendar({ dayFor }) {
+export default function MonthCalendar({ dayFor, onOpenDay }) {
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -35,6 +35,14 @@ export default function MonthCalendar({ dayFor }) {
   // is furniture.
   const hasMarkers = Array.from({ length: daysInMonth }, (_, i) => i + 1)
     .some((day) => dayFor(dateKeyFor(day))?.marker)
+
+  // Same reasoning for the note mark. Two legends where only one symbol is on
+  // screen is furniture explaining something that isn't there.
+  const hasNotes = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+    .some((day) => dayFor(dateKeyFor(day))?.note)
+
+  const hasEvents = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+    .some((day) => dayFor(dateKeyFor(day))?.event)
 
   function dateKeyFor(day) {
     return `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -107,29 +115,81 @@ export default function MonthCalendar({ dayFor }) {
               onClick={() => setSelectedDay(isSelected ? null : day)}
             >
               {day}
-              {/* A medication started or stopped on this day. Deliberately a
-                  dot rather than a letter or an icon: the cell is a few
-                  millimetres square with a number already in it, and anything
-                  legible would cover the number. Tapping the day says what
-                  it was. */}
-              {info?.marker && <span className="calendar-cell-marker" />}
+              {/* A medication started or stopped on this day. A pill rather
+                  than a plain dot: the cell is a few millimetres square, but
+                  the shape is recognisable at that size where a letter would
+                  not be, and it says what the mark MEANS without the reader
+                  having to find the key first. Tapping the day gives the
+                  detail. */}
+              {info?.marker && (
+                <span className="calendar-cell-marker">
+                  <Pill size={9} strokeWidth={2.5} />
+                </span>
+              )}
+              {/* The note mark takes the opposite corner, so a day that has
+                  both a medication change and a note shows both rather than
+                  one covering the other — which is exactly the day an owner
+                  most wants to open. */}
+              {info?.note && (
+                <span className="calendar-cell-note">
+                  <Pencil size={9} strokeWidth={2.5} />
+                </span>
+              )}
+              {/* A medical event — a vet visit, an episode, a diagnosis.
+                  Bottom-right, so all three marks can sit on one day without
+                  overlapping: the day that has a flare, a new drug AND a note
+                  about it is exactly the day worth opening. */}
+              {info?.event && (
+                <span className="calendar-cell-event">
+                  <Stethoscope size={9} strokeWidth={2.5} />
+                </span>
+              )}
             </button>
           )
         })}
       </div>
 
       {selectedDay != null && (
-        <p className="calendar-detail" role="status">
-          <strong>{selectedDay} {monthLabel.split(' ')[0]}</strong>
-          {' — '}
-          {dayFor(dateKeyFor(selectedDay))?.title || 'Nothing recorded'}
-        </p>
+        <div className="calendar-detail" role="status">
+          <p className="calendar-detail-text">
+            <strong>{selectedDay} {monthLabel.split(' ')[0]}</strong>
+            {' — '}
+            {dayFor(dateKeyFor(selectedDay))?.title || 'Nothing recorded'}
+          </p>
+          {/* The colour and the summary line say how the day went. This is
+              the way back to what was actually answered to get there, which
+              until now was recorded and never shown. Offered only where the
+              caller can answer it, and only on a day with something on it. */}
+          {onOpenDay && dayFor(dateKeyFor(selectedDay)) && (
+            <button
+              type="button"
+              className="subtle-link"
+              onClick={() => onOpenDay(dateKeyFor(selectedDay))}
+            >
+              See this day's answers
+            </button>
+          )}
+        </div>
       )}
 
       {hasMarkers && (
         <p className="calendar-legend">
-          <span className="calendar-legend-dot" />
+          <Pill size={13} />
           A medication started or stopped. Tap a day to see which.
+        </p>
+      )}
+
+      {hasNotes && (
+        <p className="calendar-legend">
+          <Pencil size={13} />
+          A note was written on this day. Tap the day to read it.
+        </p>
+      )}
+
+      {hasEvents && (
+        <p className="calendar-legend">
+          <Stethoscope size={13} />
+          A medical event was recorded. Tap the day to see what.
         </p>
       )}
     </div>

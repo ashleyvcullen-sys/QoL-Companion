@@ -1,7 +1,20 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import Btn from './Btn'
 
-export default function SwipeableWizard({ pages, onComplete, indicator = 'fraction', finishLabel = 'Finish', footer, initialPageIndex = 0 }) {
+export default function SwipeableWizard({
+  pages,
+  onComplete,
+  indicator = 'fraction',
+  finishLabel = 'Finish',
+  footer,
+  // Content that belongs to ONE page but below the Back/Next buttons rather
+  // than above them — an array parallel to `pages`, with holes for the pages
+  // that have none. The assessment's source credits are the reason: they
+  // belong to the intro page, but they are not part of the instructions and
+  // should not push the buttons down the screen.
+  pageFooters = [],
+  initialPageIndex = 0,
+}) {
   const [pageIndex, setPageIndex] = useState(initialPageIndex)
   const isLastPage = pageIndex === pages.length - 1
 
@@ -89,6 +102,7 @@ export default function SwipeableWizard({ pages, onComplete, indicator = 'fracti
         <Btn type="button" variant="outline" onClick={goBack} disabled={pageIndex === 0}>Back</Btn>
         <Btn type="button" onClick={goNext}>{isLastPage ? finishLabel : 'Next'}</Btn>
       </div>
+      {pageFooters[pageIndex] ?? null}
       {footer}
     </div>
   )

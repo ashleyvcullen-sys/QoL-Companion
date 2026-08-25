@@ -3,6 +3,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
+import { allReferencesText } from '../lib/references'
 
 const SECTIONS = [
   {
@@ -33,8 +34,16 @@ const SECTIONS = [
   },
   {
     heading: 'Copyright & attribution',
+    // Built from lib/references.js rather than written out here. This is the
+    // one copy of the list that has to be COMPLETE, and a hand-written
+    // paragraph is complete only until the next instrument is added and
+    // nobody remembers to come back. Adding a reference to that file now puts
+    // it here automatically.
+    //
+    // One paragraph each, rather than the single run-on paragraph this was:
+    // an attribution nobody can pick apart is not much of an attribution.
     paragraphs: [
-      "The BEAAAAPP pain-scale concept referenced in this app is adapted from work by Dr. Shea Cox. The cat eyes/face scoring draws on the Feline Grimace Scale (Evangelista MC, Watanabe R, Leung VSY, Monteiro BP, O'Toole E, Pang DSJ, Steagall PV. \"Facial expressions of pain in cats: the development and validation of a Feline Grimace Scale.\" Scientific Reports, 2019;9:19128). The \"How children grieve\" guidance is adapted from material by Kristi Lehman, MSW, LISW, DVM Center. Body Condition Score based on the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina). Life-stage / human-year equivalents reference published AAHA and AAFP guidelines.",
+      ...allReferencesText(),
       "All other text, design, and code in this app are original to this app unless otherwise credited.",
     ],
   },

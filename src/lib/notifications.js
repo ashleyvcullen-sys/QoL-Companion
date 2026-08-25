@@ -44,6 +44,53 @@ export function medicationReminderId(medicationId, timeIndex) {
   return hashToNotificationId(`med:${medicationId}:${timeIndex}`)
 }
 
+// One id per condition per pet, so arthritis and heart disease can be due on
+// different days without one reschedule clearing the other. Namespaced with
+// 'cond:' for the same reason 'med:' is — a condition key hashed bare could
+// collide with a pet uuid.
+export function conditionReminderId(petId, conditionKey) {
+  return hashToNotificationId(`cond:${petId}:${conditionKey}`)
+}
+
+// Moves a due date forward onto the day the owner asked for.
+//
+// A cadence on its own says how OFTEN; it cannot say WHEN. "Weekly" from a
+// Tuesday entry lands on a Tuesday forever, whether or not that is the day
+// the owner is ever free to sit down with the pet. Given a day, the reminder
+// slides forward to the next one of those on or after the date it was
+// already due — forward only, so a reminder never arrives earlier than the
+// cadence allows.
+//
+// `day` is a JavaScript weekday (0 Sunday – 6 Saturday) for a weekly or
+// fortnightly cadence, and a date of the month for a monthly one. Dates are
+// capped at the 28th where they are chosen, so there is no month this can
+// fail to find.
+export function advanceToChosenDay(date, cadenceDays, day) {
+  if (day == null || !Number.isFinite(Number(day))) return date
+  const target = Number(day)
+
+  if (cadenceDays >= 28) {
+    // Built from parts rather than by nudging the month on a copy. Calling
+    // setMonth on the 31st of January asks for "31 February", which JavaScript
+    // rolls forward to 3 March — so a reminder due at the end of January and
+    // set for the 28th would have landed in MARCH, a month late, and only in
+    // the months where it mattered. Starting from the 1st there is no date to
+    // overflow.
+    const next = new Date(date.getFullYear(), date.getMonth(), 1)
+    next.setHours(date.getHours(), date.getMinutes(), date.getSeconds(), 0)
+    if (date.getDate() > target) next.setMonth(next.getMonth() + 1)
+    next.setDate(target)
+    return next
+  }
+
+  // Up to six days forward, which is as far as the next given weekday can
+  // ever be.
+  const next = new Date(date)
+  const shift = (target - next.getDay() + 7) % 7
+  next.setDate(next.getDate() + shift)
+  return next
+}
+
 export async function checkNotificationPermission() {
   const { display } = await LocalNotifications.checkPermissions()
   return display
@@ -99,7 +146,7 @@ async function cancelLegacySharedReminder() {
 // schedule — a fixed native repeat has no idea when the user actually did
 // the assessment, so it would drift out of sync with real completions
 // instead of counting fresh from each one.
-export async function scheduleQolReminder({ petId, petName, cadenceDays, fromDate }) {
+export async function scheduleQolReminder({ petId, petName, cadenceDays, cadenceDay = null, fromDate }) {
   if (!petId) return
 
   const display = await checkNotificationPermission()
@@ -108,12 +155,15 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, fromDat
   await cancelLegacySharedReminder()
   await cancelQolReminder(petId)
 
-  const nextDate = new Date(fromDate)
+  let nextDate = new Date(fromDate)
   nextDate.setDate(nextDate.getDate() + cadenceDays)
+  // The chosen weekday or date, applied before the in-the-past check so a
+  // day that slides the reminder backwards can never be scheduled.
+  nextDate = advanceToChosenDay(nextDate, cadenceDays, cadenceDay)
   if (nextDate.getTime() <= Date.now()) {
     // Cadence was shortened past an already-elapsed date — fire soon
     // rather than scheduling something in the past.
-    nextDate.setTime(Date.now() + 60 * 1000)
+    nextDate = new Date(Date.now() + 60 * 1000)
   }
 
   await LocalNotifications.schedule({
@@ -127,6 +177,60 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, fromDat
         // assessment for the pet it was actually about, rather than
         // whichever pet happens to be selected at the time.
         extra: { screen: 'assessment', petId },
+      },
+    ],
+  })
+}
+
+export async function cancelConditionReminder(petId, conditionKey) {
+  if (!petId || !conditionKey) return
+  try {
+    await LocalNotifications.cancel({
+      notifications: [{ id: conditionReminderId(petId, conditionKey) }],
+    })
+  } catch {
+    // Cancelling something that was never scheduled is a no-op on both
+    // platforms; never let it break a reschedule.
+  }
+}
+
+// The same shape as the quality of life reminder above, and deliberately so:
+// a disease check is due a set interval after the LAST one, not at a fixed
+// wall-clock time, so it has to be re-issued from each completion rather
+// than left to repeat natively.
+//
+// `cadenceDays` of 0 means the owner turned this condition's reminder off.
+// The cancel above still runs, so switching it off clears anything pending
+// rather than leaving the last one to fire.
+export async function scheduleConditionReminder({
+  petId, petName, conditionKey, conditionLabel, cadenceDays, cadenceDay = null, fromDate,
+}) {
+  if (!petId || !conditionKey) return
+
+  const display = await checkNotificationPermission()
+  if (display !== 'granted') return
+
+  await cancelConditionReminder(petId, conditionKey)
+
+  if (!cadenceDays) return
+
+  let nextDate = new Date(fromDate ?? Date.now())
+  nextDate.setDate(nextDate.getDate() + cadenceDays)
+  nextDate = advanceToChosenDay(nextDate, cadenceDays, cadenceDay)
+  if (nextDate.getTime() <= Date.now()) {
+    nextDate = new Date(Date.now() + 60 * 1000)
+  }
+
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: conditionReminderId(petId, conditionKey),
+        title: `${conditionLabel} check-in`,
+        body: `Time for ${petName}'s ${conditionLabel.toLowerCase()} check-in`,
+        schedule: { at: nextDate },
+        // The condition key rides along so tapping the notification opens
+        // the condition it was about rather than the conditions list.
+        extra: { screen: 'condition', petId, conditionKey },
       },
     ],
   })

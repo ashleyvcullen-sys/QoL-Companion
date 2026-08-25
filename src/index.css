@@ -1461,14 +1461,30 @@ code {
 
 /* Count and period read as one sentence ("2 per day"), so they sit side by
    side. .field-group is a vertical stack and would have broken that apart. */
+/* Reads as one line — "2 per day" — rather than two labelled columns. The
+   number is only ever one or two digits, so it takes just enough width to
+   show them and the period select gets the rest. */
 .med-frequency-row {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 
-.med-frequency-row .field {
+.med-freq-count {
+  flex: 0 0 72px;
+  width: 72px;
+  text-align: center;
+}
+
+.med-frequency-row select {
   flex: 1;
   min-width: 0;
+}
+
+.med-frequency-per {
+  font-size: var(--type-item);
+  color: var(--text-b);
+  flex: 0 0 auto;
 }
 
 /* The "reminders off" marker sits inline with the dose pills, so its icon
@@ -1862,26 +1878,33 @@ code {
   color: var(--text-muted);
 }
 
-.calendar-legend-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-h);
-  flex-shrink: 0;
+/* The key under a line chart, matching the calendar's. */
+.chart-key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
 }
 
 /* The medication mark. Sits over the top-right corner of the day, and is
    outlined so it stays visible on a green day, an amber one and an
    unrecorded grey one alike. */
+/* The pill sits over the top-right corner of the day. White with a dark
+   stroke so it reads on a green day, an amber one and an unrecorded grey one
+   alike — a single colour would disappear against one of them. */
 .calendar-cell-marker {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 6px;
-  height: 6px;
+  top: 1px;
+  right: 1px;
+  display: flex;
+  color: var(--text-h);
+  background: #fff;
   border-radius: 50%;
-  background: var(--text-h);
-  box-shadow: 0 0 0 1.5px #fff;
+  padding: 1px;
+  line-height: 0;
 }
 
 .chart-title {
@@ -2545,4 +2568,283 @@ code {
   .modal-confirm-actions {
     flex-direction: column;
   }
+}
+
+/* The reminder day picker. Borrows the calendar's grid so "which date?"
+   looks like the calendars everywhere else in the app rather than a second
+   invention — only the cells differ, because these are choices rather than
+   readings and have to show a chosen/not-chosen state. */
+.reminder-picker {
+  margin-top: 8px;
+}
+
+.reminder-cell {
+  background: var(--border);
+  color: var(--text-h);
+  font-size: 11px;
+}
+
+.reminder-cell.chosen {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Two reasons a cell can be dead: the date does not exist in every month,
+   or every dose is already accounted for. Both read the same way — there is
+   nothing to be gained here — so they look the same. */
+.reminder-cell:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* The note mark. Opposite corner to the medication pill, so a day carrying
+   both shows both — and the same white disc behind it, so it reads on a
+   green day, an amber one and an unrecorded grey one alike. */
+.calendar-cell-note {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  display: flex;
+  color: var(--text-h);
+  background: #fff;
+  border-radius: 50%;
+  padding: 1px;
+  line-height: 0;
+}
+
+/* The reference block at the foot of the assessment intro. Set apart from the
+   copy above it by a rule and a gap rather than by size alone — these are
+   credits, read once, and they should not compete with the instructions. */
+.assessment-references {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* A medical event on a calendar day — bottom-right, so the pill (top-right)
+   and the note pencil (top-left) all fit on one day without overlapping. */
+.calendar-cell-event {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  display: flex;
+  color: var(--text-h);
+  background: #fff;
+  border-radius: 50%;
+  padding: 1px;
+  line-height: 0;
+}
+
+/* The colour key under a calendar. Wraps on a narrow phone rather than
+   squeezing three items onto one line. */
+.chart-severity-key {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-severity-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-severity-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* A line that belongs above its chart rather than under it. */
+.chart-intro {
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+/* "Tap Next or swipe to begin" — an instruction, not another paragraph. */
+.assessment-begin-hint {
+  text-align: center;
+}
+
+/* The day detail under a calendar, now that it carries a way in as well as a
+   summary line. */
+.calendar-detail-text {
+  margin: 0 0 6px;
+}
+
+/* One day's answers, question by question. A definition list rather than a
+   table: the label and the answer are a pair, and on a phone they stack. */
+.day-answers-date {
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+.day-answers {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.day-answer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.day-answer-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* A follow-up belongs to the question above it, so it is indented rather
+   than given equal weight in the list. */
+.day-answer-row.follow-up {
+  padding-left: 14px;
+  border-left: 2px solid var(--border);
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-top: -8px;
+}
+
+.day-answer-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.day-answer-value {
+  margin: 0;
+  font-size: var(--type-item);
+  color: var(--text-b);
+  line-height: 150%;
+}
+
+.day-answer-detail {
+  display: block;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.day-answer-flag {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* The gallery thumbnail is a button now. These four lines undo the browser's
+   button styling; the image inside keeps the square crop it always had. */
+.media-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* Full-size photo viewer. Sits above everything, including the modals, since
+   it is opened from on top of one of them on some screens. */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* Clear of the notch and the home indicator on a phone. */
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.lightbox-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Contain, not cover: the whole point of opening it is to see all of it. */
+.lightbox-content img,
+.lightbox-content video {
+  max-width: 100%;
+  /* Leaves room for the caption underneath rather than pushing it off. */
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.lightbox-caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--type-meta);
+  line-height: 150%;
+  max-width: 460px;
+}
+
+.lightbox-date {
+  font-weight: 600;
+  color: #fff;
+}
+
+.lightbox-close,
+.lightbox-nav {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lightbox-close {
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  width: 40px;
+  height: 40px;
+}
+
+/* Big enough to hit with a thumb, and vertically centred so it falls where
+   the hand already is rather than at the top of the screen. */
+.lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+}
+
+.lightbox-nav.previous { left: 10px; }
+.lightbox-nav.next { right: 10px; }
+
+.lightbox-count {
+  position: absolute;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--type-meta);
 }

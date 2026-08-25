@@ -35,10 +35,6 @@ export default function FelineGrimacePage({ answers, onAnswerChange, onTotalChan
   return (
     <div className="assessment-page">
       <SectionTitle>Eyes / Face</SectionTitle>
-      <p className="beap-citation">
-        Based on the Feline Grimace Scale (Evangelista et al., Scientific Reports, 2019,
-        Université de Montréal).
-      </p>
 
       {FELINE_GRIMACE_ACTION_UNITS.map((unit) => {
         // Defaults to the "0" photo before an answer is picked, rather than

@@ -11,10 +11,12 @@ import {
   requestNotificationPermission,
   checkExactAlarmPermission,
   requestExactAlarmPermission,
+  scheduleConditionReminder,
   scheduleQolReminder,
 } from '../lib/notifications'
 import { useMedications } from '../lib/medicationsData'
 import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import ReminderDayPicker from '../components/ReminderDayPicker'
 import { resolveTrackedConditions } from '../lib/charts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -29,6 +31,34 @@ const CADENCE_OPTIONS = [
   { value: 14, label: 'Every 2 weeks' },
   { value: 30, label: 'Monthly' },
 ]
+
+// Conditions get one more option than the quality of life assessment does.
+// Someone monitoring four things does not necessarily want four reminders,
+// and the alternative — deleting the condition to stop being nudged about
+// it — would take the history with it.
+const CONDITION_CADENCE_OPTIONS = [
+  ...CADENCE_OPTIONS,
+  { value: 0, label: 'No reminder' },
+]
+
+// Which day the reminder lands on, and therefore which picker to show. A
+// daily cadence has no day to choose; a fortnightly one still lands on a
+// weekday. Monthly is the only one that asks for a date.
+function dayModeFor(cadenceDays) {
+  if (cadenceDays === 7 || cadenceDays === 14) return 'week'
+  if (cadenceDays >= 28) return 'month'
+  return null
+}
+
+// Local midnight from 'YYYY-MM-DD'. new Date('2026-08-25') parses as UTC,
+// which is the previous day west of Greenwich — and a weekly reminder
+// anchored a day early is a day early every week from then on.
+function localDateFromIso(iso) {
+  if (!iso) return null
+  const [year, month, day] = String(iso).split('-').map(Number)
+  if (!year || !month || !day) return null
+  return new Date(year, month - 1, day)
+}
 
 // '08:00' as a person reads it. Medications.jsx has its own copy; both are
 // four lines, and sharing them would mean a module for one function.
@@ -78,26 +108,60 @@ function openNotificationSettings() {
   })
 }
 
-function ScheduleRow({ label, lastDate, cadenceDays, onCadenceChange }) {
-  const isOverdue = !lastDate || daysSince(lastDate) >= cadenceDays
+function ScheduleRow({
+  label,
+  lastDate,
+  cadenceDays,
+  cadenceDay = null,
+  onCadenceChange,
+  onDayChange,
+  options = CADENCE_OPTIONS,
+  reminderOff = false,
+}) {
+  // Nothing is overdue when there is no schedule to be overdue against.
+  const isOverdue = !reminderOff && (!lastDate || daysSince(lastDate) >= cadenceDays)
+  const dayMode = reminderOff ? null : dayModeFor(cadenceDays)
 
   return (
     <div className="schedule-row">
       <div className="schedule-row-header">
         <span className="schedule-row-label">{label}</span>
-        <span className={`schedule-badge ${isOverdue ? 'overdue' : 'ok'}`}>
-          {isOverdue ? 'Overdue' : 'On track'}
-        </span>
+        {!reminderOff && (
+          <span className={`schedule-badge ${isOverdue ? 'overdue' : 'ok'}`}>
+            {isOverdue ? 'Overdue' : 'On track'}
+          </span>
+        )}
       </div>
       <p className="assessment-hint">Last logged: {lastDate || 'never'}</p>
       <div className="field">
         <label>Repeat</label>
         <select value={cadenceDays} onChange={(e) => onCadenceChange(Number(e.target.value))}>
-          {CADENCE_OPTIONS.map((opt) => (
+          {options.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
       </div>
+
+      {/* Which day, once "how often" leaves a choice. A cadence says how
+          often; it cannot say when, and "weekly" measured from whichever
+          Tuesday the last entry happened to fall on is not a day anyone
+          picked. */}
+      {dayMode && onDayChange && (
+        <div className="field">
+          <label>{dayMode === 'week' ? 'Which day?' : 'Which date?'}</label>
+          <ReminderDayPicker
+            mode={dayMode}
+            value={cadenceDay == null ? [] : [cadenceDay]}
+            max={1}
+            onChange={(days) => onDayChange(days.length ? days[days.length - 1] : null)}
+          />
+          <p className="assessment-hint">
+            {cadenceDay == null
+              ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
+              : 'Tap it again to go back to counting from your last entry.'}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -129,6 +193,27 @@ export default function Schedule() {
   // single `qol` field; existing pets fall back to whatever `general` was
   // already set to (or a weekly default) so no one's cadence silently resets.
   const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
+  // Which weekday or date the reminder lands on. Null means "count from the
+  // last entry", which is what every existing pet has been doing, so nothing
+  // changes for anyone who never opens this.
+  const cadenceDay = pet.schedule.qolDay ?? null
+
+  // Per-condition cadence, stored under the same `schedule` object as the
+  // assessment's. A condition with no entry here falls back to the cadence
+  // its own definition recommends, so the sensible default is still the
+  // clinical one rather than a flat weekly.
+  const conditionSchedules = pet.schedule.conditions ?? {}
+
+  function scheduleForCondition(definition) {
+    const saved = conditionSchedules[definition.key]
+    return {
+      days: saved?.days ?? definition.cadence?.days ?? 1,
+      day: saved?.day ?? null,
+      // Only an explicit 0 turns a reminder off. `undefined` means the owner
+      // has never touched this one, which is not the same thing.
+      off: saved?.days === 0,
+    }
+  }
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -153,14 +238,64 @@ export default function Schedule() {
       petId: pet.id,
       petName: pet.name,
       cadenceDays,
+      cadenceDay,
       fromDate: latestGeneralDate ?? new Date(),
     })
-  }, [notifStatus, loading, cadenceDays, latestGeneralDate, pet.id, pet.name])
+  }, [notifStatus, loading, cadenceDays, cadenceDay, latestGeneralDate, pet.id, pet.name])
 
-  async function updateCadence(days) {
-    const nextSchedule = { ...pet.schedule, qol: days }
+  // The same self-healing pass for every condition being monitored. Keyed on
+  // a serialised copy of the schedule rather than the object itself, which is
+  // a fresh reference on every render and would reschedule endlessly.
+  const conditionScheduleKey = JSON.stringify(conditionSchedules)
+  const trackedKey = trackedConditions.map((d) => d.key).join(',')
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || notifStatus !== 'granted' || conditionsLoading) return
+    trackedConditions.forEach((definition) => {
+      const { days, day } = scheduleForCondition(definition)
+      const entries = byCondition[definition.key] ?? []
+      scheduleConditionReminder({
+        petId: pet.id,
+        petName: pet.name,
+        conditionKey: definition.key,
+        conditionLabel: definition.label,
+        cadenceDays: days,
+        cadenceDay: day,
+        fromDate: localDateFromIso(entries[entries.length - 1]?.date) ?? new Date(),
+      })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifStatus, conditionsLoading, conditionScheduleKey, trackedKey, pet.id, pet.name])
+
+  async function saveSchedule(nextSchedule) {
     const { error } = await supabase.from('pets').update({ schedule: nextSchedule }).eq('id', pet.id)
     if (!error) await refresh()
+  }
+
+  async function updateCadence(days) {
+    // Changing how often clears which day, because the day means a different
+    // thing on either side of the change: the 14th of the month is not a
+    // weekday, and Tuesday is not a date.
+    const keepsDay = dayModeFor(days) === dayModeFor(cadenceDays)
+    await saveSchedule({
+      ...pet.schedule,
+      qol: days,
+      qolDay: keepsDay ? cadenceDay : null,
+    })
+  }
+
+  async function updateCadenceDay(day) {
+    await saveSchedule({ ...pet.schedule, qolDay: day })
+  }
+
+  async function updateConditionSchedule(conditionKey, patch) {
+    const current = conditionSchedules[conditionKey] ?? {}
+    await saveSchedule({
+      ...pet.schedule,
+      conditions: {
+        ...conditionSchedules,
+        [conditionKey]: { ...current, ...patch },
+      },
+    })
   }
 
   async function handleEnableReminders() {
@@ -193,7 +328,9 @@ export default function Schedule() {
             label="Overall Quality of Life Assessment"
             lastDate={latestGeneralDate}
             cadenceDays={cadenceDays}
+            cadenceDay={cadenceDay}
             onCadenceChange={updateCadence}
+            onDayChange={updateCadenceDay}
           />
         )}
       </Card>
@@ -223,10 +360,12 @@ export default function Schedule() {
         )}
       </Card>
 
-      {/* Frequency only — there is no cadence to set here, because these do
-          not send notifications. Shown so the one screen an owner opens to
-          ask "what am I meant to be doing, and when?" answers the whole
-          question rather than two thirds of it. */}
+      {/* Each condition sets its own cadence, the same way the assessment
+          does. It used to be a read-only list of what the app thought was
+          "worth filling in", which is exactly the sort of advice that gets
+          ignored when nothing acts on it — a monthly injection and a daily
+          pain score are not on the same clock, and only the owner knows
+          which of the two this week looks like. */}
       <Card>
         <SectionTitle>Disease Monitoring</SectionTitle>
         {conditionsLoading && <p>Loading…</p>}
@@ -239,21 +378,31 @@ export default function Schedule() {
         {!conditionsLoading && trackedConditions.map((definition) => {
           const entries = byCondition[definition.key] ?? []
           const lastDate = entries[entries.length - 1]?.date ?? null
-          const cadenceDaysForCondition = definition.cadence?.days ?? 1
-          const overdue = !lastDate || daysSince(lastDate) >= cadenceDaysForCondition
+          const { days, day, off } = scheduleForCondition(definition)
 
           return (
-            <div key={definition.key} className="schedule-row">
-              <div className="schedule-row-header">
-                <span className="schedule-row-label">{definition.label}</span>
-                <span className={`schedule-badge ${overdue ? 'overdue' : 'ok'}`}>
-                  {overdue ? 'Due' : 'On track'}
-                </span>
-              </div>
-              <p className="assessment-hint">
-                {definition.cadence ? `Worth filling in ${definition.cadence.label}.` : 'Worth filling in daily.'}
-                {' '}Last logged: {lastDate ?? 'never'}
-              </p>
+            <div key={definition.key}>
+              <ScheduleRow
+                label={definition.label}
+                lastDate={lastDate}
+                cadenceDays={days}
+                cadenceDay={day}
+                options={CONDITION_CADENCE_OPTIONS}
+                reminderOff={off}
+                onCadenceChange={(next) => updateConditionSchedule(definition.key, {
+                  days: next,
+                  // Same reasoning as the assessment above: a weekday and a
+                  // date are not interchangeable, so the day is dropped
+                  // whenever the kind of day changes.
+                  day: dayModeFor(next) === dayModeFor(days) ? day : null,
+                })}
+                onDayChange={(nextDay) => updateConditionSchedule(definition.key, { day: nextDay })}
+              />
+              {definition.cadence && (
+                <p className="assessment-hint">
+                  Suggested: {definition.cadence.label}.
+                </p>
+              )}
               <Link to={`/conditions/${definition.key}`} className="subtle-link">
                 Open {definition.label}
               </Link>

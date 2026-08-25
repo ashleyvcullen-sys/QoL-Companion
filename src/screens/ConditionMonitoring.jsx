@@ -8,11 +8,14 @@ import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import ChartView from '../components/ChartView'
+import DayAnswersModal from '../components/DayAnswersModal'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import {
+  SAME_AS_ASSESSMENT,
   SEVERITY,
   askedParameters,
+  describeConditionDay,
   beapAppetiteFromVcogGrade,
   conditionByKey,
   evaluateParameter,
@@ -84,6 +87,8 @@ export default function ConditionMonitoring() {
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [chartKey, setChartKey] = useState(null)
+  // Which day's answers are open, as an ISO date. Null is closed.
+  const [openDay, setOpenDay] = useState(null)
   // Confirmation exists because this now genuinely deletes the readings. It
   // did not before — the button used to remove the condition and silently
   // leave every entry behind, so a mis-tap was recoverable by re-adding it.
@@ -355,6 +360,14 @@ export default function ConditionMonitoring() {
     config,
   })
 
+  // The entry behind the day whose answers are open, and the definition as
+  // it was actually asked — cancer resolves its parameters per pet, so the
+  // static list would describe questions this owner was never shown.
+  const openEntry = openDay ? entries.find((entry) => entry.date === openDay) ?? null : null
+  const resolvedForDay = definition
+    ? { ...definition, parameters: parametersFor(definition, config, pet?.species) }
+    : null
+
   const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
   const flagsChart = definition ? chartByKey(charts, `${definition.key}:flags`) : null
   // Only the per-parameter charts belong in the picker: the calendar and the
@@ -511,7 +524,7 @@ export default function ConditionMonitoring() {
                   pet={pet}
                   note={
                     assessmentValueFor(parameter) != null
-                      ? "Filled in from today's Overall Quality of Life Assessment, because this is the same question. You can change it — it will change in both places."
+                      ? SAME_AS_ASSESSMENT
                       : null
                   }
                   number={index + 1}
@@ -563,7 +576,7 @@ export default function ConditionMonitoring() {
           {calendarChart && (
             <Card>
               <SectionTitle>{pet.name}'s {definition.label} Summary</SectionTitle>
-              <ChartView chart={calendarChart} />
+              <ChartView chart={calendarChart} onOpenDay={setOpenDay} />
             </Card>
           )}
 
@@ -712,6 +725,19 @@ export default function ConditionMonitoring() {
           </div>
           {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
         </Modal>
+      )}
+
+      {openDay && (
+        <DayAnswersModal
+          title="This Day's Answers"
+          dateLabel={formatDateDDMMYYYY(openDay)}
+          rows={resolvedForDay
+            ? describeConditionDay(resolvedForDay, openEntry?.values, pet?.species)
+            : []}
+          pet={pet}
+          emptyMessage="Nothing was recorded for this condition on this day."
+          onClose={() => setOpenDay(null)}
+        />
       )}
 
       <Footer />

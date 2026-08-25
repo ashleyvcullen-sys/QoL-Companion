@@ -53,7 +53,7 @@ export default function Conditions() {
         <SectionTitle>Disease-Specific Monitoring</SectionTitle>
         <p>
           Track the things that matter for a condition {pet.name} has been diagnosed with,
-          alongside <PetText template="{their}" pet={pet} /> general quality of life.
+          alongside <PetText template="{their}" pet={pet} /> Overall Quality of Life Assessments.
         </p>
         <p className="assessment-hint">
           This doesn't replace your vet's monitoring plan but will help make monitoring at home

@@ -23,7 +23,7 @@
 // PENDING ASH: owner-facing strings drafted by Claude are marked. Anything
 // NOT marked came from Ash directly.
 
-import { RELATIONSHIP, SAME_AS_ASSESSMENT, SEVERITY, sharedParameter } from './conditions'
+import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
 
 // ---------------------------------------------------------------- core
 //
@@ -56,7 +56,6 @@ export const CORE_PARAMETERS = [
     // Graded here, scored there, converted in both directions. The owner
     // answers appetite once a day whichever screen they open first.
     beapFromGrade: true,
-    why: SAME_AS_ASSESSMENT,
     concernFromGrade: 3, // PENDING ASH
     grades: [
       { grade: 0, owner: 'Eating normally.' },

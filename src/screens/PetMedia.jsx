@@ -5,6 +5,7 @@ import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
+import MediaLightbox from '../components/MediaLightbox'
 import { usePets } from '../lib/PetsContext'
 import {
   MAX_VIDEO_SECONDS,
@@ -36,6 +37,10 @@ export default function PetMedia() {
   const [takenOn, setTakenOn] = useState(todayIsoDate())
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  // Which gallery item is open full size, as an index into `items`. Null is
+  // closed. An index rather than the item itself, so the viewer can step
+  // through the gallery without being handed the whole list twice.
+  const [lightboxIndex, setLightboxIndex] = useState(null)
 
   function handleFileChosen(event) {
     const file = event.target.files?.[0]
@@ -166,12 +171,28 @@ export default function PetMedia() {
         {!loading && items.length === 0 && <p>Nothing added yet.</p>}
 
         <div className="media-grid">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <figure key={item.id} className="media-item">
+              {/* A button, not a bare image. The grid crops every thumbnail
+                  square, so a portrait photo is only ever partly visible here
+                  — tapping opens the whole thing. A video keeps its own
+                  controls in the grid and opens on the frame rather than the
+                  play button, so tapping play does not also open the viewer. */}
               {item.mediaType === 'video' ? (
                 <video src={urls[item.storagePath]} controls preload="metadata" playsInline />
               ) : (
-                <img src={urls[item.storagePath]} alt={item.caption || `Photo of ${pet.name}`} loading="lazy" />
+                <button
+                  type="button"
+                  className="media-open"
+                  onClick={() => setLightboxIndex(index)}
+                  aria-label={`View ${item.caption || 'photo'} full size`}
+                >
+                  <img
+                    src={urls[item.storagePath]}
+                    alt={item.caption || `Photo of ${pet.name}`}
+                    loading="lazy"
+                  />
+                </button>
               )}
               <figcaption>
                 <span className="media-date">{formatDateDDMMYYYY(item.takenOn)}</span>
@@ -189,6 +210,17 @@ export default function PetMedia() {
           ))}
         </div>
       </Card>
+
+      {lightboxIndex != null && (
+        <MediaLightbox
+          items={items}
+          index={lightboxIndex}
+          urls={urls}
+          petName={pet.name}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
 
       <Footer />
     </div>

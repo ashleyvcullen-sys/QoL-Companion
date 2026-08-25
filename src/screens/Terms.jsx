@@ -3,6 +3,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
+import { allReferencesText } from '../lib/references'
 
 const SECTIONS = [
   {
@@ -96,7 +97,13 @@ const SECTIONS = [
     heading: '8. Intellectual Property',
     content: [
       'The App, including its design, content, source code, trademarks, and the BEAAAAPP scoring framework as implemented within the App, is owned by us or our licensors and is protected by copyright and other intellectual property laws. Except for the limited license granted in Section 3, no rights are transferred to you.',
-      "Content referenced in the App is attributed to its original sources where applicable (see the App's Legal & Privacy page for full attribution, including the BEAAAAPP pain scale concept and the Feline Grimace Scale).",
+      'Content referenced in the App is attributed to its original sources. The published instruments the App draws on are:',
+      // Listed in full here as well as on the Legal & Privacy page, from the
+      // same source file, so the Terms are complete on their own — an App
+      // Store reviewer reading this section should not have to go and find a
+      // second document. Naming two of them and pointing elsewhere for the
+      // rest, which is what this said before, was not attribution.
+      ...allReferencesText(),
     ],
   },
   {

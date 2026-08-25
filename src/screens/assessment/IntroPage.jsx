@@ -21,7 +21,10 @@ export default function IntroPage({ petName, isFirstAssessment }) {
 
       <WellbeingConcepts />
 
-      <p className="assessment-hint">Tap Next or swipe to begin.</p>
+      {/* The last thing on the page, and centred: it is an instruction to
+          the reader rather than more information, and left-aligned under a
+          block of prose it read as another paragraph of it. */}
+      <p className="assessment-hint assessment-begin-hint">Tap Next or swipe to begin.</p>
     </div>
   )
 }

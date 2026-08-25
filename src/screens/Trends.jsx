@@ -10,6 +10,7 @@ import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
 import ChartView from '../components/ChartView'
+import DayAnswersModal from '../components/DayAnswersModal'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -18,6 +19,7 @@ import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { useMedications } from '../lib/medicationsData'
+import { describeAssessmentDay } from '../lib/assessmentSummary'
 
 function formatDateDDMMYYYY(dateStr) {
   if (!dateStr) return dateStr
@@ -36,10 +38,22 @@ export default function Trends() {
   // a long scroll where nothing was findable; collapsed, the page is a list
   // of what's trackable and you open the one you came for.
   const [expandedCharts, setExpandedCharts] = useState({})
+  // Which day's answers are open, as an ISO date. Null is closed.
+  const [openDay, setOpenDay] = useState(null)
 
   function toggleChart(key) {
     setExpandedCharts((current) => ({ ...current, [key]: !current[key] }))
   }
+
+  // The two halves of one day's assessment, for the day whose answers are
+  // open. Looked up rather than carried on the calendar descriptor, so the
+  // calendar stays a picture of the data instead of a copy of it.
+  const openGeneralEntry = openDay
+    ? generalEntries.find((entry) => entry.date === openDay) ?? null
+    : null
+  const openPainEntry = openDay
+    ? painEntries.find((entry) => entry.date === openDay) ?? null
+    : null
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -121,7 +135,9 @@ export default function Trends() {
 
       <Card>
         <SectionTitle>{goodBadDays?.title ?? 'Good / Bad Days'}</SectionTitle>
-        {goodBadDays ? <ChartView chart={goodBadDays} /> : <p>No assessments logged yet.</p>}
+        {goodBadDays
+          ? <ChartView chart={goodBadDays} onOpenDay={setOpenDay} />
+          : <p>No assessments logged yet.</p>}
       </Card>
 
       <Card>
@@ -148,6 +164,17 @@ export default function Trends() {
       <button type="button" className="subtle-link" onClick={() => setShowScoringExplainer(true)}>
         How does QoL Companion calculate quality of life?
       </button>
+
+      {openDay && (
+        <DayAnswersModal
+          title="This Day's Answers"
+          dateLabel={formatDateDDMMYYYY(openDay)}
+          rows={describeAssessmentDay(openGeneralEntry, openPainEntry, pet.species)}
+          pet={pet}
+          emptyMessage="No assessment was saved on this day."
+          onClose={() => setOpenDay(null)}
+        />
+      )}
 
       {showScoringExplainer && (
         <Modal title="How does QoL Companion calculate quality of life?" onClose={() => setShowScoringExplainer(false)}>

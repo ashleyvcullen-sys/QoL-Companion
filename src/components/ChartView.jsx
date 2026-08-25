@@ -1,5 +1,6 @@
 import TrendLineChart from './TrendLineChart'
 import MonthCalendar from './MonthCalendar'
+import { SEVERITY_KEY_ITEMS } from '../lib/charts'
 
 // Draws one descriptor from lib/charts.js.
 //
@@ -15,6 +16,10 @@ export default function ChartView({
   brush = true,
   isAnimationActive = true,
   showCaption = true,
+  // Given only by the screens that can answer "what was answered that day?".
+  // The PDF capture passes nothing, so the report never renders a button
+  // nobody can press.
+  onOpenDay,
 }) {
   if (!chart) return null
 
@@ -22,10 +27,35 @@ export default function ChartView({
     ? <p className="assessment-hint">{chart.caption}</p>
     : null
 
+  // What the colours mean. Only the calendars carry it — a line chart draws
+  // one line in one colour, and a green/amber/red key under it would be
+  // explaining something that isn't there.
+  const severityKey = chart.severityKey
+    ? (
+      <p className="chart-key chart-severity-key">
+        {SEVERITY_KEY_ITEMS.map((item) => (
+          <span key={item.label} className="chart-severity-item">
+            <span className="chart-severity-swatch" style={{ background: item.colour }} />
+            {item.label}
+          </span>
+        ))}
+      </p>
+    )
+    : null
+
+  // Above the chart rather than below: on the good/bad days calendar this is
+  // what the reader is looking FOR, and a footnote arrives after they have
+  // already decided what they were looking at.
+  const intro = chart.intro
+    ? <p className="assessment-hint chart-intro">{chart.intro}</p>
+    : null
+
   if (chart.kind === 'calendar') {
     return (
       <>
-        <MonthCalendar dayFor={chart.dayFor} />
+        {intro}
+        <MonthCalendar dayFor={chart.dayFor} onOpenDay={onOpenDay} />
+        {severityKey}
         {caption}
       </>
     )

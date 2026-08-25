@@ -40,6 +40,7 @@ import {
 } from '../components/icons/OrganIcon'
 import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
 import { SLEEP_NOTES } from './assessmentOptions'
+import { referenceText } from './references'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
@@ -233,13 +234,18 @@ export function sharedParameter(key, overrides = {}) {
 // explanations of that would undo it. Any parameter with `beapKey` should
 // carry it.
 //
-// Exported so cancer's appetite question can carry the identical sentence.
-// Two subtly different explanations of "these are the same question" would
-// undo the thing they are explaining.
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, verbatim.
 //
-// PENDING ASH — drafted by me.
-export const SAME_AS_ASSESSMENT =
-  'This is the same question as in the Overall Quality of Life Assessment. Answering it in one place fills it in the other, and you can change it in either.'
+// One sentence, shown once, only when the answer is actually already there.
+// The static "this is the same question as..." subtext that used to sit above
+// it has gone: on a pre-filled question the two said the same thing twice.
+//
+// `prefilledFrom` is the same sentence pointed the other way, for the
+// assessment screens, where the answer came from a condition form instead.
+export const prefilledFrom = (sourceLabel) =>
+  `Already filled in from today's ${sourceLabel}. You can still change your answer and it will update in both assessments.`
+
+export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessment')
 
 export const CONDITIONS = {
   cardiac: {
@@ -252,6 +258,8 @@ export const CONDITIONS = {
       'Includes conditions such as myxomatous mitral valve disease (MMVD), dilated cardiomyopathy (DCM) and hypertrophic cardiomyopathy (HCM).',
     intro:
       'Monitoring parameters such as resting breathing rate and exercise tolerance can help catch subtle changes over time. Earlier detection often leads to earlier intervention and better outcomes.',
+    // PENDING ASH — see the 'acvim-cardiac' entry in lib/references.js.
+    citation: referenceText('acvim-cardiac'),
     parameters: [
       {
         key: 'resting_respiratory_rate',
@@ -427,8 +435,7 @@ export const CONDITIONS = {
     // credits BEAAAAPP and the WSAVA body condition chart — rather than
     // explaining the provenance again inside every graded question.
     // PENDING ASH — confirm the version to cite and the exact wording.
-    citation:
-      'Adapted from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
+    citation: referenceText('vcog-ctcae'),
     parameters: [],
   },
 
@@ -462,17 +469,17 @@ export const CONDITIONS = {
   // to be replaced sentence by sentence, the way arthritis was.
   cognitive: {
     key: 'cognitive',
-    label: 'Cognitive Decline',
+    label: 'Cognitive Decline / Dementia',
     Icon: CognitiveOrganIcon,
-    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. {canineOrFeline} resolves to
-    // "canine" or "feline" from the pet's species, so a dog owner reads
-    // "canine dementia" rather than being asked to pick their half of it.
+    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. The "sometimes called
+    // canine/feline dementia" tail has gone: the title says Dementia now, so
+    // the sentence was introducing a word already on the screen above it.
     summary:
-      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called **{canineOrFeline} dementia**.',
+      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing.',
     // PENDING ASH — confirm the instrument and the exact wording. Nothing from
     // DISHAA is reproduced here; the domains are followed and the owner
     // wording is drafted.
-    citation: 'Adapted from DISHAA.',
+    citation: referenceText('dishaa'),
     // The caution comes FIRST, before the "changes are gradual" framing.
     // Everything below this line teaches an owner to watch and wait; this
     // sentence is the one that might send them to a vet instead, and a
@@ -602,7 +609,7 @@ export const CONDITIONS = {
         // The normal hours, the same sentence the daily assessment shows, so
         // an owner judging "is this a lot?" has the number in front of them
         // wherever they are asked.
-        why: `${SLEEP_NOTES.dog[0]} ${SAME_AS_ASSESSMENT}`,
+        why: SLEEP_NOTES.dog[0],
         concernFrom: 4, // PENDING ASH
         levels: { dog: SLEEP_SCALE.dog },
       },
@@ -614,7 +621,7 @@ export const CONDITIONS = {
         covers: 'sleep',
         relationship: RELATIONSHIP.SUPERSEDES,
         scoreKey: 'sleep',
-        why: `${SLEEP_NOTES.cat[0]} ${SAME_AS_ASSESSMENT}`,
+        why: SLEEP_NOTES.cat[0],
         concernFrom: 4, // PENDING ASH
         levels: { cat: SLEEP_SCALE.cat },
       },
@@ -828,8 +835,7 @@ export const CONDITIONS = {
     // PENDING ASH — confirm both instruments and the exact wording. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
-    citation:
-      'Adapted from the Liverpool Osteoarthritis in Dogs (LOAD) and the Feline Musculoskeletal Pain Index (FMPI).',
+    citation: referenceText('load-fmpi'),
     parameters: [
       // The BEAAAAPP category rather than a scale of its own, so the two can
       // never disagree about the same day. Ambulation IS the central
@@ -854,7 +860,6 @@ export const CONDITIONS = {
         covers: 'ambulation',
         relationship: RELATIONSHIP.SUPERSEDES,
         concernFrom: 4, // PENDING ASH
-        why: SAME_AS_ASSESSMENT,
       },
       {
         key: 'stiffness_after_rest',
@@ -889,8 +894,6 @@ export const CONDITIONS = {
             'Struggles to get up at all or cannot without assistance. Reluctant to walk or move. (emergency)',
           ],
         },
-        why:
-          'Stiffness after rest is often the first thing owners notice, and it comes on before any limp does.', // PENDING ASH
       },
       // The BEAAAAPP palpation category rather than a yes/no of its own.
       // Same reasoning as ambulation above: the daily assessment already
@@ -923,7 +926,6 @@ export const CONDITIONS = {
           label: 'Where Is {name} Sore?',
           placeholder: 'Hips, lower back, a particular leg…',
         },
-        why: SAME_AS_ASSESSMENT,
       },
 
       // --- Dogs only ------------------------------------------------------
@@ -1176,6 +1178,36 @@ export function vcogGradeFromBeapAppetite(score) {
 // stores the same answer as a SEVERITY, 0 best. Same six levels either way,
 // so the conversion is a subtraction and nothing is lost in either
 // direction.
+// The option a stored value should light up.
+//
+// Two things break a plain equality check. A value can arrive as a string
+// from JSON, and it can be a number the current picker does not offer — the
+// sleep slider this replaced stored anything from 0 to 10, so a night
+// recorded as 7 matches none of the six options and the question renders as
+// though it were never answered. Both would make a pre-filled answer look
+// unanswered, which is exactly the confusion the pre-fill exists to remove.
+//
+// Nearest wins, and a tie goes to the gentler reading — a legacy 7 shows as
+// 8 rather than 6, because inventing a worse answer than the owner gave is
+// the more harmful of the two errors.
+export function snapToOption(value, options) {
+  // Guarded BEFORE Number(), because Number(null), Number(undefined ?? '')
+  // and Number('') are all 0 — which would light up "no abnormalities" on a
+  // question nobody has answered. An invented healthy answer is the worst
+  // failure this function could have.
+  if (value == null || value === '') return null
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return null
+  let best = null
+  for (const option of options) {
+    if (best == null) { best = option; continue }
+    const gap = Math.abs(option - numeric)
+    const bestGap = Math.abs(best - numeric)
+    if (gap < bestGap || (gap === bestGap && option > best)) best = option
+  }
+  return best
+}
+
 export function sleepScoreFromSeverity(severity) {
   const value = Number(severity)
   return Number.isFinite(value) ? 10 - value : null
@@ -1349,11 +1381,124 @@ function parametersOf(condition) {
   return condition?.parameters ?? []
 }
 
+// A parameter's name for a list, including which lump or lymph node it was
+// about — "Size" on its own is not an answer to "what was flagged?" when a
+// pet is being measured in three places.
+function labelOf(parameter) {
+  return parameter.instanceLabel
+    ? `${parameter.label} — ${parameter.instanceLabel}`
+    : parameter.label
+}
+
+// One answer, as the owner would read it back.
+//
+// The calendar could always say a day was "worth watching"; it could never
+// say what was actually answered. This turns a stored value back into the
+// words that were on screen when it was given — the level text for a scale,
+// the option label for a choice, the number and its unit for a reading.
+//
+// Returns null where there is nothing to show, so a day's list can skip
+// questions that were never answered rather than filling with "—".
+export function describeParameterAnswer(parameter, value, species) {
+  if (value == null || value === '') return null
+  if (value === UNSURE) return 'Not sure'
+  if (value === NOT_APPLICABLE) return "Doesn't apply"
+
+  if (parameter.type === 'text') {
+    const text = String(value).trim()
+    return text || null
+  }
+
+  if (parameter.type === 'number') {
+    const numeric = Number(value)
+    if (!Number.isFinite(numeric)) return null
+    return parameter.unit ? `${numeric} ${parameter.unit}` : String(numeric)
+  }
+
+  if (parameter.type === 'yesno') {
+    return value === true || value === 'yes' ? 'Yes' : 'No'
+  }
+
+  if (parameter.type === 'choice') {
+    const option = (parameter.options ?? []).find((entry) => entry.value === value)
+    return option?.label ?? String(value)
+  }
+
+  if (parameter.type === 'vcog') {
+    const grade = Number(value)
+    if (!Number.isFinite(grade)) return null
+    const owner = vcogLevelsFor(parameter)[grade]
+    // The grade is the record a vet reads; the owner wording is the record
+    // the owner gave. Both, because this list is shown to one and exported
+    // to the other.
+    return owner ? `Grade ${grade} — ${stripEmergencyMarker(owner)}` : `Grade ${grade}`
+  }
+
+  if (parameter.type === 'beap' || parameter.type === 'scale') {
+    const score = Number(value)
+    if (!Number.isFinite(score)) return null
+    const level = levelsFor(parameter, species)[score / 2]
+    return level ? stripEmergencyMarker(level) : String(score)
+  }
+
+  return String(value)
+}
+
+// The "(emergency)" marker is an instruction to the app, not words for a
+// reader. The severity it drives is already shown beside the answer.
+function stripEmergencyMarker(text) {
+  return String(text).replace(/\s*\(emergency\)\s*/gi, ' ').trim()
+}
+
+// Every question on a condition form for one day, with the answer given and
+// whether it flagged. Follow-ups sit under the question they belong to, and
+// questions that were never answered are dropped rather than listed blank.
+export function describeConditionDay(condition, values, species) {
+  const rows = []
+
+  for (const parameter of parametersOf(condition)) {
+    if (!isAsked(parameter)) continue
+
+    const value = values?.[parameter.key]
+    const answer = describeParameterAnswer(parameter, value, species)
+    if (answer == null) continue
+
+    const verdict = evaluateParameter(parameter, value, species)
+    rows.push({
+      key: parameter.key,
+      label: labelOf(parameter),
+      answer,
+      severity: verdict?.severity ?? null,
+    })
+
+    // A follow-up is only meaningful next to the answer that triggered it —
+    // "Hips, lower back" on its own is not a finding.
+    const followUp = parameter.followUp
+    if (!followUp) continue
+    const followAnswer = describeParameterAnswer(followUp, values?.[followUp.key], species)
+    if (followAnswer == null) continue
+    rows.push({
+      key: followUp.key,
+      label: typeof followUp.label === 'string' ? followUp.label : 'More detail',
+      answer: followAnswer,
+      severity: null,
+      isFollowUp: true,
+    })
+  }
+
+  return rows
+}
+
 export function summariseEntry(condition, values, species) {
   let emergencies = 0
   let concerns = 0
   let answered = 0
   let unsure = 0
+  // WHICH parameters flagged, not just how many. "1 flagged" tells an owner
+  // there is something to look at and then makes them go and find it —
+  // which, on a calendar showing three months, means opening days one at a
+  // time until they hit the right one.
+  const flagged = []
 
   for (const parameter of parametersOf(condition)) {
     // Skipped before the answered count, not just before the flag count. A
@@ -1375,13 +1520,20 @@ export function summariseEntry(condition, values, species) {
     answered += 1
 
     const verdict = evaluateParameter(parameter, value, species)
-    if (verdict?.severity === SEVERITY.EMERGENCY) emergencies += 1
-    else if (verdict?.severity === SEVERITY.CONCERN) concerns += 1
+    if (verdict?.severity === SEVERITY.EMERGENCY) {
+      emergencies += 1
+      flagged.push({ key: parameter.key, label: labelOf(parameter), severity: SEVERITY.EMERGENCY })
+    } else if (verdict?.severity === SEVERITY.CONCERN) {
+      concerns += 1
+      flagged.push({ key: parameter.key, label: labelOf(parameter), severity: SEVERITY.CONCERN })
+    }
   }
 
   // Nothing answered is not the same as nothing wrong, so it gets its own
   // state rather than defaulting to OK.
-  if (answered === 0) return { severity: null, emergencies: 0, concerns: 0, flags: 0, answered, unsure }
+  if (answered === 0) {
+    return { severity: null, emergencies: 0, concerns: 0, flags: 0, flagged: [], answered, unsure }
+  }
 
   const severity = emergencies > 0
     ? SEVERITY.EMERGENCY
@@ -1389,7 +1541,13 @@ export function summariseEntry(condition, values, species) {
       ? SEVERITY.CONCERN
       : SEVERITY.OK
 
-  return { severity, emergencies, concerns, flags: emergencies + concerns, answered, unsure }
+  // Worst first, so a day with an emergency and two concerns names the
+  // emergency before anything else.
+  flagged.sort((a, b) => (
+    (a.severity === SEVERITY.EMERGENCY ? 0 : 1) - (b.severity === SEVERITY.EMERGENCY ? 0 : 1)
+  ))
+
+  return { severity, emergencies, concerns, flags: emergencies + concerns, flagged, answered, unsure }
 }
 
 export const SEVERITY_COLOURS = {

@@ -29,11 +29,13 @@ import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst, computeGeneralQolResult } from '../lib/scoring'
 import {
   beapAppetiteFromVcogGrade,
+  prefilledFrom,
   sleepScoreFromSeverity,
   sleepSeverityFromScore,
   vcogGradeFromBeapAppetite,
 } from '../lib/conditions'
 import { CONDITION_LIST } from '../lib/conditions'
+import { assessmentReferences } from '../lib/references'
 import {
   saveConditionEntry,
   todayIsoDate,
@@ -498,6 +500,23 @@ export default function QualityOfLifeAssessment() {
     setSaving(false)
   }
 
+  // Species-filtered: a dog owner is never shown the Feline Grimace Scale, so
+  // crediting it to them would be noise dressed up as rigour.
+  const references = assessmentReferences(pet.species)
+
+  // Below the Back/Next buttons on the intro page only. Credits belong at
+  // the bottom of the screen, under the controls — not between the
+  // instructions and the button the reader is trying to press.
+  const pageFooters = [
+    references.length > 0 ? (
+      <div className="assessment-references" key="references">
+        {references.map((reference) => (
+          <p key={reference.key} className="beap-citation">{reference.short}</p>
+        ))}
+      </div>
+    ) : null,
+  ]
+
   const pages = [
     <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
     <SliderWithChipsPage
@@ -573,7 +592,7 @@ export default function QualityOfLifeAssessment() {
       description={SLEEP_NOTES[pet.species] ?? SLEEP_NOTES.dog}
       note={
         scoresFromConditions.sleep
-          ? `Filled in from today's ${scoresFromConditions.sleep.conditionLabel} assessment, because this is the same question. You can change it — it will change in both places.`
+          ? prefilledFrom(`${scoresFromConditions.sleep.conditionLabel} assessment`)
           : null
       }
     />,
@@ -594,7 +613,7 @@ export default function QualityOfLifeAssessment() {
           value={entry.beap[category]}
           note={
             beapFromConditions[category]
-              ? `Filled in from today's ${beapFromConditions[category].conditionLabel} assessment, because this is the same question. You can change it — it will change in both places.`
+              ? prefilledFrom(`${beapFromConditions[category].conditionLabel} assessment`)
               : null
           }
           onChange={(v) => updateBeap(category, v)}
@@ -688,6 +707,7 @@ export default function QualityOfLifeAssessment() {
           initialPageIndex={initialPageIndex}
           finishLabel={saving ? 'Saving…' : 'Save'}
           onComplete={handleComplete}
+          pageFooters={pageFooters}
           footer={<Footer />}
         />
       </Card>

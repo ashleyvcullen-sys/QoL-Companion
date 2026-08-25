@@ -21,6 +21,7 @@
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import {
   RELATIONSHIP,
+  SEVERITY,
   SEVERITY_COLOURS,
   SEVERITY_LABELS,
   askedParameters,
@@ -45,6 +46,15 @@ export const BCS_COLOUR = '#5C6F8A'
 export const WEIGHT_COLOUR = '#7A9A7E'
 export const CONDITION_COLOUR = '#8A5C6F'
 export const FLAGS_COLOUR = '#C97A2E'
+// What the three colours on a calendar mean, in the owner's words rather
+// than the scoring vocabulary. Green covers both "nothing flagged" and the
+// mildly-reduced band that shares its colour, so "good day" is the honest
+// reading of a green cell rather than a stricter claim than the colour makes.
+export const SEVERITY_KEY_ITEMS = [
+  { colour: SEVERITY_COLOURS[SEVERITY.OK], label: 'Good day' },
+  { colour: SEVERITY_COLOURS[SEVERITY.CONCERN], label: 'Average day' },
+  { colour: SEVERITY_COLOURS[SEVERITY.EMERGENCY], label: 'Bad day' },
+]
 
 // Recharts can only place a vertical line on an x value present in the
 // series, so an event on a day with no reading simply isn't drawn. It still
@@ -64,15 +74,53 @@ function markersFor(points, events) {
   return marks.length ? marks : undefined
 }
 
-// Which days a medication started or stopped, as one label per day.
+// Which days carry a medical event, as one entry per day.
 //
-// The point of drawing these on a calendar is the question every owner asks
-// and no chart has answered until now: did it help? A row of amber days
-// followed by a mark and then a row of green ones answers it at a glance,
-// which no amount of remembering does.
+// Same shape as the medication and note maps below, and drawn the same way:
+// a mark inside the day's cell on the calendar. Several events on one day —
+// a vet visit and the medication it started — accumulate rather than
+// overwrite, because both belong to that day.
+export function eventDayLabels(events = []) {
+  const byDate = new Map()
+
+  for (const event of events) {
+    if (!event?.date) continue
+    const type = eventTypeByValue(event.type)
+    const label = event.title || type?.label || 'Event'
+    const existing = byDate.get(event.date)
+    byDate.set(event.date, existing ? `${existing} \u2014 ${label}` : label)
+  }
+
+  return byDate
+}
+
+// Which days carry a note, as one entry per day.
 //
-// A day can carry more than one — two medications started together on the day
-// of a diagnosis is a common shape — so they accumulate rather than overwrite.
+// Notes arrive from more than one place on the same day — the assessment and
+// the pain log each have their own field, and a condition entry has another —
+// so they accumulate rather than overwrite. Blank and whitespace-only notes
+// are dropped: an empty string is not a note, and marking every day would
+// make the mark meaningless.
+export function noteDayLabels(...entryLists) {
+  const byDate = new Map()
+
+  for (const entries of entryLists) {
+    for (const entry of entries ?? []) {
+      const text = (entry?.notes ?? '').trim()
+      if (!text || !entry.date) continue
+      const existing = byDate.get(entry.date)
+      // The same note saved through two paths on one day would otherwise be
+      // shown twice, which reads as two different notes.
+      if (existing?.includes(text)) continue
+      // Separated, not run together: two notes on one day joined by a bare
+      // space read as one sentence that never made sense.
+      byDate.set(entry.date, existing ? `${existing} \u2014 ${text}` : text)
+    }
+  }
+
+  return byDate
+}
+
 function medicationDayLabels(medications = []) {
   const byDate = new Map()
 
@@ -96,6 +144,11 @@ function medicationDayLabels(medications = []) {
 // no data yet, or a parameter that can't be turned into a series — and the
 // caller drops it rather than rendering an empty frame.
 
+// No medication or note marks on the line charts. A dashed vertical line
+// every time a tablet started or a note was written turned a twelve-week
+// trend into a picket fence, and the thing the chart exists to show — the
+// shape of the line — was the thing hardest to see. Both marks live on the
+// calendars, where a day is a cell and a mark sits inside it.
 function overallChart(dailySeries) {
   if (!dailySeries.length) return null
   return {
@@ -112,9 +165,9 @@ function overallChart(dailySeries) {
   }
 }
 
-function goodBadDaysChart(generalEntries, painEntries, medications) {
+function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map()) {
   const medicationDays = medicationDayLabels(medications)
-  if (!generalEntries.length && medicationDays.size === 0) return null
+  if (!generalEntries.length && medicationDays.size === 0 && noteDays.size === 0) return null
 
   const beapByDate = new Map(painEntries.map((entry) => [entry.date, entry.beap]))
   // The colour is taken straight off the computed result rather than being
@@ -138,17 +191,25 @@ function goodBadDaysChart(generalEntries, painEntries, medications) {
     dayFor: (dateKey) => {
       const result = resultByDate.get(dateKey)
       const marker = medicationDays.get(dateKey) ?? null
-      // A medication starting on a day with no assessment still gets marked.
-      // That day is uncoloured, which is honest — nothing was recorded — but
-      // the mark is the whole reason the owner is looking at this calendar.
-      if (!result && !marker) return null
+      const note = noteDays.get(dateKey) ?? null
+      // A medication starting, or a note written, on a day with no assessment
+      // still gets marked. That day is uncoloured, which is honest — nothing
+      // was scored — but the mark is the whole reason the owner is looking at
+      // this calendar.
+      if (!result && !marker && !note) return null
       return {
         colour: result ? result.color : null,
-        title: [result ? `${result.percent}%` : null, marker].filter(Boolean).join(' — '),
+        title: [result ? `${result.percent}%` : null, marker, note]
+          .filter(Boolean).join(' — '),
         marker,
+        note,
       }
     },
-    caption: 'A good quality of life means having more good days than bad.',
+    // Above the calendar, not below it. It is the point of the chart rather
+    // than a footnote to it — an owner should read what they are looking for
+    // before they look, not after.
+    intro: 'A good quality of life means having more good days than bad.',
+    severityKey: true,
   }
 }
 
@@ -299,8 +360,13 @@ export function chartsForCondition({
   }))
 
   const medicationDays = medicationDayLabels(medications)
+  // A condition entry carries its own notes field, separate from the
+  // assessment's. Both belong on this condition's calendar.
+  const noteDays = noteDayLabels(entries)
+  const eventDays = eventDayLabels(events)
 
-  if (summaries.length > 0 || medicationDays.size > 0) {
+  if (summaries.length > 0 || medicationDays.size > 0
+      || noteDays.size > 0 || eventDays.size > 0) {
     const summaryByDate = new Map(summaries.map((day) => [day.date, day]))
     charts.push({
       key: `${resolved.key}:calendar`,
@@ -313,16 +379,26 @@ export function chartsForCondition({
       dayFor: (dateKey) => {
         const day = summaryByDate.get(dateKey)
         const marker = medicationDays.get(dateKey) ?? null
-        if (!day?.severity && !marker) return null
+        const note = noteDays.get(dateKey) ?? null
+        const event = eventDays.get(dateKey) ?? null
+        if (!day?.severity && !marker && !note && !event) return null
+        // Names what was flagged, not just how many. "Worth watching — 1
+        // flagged" told the owner there was something without saying what,
+        // which on a three-month calendar meant opening days one at a time
+        // to find it.
+        const flaggedNames = (day?.flagged ?? []).map((entry) => entry.label)
         const severityTitle = day?.severity
-          ? `${SEVERITY_LABELS[day.severity]}${day.flags ? ` — ${day.flags} flagged` : ''}`
+          ? `${SEVERITY_LABELS[day.severity]}${flaggedNames.length ? `: ${flaggedNames.join(', ')}` : ''}`
           : null
         return {
           colour: day?.severity ? SEVERITY_COLOURS[day.severity] : null,
-          title: [severityTitle, marker].filter(Boolean).join(' — '),
+          title: [severityTitle, marker, note, event].filter(Boolean).join(' — '),
           marker,
+          note,
+          event,
         }
       },
+      severityKey: true,
     })
   }
 
@@ -382,7 +458,11 @@ export function chartsForCondition({
       height: 180,
       threshold: config.threshold,
       thresholdLabel: config.threshold != null ? `${config.threshold}` : undefined,
-      markers: markersFor(config.points, events),
+      // Events only. Medication and note marks used to be merged in here
+      // too; they now sit on this condition's summary calendar instead, for
+      // the same reason as the overall chart above — a line with a mark on
+      // every second reading is a line nobody can read.
+      markers: markersFor(config.points, events) ?? [],
       caption: config.caption ?? undefined,
     })
   }
@@ -411,9 +491,15 @@ export function buildChartRegistry({
   configByCondition = {},
   species,
 } = {}) {
+  // The assessment and the pain log are saved together but keep separate
+  // notes fields, so a day's note can be in either. Built once and shared by
+  // every overview chart, so the calendar and the lines can never disagree
+  // about which days carry a note.
+  const noteDays = noteDayLabels(generalEntries, painEntries)
+
   const charts = [
     overallChart(dailySeries),
-    goodBadDaysChart(generalEntries, painEntries, medications),
+    goodBadDaysChart(generalEntries, painEntries, medications, noteDays),
     ...pillarCharts(dailySeries),
     ...bodyCharts(bcsEntries),
   ].filter(Boolean)

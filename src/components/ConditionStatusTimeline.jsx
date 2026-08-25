@@ -23,7 +23,9 @@ export default function ConditionStatusTimeline({ days }) {
             key={day.date}
             className="status-cell"
             style={{ background: day.severity ? SEVERITY_COLOURS[day.severity] : 'var(--border)' }}
-            title={`${formatShort(day.date)} — ${day.severity ? SEVERITY_LABELS[day.severity] : 'Nothing recorded'}${day.flags ? ` (${day.flags} flagged)` : ''}`}
+            // Names what was flagged, the same as the calendar does. A count
+            // on its own sends the reader looking for the thing it counted.
+            title={`${formatShort(day.date)} — ${day.severity ? SEVERITY_LABELS[day.severity] : 'Nothing recorded'}${(day.flagged ?? []).length ? `: ${day.flagged.map((f) => f.label).join(', ')}` : ''}`}
           />
         ))}
       </div>

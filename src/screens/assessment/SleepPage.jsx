@@ -1,6 +1,7 @@
 import SectionTitle from '../../components/SectionTitle'
 import SeverityOptionList from '../../components/SeverityOptionList'
 import { SLEEP_SCALE } from '../../lib/beapScales'
+import { snapToOption } from '../../lib/conditions'
 import { fillPetText } from '../../lib/petText'
 
 // The six sleep levels, scored the way every other everyday-function question
@@ -35,7 +36,9 @@ export default function SleepPage({ value, onChange, pet, description, note }) {
 
       <SeverityOptionList
         levels={levels}
-        value={isUnsure ? null : value}
+        // Snapped, so a score saved by the slider this replaced still shows
+        // as an answered question rather than a blank one.
+        value={isUnsure ? null : snapToOption(value, SLEEP_SCORES)}
         onChange={onChange}
         scores={SLEEP_SCORES}
       />

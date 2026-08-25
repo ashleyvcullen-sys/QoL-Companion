@@ -42,6 +42,10 @@ export const BrainOrganIcon = (props) => <OrganIcon name="brain" {...props} />
 export const EyeOrganIcon = (props) => <OrganIcon name="eye" {...props} />
 export const GutOrganIcon = (props) => <OrganIcon name="gut" {...props} />
 export const SeizureOrganIcon = (props) => <OrganIcon name="seizure" {...props} />
+// A tangle of loops rather than a downward-trending line. The trend arrow
+// said "this gets worse", which is a prognosis rather than a description, and
+// it was the only icon in the set making a claim about outcome instead of
+// naming the thing being monitored. Ash's drawing.
 export const CognitiveOrganIcon = (props) => <OrganIcon name="cognitive" {...props} />
 // Cancer has no single organ, so it borrows the cell-division glyph rather
 // than picking one site and implying the others don't count.
