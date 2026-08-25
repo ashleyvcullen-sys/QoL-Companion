@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ChevronDown, FileDown } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
@@ -19,6 +19,7 @@ import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
+import { useMedications } from '../lib/medicationsData'
 
 function formatDateDDMMYYYY(dateStr) {
   if (!dateStr) return dateStr
@@ -32,6 +33,7 @@ export default function Trends() {
   const navigate = useNavigate()
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
+  const { medications } = useMedications(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   // Charts start collapsed. Seven full-height charts stacked made the screen
   // a long scroll where nothing was findable; collapsed, the page is a list
@@ -58,6 +60,9 @@ export default function Trends() {
     painEntries,
     dailySeries,
     bcsEntries,
+    // Only for the calendar's start/stop marks — the medication list itself
+    // lives on its own screen.
+    medications,
     species: pet?.species,
   })
 

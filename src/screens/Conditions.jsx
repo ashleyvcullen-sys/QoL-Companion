@@ -13,7 +13,10 @@ export default function Conditions() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
-  const { conditions, loading } = usePetConditions(pet?.id)
+  // Only the loading flag: which conditions have a row is deliberately not
+  // what this screen reads. "Tracking" means readings have been logged, and
+  // that comes from byCondition below.
+  const { loading } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
 
   // "Tracking" means readings have been logged, NOT that a row exists in

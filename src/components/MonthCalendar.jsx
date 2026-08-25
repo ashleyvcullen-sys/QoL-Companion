@@ -86,6 +86,11 @@ export default function MonthCalendar({ dayFor }) {
               title={info?.title ?? 'Nothing recorded'}
             >
               {day}
+              {/* A medication started or stopped on this day. Deliberately a
+                  dot rather than a letter or an icon: the cell is 11px of
+                  space with a number already in it, and anything legible
+                  would cover the number. The detail is in the title. */}
+              {info?.marker && <span className="calendar-cell-marker" />}
             </div>
           )
         })}

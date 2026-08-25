@@ -41,6 +41,7 @@ reports as already satisfied if re-run. Both are written to be re-runnable.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
+| `20260825010000_medication_dates.sql` | Adds `started_on` and `ended_on` dates to `medications`, back-fills `started_on` from `created_at`, and adds a check that an end date cannot precede a start date | The calendars mark the day a medication started or stopped, so an owner can see whether the days improved afterwards. **Until this is run, the medication form's date fields fail to save.** |
 | `20260825000000_medication_monthly_frequency.sql` | Widens the `medications_frequency_period_check` constraint from `('day', 'week')` to `('day', 'week', 'month')` | The app now offers "N times per month" in the medication frequency dropdown. **Until this is run, saving a monthly medication fails with a constraint violation** — the option appears but cannot be saved. |
 
 To verify after running it:

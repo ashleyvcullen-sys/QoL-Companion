@@ -37,6 +37,8 @@ const EMPTY_FORM = {
   frequencyPeriod: 'day',
   remindersEnabled: true,
   notes: '',
+  startedOn: '',
+  endedOn: '',
 }
 
 const MODE_OPTIONS = [
@@ -146,6 +148,8 @@ export default function Medications() {
     setForm({
       name: medication.name,
       dose: medication.dose ?? '',
+      startedOn: medication.startedOn ?? '',
+      endedOn: medication.endedOn ?? '',
       scheduleMode: medication.scheduleMode,
       times: medication.times.length > 0 ? [...medication.times] : ['08:00'],
       frequencyCount: medication.frequencyCount ?? 2,
@@ -200,6 +204,8 @@ export default function Medications() {
         frequencyCount: Number(form.frequencyCount) || 1,
         frequencyPeriod: form.frequencyPeriod,
         remindersEnabled: form.scheduleMode === 'times' ? form.remindersEnabled : false,
+        startedOn: form.startedOn,
+        endedOn: form.endedOn,
       }
 
       const saved = editingId === 'new'
@@ -250,7 +256,14 @@ export default function Medications() {
   async function handleSetActive(medication, nextActive) {
     setErrorMessage('')
     try {
-      const saved = await updateMedication(medication.id, { active: nextActive })
+      // Stopping a course records when, unless the owner already said. The
+      // date is what the calendar draws; without it, "stopped" is a fact with
+      // no position in time.
+      const saved = await updateMedication(medication.id, {
+        active: nextActive,
+        ...(nextActive === false && !medication.endedOn ? { endedOn: todayIsoDate() } : {}),
+        ...(nextActive === true ? { endedOn: '' } : {}),
+      })
       await syncReminders(saved)
       refresh()
     } catch (error) {
@@ -423,6 +436,36 @@ export default function Medications() {
                 onChange={(e) => setForm({ ...form, dose: e.target.value })}
                 placeholder="e.g. 1 tablet, 0.5 ml"
               />
+            </div>
+
+            {/* Dates, not "when did you add this to the app". They are drawn
+                on the Trends and condition calendars, so an owner can see
+                what the days looked like either side of starting something.
+                Both optional: a guess drawn as a fact is worse than a gap. */}
+            <div className="field">
+              <label htmlFor="med-started">Started (optional)</label>
+              <input
+                id="med-started"
+                type="date"
+                value={form.startedOn}
+                max={todayIsoDate()}
+                onChange={(e) => setForm({ ...form, startedOn: e.target.value })}
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="med-ended">Stopped (optional)</label>
+              <input
+                id="med-ended"
+                type="date"
+                value={form.endedOn}
+                min={form.startedOn || undefined}
+                onChange={(e) => setForm({ ...form, endedOn: e.target.value })}
+              />
+              <p className="assessment-hint">
+                Leave this empty while {pet.name} is still taking it. Marking a medication as
+                finished fills it in for you.
+              </p>
             </div>
 
             <div className="field">

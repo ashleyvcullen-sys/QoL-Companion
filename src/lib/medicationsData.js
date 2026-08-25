@@ -18,6 +18,11 @@ function mapMedicationRow(row) {
     remindersEnabled: row.reminders_enabled ?? true,
     notes: row.notes,
     active: row.active,
+    // Null means "not recorded", never "today". An owner who does not know
+    // when a long-standing medication began should not have the app invent a
+    // date and then draw it on a calendar as though it were fact.
+    startedOn: row.started_on ?? null,
+    endedOn: row.ended_on ?? null,
   }
 }
 
@@ -93,7 +98,10 @@ export async function fetchDosesSince(petId, fromDate) {
   return (data ?? []).map(mapDoseRow)
 }
 
-export async function createMedication({ petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod, remindersEnabled }) {
+export async function createMedication({
+  petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod,
+  remindersEnabled, startedOn, endedOn,
+}) {
   const { data, error } = await supabase
     .from('medications')
     .insert({
@@ -106,6 +114,8 @@ export async function createMedication({ petId, name, dose, times, notes, schedu
       frequency_period: scheduleMode === 'frequency' ? frequencyPeriod : null,
       reminders_enabled: remindersEnabled ?? true,
       notes: notes || null,
+      started_on: startedOn || null,
+      ended_on: endedOn || null,
     })
     .select()
     .single()
@@ -114,13 +124,21 @@ export async function createMedication({ petId, name, dose, times, notes, schedu
   return mapMedicationRow(data)
 }
 
-export async function updateMedication(medicationId, { name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod, remindersEnabled }) {
+export async function updateMedication(medicationId, {
+  name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod,
+  remindersEnabled, startedOn, endedOn,
+}) {
   const patch = {}
   if (name !== undefined) patch.name = name
   if (dose !== undefined) patch.dose = dose || null
   if (notes !== undefined) patch.notes = notes || null
   if (active !== undefined) patch.active = active
   if (remindersEnabled !== undefined) patch.reminders_enabled = remindersEnabled
+  // Empty string means the owner cleared the field, which is a real answer —
+  // "I do not know" — and has to reach the database as null rather than being
+  // skipped as though they had never touched it.
+  if (startedOn !== undefined) patch.started_on = startedOn || null
+  if (endedOn !== undefined) patch.ended_on = endedOn || null
 
   // Mode drives the other three, so they're written as a set. Leaving a
   // stale frequency on a medication switched to clock times would make the

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
 import { Filesystem, Directory } from '@capacitor/filesystem'
@@ -31,6 +32,7 @@ import {
   usePetConditions,
 } from '../lib/conditionsData'
 import { usePetMedia } from '../lib/mediaData'
+import { useMedications } from '../lib/medicationsData'
 
 // What the report contains when the owner never touches the picker: the
 // overall score and all five wellbeing pillars, which is exactly what it
@@ -285,7 +287,18 @@ export default function ExportReport() {
   // the second is told to pick something. Resolving lazily rather than
   // seeding state in an effect also avoids a first render where the report
   // claims to contain nothing because the charts haven't loaded yet.
-  const [selectedKeys, setSelectedKeys] = useState(null)
+  // A screen can arrive here having already decided what is worth exporting:
+  // the condition page sends its own charts, so an owner who has just looked
+  // at a summary and thought "my vet should see this" does not have to find
+  // it again in a list of everything. It is a starting point, not a lock —
+  // the picker below works exactly as it always did, and they can add the
+  // overall trend or take a chart out.
+  const location = useLocation()
+  const preselected = Array.isArray(location.state?.preselect) && location.state.preselect.length > 0
+    ? location.state.preselect
+    : null
+
+  const [selectedKeys, setSelectedKeys] = useState(preselected)
   // Off by default: photos make the file much larger and are not wanted for
   // most visits.
   const [includeMedia, setIncludeMedia] = useState(false)
@@ -348,6 +361,9 @@ export default function ExportReport() {
     painEntries,
     dailySeries,
     bcsEntries,
+    // Only for the calendar's start/stop marks — the medication list itself
+    // lives on its own screen.
+    medications,
     trackedConditions,
     entriesByCondition: byCondition,
     eventsByCondition,

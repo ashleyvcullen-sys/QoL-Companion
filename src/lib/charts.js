@@ -64,6 +64,32 @@ function markersFor(points, events) {
   return marks.length ? marks : undefined
 }
 
+// Which days a medication started or stopped, as one label per day.
+//
+// The point of drawing these on a calendar is the question every owner asks
+// and no chart has answered until now: did it help? A row of amber days
+// followed by a mark and then a row of green ones answers it at a glance,
+// which no amount of remembering does.
+//
+// A day can carry more than one — two medications started together on the day
+// of a diagnosis is a common shape — so they accumulate rather than overwrite.
+function medicationDayLabels(medications = []) {
+  const byDate = new Map()
+
+  function add(date, label) {
+    if (!date) return
+    const existing = byDate.get(date)
+    byDate.set(date, existing ? `${existing}, ${label}` : label)
+  }
+
+  for (const medication of medications) {
+    add(medication.startedOn, `Started ${medication.name}`)
+    add(medication.endedOn, `Stopped ${medication.name}`)
+  }
+
+  return byDate
+}
+
 // --- The individual builders ---------------------------------------------
 //
 // Each returns a descriptor or null. Null means "there is nothing to draw" —
@@ -86,8 +112,9 @@ function overallChart(dailySeries) {
   }
 }
 
-function goodBadDaysChart(generalEntries, painEntries) {
-  if (!generalEntries.length) return null
+function goodBadDaysChart(generalEntries, painEntries, medications) {
+  const medicationDays = medicationDayLabels(medications)
+  if (!generalEntries.length && medicationDays.size === 0) return null
 
   const beapByDate = new Map(painEntries.map((entry) => [entry.date, entry.beap]))
   // The colour is taken straight off the computed result rather than being
@@ -110,8 +137,16 @@ function goodBadDaysChart(generalEntries, painEntries) {
     kind: 'calendar',
     dayFor: (dateKey) => {
       const result = resultByDate.get(dateKey)
-      if (!result) return null
-      return { colour: result.color, title: `${result.percent}%` }
+      const marker = medicationDays.get(dateKey) ?? null
+      // A medication starting on a day with no assessment still gets marked.
+      // That day is uncoloured, which is honest — nothing was recorded — but
+      // the mark is the whole reason the owner is looking at this calendar.
+      if (!result && !marker) return null
+      return {
+        colour: result ? result.color : null,
+        title: [result ? `${result.percent}%` : null, marker].filter(Boolean).join(' — '),
+        marker,
+      }
     },
     caption: 'A good quality of life means having more good days than bad.',
   }
@@ -240,6 +275,7 @@ export function chartsForCondition({
   entries = [],
   events = [],
   dailySeries = [],
+  medications = [],
   species,
   config,
 }) {
@@ -262,7 +298,9 @@ export function chartsForCondition({
     ...summariseEntry(resolved, entry.values, species),
   }))
 
-  if (summaries.length > 0) {
+  const medicationDays = medicationDayLabels(medications)
+
+  if (summaries.length > 0 || medicationDays.size > 0) {
     const summaryByDate = new Map(summaries.map((day) => [day.date, day]))
     charts.push({
       key: `${resolved.key}:calendar`,
@@ -274,10 +312,15 @@ export function chartsForCondition({
       kind: 'calendar',
       dayFor: (dateKey) => {
         const day = summaryByDate.get(dateKey)
-        if (!day?.severity) return null
+        const marker = medicationDays.get(dateKey) ?? null
+        if (!day?.severity && !marker) return null
+        const severityTitle = day?.severity
+          ? `${SEVERITY_LABELS[day.severity]}${day.flags ? ` — ${day.flags} flagged` : ''}`
+          : null
         return {
-          colour: SEVERITY_COLOURS[day.severity],
-          title: `${SEVERITY_LABELS[day.severity]}${day.flags ? ` — ${day.flags} flagged` : ''}`,
+          colour: day?.severity ? SEVERITY_COLOURS[day.severity] : null,
+          title: [severityTitle, marker].filter(Boolean).join(' — '),
+          marker,
         }
       },
     })
@@ -361,6 +404,7 @@ export function buildChartRegistry({
   painEntries = [],
   dailySeries = [],
   bcsEntries = [],
+  medications = [],
   trackedConditions = [],
   entriesByCondition = {},
   eventsByCondition = {},
@@ -369,7 +413,7 @@ export function buildChartRegistry({
 } = {}) {
   const charts = [
     overallChart(dailySeries),
-    goodBadDaysChart(generalEntries, painEntries),
+    goodBadDaysChart(generalEntries, painEntries, medications),
     ...pillarCharts(dailySeries),
     ...bodyCharts(bcsEntries),
   ].filter(Boolean)
@@ -381,6 +425,7 @@ export function buildChartRegistry({
         entries: entriesByCondition[definition.key] ?? [],
         events: eventsByCondition[definition.key] ?? [],
         dailySeries,
+        medications,
         species,
         config: configByCondition[definition.key],
       }),

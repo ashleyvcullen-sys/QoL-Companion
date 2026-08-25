@@ -1804,6 +1804,7 @@ code {
 }
 
 .calendar-cell {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 8px;
   display: flex;
@@ -1815,6 +1816,20 @@ code {
 
 .calendar-cell-empty {
   background: none;
+}
+
+/* The medication mark. Sits over the top-right corner of the day, and is
+   outlined so it stays visible on a green day, an amber one and an
+   unrecorded grey one alike. */
+.calendar-cell-marker {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-h);
+  box-shadow: 0 0 0 1.5px #fff;
 }
 
 .chart-title {

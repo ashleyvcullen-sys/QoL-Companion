@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, Trash2 } from 'lucide-react'
+import { AlertTriangle, FileDown, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -14,6 +14,7 @@ import { SEVERITY, askedParameters, conditionByKey, evaluateParameter } from '..
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries, updateBeapCategory } from '../lib/qolData'
+import { useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -46,6 +47,7 @@ export default function ConditionMonitoring() {
   // with nothing referenced never reads it, and the extra fetch costs one
   // query on a page that is already fetching three.
   const { generalEntries, painEntries } = useQolHistory(pet?.id)
+  const { medications } = useMedications(pet?.id)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
 
   // Which condition is determined by the URL, so each one is a real page you
@@ -297,6 +299,9 @@ export default function ConditionMonitoring() {
     // but does not collect. Loaded here rather than threaded down from Trends
     // because this page is reached directly.
     dailySeries,
+    // Only for the calendar's start/stop marks — the medication list itself
+    // lives on its own screen.
+    medications,
     species: pet?.species,
     config,
   })
@@ -532,6 +537,29 @@ export default function ConditionMonitoring() {
               </div>
 
               <ChartView chart={activeChart} />
+            </Card>
+          )}
+
+          {/* Offered where the charts are, not on a menu somewhere else. The
+              moment an owner decides their vet should see this is the moment
+              they are looking at it. */}
+          {charts.length > 0 && (
+            <Card>
+              <SectionTitle>Take This To Your Vet</SectionTitle>
+              <p className="assessment-hint">
+                Export {pet.name}'s {definition.label.toLowerCase()} charts as a report. Everything
+                on this page is selected to start with, and you can add {pet.name}'s general
+                quality of life trends on the next screen.
+              </p>
+              <Btn
+                type="button"
+                className="btn-block"
+                onClick={() => navigate('/export-report', {
+                  state: { preselect: charts.map((chart) => chart.key) },
+                })}
+              >
+                <FileDown size={16} /> Export these charts
+              </Btn>
             </Card>
           )}
 
