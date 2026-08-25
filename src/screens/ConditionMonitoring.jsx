@@ -91,10 +91,15 @@ export default function ConditionMonitoring() {
     return Number.isFinite(ms) ? Math.floor(ms / 86400000) : null
   }
 
-  const sinceLast = daysSince(latestEntry?.date)
-  const dueIn = cadence && sinceLast != null ? cadence.days - sinceLast : null
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
   const latestEntry = entries[entries.length - 1] ?? null
+
+  // Declared AFTER latestEntry, and that ordering is the whole point: these
+  // two read it, and a `const` cannot be read on a line above its own
+  // declaration. Reversed, every render of this screen threw "Cannot access
+  // 'latestEntry' before initialization" before it drew anything.
+  const sinceLast = daysSince(latestEntry?.date)
+  const dueIn = cadence && sinceLast != null ? cadence.days - sinceLast : null
 
   const values = draft ?? todaysEntry?.values ?? {}
 
