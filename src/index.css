@@ -2848,3 +2848,12 @@ code {
   color: rgba(255, 255, 255, 0.6);
   font-size: var(--type-meta);
 }
+
+/* Source credits at the foot of a screen, set apart from the content above
+   by a rule — the same treatment the assessment's credits get, so a credit
+   looks like a credit wherever it appears. */
+.page-references {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}

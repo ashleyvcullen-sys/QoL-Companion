@@ -22,27 +22,27 @@ export const REFERENCES = [
   {
     key: 'beaaaapp',
     where: 'assessment',
-    short: 'BEAAAAPP pain scale concept by Dr. Shea Cox.',
-    full: 'The BEAAAAPP pain-scale concept referenced in this app is adapted from work by Dr. Shea Cox.',
+    short: 'Incorporates ideas from the BEAAAAPP pain scale concept by Dr. Shea Cox.',
+    full: 'This app incorporates ideas from the BEAAAAPP pain-scale concept by Dr. Shea Cox.',
   },
   {
     key: 'feline-grimace',
     where: 'assessment',
     species: 'cat',
-    short: 'Feline Grimace Scale (Evangelista et al., Scientific Reports, 2019, Université de Montréal).',
-    full: 'The cat eyes/face scoring draws on the Feline Grimace Scale (Evangelista MC, Watanabe R, Leung VSY, Monteiro BP, O\'Toole E, Pang DSJ, Steagall PV. "Facial expressions of pain in cats: the development and validation of a Feline Grimace Scale." Scientific Reports, 2019;9:19128).',
+    short: 'Incorporates ideas from the Feline Grimace Scale (Evangelista et al., Scientific Reports, 2019, Université de Montréal).',
+    full: 'The cat eyes/face scoring incorporates ideas from the Feline Grimace Scale (Evangelista MC, Watanabe R, Leung VSY, Monteiro BP, O\'Toole E, Pang DSJ, Steagall PV. "Facial expressions of pain in cats: the development and validation of a Feline Grimace Scale." Scientific Reports, 2019;9:19128).',
   },
   {
     key: 'vcog-ctcae',
     where: 'condition',
-    short: 'Adapted from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
-    full: 'Cancer treatment side-effect grading is adapted from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
+    short: 'Incorporates assessment structures from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
+    full: 'Cancer treatment side-effect grading incorporates assessment structures from the Veterinary Cooperative Oncology Group — Common Terminology Criteria for Adverse Events (VCOG-CTCAE).',
   },
   {
     key: 'load-fmpi',
     where: 'condition',
-    short: 'Adapted from the Liverpool Osteoarthritis in Dogs (LOAD) and the Feline Musculoskeletal Pain Index (FMPI).',
-    full: 'Arthritis monitoring is adapted from the Liverpool Osteoarthritis in Dogs (LOAD) questionnaire and the Feline Musculoskeletal Pain Index (FMPI).',
+    short: 'Incorporates ideas and assessment structures from the Liverpool Osteoarthritis in Dogs (LOAD) questionnaire and the Feline Musculoskeletal Pain Index (FMPI).',
+    full: 'Arthritis monitoring incorporates ideas and assessment structures from the Liverpool Osteoarthritis in Dogs (LOAD) questionnaire and the Feline Musculoskeletal Pain Index (FMPI).',
   },
   {
     key: 'dishaa',
@@ -50,8 +50,8 @@ export const REFERENCES = [
     // PENDING ASH — confirm the instrument and the exact wording. Nothing
     // from DISHAA is reproduced; the domains are followed and the owner
     // wording is drafted.
-    short: 'Adapted from DISHAA.',
-    full: 'Cognitive decline monitoring follows the DISHAA domains (Disorientation, Interactions, Sleep-wake cycle, House-soiling, Activity, Anxiety).',
+    short: 'Incorporates assessment structures from the DISHAA cognitive assessment domains.',
+    full: 'Cognitive decline monitoring incorporates assessment structures from the DISHAA domains (Disorientation, Interactions, Sleep-wake cycle, House-soiling, Activity, Anxiety).',
   },
   {
     key: 'acvim-cardiac',
@@ -62,26 +62,26 @@ export const REFERENCES = [
     // distension) are the ones these two sources describe, but the instrument
     // and the exact wording are yours to confirm — and I have not reproduced
     // anything from either.
-    short: 'Adapted from ACVIM consensus guidelines on myxomatous mitral valve disease and published guidance on home monitoring of sleeping and resting respiratory rate.',
-    full: 'Heart disease monitoring is adapted from the American College of Veterinary Internal Medicine (ACVIM) consensus guidelines for the diagnosis and treatment of myxomatous mitral valve disease in dogs (Keene BW, Atkins CE, Bonagura JD, et al. J Vet Intern Med. 2019;33(3):1127-1140), and from published guidance on owner monitoring of sleeping and resting respiratory rate.',
+    short: 'Incorporates ideas from ACVIM consensus guidelines on myxomatous mitral valve disease and from published guidance on home monitoring of sleeping and resting respiratory rate.',
+    full: 'Heart disease monitoring incorporates ideas from the American College of Veterinary Internal Medicine (ACVIM) consensus guidelines for the diagnosis and treatment of myxomatous mitral valve disease in dogs (Keene BW, Atkins CE, Bonagura JD, et al. J Vet Intern Med. 2019;33(3):1127-1140), and from published guidance on owner monitoring of sleeping and resting respiratory rate.',
   },
   {
     key: 'wsava-bcs',
     where: 'app',
-    short: 'WSAVA/Purina 9-point body condition score.',
-    full: 'Body Condition Score based on the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).',
+    short: 'Incorporates the WSAVA/Purina 9-point body condition scoring structure.',
+    full: 'Body condition scoring incorporates the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).',
   },
   {
     key: 'aaha-aafp',
     where: 'app',
-    short: 'AAHA and AAFP life-stage guidelines.',
-    full: 'Life-stage / human-year equivalents reference published AAHA and AAFP guidelines.',
+    short: 'Incorporates ideas from published AAHA and AAFP life-stage guidelines.',
+    full: 'Life-stage and human-year equivalents incorporate ideas from published AAHA and AAFP guidelines.',
   },
   {
     key: 'lehman-grief',
     where: 'app',
-    short: 'Adapted from guidance by Kristi Lehman, MSW, LISW, DVM Center.',
-    full: 'The "How children grieve" guidance is adapted from material by Kristi Lehman, MSW, LISW, DVM Center.',
+    short: 'Incorporates ideas from guidance by Kristi Lehman, MSW, LISW, DVM Center.',
+    full: 'The "How children grieve" guidance incorporates ideas from material by Kristi Lehman, MSW, LISW, DVM Center.',
   },
 ]
 

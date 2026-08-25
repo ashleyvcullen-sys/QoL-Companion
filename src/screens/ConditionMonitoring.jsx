@@ -12,6 +12,7 @@ import DayAnswersModal from '../components/DayAnswersModal'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import {
+  MONITORING_DISCLAIMER,
   SAME_AS_ASSESSMENT,
   SEVERITY,
   askedParameters,
@@ -423,9 +424,10 @@ export default function ConditionMonitoring() {
                   <PetText template={paragraph} pet={pet} />
                 </p>
               ))}
-            {definition.citation && (
-              <p className="beap-citation">{definition.citation}</p>
-            )}
+            {/* The same sentence as the monitoring list, on the screen where
+                the monitoring actually happens. Someone who lands here from a
+                notification or a bookmark never passes the list. */}
+            <p className="assessment-hint condition-intro">{MONITORING_DISCLAIMER}</p>
           </Card>
 
           {asksAboutMedication && (
@@ -725,6 +727,14 @@ export default function ConditionMonitoring() {
           </div>
           {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
         </Modal>
+      )}
+
+      {/* Credits at the foot of the page, not under the intro. They are read
+          once, if at all, and sitting between the description and the first
+          question they pushed the thing the owner came to do further down
+          every single visit. */}
+      {definition?.citation && (
+        <p className="beap-citation page-references">{definition.citation}</p>
       )}
 
       {openDay && (

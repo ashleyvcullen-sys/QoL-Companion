@@ -14,7 +14,7 @@
 // this is species-keyed like BEAP_SCALES.
 
 export const BCS_CITATION =
-  'Body Condition Score based on the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).'
+  'Incorporates the WSAVA/Purina 9-point body condition scoring structure (World Small Animal Veterinary Association, in partnership with Purina).'
 
 // Kept separate from BCS_CITATION on purpose. The scale is WSAVA's and is
 // cited as such; the artwork in public/images/bcs is NOT WSAVA's, so its
@@ -29,7 +29,7 @@ export const BCS_CITATION =
 // labels here are verified correct; the gradations are not. Worth checking
 // each silhouette against the WSAVA PDF before launch.
 export const BCS_IMAGE_CREDIT =
-  'Illustrations adapted from the WSAVA Body Condition Score chart.'
+  'Illustrations incorporate ideas from the WSAVA Body Condition Score chart.'
 
 export const BCS_MIN = 1
 export const BCS_MAX = 9

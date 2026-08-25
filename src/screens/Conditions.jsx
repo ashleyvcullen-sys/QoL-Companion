@@ -6,8 +6,8 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import { usePets } from '../lib/PetsContext'
 import PetText from '../components/PetText'
-import { CONDITION_LIST } from '../lib/conditions'
 import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import { CONDITION_LIST, MONITORING_DISCLAIMER } from '../lib/conditions'
 
 export default function Conditions() {
   const { selectedPet } = usePets()
@@ -55,10 +55,7 @@ export default function Conditions() {
           Track the things that matter for a condition {pet.name} has been diagnosed with,
           alongside <PetText template="{their}" pet={pet} /> Overall Quality of Life Assessments.
         </p>
-        <p className="assessment-hint">
-          This doesn't replace your vet's monitoring plan but will help make monitoring at home
-          easier between visits.
-        </p>
+        <p className="assessment-hint">{MONITORING_DISCLAIMER}</p>
       </Card>
 
       <div className="condition-grid">

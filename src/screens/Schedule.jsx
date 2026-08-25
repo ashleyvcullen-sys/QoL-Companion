@@ -335,29 +335,18 @@ export default function Schedule() {
         )}
       </Card>
 
+      {/* Directly under the box that asks for a cadence, because that is the
+          moment the question occurs to someone. At the foot of the screen it
+          was four cards past the only control it explains. */}
       <Card>
-        <SectionTitle>Medications</SectionTitle>
-        {medsLoading && <p>Loading…</p>}
-        {!medsLoading && activeMedications.length === 0 && (
-          <p className="assessment-hint">
-            No medications yet. <Link to="/medications" className="subtle-link">Add one</Link> to
-            get reminders for it.
-          </p>
-        )}
-        {!medsLoading && activeMedications.map((medication) => (
-          <div key={medication.id} className="schedule-row">
-            <div className="schedule-row-header">
-              <span className="schedule-row-label">{medication.name}</span>
-              {!medication.remindersEnabled && medication.scheduleMode !== 'as_needed' && (
-                <span className="assessment-hint"><BellOff size={13} /> off</span>
-              )}
-            </div>
-            <p className="assessment-hint">{describeMedicationReminder(medication)}</p>
+        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
+          <div className="welcome-help-row">
+            <span className="icon-badge">
+              <HelpCircle size={20} color="#fff" />
+            </span>
+            <span>How often should I be assessing my pet's quality of life?</span>
           </div>
-        ))}
-        {!medsLoading && activeMedications.length > 0 && (
-          <Link to="/medications" className="subtle-link">Change these in Medications</Link>
-        )}
+        </button>
       </Card>
 
       {/* Each condition sets its own cadence, the same way the assessment
@@ -411,6 +400,35 @@ export default function Schedule() {
         })}
       </Card>
 
+      {/* Last of the three. The quality of life cadence and the per-disease
+          cadences are the same kind of decision — how often to look at the
+          pet — and medications sat between them, splitting the pair with a
+          list that answers to a prescription instead. */}
+      <Card>
+        <SectionTitle>Medications</SectionTitle>
+        {medsLoading && <p>Loading…</p>}
+        {!medsLoading && activeMedications.length === 0 && (
+          <p className="assessment-hint">
+            No medications yet. <Link to="/medications" className="subtle-link">Add one</Link> to
+            get reminders for it.
+          </p>
+        )}
+        {!medsLoading && activeMedications.map((medication) => (
+          <div key={medication.id} className="schedule-row">
+            <div className="schedule-row-header">
+              <span className="schedule-row-label">{medication.name}</span>
+              {!medication.remindersEnabled && medication.scheduleMode !== 'as_needed' && (
+                <span className="assessment-hint"><BellOff size={13} /> off</span>
+              )}
+            </div>
+            <p className="assessment-hint">{describeMedicationReminder(medication)}</p>
+          </div>
+        ))}
+        {!medsLoading && activeMedications.length > 0 && (
+          <Link to="/medications" className="subtle-link">Change these in Medications</Link>
+        )}
+      </Card>
+
       {Capacitor.isNativePlatform() && (notifStatus === 'prompt' || notifStatus === 'prompt-with-rationale') && (
         <Card>
           <p>Allow notifications so we can remind you when it's time for your next check-in?</p>
@@ -448,17 +466,6 @@ export default function Schedule() {
           at the exact time.
         </p>
       )}
-
-      <Card>
-        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
-          <div className="welcome-help-row">
-            <span className="icon-badge">
-              <HelpCircle size={20} color="#fff" />
-            </span>
-            <span>How often should I be assessing my pet's quality of life?</span>
-          </div>
-        </button>
-      </Card>
 
       {showFrequencyInfo && (
         <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>

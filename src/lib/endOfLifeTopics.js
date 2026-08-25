@@ -82,7 +82,7 @@ export const END_OF_LIFE_TOPICS = [
       { type: 'p', text: 'Select an age bracket to read about how children of different ages grieve and understand death.' },
     ],
     hasAgeBracketPicker: true,
-    citation: 'Adapted from guidance by Kristi Lehman, MSW, LISW, DVM Center.',
+    citation: 'Incorporates ideas from guidance by Kristi Lehman, MSW, LISW, DVM Center.',
   },
   {
     key: 'other-pets-grief',
