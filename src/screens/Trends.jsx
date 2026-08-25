@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, FileDown } from 'lucide-react'
+import { FileDown } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -34,16 +34,8 @@ export default function Trends() {
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
-  // Charts start collapsed. Seven full-height charts stacked made the screen
-  // a long scroll where nothing was findable; collapsed, the page is a list
-  // of what's trackable and you open the one you came for.
-  const [expandedCharts, setExpandedCharts] = useState({})
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
-
-  function toggleChart(key) {
-    setExpandedCharts((current) => ({ ...current, [key]: !current[key] }))
-  }
 
   // The two halves of one day's assessment, for the day whose answers are
   // open. Looked up rather than carried on the calendar descriptor, so the

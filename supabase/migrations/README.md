@@ -35,15 +35,36 @@ order by kind, name;
 | `20260824000000_add_condition_config.sql` | 24 Aug 2026 | `config` present on `pet_conditions`: `jsonb`, default `'{}'::jsonb`, confirmed via information_schema. Adds `config` jsonb to `pet_conditions` so a condition's parameter list can be composed per pet rather than fixed — cancer monitoring needs it; every other condition defaults to `'{}'` and behaves exactly as before, so there was nothing to back-fill. Written `add column if not exists`, so re-running is a no-op. |
 | `20260825000000_medication_monthly_frequency.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor. Widens `medications_frequency_period_check` to `('day', 'week', 'month')` so "N times per month" can be saved. Drop-and-recreate rather than alter, because Postgres cannot widen a check in place; `if exists` on the drop makes it re-runnable. Nothing to back-fill — the new set is a strict superset, so every existing row already satisfies it. |
 | `20260825010000_medication_dates.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `started_on` and `ended_on` both present via information_schema. Adds the two dates, back-fills `started_on` from `created_at` (the best available answer for rows added as they were prescribed), and adds `medications_dates_order_check` so an end date cannot precede a start. Both columns stay nullable: "I don't know when this started" is a real answer, and a guess drawn on a calendar as fact would be worse than a gap. |
+| `20260825020000_medication_reminder_time.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `reminder_time` present via information_schema. Adds a nullable `reminder_time text` to `medications` — one time of day at which to raise a frequency medication's doses, chosen by the owner. Kept separate from `times`, which are the prescribed clock times a dose is due at and each get their own tick box and reminder. Nullable because a medication on set times, or given as needed, or with reminders off, has no such time. `add column if not exists`, so re-running is a no-op. |
+| `20260825030000_medication_reminder_days.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `reminder_days` present via information_schema. Adds a nullable `reminder_days integer[]` to `medications`. Meaning depends on `frequency_period`: for `'week'` these are JavaScript weekdays (0 Sunday – 6 Saturday), for `'month'` they are dates of the month. Capped at 28 by the app rather than by the database — a reminder set for the 31st would silently skip five months a year, and the owner would have no way of knowing. Null or empty means "no days chosen" and the app falls back to the day the course started, which is the behaviour from before the column existed. |
 
-Both were applied as a single combined paste, which is why the second one
-reports as already satisfied if re-run. Both are written to be re-runnable.
+The 25 Aug medication migrations were applied in two sittings: the monthly
+frequency and dates pair together, then the two reminder columns. All four are
+written `if not exists` / `if exists`, so re-running any of them is a no-op.
+
+Both reminder columns were confirmed present against `information_schema` on
+25 Aug 2026 — two rows returned. To re-check at any point:
+
+```sql
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'medications'
+  and column_name in ('reminder_time', 'reminder_days');
+```
+
+Two rows means both are present.
 
 ## Not yet applied
 
+**Nothing outstanding as of 25 Aug 2026.**
+
+Every migration file in this folder has been run. Add a row here the moment a
+new migration file is written, not when someone remembers — a file sitting in
+the folder with no row in either table is indistinguishable from one that has
+been applied, and that ambiguity is what this document exists to remove.
+
 | Migration | What it does | Why it is needed |
 |---|---|---|
-| `20260825030000_medication_reminder_days.sql` | Adds a nullable `reminder_days` integer array to `medications` | A medication given more than once a week or month needs a reminder on each of its days, and only the owner knows which days those are. **Until this is run, choosing reminder days fails to save.** |
-| `20260825020000_medication_reminder_time.sql` | Adds a nullable `reminder_time` to `medications` | Medications scheduled by frequency ("twice a day", "once a month") can now remind, at a time of day the owner chooses. **Until this is run, saving a frequency medication with reminders on fails.** |
 
 Update these tables whenever a migration is applied.
