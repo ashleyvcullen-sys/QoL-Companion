@@ -225,6 +225,19 @@ export function sharedParameter(key, overrides = {}) {
   return { ...base, ...overrides }
 }
 
+// The note shown on every question that reuses a BEAAAAPP category verbatim.
+//
+// Defined once and shared rather than written per parameter, because the whole
+// point is that these ARE the same question — two subtly different
+// explanations of that would undo it. Any parameter with `beapKey` should
+// carry it.
+//
+// PENDING ASH — drafted by me. Deliberately does NOT promise that answering
+// in one place fills in the other; that is not built yet. When it is, this
+// sentence is the one place to say so.
+const SAME_AS_ASSESSMENT =
+  'This is the same question as in the daily assessment, asked here because it is one of the most important measures in arthritis.'
+
 export const CONDITIONS = {
   cardiac: {
     key: 'cardiac',
@@ -400,7 +413,12 @@ export const CONDITIONS = {
     composed: true,
     summary:
       'There are many different types of cancer and they cause different symptoms. This makes it easier to keep track of the ones that matter for your pet.',
-    intro:
+    // Shown on the setup screen under "What To Monitor", not on the condition
+    // page. `intro` on every other condition explains what monitoring that
+    // condition involves; for cancer that question cannot be answered until
+    // the owner has said which cancer, so the text that would have gone there
+    // belongs on the screen where they answer it.
+    setupIntro:
       'Cancer looks different in every patient. Your vet may have told you exactly what to watch for; if you are still waiting on results, start with the basics and add to it later.',
     // Credited once, at the top of the assessment, the same way the app
     // credits BEAAAAPP and the WSAVA body condition chart — rather than
@@ -438,8 +456,11 @@ export const CONDITIONS = {
     Icon: BoneOrganIcon,
     summary:
       'Stiffness, lameness and willingness to move, and how well pain relief is holding.',
+    // The weekly recommendation is bolded because it is the one instruction
+    // on this screen that changes what the owner does. PetText renders **runs**
+    // as <strong>, the same way the condition `why` fields emphasise.
     intro:
-      'Arthritis changes slowly, so this one is worth filling in about once a week rather than every day. The questions differ for dogs and cats because the two show it differently — a cat rarely limps, but stops jumping.',
+      'Arthritis changes slowly, so **this one is worth filling in about once a week rather than every day.**',
     // How often this is worth filling in. Conditions without a cadence are
     // daily by default, which is what every other one has been until now.
     // Arthritis moves over weeks, not days: a daily prompt would train
@@ -465,15 +486,17 @@ export const CONDITIONS = {
       // with an arthritis entry missing the one measure that matters most.
       {
         key: 'ambulation',
-        label: 'Getting About',
+        // Named the same as the BEAAAAPP category it reuses. It IS that
+        // question, so calling it something friendlier here only made the two
+        // look like different measures on the same day.
+        label: 'Ambulation',
         type: 'beap',
         beapKey: 'ambulation',
         hideImages: true,
         covers: 'ambulation',
         relationship: RELATIONSHIP.SUPERSEDES,
         concernFrom: 4, // PENDING ASH
-        why:
-          'The same question as in the daily assessment, kept here because it is the one that matters most for arthritis.', // PENDING ASH
+        why: SAME_AS_ASSESSMENT,
       },
       {
         key: 'stiffness_after_rest',
@@ -485,41 +508,31 @@ export const CONDITIONS = {
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, one set for
+        // both species: nothing in it is dog- or cat-specific, so the drafted
+        // versions that differed at moderate-to-severe are gone. Only
+        // capitalisation and full stops were normalised to match the rest of
+        // the app, and "obviously stiff or a long time" was read as "for".
         levels: {
           dog: [
-            'Gets up and moves off normally.',
-            'Very slightly slow to get going, loose within a few steps.',
-            'Stiff for the first minute or so after getting up.',
-            'Clearly stiff for several minutes, and needs to warm up before moving freely.',
-            'Stiff for a long time after resting, and never fully loosens up.',
-            'Struggles to get up at all, or cannot without help. (emergency)',
+            'Gets up with ease and immediately moves around normally.',
+            'Slightly slow to get up and has a few stiff steps before returning to normal movement.',
+            'Slow to get up and appears stiff for the first minute or so, before moving comfortably.',
+            'Some difficulty getting up, stiff for several minutes. Needs to \'warm up\' before moving comfortably.',
+            'Difficulty getting up, obviously stiff for a long time after resting. Never seems to move comfortably.',
+            'Struggles to get up at all or cannot without assistance. Reluctant to walk or move. (emergency)',
           ],
           cat: [
-            'Gets up and moves off normally.',
-            'Very slightly slow to get going, loose within a few steps.',
-            'Stiff for the first minute or so after getting up.',
-            'Clearly stiff for several minutes, and moves carefully before settling again.',
-            'Stiff for a long time after resting, and never fully loosens up.',
-            'Struggles to get up at all, or cannot without help. (emergency)',
+            'Gets up with ease and immediately moves around normally.',
+            'Slightly slow to get up and has a few stiff steps before returning to normal movement.',
+            'Slow to get up and appears stiff for the first minute or so, before moving comfortably.',
+            'Some difficulty getting up, stiff for several minutes. Needs to \'warm up\' before moving comfortably.',
+            'Difficulty getting up, obviously stiff for a long time after resting. Never seems to move comfortably.',
+            'Struggles to get up at all or cannot without assistance. Reluctant to walk or move. (emergency)',
           ],
         },
         why:
           'Stiffness after rest is often the first thing owners notice, and it comes on before any limp does.', // PENDING ASH
-      },
-      {
-        key: 'pain_relief_effect',
-        label: 'How Well Is The Pain Relief Working?',
-        type: 'choice',
-        options: [
-          { value: 'not_on_any', label: 'Not on any', severity: SEVERITY.OK },
-          { value: 'well', label: 'Working well', severity: SEVERITY.OK },
-          { value: 'wearing_off', label: 'Wears off before the next dose', severity: SEVERITY.CONCERN },
-          { value: 'not_helping', label: 'Not helping much', severity: SEVERITY.CONCERN },
-        ],
-        concernMessage:
-          'Worth raising with your vet — the dose, the timing or the medication itself may need changing.', // PENDING ASH
-        why:
-          'How well pain relief is holding is the thing your vet most wants to know at a recheck, and it is easy to lose track of between visits.', // PENDING ASH
       },
       // The BEAAAAPP palpation category rather than a yes/no of its own.
       // Same reasoning as ambulation above: the daily assessment already
@@ -531,7 +544,9 @@ export const CONDITIONS = {
       // examination.
       {
         key: 'palpation',
-        label: 'Response To Touch',
+        // Same reasoning as Ambulation above: named for the BEAAAAPP category
+        // it reuses, so the two never read as separate measures.
+        label: 'Palpation',
         type: 'beap',
         beapKey: 'palpation',
         hideImages: true,
@@ -550,8 +565,7 @@ export const CONDITIONS = {
           label: 'Where Is {name} Sore?',
           placeholder: 'Hips, lower back, a particular leg…',
         },
-        why:
-          'Gently running your hands over {them} tells you things watching cannot — and where {they} {are} sore is what your vet will want to examine.', // PENDING ASH
+        why: SAME_AS_ASSESSMENT,
       },
 
       // --- Dogs only ------------------------------------------------------
@@ -565,16 +579,42 @@ export const CONDITIONS = {
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation and full
+        // stops normalised to match the other scales; wording otherwise hers.
         levels: {
           dog: [
-            'Walks as far as ever and comes home keen.',
-            'Walks the usual distance but is a little slower at the end.',
-            'Slows down or lags before the end of the usual walk.',
-            'Needs the walk cut short, or is sore afterwards.',
-            'Manages only a short, slow walk.',
-            'Unwilling to walk at all.',
+            'Very keen on walks, does not tire and does not pull up sore after.',
+            'Keen on walks and goes the usual distance, but is a little slower at the end.',
+            'Slows down or lags before the end of the usual walk. Will sometimes pull up sore after.',
+            'Slow and needs the walk cut shorter than usual. Will limp or pull up sore after.',
+            'Can only manage a short, slow walk. Goes out mostly to sniff rather than exercise.',
+            'Unwilling to walk or not interested in walks at all.',
           ],
         },
+      },
+      // Same key as the cat question below, deliberately. It is the same
+      // measurement — can {name} still get up onto the things {they} used to —
+      // and only the examples differ, so one key keeps one history and one
+      // chart whatever the species. Species filtering guarantees a pet is only
+      // ever shown one of the two.
+      //
+      // PENDING ASH — options drafted by me, not reviewed. No `why` on this
+      // one: the options say it themselves.
+      {
+        key: 'jump_height',
+        species: 'dog',
+        label: 'Jumping',
+        covers: 'ambulation',
+        relationship: RELATIONSHIP.DISTINCT,
+        type: 'choice',
+        options: [
+          { value: 'as_before', label: 'Gets in and out of the car and onto furniture without hesitating', severity: SEVERITY.OK },
+          { value: 'hesitates', label: 'Still manages, but hesitates or takes a run-up first', severity: SEVERITY.CONCERN },
+          { value: 'lower_only', label: 'Only manages lower things, or needs a hand up or a ramp', severity: SEVERITY.CONCERN },
+          { value: 'stopped', label: 'Has stopped jumping up altogether', severity: SEVERITY.CONCERN },
+        ],
+        concernMessage:
+          'Worth mentioning to your vet, particularly if this is a change from a few months ago.',
       },
       {
         key: 'cold_or_damp',
@@ -591,7 +631,7 @@ export const CONDITIONS = {
       {
         key: 'jump_height',
         species: 'cat',
-        label: 'Jumping Up',
+        label: 'Jumping',
         type: 'choice',
         // A specific loss the daily ambulation grade misses entirely: a cat
         // who has quietly stopped using the windowsill still walks normally.
@@ -603,9 +643,13 @@ export const CONDITIONS = {
           { value: 'lower_only', label: 'Only jumps to lower places now', severity: SEVERITY.CONCERN },
           { value: 'stopped', label: 'Has stopped jumping up', severity: SEVERITY.CONCERN },
         ],
-        concernMessage: 'PENDING ASH',
+        // PENDING ASH — drafted. This one WAS the literal string 'PENDING ASH',
+        // which an owner picking anything below "gets to all the usual places"
+        // would have read as their alert.
+        concernMessage:
+          'Worth mentioning to your vet, particularly if this is a change from a few months ago.',
         why:
-          'Cats rarely limp. Choosing a lower windowsill, or taking the sofa in two steps instead of one, is usually the first sign.', // PENDING ASH
+          'Choosing a lower windowsill, or taking the sofa in two steps instead of one, is often the first sign of sore joints.', // PENDING ASH
       },
       {
         key: 'grooming',
@@ -622,15 +666,16 @@ export const CONDITIONS = {
         levels: {
           cat: [
             'Coat is well kept all over.',
-            'Very slightly less tidy than usual.',
+            'Slightly less tidy than usual.',
             'Some untidy patches, usually over the back or hips.',
             'Coat is matted or greasy where {they} cannot reach.',
-            'Has largely stopped grooming.',
-            'Coat is badly matted and {they} {are} not grooming at all.',
+            'Rarely grooms any more. Coat is matted or greasy.',
+            'Not grooming at all. Coat is severely matted and greasy.',
           ],
         },
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         why:
-          'A cat who cannot turn comfortably stops grooming the places that need turning — over the back, the hips and the base of the tail.', // PENDING ASH
+          'A cat who cannot comfortably turn or position to groom will stop doing so. The most common areas they will stop grooming are over the back, the hips and the base of the tail.',
       },
       {
         key: 'litter_tray',

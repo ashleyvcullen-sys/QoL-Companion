@@ -39,6 +39,18 @@ reports as already satisfied if re-run. Both are written to be re-runnable.
 
 ## Not yet applied
 
-Nothing. Every migration in this folder has been applied and verified.
+| Migration | What it does | Why it is needed |
+|---|---|---|
+| `20260825000000_medication_monthly_frequency.sql` | Widens the `medications_frequency_period_check` constraint from `('day', 'week')` to `('day', 'week', 'month')` | The app now offers "N times per month" in the medication frequency dropdown. **Until this is run, saving a monthly medication fails with a constraint violation** — the option appears but cannot be saved. |
+
+To verify after running it:
+
+```sql
+select pg_get_constraintdef(oid)
+from pg_constraint
+where conname = 'medications_frequency_period_check';
+```
+
+It should mention `month`.
 
 Update these tables whenever a migration is applied.

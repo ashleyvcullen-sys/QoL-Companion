@@ -8,7 +8,6 @@ import { usePets } from '../lib/PetsContext'
 import PetText from '../components/PetText'
 import { CONDITION_LIST } from '../lib/conditions'
 import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
-import { isCancerConfigured } from '../lib/cancerConfig'
 
 export default function Conditions() {
   const { selectedPet } = usePets()
@@ -32,17 +31,14 @@ export default function Conditions() {
     // Deliberately no write here. The pet_conditions row is created on the
     // first save — of an assessment, or of a cancer setup — so that backing
     // out of a condition leaves nothing behind.
-    const existing = conditions.find((entry) => entry.conditionKey === condition.key) ?? null
-
-    // A composed condition has no questions until the owner says what they
-    // are dealing with, so the first visit goes to setup rather than to a
-    // form. Sending someone to "how much is she eating?" before they have
-    // told us anything about the diagnosis is the wrong first screen.
-    if (condition.composed && !isCancerConfigured(existing?.config)) {
-      navigate(`/conditions/${condition.key}/setup`)
-      return
-    }
-
+    //
+    // Every condition opens on its own page, cancer included. Cancer used to
+    // skip straight to setup on a first visit, which put the owner one screen
+    // deep with no idea what they had opened — and pressing back landed them
+    // on a page telling them to start with the diagnosis they had just been
+    // asked for. The condition page IS the start: it introduces cancer and
+    // offers the diagnosis button, and setup sits one level below it where
+    // back means back.
     navigate(`/conditions/${condition.key}`)
   }
 

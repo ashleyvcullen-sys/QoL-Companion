@@ -38,6 +38,18 @@ export function weekStartIsoDate(reference) {
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10)
 }
 
+// First day of the current month, in the pet owner's own timezone.
+//
+// Same timezone dance as weekStartIsoDate above: toISOString() would convert
+// to UTC first, so anyone east of Greenwich in the evening would get
+// yesterday's date — and on the 1st of the month, last month.
+export function monthStartIsoDate(reference) {
+  const date = reference ? new Date(reference) : new Date()
+  date.setDate(1)
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10)
+}
+
 function mapDoseRow(row) {
   return {
     id: row.id,
@@ -188,7 +200,12 @@ export function useMedications(petId) {
     let cancelled = false
     setLoading(true)
 
-    Promise.all([fetchMedications(petId), fetchDosesSince(petId, weekStartIsoDate())])
+    // The earliest date any medication could still be counting from. A week
+    // can start in the previous month — Wednesday the 1st — so this is the
+    // earlier of the two rather than simply the month start.
+    const earliestStart = [weekStartIsoDate(), monthStartIsoDate()].sort()[0]
+
+    Promise.all([fetchMedications(petId), fetchDosesSince(petId, earliestStart)])
       .then(([meds, todaysDoses]) => {
         if (cancelled) return
         setMedications(meds)

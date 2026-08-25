@@ -19,6 +19,7 @@ import {
   updateMedication,
   useMedications,
   weekStartIsoDate,
+  monthStartIsoDate,
 } from '../lib/medicationsData'
 import {
   cancelMedicationReminders,
@@ -55,7 +56,10 @@ function describeSchedule(medication) {
   if (medication.scheduleMode === 'as_needed') return 'as needed'
   if (medication.scheduleMode === 'frequency') {
     const count = medication.frequencyCount ?? 1
-    return `${count}× per ${medication.frequencyPeriod === 'week' ? 'week' : 'day'}`
+    const period = medication.frequencyPeriod === 'week' ? 'week'
+      : medication.frequencyPeriod === 'month' ? 'month'
+        : 'day'
+    return `${count}× per ${period}`
   }
   return medication.times.map(formatTime).join(', ')
 }
@@ -104,14 +108,20 @@ export default function Medications() {
 
   const today = todayIsoDate()
   const weekStart = weekStartIsoDate()
+  const monthStart = monthStartIsoDate()
 
   // A daily course counts against today; a weekly one against the whole
   // week, which is why the hook fetches from the week's start rather than
   // just today.
   function dosesFor(medication) {
-    const scope = medication.scheduleMode === 'frequency' && medication.frequencyPeriod === 'week'
-      ? doses.filter((dose) => dose.date >= weekStart)
-      : doses.filter((dose) => dose.date === today)
+    // Which doses count towards the tally: a daily course counts today's, a
+    // weekly one the whole week, a monthly one the whole month.
+    const period = medication.scheduleMode === 'frequency' ? medication.frequencyPeriod : null
+    const scope = period === 'month'
+      ? doses.filter((dose) => dose.date >= monthStart)
+      : period === 'week'
+        ? doses.filter((dose) => dose.date >= weekStart)
+        : doses.filter((dose) => dose.date === today)
     return scope.filter((dose) => dose.medicationId === medication.id)
   }
 
@@ -286,7 +296,9 @@ export default function Medications() {
 
     if (medication.scheduleMode === 'frequency') {
       const total = medication.frequencyCount ?? 1
-      const period = medication.frequencyPeriod === 'week' ? 'this week' : 'today'
+      const period = medication.frequencyPeriod === 'week' ? 'this week'
+        : medication.frequencyPeriod === 'month' ? 'this month'
+          : 'today'
       const taken = dosesFor(medication).filter((dose) => dose.time != null).length
       return (
         <>
@@ -495,6 +507,7 @@ export default function Medications() {
                     >
                       <option value="day">Day</option>
                       <option value="week">Week</option>
+                      <option value="month">Month</option>
                     </select>
                   </div>
                 </div>

@@ -157,9 +157,16 @@ export default function ConditionSetup() {
           )}
           <SectionTitle>What To Monitor</SectionTitle>
         </div>
-        <p className="assessment-hint">
-          There are many different types of cancers and they can affect every pet differently.
-        </p>
+        {/* The condition's setup text. NOT its summary — "there are many
+            different types of cancer" is the answer to "is this the right
+            condition for my pet?", which was already answered on the previous
+            screen. By the time someone is here they have chosen cancer; what
+            they need now is what this screen is asking them to do. */}
+        {(definition.setupIntro ?? definition.intro) && (
+          <p className="assessment-hint">
+            <PetText template={definition.setupIntro ?? definition.intro} pet={pet} />
+          </p>
+        )}
       </Card>
 
       {loading && <Card><p>Loading…</p></Card>}

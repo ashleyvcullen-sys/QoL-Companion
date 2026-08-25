@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
-import { computeGeneralQolResult, computeIndividualMeasures, computeOverviewCategories } from './scoring'
+import {
+  computeBeapWorst,
+  computeGeneralQolResult,
+  computeIndividualMeasures,
+  computeOverviewCategories,
+} from './scoring'
 
 function mapGeneralQolRow(row) {
   return {
@@ -49,6 +54,45 @@ export async function fetchLatestPainLogEntry(petId) {
 
   if (error) throw error
   return data ? mapPainLogRow(data) : null
+}
+
+// Write a single BEAAAAPP category into an existing assessment for a date.
+//
+// Arthritis asks Ambulation and Palpation, and those are not similar to the
+// daily assessment's categories — they ARE them. Storing the answer twice
+// leaves two records of one measurement, free to disagree, with nothing to
+// say which the vet should believe. So the condition form writes its answer
+// back to the assessment it came from.
+//
+// It only ever UPDATES a row that already exists, and returns null when there
+// is none. Creating one would put a day into the pain history the owner never
+// assessed — a single category standing in for eight — and the comfort pillar
+// is calculated from the worst answered category, so one bad ambulation score
+// on an otherwise unassessed day would read as a thoroughly miserable day.
+//
+// beap_worst is recomputed rather than patched, because it is a derived value
+// and the whole point of this function is that derived values stay true.
+export async function updateBeapCategory({ petId, date, category, value }) {
+  const { data, error } = await supabase
+    .from('pain_log_entries')
+    .select('*')
+    .eq('pet_id', petId)
+    .eq('entry_date', date)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const beap = { ...(data.beap ?? {}), [category]: value }
+  const beapWorst = computeBeapWorst(beap)
+
+  const { error: updateError } = await supabase
+    .from('pain_log_entries')
+    .update({ beap, beap_worst: beapWorst })
+    .eq('id', data.id)
+
+  if (updateError) throw updateError
+  return mapPainLogRow({ ...data, beap, beap_worst: beapWorst })
 }
 
 export async function fetchGeneralQolEntries(petId) {

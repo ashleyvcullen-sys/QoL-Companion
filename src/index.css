@@ -142,7 +142,7 @@ code,
 }
 
 code {
-  font-size: 15px;
+  font-size: var(--type-item);
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
@@ -195,7 +195,7 @@ code {
 }
 
 .field label {
-  font-size: 14px;
+  font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -232,7 +232,7 @@ code {
 }
 
 .field-group legend {
-  font-size: 14px;
+  font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
   padding: 0;
@@ -255,7 +255,7 @@ code {
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
-  font-size: 14px;
+  font-size: var(--type-support);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
@@ -275,7 +275,7 @@ code {
 
 .form-error {
   color: var(--severity-severe);
-  font-size: 14px;
+  font-size: var(--type-support);
   text-align: left;
 }
 
@@ -355,7 +355,7 @@ code {
   border-radius: 20px;
   padding: 6px 14px;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -408,7 +408,7 @@ code {
   border: 1px dashed var(--border);
   background: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--type-support);
   text-decoration: none;
 }
 
@@ -514,7 +514,7 @@ code {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
 }
@@ -525,7 +525,7 @@ code {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 145%;
   color: var(--severity-moderate);
 }
@@ -542,7 +542,7 @@ code {
   background: rgba(163, 58, 46, 0.1);
   border: 1px solid var(--severity-severe);
   color: var(--severity-severe);
-  font-size: 14px;
+  font-size: var(--type-support);
   font-weight: 600;
   line-height: 145%;
 }
@@ -611,7 +611,7 @@ code {
 
 .condition-parameter .input-unit {
   right: 18px;
-  font-size: 15px;
+  font-size: var(--type-item);
   font-weight: 600;
   color: var(--accent);
 }
@@ -643,7 +643,7 @@ code {
   align-items: center;
   gap: 7px;
   align-self: flex-start;
-  font-size: 14px;
+  font-size: var(--type-support);
 }
 
 /* The heading row on a condition page: icon beside the title rather than
@@ -703,7 +703,12 @@ code {
 
 .condition-tile {
   display: flex;
-  align-items: flex-start;
+  /* Centred, now that the tile is a single line of text. It was flex-start
+     because the summary sat under the label and the icon needed to line up
+     with the first line rather than float in the middle of two. With the
+     summary moved to the condition's own page, top-aligning leaves the name
+     sitting high against a 34px organ icon. */
+  align-items: center;
   gap: 14px;
   padding: 18px 16px;
 }
@@ -871,7 +876,7 @@ code {
    Scoped to these two screens so nothing else shrinks. */
 .legal-doc p,
 .legal-doc li {
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 155%;
   /* One colour for every piece of prose. These screens previously mixed
      three — body text, muted hints and list items all landed slightly
@@ -940,7 +945,7 @@ code {
   background: rgba(201, 123, 140, 0.08);
   border-radius: 12px;
   padding: 12px 14px;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text);
   margin: 0;
 }
@@ -958,7 +963,7 @@ code {
   background: #fff;
   color: var(--text);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   cursor: pointer;
 }
 
@@ -1000,7 +1005,7 @@ code {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
 }
 
@@ -1017,7 +1022,7 @@ code {
 }
 
 .swipeable-wizard-progress {
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
   text-align: right;
 }
@@ -1069,7 +1074,7 @@ code {
 
 .welcome-callout p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text);
 }
 
@@ -1105,7 +1110,7 @@ code {
 }
 
 .welcome-footnote {
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
 }
 
@@ -1119,7 +1124,7 @@ code {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-h);
 }
 
@@ -1157,7 +1162,7 @@ code {
 .warning-banner p {
   margin: 0;
   color: var(--text-h);
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 145%;
 }
 
@@ -1170,7 +1175,7 @@ code {
 }
 
 .emergency-list li {
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-h);
   line-height: 140%;
 }
@@ -1193,7 +1198,7 @@ code {
   background: #fff;
   color: var(--text-h);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 140%;
   cursor: pointer;
 }
@@ -1297,7 +1302,7 @@ code {
 .input-unit {
   position: absolute;
   right: 14px;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-muted);
   pointer-events: none;
 }
@@ -1352,7 +1357,7 @@ code {
   background: #fff;
   color: var(--text);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   cursor: pointer;
 }
 
@@ -1418,7 +1423,7 @@ code {
   background: none;
   color: var(--text-muted);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   cursor: pointer;
   padding: 4px;
 }
@@ -1427,7 +1432,7 @@ code {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-h);
   cursor: pointer;
 }
@@ -1529,7 +1534,7 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-h);
 }
 
@@ -1594,14 +1599,14 @@ code {
 }
 
 .modal-body p {
-  font-size: 14px;
+  font-size: var(--type-support);
   line-height: 150%;
   color: var(--text);
   margin: 0;
 }
 
 .modal-citation {
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
   font-style: italic;
 }
@@ -1625,7 +1630,7 @@ code {
   background: #fff;
   color: var(--text);
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   cursor: pointer;
 }
 
@@ -1651,13 +1656,13 @@ code {
 }
 
 .age-bracket-field-label {
-  font-size: 12px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--text-h);
 }
 
 .age-bracket-row-item span:last-child {
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text);
   line-height: 145%;
 }
@@ -1695,7 +1700,7 @@ code {
 }
 
 .overview-bar-label {
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-h);
   font-weight: 500;
 }
@@ -1714,7 +1719,7 @@ code {
 }
 
 .overview-bar-percent {
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
   text-align: right;
 }
@@ -1914,7 +1919,7 @@ code {
 }
 
 .grimace-total-label {
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 600;
 }
 
@@ -1932,7 +1937,7 @@ code {
 }
 
 .grimace-action-unit-label {
-  font-size: 14px;
+  font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
   margin: 0;
@@ -2027,7 +2032,7 @@ code {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-h);
   gap: 12px;
 }
@@ -2071,7 +2076,7 @@ code {
 }
 
 .history-notes {
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text);
   margin: 0;
 }
@@ -2116,7 +2121,7 @@ code {
 }
 
 .home-tour-progress {
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
   margin: 0 0 4px;
 }
@@ -2134,7 +2139,7 @@ code {
   border: none;
   padding: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--type-support);
   color: var(--text-muted);
   text-decoration: underline;
   cursor: pointer;
@@ -2149,7 +2154,7 @@ code {
   font: inherit;
   cursor: pointer;
   text-align: center;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
   text-decoration: underline;
   margin: 8px 0 24px;
@@ -2201,7 +2206,7 @@ code {
 }
 
 .paywall-package-description {
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
   margin: 0;
 }
@@ -2210,7 +2215,7 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: var(--type-meta);
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -2236,7 +2241,7 @@ code {
   background: none;
   border: none;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--type-meta);
   color: var(--text-muted);
   text-decoration: underline;
   cursor: pointer;
@@ -2251,7 +2256,7 @@ code {
   background: none;
   border: none;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--type-label);
   color: var(--text-muted);
   opacity: 0.7;
   cursor: pointer;

@@ -70,7 +70,7 @@ function Verdict({ verdict }) {
   return null
 }
 
-export default function ConditionParameter({ parameter, values, pet, number, onChange }) {
+export default function ConditionParameter({ parameter, values, pet, number, note, onChange }) {
   const species = pet?.species
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
@@ -119,6 +119,9 @@ export default function ConditionParameter({ parameter, values, pet, number, onC
       {parameter.why && (
         <p className="assessment-hint"><PetText template={parameter.why} pet={pet} /></p>
       )}
+      {/* Below `why`, not above it: the explanation of what the question means
+          comes first, and where this particular answer came from second. */}
+      {note && <p className="assessment-hint">{note}</p>}
       {parameter.howTo && (
         <HowTo
           title={parameter.howToTitle}

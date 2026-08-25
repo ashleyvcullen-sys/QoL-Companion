@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Droplet, House } from 'lucide-react'
 import Card from '../components/Card'
@@ -24,6 +24,8 @@ import {
 } from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
+import { CONDITION_LIST } from '../lib/conditions'
+import { saveConditionEntry, todayIsoDate, useAllConditionEntries } from '../lib/conditionsData'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
@@ -136,6 +138,43 @@ export default function QualityOfLifeAssessment() {
   const todaysGeneralEntry = generalEntries.find((e) => e.date === todayStr) ?? null
   const todaysPainEntry = painEntries.find((e) => e.date === todayStr) ?? null
 
+  // BEAAAAPP categories a condition form has already collected TODAY.
+  //
+  // Arthritis asks Ambulation and Palpation, and those are not similar to the
+  // categories below — they are the same question. Whichever screen the owner
+  // reaches first should be the only place they answer it; the other should
+  // show the answer and say where it came from.
+  //
+  // Same day only, matching the condition side: an answer from Tuesday is not
+  // an answer about today, and presenting it in an answered-looking field
+  // would be worse than an empty one.
+  const todayDate = todayIsoDate()
+  const { byCondition: conditionEntriesByCondition } = useAllConditionEntries(pet.id)
+
+  const beapFromConditions = useMemo(() => {
+    const found = {}
+    for (const condition of CONDITION_LIST) {
+      const todaysEntry = (conditionEntriesByCondition[condition.key] ?? [])
+        .find((conditionEntry) => conditionEntry.date === todayDate)
+      if (!todaysEntry) continue
+
+      for (const parameter of condition.parameters ?? []) {
+        if (!parameter.beapKey) continue
+        const score = Number(todaysEntry.values?.[parameter.key])
+        if (!Number.isFinite(score)) continue
+        found[parameter.beapKey] = {
+          value: score,
+          conditionKey: condition.key,
+          conditionLabel: condition.label,
+          parameterKey: parameter.key,
+          entryValues: todaysEntry.values ?? {},
+          entryNotes: todaysEntry.notes ?? '',
+        }
+      }
+    }
+    return found
+  }, [conditionEntriesByCondition, todayDate])
+
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -178,6 +217,25 @@ export default function QualityOfLifeAssessment() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyLoading, generalEntries, pet.id])
+
+  // Seeds only categories still unanswered here. A value the owner has
+  // already set on this screen — or resumed from a draft — always wins, so
+  // this can never overwrite what they typed.
+  useEffect(() => {
+    const keys = Object.keys(beapFromConditions)
+    if (keys.length === 0) return
+    setEntry((previous) => {
+      let changed = false
+      const beap = { ...previous.beap }
+      for (const key of keys) {
+        if (beap[key] == null) {
+          beap[key] = beapFromConditions[key].value
+          changed = true
+        }
+      }
+      return changed ? { ...previous, beap } : previous
+    })
+  }, [beapFromConditions])
 
   // Debounced so rapid typing (e.g. the notes field) doesn't fire a write
   // per keystroke — still eventually-consistent within well under a second.
@@ -295,6 +353,29 @@ export default function QualityOfLifeAssessment() {
       return
     }
 
+    // Keep the condition form in step. Only categories a condition actually
+    // collected today, and only where the owner has moved the answer on this
+    // screen — the condition entry is otherwise left exactly as it was.
+    try {
+      for (const [category, source] of Object.entries(beapFromConditions)) {
+        const score = entry.beap[category]
+        if (score == null || score === source.value) continue
+        await saveConditionEntry({
+          petId: pet.id,
+          conditionKey: source.conditionKey,
+          entryDate,
+          values: { ...source.entryValues, [source.parameterKey]: score },
+          notes: source.entryNotes,
+        })
+      }
+    } catch (syncError) {
+      // The assessment itself saved. Say so rather than reporting a failure
+      // that did not happen.
+      setErrorMessage(
+        `Assessment saved, but the condition form could not be updated to match: ${syncError.message}`,
+      )
+    }
+
     // Reschedule from this completion, not the cadence-change baseline —
     // keeps the reminder counting from when the pet was actually last
     // checked on rather than drifting from whenever the cadence was set.
@@ -396,6 +477,11 @@ export default function QualityOfLifeAssessment() {
           species={pet.species}
           categoryKey={category}
           value={entry.beap[category]}
+          note={
+            beapFromConditions[category]
+              ? `Filled in from today's ${beapFromConditions[category].conditionLabel} assessment, because this is the same question. You can change it — it will change in both places.`
+              : null
+          }
           onChange={(v) => updateBeap(category, v)}
         />
       )

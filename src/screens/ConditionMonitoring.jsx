@@ -8,11 +8,12 @@ import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import ChartView from '../components/ChartView'
+import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import { SEVERITY, askedParameters, conditionByKey, evaluateParameter } from '../lib/conditions'
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
-import { buildDailySeries } from '../lib/qolData'
+import { buildDailySeries, updateBeapCategory } from '../lib/qolData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -20,6 +21,7 @@ import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
 import {
   addPetCondition,
+  saveConditionConfig,
   removePetCondition,
   saveConditionEntry,
   todayIsoDate,
@@ -101,7 +103,6 @@ export default function ConditionMonitoring() {
   const sinceLast = daysSince(latestEntry?.date)
   const dueIn = cadence && sinceLast != null ? cadence.days - sinceLast : null
 
-  const values = draft ?? todaysEntry?.values ?? {}
 
   // Any emergency answer anywhere in the condition, surfaced at the top of
   // the card as well as beside the question — an owner scrolling to save
@@ -120,6 +121,29 @@ export default function ConditionMonitoring() {
     ? []
     : askedParameters(parametersFor(definition, config, pet?.species))
 
+  // Answers already given in TODAY'S assessment, for the questions that are
+  // the same question. Same day only — deliberately. Arthritis is filled in
+  // weekly, so most weeks there will be nothing here, and that is the right
+  // outcome: showing Tuesday's ambulation score on Friday's form, in a field
+  // that looks answered, would be presenting stale data as current.
+  const todaysPain = painEntries.find((entry) => entry.date === today) ?? null
+
+  function assessmentValueFor(parameter) {
+    if (!parameter.beapKey || !todaysPain) return null
+    return todaysPain.beap?.[parameter.beapKey] ?? null
+  }
+
+  const assessmentPrefill = {}
+  for (const parameter of parameters) {
+    const prefilled = assessmentValueFor(parameter)
+    if (prefilled != null) assessmentPrefill[parameter.key] = prefilled
+  }
+
+  // Order matters: anything the owner has actually typed or saved on this
+  // form wins over the pre-filled answer. The pre-fill is a starting point,
+  // not an override.
+  const values = { ...assessmentPrefill, ...(draft ?? todaysEntry?.values ?? {}) }
+
   // Days since the last treatment, derived from the event the owner already
   // logs rather than asked. "Lethargic on day 8" is a different question to
   // "lethargic generally" — that is when a neutropenic patient gets into
@@ -136,6 +160,48 @@ export default function ConditionMonitoring() {
   const treatmentDay = treatmentModule?.usesTreatmentDay
     ? daysSinceTreatment(events, today)
     : null
+
+  // Whether this pet is on medication for THIS condition. Stored on the
+  // condition's config rather than asked as a daily question: it is a standing
+  // fact about their treatment, not something that changes between Tuesday and
+  // Wednesday, and asking it every day would train people to tap past it.
+  //
+  // Cancer is excluded — its treatment module already asks this, and asking
+  // twice on one screen is exactly the duplication we have spent the day
+  // removing.
+  const asksAboutMedication = Boolean(definition) && !definition.composed
+  const onMedication = config?.onMedication ?? null
+
+  async function handleMedicationAnswer(answer) {
+    if (busy) return
+    setBusy(true)
+    setErrorMessage('')
+    try {
+      // Answering is a deliberate act, so it may create the pet_conditions
+      // row. Reading about a condition still leaves no trace, and this does
+      // not mark the condition as tracked — that still takes a saved
+      // assessment (see Conditions.jsx).
+      const id = petCondition?.id
+        ?? (await addPetCondition({ petId: pet.id, conditionKey: definition.key })).id
+      await saveConditionConfig(id, { ...(config ?? {}), onMedication: answer })
+      refresh()
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not save that. Please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function goToMedications() {
+    // Same round trip cancer's setup uses, so the owner lands back here
+    // rather than on the medications list wondering where they were.
+    navigate('/medications', {
+      state: {
+        returnTo: `/conditions/${definition.key}`,
+        returnLabel: `${definition.label} monitoring`,
+      },
+    })
+  }
 
   const emergencies = parameters
     .map((parameter) => evaluateParameter(parameter, values[parameter.key], pet?.species))
@@ -185,6 +251,30 @@ export default function ConditionMonitoring() {
         values: stored,
         notes: notes || todaysEntry?.notes || '',
       })
+      // The same answer, kept the same in both places. Only categories the
+      // owner actually answered here, and only where the value has moved —
+      // an unchanged answer needs no write, and 'unsure' is not a score.
+      try {
+        for (const parameter of parameters) {
+          if (!parameter.beapKey) continue
+          const score = Number(stored[parameter.key])
+          if (!Number.isFinite(score)) continue
+          if (todaysPain?.beap?.[parameter.beapKey] === score) continue
+          await updateBeapCategory({
+            petId: pet.id,
+            date: today,
+            category: parameter.beapKey,
+            value: score,
+          })
+        }
+      } catch (syncError) {
+        // The condition entry itself saved. Say precisely that, rather than
+        // letting the outer catch report a failure that did not happen.
+        setErrorMessage(
+          `Saved here, but today's assessment could not be updated to match: ${syncError.message}`,
+        )
+      }
+
       setDraft(null)
       setNotes('')
       refreshEntries()
@@ -265,6 +355,46 @@ export default function ConditionMonitoring() {
             )}
           </Card>
 
+          {asksAboutMedication && (
+            <Card>
+              <SectionTitle>Medication</SectionTitle>
+              <p className="assessment-hint">
+                Is {pet.name} currently on any medication for{' '}
+                <PetText template="{their}" pet={pet} /> {definition.label.toLowerCase()}?
+              </p>
+              <ChoiceButtons
+                options={[
+                  { value: 'yes', label: 'Yes' },
+                  { value: 'no', label: 'No' },
+                ]}
+                value={onMedication}
+                onChange={handleMedicationAnswer}
+              />
+
+              {/* Offered, never done for them. The app does not know the drug,
+                  the dose or the schedule, and inventing a medication entry on
+                  an owner's behalf would be wrong in the one place where being
+                  wrong matters most. */}
+              {onMedication === 'yes' && (
+                <>
+                  <p className="assessment-hint">
+                    Would you like to add it to {pet.name}'s medications, so you can set up
+                    reminders and record each dose?
+                  </p>
+                  <Btn
+                    type="button"
+                    variant="outline"
+                    className="btn-block"
+                    onClick={goToMedications}
+                    disabled={busy}
+                  >
+                    Add to medications
+                  </Btn>
+                </>
+              )}
+            </Card>
+          )}
+
           {/* A composed condition with nothing selected has no questions to
               show, so the daily form would be an empty card. Sending the
               owner to setup is the only useful thing this screen can do
@@ -319,6 +449,11 @@ export default function ConditionMonitoring() {
                   parameter={parameter}
                   values={values}
                   pet={pet}
+                  note={
+                    assessmentValueFor(parameter) != null
+                      ? "Filled in from today's Quality Of Life Assessment, because this is the same question. You can change it — it will change in both places."
+                      : null
+                  }
                   number={index + 1}
                   onChange={setDraft}
                 />
