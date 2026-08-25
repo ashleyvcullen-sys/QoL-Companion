@@ -281,6 +281,10 @@ export default function ExportReport() {
   const { byCondition: eventsByCondition } = useAllConditionEvents(pet?.id)
   const { entries: bcsEntries } = useBcsHistory(pet?.id)
   const { items: mediaItems, urls: mediaUrls } = usePetMedia(pet?.id)
+  // Only for the medication start/stop marks on the calendars. This import
+  // was added without its hook, so `medications` was an undefined variable
+  // and the screen threw the moment it rendered.
+  const { medications } = useMedications(pet?.id)
 
   // null means "the owner hasn't touched the picker", which is not the same
   // as "the owner deselected everything" — the first gets the default report,

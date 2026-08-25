@@ -9,7 +9,6 @@ import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import OverviewBars from '../components/OverviewBars'
-import ChoiceButtons from '../components/ChoiceButtons'
 import ChartView from '../components/ChartView'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
@@ -17,7 +16,6 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
 import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
-import { useBcsHistory } from '../lib/bcsData'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { useMedications } from '../lib/medicationsData'
 
@@ -32,13 +30,11 @@ export default function Trends() {
   const pet = selectedPet
   const navigate = useNavigate()
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
-  const { entries: bcsEntries, loading: bcsLoading } = useBcsHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   // Charts start collapsed. Seven full-height charts stacked made the screen
   // a long scroll where nothing was findable; collapsed, the page is a list
   // of what's trackable and you open the one you came for.
-  const [bodyMetric, setBodyMetric] = useState('body:score')
   const [expandedCharts, setExpandedCharts] = useState({})
 
   function toggleChart(key) {
@@ -59,7 +55,6 @@ export default function Trends() {
     generalEntries,
     painEntries,
     dailySeries,
-    bcsEntries,
     // Only for the calendar's start/stop marks — the medication list itself
     // lives on its own screen.
     medications,
@@ -68,10 +63,6 @@ export default function Trends() {
 
   const overallChart = chartByKey(charts, 'overall')
   const goodBadDays = chartByKey(charts, 'good-bad-days')
-  const bcsChart = chartByKey(charts, 'body:score')
-  const weightChart = chartByKey(charts, 'body:weight')
-  const activeBodyChart = chartByKey(charts, bodyMetric)
-  const hasBodyCharts = Boolean(bcsChart || weightChart)
 
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
@@ -136,55 +127,6 @@ export default function Trends() {
       <Card>
         <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
         {overallChart ? <ChartView chart={overallChart} /> : <p>No assessments logged yet.</p>}
-      </Card>
-
-      <Card>
-        <h2 className="section-title chart-collapse-heading">
-          <button
-            type="button"
-            className="chart-collapse"
-            aria-expanded={Boolean(expandedCharts.body)}
-            onClick={() => toggleChart('body')}
-          >
-            <span>Body Condition / Weight Over Time</span>
-            <ChevronDown size={18} className={`chart-chevron ${expandedCharts.body ? 'open' : ''}`.trim()} />
-          </button>
-        </h2>
-
-        {expandedCharts.body && (
-          <>
-            {bcsLoading && <p>Loading…</p>}
-
-            {!bcsLoading && !hasBodyCharts && (
-              <p>No body condition scores logged yet.</p>
-            )}
-
-            {/* The metric switcher is only worth showing once there is more
-                than one metric to switch between — with weight never recorded
-                it would be a two-button control where one button always says
-                "nothing here". */}
-            {!bcsLoading && bcsChart && weightChart && (
-              <ChoiceButtons
-                options={[bcsChart, weightChart].map((chart) => ({
-                  value: chart.key,
-                  label: chart.label,
-                }))}
-                value={bodyMetric}
-                onChange={setBodyMetric}
-              />
-            )}
-
-            {!bcsLoading && hasBodyCharts && (
-              <ChartView chart={activeBodyChart ?? bcsChart ?? weightChart} />
-            )}
-
-            {!bcsLoading && bcsChart && !weightChart && (
-              <p className="assessment-hint">
-                No weights logged yet. Weight is optional when you record a body condition score.
-              </p>
-            )}
-          </>
-        )}
       </Card>
 
       <Card>

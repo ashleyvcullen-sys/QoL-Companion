@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { HelpCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { BellOff, HelpCircle } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings'
 import { supabase } from '../lib/supabase'
@@ -12,6 +13,9 @@ import {
   requestExactAlarmPermission,
   scheduleQolReminder,
 } from '../lib/notifications'
+import { useMedications } from '../lib/medicationsData'
+import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import { resolveTrackedConditions } from '../lib/charts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -25,6 +29,36 @@ const CADENCE_OPTIONS = [
   { value: 14, label: 'Every 2 weeks' },
   { value: 30, label: 'Monthly' },
 ]
+
+// '08:00' as a person reads it. Medications.jsx has its own copy; both are
+// four lines, and sharing them would mean a module for one function.
+function formatTime(value) {
+  if (!value) return ''
+  const [hour, minute] = value.split(':').map(Number)
+  const suffix = hour >= 12 ? 'pm' : 'am'
+  const display = hour % 12 === 0 ? 12 : hour % 12
+  return `${display}:${String(minute).padStart(2, '0')} ${suffix}`
+}
+
+// When a medication will actually raise a notification, in words. Says
+// "off" rather than staying silent when reminders are disabled: an owner
+// checking this screen is asking "what will tell me?", and a medication
+// quietly absent from the list looks like a bug.
+function describeMedicationReminder(medication) {
+  if (medication.scheduleMode === 'as_needed') return 'As needed — no reminders'
+  if (!medication.remindersEnabled) return 'Reminders off'
+
+  if (medication.scheduleMode === 'times') {
+    const times = (medication.times ?? []).filter(Boolean)
+    return times.length ? times.map(formatTime).join(', ') : 'No times set'
+  }
+
+  if (!medication.reminderTime) return 'No reminder time set'
+  const when = formatTime(medication.reminderTime)
+  if (medication.frequencyPeriod === 'week') return `${when}, weekly`
+  if (medication.frequencyPeriod === 'month') return `${when}, monthly`
+  return `${when}, daily`
+}
 
 function daysSince(dateStr) {
   const last = new Date(dateStr)
@@ -72,12 +106,22 @@ export default function Schedule() {
   const { refresh, selectedPet } = usePets()
   const pet = selectedPet
   const { generalEntries, loading } = useQolHistory(pet?.id)
+  const { medications, loading: medsLoading } = useMedications(pet?.id)
+  const { conditions, loading: conditionsLoading } = usePetConditions(pet?.id)
+  const { byCondition } = useAllConditionEntries(pet?.id)
   const [showFrequencyInfo, setShowFrequencyInfo] = useState(false)
   const [notifStatus, setNotifStatus] = useState(null)
   const [exactAlarmStatus, setExactAlarmStatus] = useState(null)
   const isAndroid = Capacitor.getPlatform() === 'android'
 
   const latestGeneralDate = generalEntries[generalEntries.length - 1]?.date ?? null
+
+  const activeMedications = medications.filter((medication) => medication.active)
+
+  // Conditions with readings logged, which is what "monitoring" means
+  // everywhere else in the app — not simply a row in the table.
+  const trackedConditions = resolveTrackedConditions(conditions)
+    .filter((definition) => (byCondition[definition.key] ?? []).length > 0)
 
   // Schedule used to track "general" and "pain" cadence separately, even
   // though a save always writes both halves of the assessment together —
@@ -152,6 +196,70 @@ export default function Schedule() {
             onCadenceChange={updateCadence}
           />
         )}
+      </Card>
+
+      <Card>
+        <SectionTitle>Medications</SectionTitle>
+        {medsLoading && <p>Loading…</p>}
+        {!medsLoading && activeMedications.length === 0 && (
+          <p className="assessment-hint">
+            No medications yet. <Link to="/medications" className="subtle-link">Add one</Link> to
+            get reminders for it.
+          </p>
+        )}
+        {!medsLoading && activeMedications.map((medication) => (
+          <div key={medication.id} className="schedule-row">
+            <div className="schedule-row-header">
+              <span className="schedule-row-label">{medication.name}</span>
+              {!medication.remindersEnabled && medication.scheduleMode !== 'as_needed' && (
+                <span className="assessment-hint"><BellOff size={13} /> off</span>
+              )}
+            </div>
+            <p className="assessment-hint">{describeMedicationReminder(medication)}</p>
+          </div>
+        ))}
+        {!medsLoading && activeMedications.length > 0 && (
+          <Link to="/medications" className="subtle-link">Change these in Medications</Link>
+        )}
+      </Card>
+
+      {/* Frequency only — there is no cadence to set here, because these do
+          not send notifications. Shown so the one screen an owner opens to
+          ask "what am I meant to be doing, and when?" answers the whole
+          question rather than two thirds of it. */}
+      <Card>
+        <SectionTitle>Disease Monitoring</SectionTitle>
+        {conditionsLoading && <p>Loading…</p>}
+        {!conditionsLoading && trackedConditions.length === 0 && (
+          <p className="assessment-hint">
+            Nothing being monitored yet.{' '}
+            <Link to="/conditions" className="subtle-link">Browse conditions</Link>
+          </p>
+        )}
+        {!conditionsLoading && trackedConditions.map((definition) => {
+          const entries = byCondition[definition.key] ?? []
+          const lastDate = entries[entries.length - 1]?.date ?? null
+          const cadenceDaysForCondition = definition.cadence?.days ?? 1
+          const overdue = !lastDate || daysSince(lastDate) >= cadenceDaysForCondition
+
+          return (
+            <div key={definition.key} className="schedule-row">
+              <div className="schedule-row-header">
+                <span className="schedule-row-label">{definition.label}</span>
+                <span className={`schedule-badge ${overdue ? 'overdue' : 'ok'}`}>
+                  {overdue ? 'Due' : 'On track'}
+                </span>
+              </div>
+              <p className="assessment-hint">
+                {definition.cadence ? `Worth filling in ${definition.cadence.label}.` : 'Worth filling in daily.'}
+                {' '}Last logged: {lastDate ?? 'never'}
+              </p>
+              <Link to={`/conditions/${definition.key}`} className="subtle-link">
+                Open {definition.label}
+              </Link>
+            </div>
+          )
+        })}
       </Card>
 
       {Capacitor.isNativePlatform() && (notifStatus === 'prompt' || notifStatus === 'prompt-with-rationale') && (

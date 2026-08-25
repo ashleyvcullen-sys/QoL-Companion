@@ -36,6 +36,7 @@ const EMPTY_FORM = {
   frequencyCount: 2,
   frequencyPeriod: 'day',
   remindersEnabled: true,
+  reminderTime: '08:00',
   notes: '',
   startedOn: '',
   endedOn: '',
@@ -135,7 +136,7 @@ export default function Medications() {
   // missing, is silently not reminding anyone.
   const remindersBlocked = isNative
     && notifStatus !== 'granted'
-    && active.some((m) => m.scheduleMode === 'times' && m.remindersEnabled)
+    && active.some((m) => m.scheduleMode !== 'as_needed' && m.remindersEnabled)
 
   function startAdd() {
     setEditingId('new')
@@ -149,6 +150,7 @@ export default function Medications() {
       name: medication.name,
       dose: medication.dose ?? '',
       startedOn: medication.startedOn ?? '',
+      reminderTime: medication.reminderTime ?? '08:00',
       endedOn: medication.endedOn ?? '',
       scheduleMode: medication.scheduleMode,
       times: medication.times.length > 0 ? [...medication.times] : ['08:00'],
@@ -175,6 +177,11 @@ export default function Medications() {
       times: saved.times,
       active: saved.active,
       remindersEnabled: saved.remindersEnabled,
+      scheduleMode: saved.scheduleMode,
+      frequencyPeriod: saved.frequencyPeriod,
+      frequencyCount: saved.frequencyCount,
+      reminderTime: saved.reminderTime,
+      startedOn: saved.startedOn,
     })
   }
 
@@ -203,7 +210,10 @@ export default function Medications() {
         times,
         frequencyCount: Number(form.frequencyCount) || 1,
         frequencyPeriod: form.frequencyPeriod,
-        remindersEnabled: form.scheduleMode === 'times' ? form.remindersEnabled : false,
+        // As-needed is the only mode that cannot remind — it answers to signs,
+        // not to a clock. Frequency can, at a time the owner picked.
+        remindersEnabled: form.scheduleMode === 'as_needed' ? false : form.remindersEnabled,
+        reminderTime: form.reminderTime,
         startedOn: form.startedOn,
         endedOn: form.endedOn,
       }
@@ -214,7 +224,7 @@ export default function Medications() {
 
       await syncReminders(saved)
 
-      if (saved.scheduleMode === 'times' && saved.remindersEnabled && isNative && notifStatus !== 'granted') {
+      if (saved.remindersEnabled && isNative && notifStatus !== 'granted') {
         const display = await requestNotificationPermission()
         setNotifStatus(display)
         if (display === 'granted') await syncReminders(saved)
@@ -555,9 +565,45 @@ export default function Medications() {
                   </div>
                 </div>
                 <p className="assessment-hint">
-                  You'll get a tick box per dose to mark off, but no reminders — there's no set
-                  time to remind you at. Choose "At set times" if you want to be notified.
+                  You'll get a tick box per dose to mark off. Choose "At set times" instead if
+                  each dose is due at a particular time of day.
                 </p>
+
+                <label className="med-reminder-toggle">
+                  <input
+                    type="checkbox"
+                    checked={form.remindersEnabled}
+                    onChange={(e) => setForm({ ...form, remindersEnabled: e.target.checked })}
+                  />
+                  <span>Remind me</span>
+                </label>
+
+                {/* The app still never invents a time — it uses one the owner
+                    gives it. Weekly and monthly reminders land on the same
+                    weekday, or the same date, as the day the course started. */}
+                {form.remindersEnabled && (
+                <div className="field">
+                  <label htmlFor="med-reminder-time">Remind me at</label>
+                  <input
+                    id="med-reminder-time"
+                    type="time"
+                    value={form.reminderTime}
+                    onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
+                  />
+                  <p className="assessment-hint">
+                    {form.frequencyPeriod === 'week'
+                      ? 'Once a week, on the same weekday the course started.'
+                      : form.frequencyPeriod === 'month'
+                        ? 'Once a month, on the same date the course started.'
+                        : 'Once a day, at this time.'}
+                  </p>
+                  {!isNative && (
+                    <p className="assessment-hint">
+                      Reminders only work in the app on your phone, not in a browser.
+                    </p>
+                  )}
+                </div>
+                )}
               </>
             )}
 

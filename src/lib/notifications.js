@@ -158,33 +158,76 @@ export async function cancelMedicationReminders(medicationId) {
   }
 }
 
-export async function scheduleMedicationReminders({ medicationId, medicationName, petName, dose, times, active, remindersEnabled = true }) {
+// A local date from an ISO 'YYYY-MM-DD'. new Date('2026-08-25') parses as
+// UTC midnight, which is the previous day for anyone west of Greenwich — and
+// a weekly reminder anchored to the wrong weekday is wrong every week.
+function localDateFromIso(iso) {
+  if (!iso) return null
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year || !month || !day) return null
+  return new Date(year, month - 1, day)
+}
+
+export async function scheduleMedicationReminders({
+  medicationId, medicationName, petName, dose, times, active, remindersEnabled = true,
+  scheduleMode = 'times', frequencyPeriod, frequencyCount, reminderTime, startedOn,
+}) {
   if (!medicationId) return
 
   await cancelMedicationReminders(medicationId)
 
-  // Nothing to schedule for an inactive course, an as-needed medication, or
-  // one scheduled by frequency ("twice a day") rather than by clock time —
-  // in all three cases the cancel above is the whole job.
-  //
-  // Frequency mode deliberately gets no reminder. Picking default times
-  // would have the app nudging an owner to give a drug at a time nobody
-  // prescribed; if they want reminding, they set real times.
-  if (!active || !remindersEnabled || !times || times.length === 0) return
+  if (!active || !remindersEnabled) return
 
   const display = await checkNotificationPermission()
   if (display !== 'granted') return
 
-  const notifications = times.slice(0, MAX_MEDICATION_SLOTS).map((time, index) => {
-    const [hour, minute] = time.split(':').map(Number)
-    return {
-      id: medicationReminderId(medicationId, index),
-      title: `${medicationName} for ${petName}`,
-      body: dose ? `${dose} — due now` : 'Due now',
-      schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
-      extra: { screen: 'medications', medicationId },
+  const title = `${medicationName} for ${petName}`
+  let notifications = []
+
+  if (scheduleMode === 'times') {
+    notifications = (times ?? []).slice(0, MAX_MEDICATION_SLOTS).map((time, index) => {
+      const [hour, minute] = time.split(':').map(Number)
+      return {
+        id: medicationReminderId(medicationId, index),
+        title,
+        body: dose ? `${dose} — due now` : 'Due now',
+        schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
+        extra: { screen: 'medications', medicationId },
+      }
+    })
+  } else if (scheduleMode === 'frequency' && reminderTime) {
+    // One reminder for the whole period, at a time the OWNER chose. The app
+    // still never invents a time — it just stopped refusing to use one it was
+    // given. Weekly and monthly are anchored to the day the course started,
+    // which is the only day in the record that means anything: a monthly
+    // injection given on the 3rd should be raised on the 3rd.
+    const [hour, minute] = reminderTime.split(':').map(Number)
+    const on = { hour, minute }
+    const anchor = localDateFromIso(startedOn)
+
+    if (frequencyPeriod === 'week') {
+      // Capacitor's weekday is 1-7 starting at Sunday; getDay() is 0-6.
+      on.weekday = (anchor ?? new Date()).getDay() + 1
+    } else if (frequencyPeriod === 'month') {
+      on.day = (anchor ?? new Date()).getDate()
     }
-  })
+
+    const count = frequencyCount ?? 1
+    const period = frequencyPeriod === 'week' ? 'this week'
+      : frequencyPeriod === 'month' ? 'this month'
+        : 'today'
+
+    notifications = [{
+      id: medicationReminderId(medicationId, 0),
+      title,
+      body: `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
+      schedule: { on, repeats: true, allowWhileIdle: true },
+      extra: { screen: 'medications', medicationId },
+    }]
+  }
+
+  // As-needed medications answer to no clock, so there is nothing to raise.
+  if (notifications.length === 0) return
 
   await LocalNotifications.schedule({ notifications })
 }

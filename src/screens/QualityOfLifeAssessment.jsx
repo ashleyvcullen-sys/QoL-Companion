@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Droplet, House } from 'lucide-react'
+import { Bell, Droplet, FileDown, House } from 'lucide-react'
 import Card from '../components/Card'
+import SectionTitle from '../components/SectionTitle'
+import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import Btn from '../components/Btn'
 import Modal from '../components/Modal'
 import Footer from '../components/Footer'
@@ -23,9 +25,16 @@ import {
   SLEEP_NOTES,
 } from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
-import { BEAP_CATEGORIES, computeBeapWorst } from '../lib/scoring'
+import { BEAP_CATEGORIES, computeBeapWorst, computeGeneralQolResult } from '../lib/scoring'
+import { beapAppetiteFromVcogGrade, vcogGradeFromBeapAppetite } from '../lib/conditions'
 import { CONDITION_LIST } from '../lib/conditions'
-import { saveConditionEntry, todayIsoDate, useAllConditionEntries } from '../lib/conditionsData'
+import {
+  saveConditionEntry,
+  todayIsoDate,
+  useAllConditionEntries,
+  usePetConditions,
+} from '../lib/conditionsData'
+import { parametersFor } from '../lib/cancerConfig'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
@@ -37,6 +46,14 @@ import EyesIcon from '../components/icons/EyesIcon'
 import SleepIcon from '../components/icons/SleepIcon'
 import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
+
+// Local rather than shared: three screens format a date this way and each
+// has its own copy. Worth unifying one day; not worth a new module today.
+function formatDateDDMMYYYY(dateStr) {
+  if (!dateStr) return dateStr
+  const [year, month, day] = dateStr.split('-')
+  return `${day}/${month}/${year}`
+}
 
 const INITIAL_ENTRY = {
   scores: { stool: 'unsure', hygiene: 'unsure', vision: 'unsure', hearing: 'unsure', sleep: 'unsure' },
@@ -150,6 +167,10 @@ export default function QualityOfLifeAssessment() {
   // would be worse than an empty one.
   const todayDate = todayIsoDate()
   const { byCondition: conditionEntriesByCondition } = useAllConditionEntries(pet.id)
+  // Needed for cancer alone: its question list is composed from the owner's
+  // own configuration rather than declared on the condition, so reading
+  // `condition.parameters` would find nothing there.
+  const { conditions: petConditions } = usePetConditions(pet.id)
 
   const beapFromConditions = useMemo(() => {
     const found = {}
@@ -158,10 +179,15 @@ export default function QualityOfLifeAssessment() {
         .find((conditionEntry) => conditionEntry.date === todayDate)
       if (!todaysEntry) continue
 
-      for (const parameter of condition.parameters ?? []) {
+      const petCondition = petConditions.find((row) => row.conditionKey === condition.key) ?? null
+      for (const parameter of parametersFor(condition, petCondition?.config ?? {}, pet.species)) {
         if (!parameter.beapKey) continue
-        const score = Number(todaysEntry.values?.[parameter.key])
-        if (!Number.isFinite(score)) continue
+        const raw = Number(todaysEntry.values?.[parameter.key])
+        if (!Number.isFinite(raw)) continue
+        // Cancer grades appetite; the assessment scores it. Convert here so
+        // the owner sees a level rather than a grade on this screen.
+        const score = parameter.beapFromGrade ? beapAppetiteFromVcogGrade(raw) : raw
+        if (score == null) continue
         found[parameter.beapKey] = {
           value: score,
           conditionKey: condition.key,
@@ -169,11 +195,18 @@ export default function QualityOfLifeAssessment() {
           parameterKey: parameter.key,
           entryValues: todaysEntry.values ?? {},
           entryNotes: todaysEntry.notes ?? '',
+          beapFromGrade: Boolean(parameter.beapFromGrade),
         }
       }
     }
     return found
-  }, [conditionEntriesByCondition, todayDate])
+  }, [conditionEntriesByCondition, petConditions, todayDate, pet.species])
+
+  // Set once the assessment is saved. Holds what was just recorded so the
+  // finish screen can show it without re-reading the database — the row was
+  // written a moment ago and reading it back to display what we already know
+  // is a round trip that can only introduce a delay or a discrepancy.
+  const [completed, setCompleted] = useState(null)
 
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
@@ -360,11 +393,16 @@ export default function QualityOfLifeAssessment() {
       for (const [category, source] of Object.entries(beapFromConditions)) {
         const score = entry.beap[category]
         if (score == null || score === source.value) continue
+        // Converted, not copied: the condition form stores a grade, so
+        // writing the level straight in would store a number meaning
+        // something else entirely.
+        const stored = source.beapFromGrade ? vcogGradeFromBeapAppetite(score) : score
+        if (stored == null) continue
         await saveConditionEntry({
           petId: pet.id,
           conditionKey: source.conditionKey,
           entryDate,
-          values: { ...source.entryValues, [source.parameterKey]: score },
+          values: { ...source.entryValues, [source.parameterKey]: stored },
           notes: source.entryNotes,
         })
       }
@@ -386,8 +424,23 @@ export default function QualityOfLifeAssessment() {
 
     await clearAssessmentDraft(pet.id)
 
+    // The last assessment BEFORE this one, for the comparison. generalEntries
+    // was loaded when the screen opened, so it does not include what was just
+    // saved — which is exactly what we want here.
+    const previousGeneral = generalEntries[generalEntries.length - 1] ?? null
+    const previousPain = painEntries.find((row) => row.date === previousGeneral?.date) ?? null
+
+    setCompleted({
+      result: computeGeneralQolResult(entry, entry.beap),
+      previous: previousGeneral
+        ? {
+            date: previousGeneral.date,
+            result: computeGeneralQolResult(previousGeneral, previousPain?.beap),
+          }
+        : null,
+    })
+
     setSaving(false)
-    navigate('/')
   }
 
   const pages = [
@@ -494,6 +547,70 @@ export default function QualityOfLifeAssessment() {
       species={pet.species}
     />,
   ]
+
+  if (completed) {
+    const { result, previous } = completed
+    const change = previous ? result.percent - previous.result.percent : null
+
+    return (
+      <div className="screen">
+        <Card>
+          <SectionTitle>Saved</SectionTitle>
+          <p className="assessment-hint">
+            Today's assessment is recorded for {pet.name}.
+          </p>
+
+          <div className="review-summary">
+            <div className="review-summary-row">
+              <span>Quality of life today</span>
+              <strong style={{ color: result.color }}>
+                {result.percent}% — {result.band}
+              </strong>
+            </div>
+            {previous && (
+              <div className="review-summary-row">
+                <span>Last assessment ({formatDateDDMMYYYY(previous.date)})</span>
+                <strong>{previous.result.percent}% — {previous.result.band}</strong>
+              </div>
+            )}
+          </div>
+
+          {/* One comparison, not a verdict. A 3-point move between two days is
+              noise, and telling an owner their pet is "improving" on the
+              strength of it would be inventing a trend out of a rounding
+              difference. The charts are where a trend can honestly be read,
+              which is what the link below is for. */}
+          {change != null && (
+            <p className="assessment-hint">
+              {change === 0
+                ? 'The same as last time.'
+                : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'} than last time. A single comparison is not a trend — the charts show whether it holds.`}
+            </p>
+          )}
+
+          <Btn
+            type="button"
+            className="btn-block"
+            onClick={() => navigate('/export-report', {
+              state: {
+                preselect: ['overall', ...WELLBEING_CONCEPTS.map((concept) => `pillar:${concept.key}`)],
+              },
+            })}
+          >
+            <FileDown size={16} /> Export a report for your vet
+          </Btn>
+
+          <button type="button" className="subtle-link" onClick={() => navigate('/trends')}>
+            See all trends
+          </button>
+          <button type="button" className="subtle-link" onClick={() => navigate('/')}>
+            Back to home
+          </button>
+        </Card>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="screen">

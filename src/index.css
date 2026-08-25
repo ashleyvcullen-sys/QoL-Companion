@@ -1805,6 +1805,13 @@ code {
 
 .calendar-cell {
   position: relative;
+  /* A button now, so the day's detail can be read on a phone, where the
+     title tooltip never appears. These four lines undo the browser's button
+     styling; everything below is the same as when it was a div. */
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
   aspect-ratio: 1;
   border-radius: 8px;
   display: flex;
@@ -1816,6 +1823,36 @@ code {
 
 .calendar-cell-empty {
   background: none;
+}
+
+.calendar-cell.selected {
+  outline: 2px solid var(--text-h);
+  outline-offset: 1px;
+}
+
+.calendar-detail {
+  margin: 10px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-b);
+  text-align: center;
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+}
+
+.calendar-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-h);
+  flex-shrink: 0;
 }
 
 /* The medication mark. Sits over the top-right corner of the day, and is

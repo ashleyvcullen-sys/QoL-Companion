@@ -23,7 +23,7 @@
 // PENDING ASH: owner-facing strings drafted by Claude are marked. Anything
 // NOT marked came from Ash directly.
 
-import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
+import { RELATIONSHIP, SAME_AS_ASSESSMENT, SEVERITY, sharedParameter } from './conditions'
 
 // ---------------------------------------------------------------- core
 //
@@ -31,20 +31,32 @@ import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
 // the general assessment (BEAAAAPP) and the Body Condition screen. Re-asking
 // them here would put two answers to the same question on the same day.
 //
-// Appetite is asked ONCE, here, as a VCOG grade. The general assessment's
-// appetite score is derived from it via appetiteScoreFromVcogGrade() in
-// conditions.js rather than asked a second time.
+// Appetite is asked ONCE, here, as a VCOG grade — the finer instrument, and
+// the one an oncologist reads. The daily assessment's appetite category is
+// filled in from that grade rather than asked a second time; see
+// beapAppetiteFromVcogGrade() in conditions.js.
 export const CORE_PARAMETERS = [
+  // Graded, because the grade is the number an oncologist acts on and the
+  // one the report has to print. `beapKey` + `beapFromGrade` mean it still
+  // fills in the daily assessment's appetite category — one direction only.
+  //
+  // One direction is a deliberate limit, not an oversight. Five grades do not
+  // map cleanly onto six BEAAAAPP levels, so converting back would have to
+  // guess, and a guess written into a clinical record is worse than a
+  // question asked twice. The finer instrument feeds the coarser one; never
+  // the reverse.
   {
     key: 'inappetence',
     label: 'Appetite',
     type: 'vcog',
     vcogCategory: 'Anorexia',
-    // Graded rather than scored, because a grade is the number an oncologist
-    // acts on. Kept alongside the daily appetite score rather than replacing
-    // it — see appetiteScoreFromVcogGrade() in conditions.js.
     covers: 'appetite',
     relationship: RELATIONSHIP.SUPERSEDES,
+    beapKey: 'appetite',
+    // Graded here, scored there, converted in both directions. The owner
+    // answers appetite once a day whichever screen they open first.
+    beapFromGrade: true,
+    why: SAME_AS_ASSESSMENT,
     concernFromGrade: 3, // PENDING ASH
     grades: [
       { grade: 0, owner: 'Eating normally.' },

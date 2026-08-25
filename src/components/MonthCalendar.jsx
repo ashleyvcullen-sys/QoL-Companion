@@ -13,6 +13,11 @@ export default function MonthCalendar({ dayFor }) {
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
+  // Which day the reader has tapped. The `title` attribute below is a hover
+  // tooltip, and on a phone there is no hover — so on the device this
+  // calendar was built for, every one of those explanations was unreachable.
+  // Tapping a day puts the same text on screen underneath.
+  const [selectedDay, setSelectedDay] = useState(null)
 
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleString('default', { month: 'long', year: 'numeric' })
@@ -25,11 +30,20 @@ export default function MonthCalendar({ dayFor }) {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
 
+  // Whether any day on screen carries a medication mark. Only then is the
+  // key worth the space — a legend explaining a symbol that is not present
+  // is furniture.
+  const hasMarkers = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+    .some((day) => dayFor(dateKeyFor(day))?.marker)
+
   function dateKeyFor(day) {
     return `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
 
+  // Clearing on navigation: a detail line left over from August, sitting
+  // under September, would be read as belonging to September.
   function goToPreviousMonth() {
+    setSelectedDay(null)
     if (viewMonth === 0) {
       setViewYear((y) => y - 1)
       setViewMonth(11)
@@ -39,6 +53,7 @@ export default function MonthCalendar({ dayFor }) {
   }
 
   function goToNextMonth() {
+    setSelectedDay(null)
     if (isCurrentMonth) return
     if (viewMonth === 11) {
       setViewYear((y) => y + 1)
@@ -78,23 +93,45 @@ export default function MonthCalendar({ dayFor }) {
           // string is truthy, so the fallbacks below would never fire and an
           // unrecorded day would render white text on a near-white cell.
           const colour = info?.colour ?? null
+          const title = info?.title || 'Nothing recorded'
+          const isSelected = selectedDay === day
+
           return (
-            <div
+            <button
               key={day}
-              className="calendar-cell"
+              type="button"
+              className={`calendar-cell ${isSelected ? 'selected' : ''}`.trim()}
               style={{ background: colour ?? '#E5DEE1', color: colour ? '#fff' : 'var(--text-h)' }}
-              title={info?.title ?? 'Nothing recorded'}
+              title={title}
+              aria-label={`${day} ${monthLabel}: ${title}`}
+              onClick={() => setSelectedDay(isSelected ? null : day)}
             >
               {day}
               {/* A medication started or stopped on this day. Deliberately a
-                  dot rather than a letter or an icon: the cell is 11px of
-                  space with a number already in it, and anything legible
-                  would cover the number. The detail is in the title. */}
+                  dot rather than a letter or an icon: the cell is a few
+                  millimetres square with a number already in it, and anything
+                  legible would cover the number. Tapping the day says what
+                  it was. */}
               {info?.marker && <span className="calendar-cell-marker" />}
-            </div>
+            </button>
           )
         })}
       </div>
+
+      {selectedDay != null && (
+        <p className="calendar-detail" role="status">
+          <strong>{selectedDay} {monthLabel.split(' ')[0]}</strong>
+          {' — '}
+          {dayFor(dateKeyFor(selectedDay))?.title || 'Nothing recorded'}
+        </p>
+      )}
+
+      {hasMarkers && (
+        <p className="calendar-legend">
+          <span className="calendar-legend-dot" />
+          A medication started or stopped. Tap a day to see which.
+        </p>
+      )}
     </div>
   )
 }

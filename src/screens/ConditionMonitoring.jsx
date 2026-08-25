@@ -10,7 +10,14 @@ import Footer from '../components/Footer'
 import ChartView from '../components/ChartView'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
-import { SEVERITY, askedParameters, conditionByKey, evaluateParameter } from '../lib/conditions'
+import {
+  SEVERITY,
+  askedParameters,
+  beapAppetiteFromVcogGrade,
+  conditionByKey,
+  evaluateParameter,
+  vcogGradeFromBeapAppetite,
+} from '../lib/conditions'
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries, updateBeapCategory } from '../lib/qolData'
@@ -132,7 +139,11 @@ export default function ConditionMonitoring() {
 
   function assessmentValueFor(parameter) {
     if (!parameter.beapKey || !todaysPain) return null
-    return todaysPain.beap?.[parameter.beapKey] ?? null
+    const recorded = todaysPain.beap?.[parameter.beapKey] ?? null
+    if (recorded == null) return null
+    // A graded question shows a grade, not a level, so the assessment's answer
+    // is converted on the way in — and back again on the way out.
+    return parameter.beapFromGrade ? vcogGradeFromBeapAppetite(recorded) : recorded
   }
 
   const assessmentPrefill = {}
@@ -259,8 +270,10 @@ export default function ConditionMonitoring() {
       try {
         for (const parameter of parameters) {
           if (!parameter.beapKey) continue
-          const score = Number(stored[parameter.key])
-          if (!Number.isFinite(score)) continue
+          const raw = Number(stored[parameter.key])
+          if (!Number.isFinite(raw)) continue
+          const score = parameter.beapFromGrade ? beapAppetiteFromVcogGrade(raw) : raw
+          if (score == null) continue
           if (todaysPain?.beap?.[parameter.beapKey] === score) continue
           await updateBeapCategory({
             petId: pet.id,

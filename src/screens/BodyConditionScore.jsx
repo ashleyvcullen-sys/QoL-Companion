@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { FileDown } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import SeverityOptionList from '../components/SeverityOptionList'
+import ChartView from '../components/ChartView'
+import ChoiceButtons from '../components/ChoiceButtons'
+import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
 import { BCS_CITATION, BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey } from '../lib/bcsScale'
@@ -21,6 +25,14 @@ export default function BodyConditionScore() {
   const pet = selectedPet
   const navigate = useNavigate()
   const { entries, loading, refresh } = useBcsHistory(pet?.id)
+
+  // The same two charts Trends draws, from the same descriptions — not a
+  // second implementation that looks similar until one of them is edited.
+  const [bodyMetric, setBodyMetric] = useState('body:score')
+  const bodyCharts = buildChartRegistry({ bcsEntries: entries })
+  const scoreChart = chartByKey(bodyCharts, 'body:score')
+  const weightChart = chartByKey(bodyCharts, 'body:weight')
+  const activeBodyChart = chartByKey(bodyCharts, bodyMetric) ?? scoreChart ?? weightChart
 
   const todayStr = new Date().toISOString().slice(0, 10)
   const todaysEntry = entries.find((entry) => entry.date === todayStr) ?? null
@@ -153,6 +165,41 @@ export default function BodyConditionScore() {
         </Btn>
         {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
       </Card>
+
+      {activeBodyChart && (
+        <Card>
+          <SectionTitle>Over Time</SectionTitle>
+
+          {/* The switcher earns its place only once there is something to
+              switch to — with no weights recorded it would be two buttons
+              where one always says "nothing here". */}
+          {scoreChart && weightChart && (
+            <ChoiceButtons
+              options={[scoreChart, weightChart].map((chart) => ({ value: chart.key, label: chart.label }))}
+              value={bodyMetric}
+              onChange={setBodyMetric}
+            />
+          )}
+
+          <ChartView chart={activeBodyChart} />
+
+          {scoreChart && !weightChart && (
+            <p className="assessment-hint">
+              No weights logged yet. Weight is optional when you record a body condition score.
+            </p>
+          )}
+
+          <Btn
+            type="button"
+            className="btn-block"
+            onClick={() => navigate('/export-report', {
+              state: { preselect: [scoreChart, weightChart].filter(Boolean).map((chart) => chart.key) },
+            })}
+          >
+            <FileDown size={16} /> Export this for your vet
+          </Btn>
+        </Card>
+      )}
 
       <div className="bcs-sources">
         <p>{BCS_CITATION}</p>

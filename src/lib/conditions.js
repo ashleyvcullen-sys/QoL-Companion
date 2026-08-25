@@ -232,11 +232,13 @@ export function sharedParameter(key, overrides = {}) {
 // explanations of that would undo it. Any parameter with `beapKey` should
 // carry it.
 //
-// PENDING ASH — drafted by me. Deliberately does NOT promise that answering
-// in one place fills in the other; that is not built yet. When it is, this
-// sentence is the one place to say so.
-const SAME_AS_ASSESSMENT =
-  'This is the same question as in the daily assessment, asked here because it is one of the most important measures in arthritis.'
+// Exported so cancer's appetite question can carry the identical sentence.
+// Two subtly different explanations of "these are the same question" would
+// undo the thing they are explaining.
+//
+// PENDING ASH — drafted by me.
+export const SAME_AS_ASSESSMENT =
+  'This is the same question as in the daily assessment. Answering it in one place fills it in the other, and you can change it in either.'
 
 export const CONDITIONS = {
   cardiac: {
@@ -439,6 +441,24 @@ export const CONDITIONS = {
     parameters: [],
   },
 
+  // --- Cognitive Decline ---------------------------------------------------
+  //
+  // Structured on DISHAA's six domains — Disorientation, Interactions,
+  // Sleep-wake cycle, House-soiling, Activity, Anxiety — because it is the
+  // instrument built to be repeated rather than scored once for a diagnosis,
+  // which is what an app an owner returns to needs.
+  //
+  // Dogs and cats get their OWN questions rather than shared wording with
+  // species variations. Feline cognitive dysfunction shows differently enough
+  // that a translated dog question would be asking the wrong thing: a cat
+  // does not get stuck behind furniture, it howls at 3am at a wall.
+  //
+  // Keys are shared across species where the domain is the same, so a pet's
+  // history lines up on one chart whichever set of questions produced it —
+  // and species filtering guarantees only one of each pair is ever shown.
+  //
+  // EVERY level below is drafted by me and needs Ash's eye. They are written
+  // to be replaced sentence by sentence, the way arthritis was.
   cognitive: {
     key: 'cognitive',
     label: 'Cognitive Decline',
@@ -446,8 +466,263 @@ export const CONDITIONS = {
     // PENDING ASH — written by me, not reviewed.
     summary:
       'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called canine or feline dementia.',
-    comingSoon: true,
-    parameters: [],
+    // PENDING ASH — confirm the instrument and the exact wording. Nothing from
+    // DISHAA is reproduced here; the domains are followed and the owner
+    // wording is drafted.
+    citation: 'Adapted from DISHAA.',
+    // PENDING ASH.
+    intro:
+      'Cognitive change happens slowly, and it is the things that stop happening that are easiest to miss. Answering the same questions every so often makes the direction of travel visible.',
+    parameters: [
+      // --- Disorientation -------------------------------------------------
+      {
+        key: 'disorientation',
+        species: 'dog',
+        label: 'Orientation',
+        type: 'scale',
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Finds their way around the house and garden normally.',
+            'Occasionally pauses, as if working out where to go next.',
+            'Sometimes goes to the hinge side of a door, or stands in a room without settling.',
+            'Often looks lost in familiar places, or gets stuck behind or under furniture.',
+            'Frequently disoriented, and needs help finding the way out of a room.',
+            'Appears lost most of the time, even in a single familiar room.',
+          ],
+        },
+      },
+      {
+        key: 'disorientation',
+        species: 'cat',
+        label: 'Orientation',
+        type: 'scale',
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Moves around the house normally and settles in the usual places.',
+            'Occasionally hesitates before jumping up or going through a door.',
+            'Sometimes stares at walls or into space for a while.',
+            'Often seems unsure where they are, or sits in unusual places.',
+            'Frequently disoriented, and cannot find the litter tray or food bowl.',
+            'Appears lost most of the time, even in one familiar room.',
+          ],
+        },
+      },
+
+      // --- Interactions ---------------------------------------------------
+      {
+        key: 'interactions',
+        species: 'dog',
+        label: 'Interaction With You',
+        type: 'scale',
+        // The daily assessment's attitude category is about demeanour — how
+        // bright they seem. This is about the specific social habits that
+        // fall away first: the greeting at the door, asking to be stroked.
+        covers: 'attitude',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Greets you, seeks attention and enjoys being stroked as always.',
+            'Slightly less inclined to come and find you.',
+            'Greets you less often, and asks for attention less than they used to.',
+            'Rarely greets you, and often moves away when stroked.',
+            'Seldom interacts, and does not seem to recognise family members every time.',
+            'No longer greets or seeks contact, and may not recognise familiar people.',
+          ],
+        },
+      },
+      {
+        key: 'interactions',
+        species: 'cat',
+        label: 'Interaction With You',
+        type: 'scale',
+        covers: 'attitude',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Comes to find you, settles nearby and enjoys being stroked as always.',
+            'Slightly less inclined to come and sit with you.',
+            'Comes to find you less often, or is less tolerant of being handled.',
+            'Rarely seeks contact, and often moves away when approached.',
+            'Seldom interacts, or has become unusually clingy and follows you constantly.',
+            'No longer seeks contact, or is distressed whenever left alone.',
+          ],
+        },
+      },
+
+      // --- Sleep-wake cycle -----------------------------------------------
+      {
+        key: 'sleep_wake',
+        species: 'dog',
+        label: 'Sleeping At Night',
+        type: 'scale',
+        // The daily assessment scores sleep as a slider — how well they
+        // slept. This asks about the day/night reversal that defines
+        // cognitive decline, which a good night's sleep at the wrong end of
+        // the clock would score well on.
+        covers: 'sleep',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Sleeps through the night and is awake during the day, as always.',
+            'Occasionally unsettled at night, but settles again quickly.',
+            'Wakes once or twice most nights, and naps more during the day.',
+            'Awake and restless for long stretches at night, sleeping much of the day.',
+            'Up most of the night, pacing or panting, and asleep most of the day.',
+            'Day and night are completely reversed, and the household is not sleeping.',
+          ],
+        },
+      },
+      {
+        key: 'sleep_wake',
+        species: 'cat',
+        label: 'Sleeping At Night',
+        type: 'scale',
+        covers: 'sleep',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Sleeps and wakes in their usual pattern.',
+            'Occasionally restless or vocal at night, then settles.',
+            'Calls out or wanders at night once or twice most nights.',
+            'Vocalising or pacing for long stretches at night, most nights.',
+            'Loud, distressed calling at night, and asleep most of the day.',
+            'Awake and calling most of the night, and the household is not sleeping.',
+          ],
+        },
+      },
+
+      // --- House-soiling --------------------------------------------------
+      {
+        key: 'house_soiling',
+        species: 'dog',
+        label: 'Toileting',
+        type: 'scale',
+        // Not the daily urination question, which asks how urination has
+        // been. This asks WHERE, and whether the habit of asking to go out
+        // has been lost — a house-trained dog forgetting is the finding.
+        covers: 'urination',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Asks to go out and toilets outside, as always.',
+            'The occasional accident, but still asks to go out.',
+            'Asks to go out less reliably, with accidents indoors now and then.',
+            'Often toilets indoors without asking, sometimes soon after being outside.',
+            'Regularly toilets indoors, and no longer signals the need to go out.',
+            'No longer house-trained at all.',
+          ],
+        },
+      },
+      {
+        key: 'house_soiling',
+        species: 'cat',
+        label: 'Litter Tray Habits',
+        type: 'scale',
+        covers: 'urination',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // PENDING ASH — worth a note on this one: toileting outside the tray
+        // has more common explanations than dementia (arthritis, kidney
+        // disease, cystitis, a tray in the wrong place). Should this question
+        // carry a line saying so, or is that the vet's job?
+        levels: {
+          cat: [
+            'Uses the litter tray normally.',
+            'The occasional accident just outside the tray.',
+            'Toilets outside the tray now and then, in the same few places.',
+            'Often toilets away from the tray, in different places around the house.',
+            'Rarely uses the tray, and toilets wherever they happen to be.',
+            'No longer uses the tray at all.',
+          ],
+        },
+      },
+
+      // --- Activity -------------------------------------------------------
+      {
+        key: 'activity_changes',
+        species: 'dog',
+        label: 'Purposeful Activity',
+        type: 'scale',
+        // The daily activity category asks how much they are doing. This
+        // asks whether what they are doing makes sense — a dog pacing a
+        // circuit for an hour is busy and not well.
+        covers: 'activity',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Play, exploring and routines are all as purposeful as ever.',
+            'Slightly less interested in toys or exploring.',
+            'Less interest in play, or occasional aimless wandering.',
+            'Wanders or paces without apparent purpose, or repeats the same route.',
+            'Long spells of pacing, circling or staring, and little real play.',
+            'Almost all activity is repetitive or aimless.',
+          ],
+        },
+      },
+      {
+        key: 'activity_changes',
+        species: 'cat',
+        label: 'Purposeful Activity',
+        type: 'scale',
+        covers: 'activity',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Grooming, play and routines are all as purposeful as ever.',
+            'Slightly less interested in play or in watching the window.',
+            'Less interest in play, or occasional aimless wandering.',
+            'Wanders or paces without apparent purpose, or repeats the same route.',
+            'Long spells of pacing, circling or staring at nothing.',
+            'Almost all activity is repetitive or aimless.',
+          ],
+        },
+      },
+
+      // --- Anxiety --------------------------------------------------------
+      {
+        key: 'anxiety',
+        species: 'dog',
+        label: 'Anxiety',
+        type: 'scale',
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          dog: [
+            'Settles easily and copes with being alone as always.',
+            'Occasionally unsettled by things that never used to bother them.',
+            'Noticeably more clingy, or restless when left.',
+            'Often anxious — following you room to room, or distressed when alone.',
+            'Anxious for much of the day, and difficult to settle at all.',
+            'Constantly distressed, and cannot be comforted.',
+          ],
+        },
+      },
+      {
+        key: 'anxiety',
+        species: 'cat',
+        label: 'Anxiety',
+        type: 'scale',
+        concernFrom: 4, // PENDING ASH
+        levels: {
+          cat: [
+            'Settles easily and copes with the usual household comings and goings.',
+            'Occasionally startled by things that never used to bother them.',
+            'Noticeably more jumpy, or hiding more than usual.',
+            'Often anxious — hiding for long spells, or calling when alone.',
+            'Anxious for much of the day, and difficult to settle at all.',
+            'Constantly distressed, and cannot be comforted.',
+          ],
+        },
+      },
+    ],
   },
 
   arthritis: {
@@ -456,17 +731,8 @@ export const CONDITIONS = {
     Icon: BoneOrganIcon,
     summary:
       'Stiffness, lameness and willingness to move, and how well pain relief is holding.',
-    // The weekly recommendation is bolded because it is the one instruction
-    // on this screen that changes what the owner does. PetText renders **runs**
-    // as <strong>, the same way the condition `why` fields emphasise.
     intro:
-      'Arthritis changes slowly, so **this one is worth filling in about once a week rather than every day.**',
-    // How often this is worth filling in. Conditions without a cadence are
-    // daily by default, which is what every other one has been until now.
-    // Arthritis moves over weeks, not days: a daily prompt would train
-    // owners to tick through it without really looking, and seven near-
-    // identical entries say no more than one.
-    cadence: { days: 7, label: 'weekly', noun: 'week' },
+      'Arthritis changes slowly, so gradual differences are easier to see over weeks than day to day.',
     // PENDING ASH — confirm both instruments and the exact wording. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
@@ -479,11 +745,11 @@ export const CONDITIONS = {
       // six species-specific levels.
       //
       // Asked here rather than referenced from the daily assessment, which is
-      // what Heart Disease does with appetite. The difference is cadence:
-      // Heart Disease is filled in daily, alongside the assessment, so
-      // referencing it costs nothing. Arthritis is weekly, and an owner who
-      // did not happen to do the daily assessment that week would be left
-      // with an arthritis entry missing the one measure that matters most.
+      // what Heart Disease does with appetite. An owner who opens Arthritis
+      // without having done the assessment that day would otherwise be left
+      // with an entry missing the one measure that matters most in it — and
+      // now that the answer is shared both ways, asking costs them nothing:
+      // whichever screen they reach first fills in the other.
       {
         key: 'ambulation',
         // Named the same as the BEAAAAPP category it reuses. It IS that
@@ -552,7 +818,7 @@ export const CONDITIONS = {
         hideImages: true,
         // Same category as the daily assessment, asked with the one thing it
         // does not ask: where. Kept rather than referenced for the same
-        // cadence reason as ambulation above.
+        // reason as ambulation above.
         covers: 'palpation',
         relationship: RELATIONSHIP.SUPERSEDES,
         concernFrom: 4, // PENDING ASH
@@ -764,27 +1030,58 @@ export function vcogColourForIndex(index) {
   return VCOG_GRADE_COLOURS[index] ?? VCOG_GRADE_COLOURS[VCOG_GRADE_COLOURS.length - 1]
 }
 
-// Appetite, derived from the VCOG inappetence grade rather than asked twice.
+// The BEAAAAPP appetite level a VCOG anorexia grade corresponds to.
 //
-// A cancer patient answers ONE question about eating: the VCOG-graded
-// inappetence question, which is the more precise instrument and the one an
-// oncologist needs in the report. Everywhere else in the app that wants a
-// familiar 0-10 appetite score reads it from that grade instead of putting a
-// second appetite question in front of the owner on the same day — two
-// answers about the same meal that can disagree.
+// A cancer patient answers ONE question about eating — the graded one — and
+// this is how that answer reaches the daily assessment's appetite category so
+// the owner is not asked twice about the same meal.
 //
-// Direction matches the everyday-function questions, NOT BEAAAAPP severity:
-// 10 is eating normally, 0 is eating nothing. That is what the general
-// assessment's appetite slider means, so a derived value can stand in for a
-// recorded one without inverting.
+// The values are BEAAAAPP SEVERITIES, so 0 is eating normally and 10 is
+// refusing food. That is the direction beap.appetite is stored in, and the
+// overview inverts it for display; producing a "higher is better" score here
+// would silently invert the pillar.
 //
-// PENDING ASH — the mapping is mine, not reviewed. Index is the VCOG grade.
-export const APPETITE_SCORE_BY_VCOG_GRADE = [10, 8, 5, 2, 0]
+// Five grades onto six levels, so grade 1 spans two of them: it covers both
+// "Slightly slower to eat" and "A bit picky, some hesitancy". Only one value
+// can be recorded, and it records the MILDER of the two — Ash's call. A pet
+// whose owner has said "eating a little less, but still eating meals" reads
+// as closer to normal than to picky, and erring the other way would make the
+// step from grade 0 to grade 1 look like a bigger fall than it is on the
+// appetite pillar and the overall percentage.
+//
+// The consequence, stated plainly: severity 4 is never written by this route.
+// It remains reachable when the owner answers appetite in the daily
+// assessment themselves.
+//
+//   grade 0  Eating normally                              -> 0   Eating normally
+//   grade 1  A little less than usual, still eating meals  -> 2   Slightly slower to eat
+//   grade 2  Noticeably less; coaxing, or favourites only  -> 6   Eating noticeably less
+//   grade 3  Very little for more than a day despite coaxing -> 8 Little interest, even treats
+//   grade 4  Not eating at all                            -> 10  Refusing food
+//
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+export const BEAP_APPETITE_BY_VCOG_GRADE = [0, 2, 6, 8, 10]
 
-export function appetiteScoreFromVcogGrade(grade) {
+// And back the other way.
+//
+// This exists because grade 1 covers two BEAAAAPP levels rather than one, so
+// both of them land on it — there is no level whose grade is ambiguous. That
+// was the missing piece: without it the conversion could only run one way,
+// and the cancer form could not be pre-filled from the assessment.
+//
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+export const VCOG_GRADE_BY_BEAP_APPETITE = { 0: 0, 2: 1, 4: 1, 6: 2, 8: 3, 10: 4 }
+
+export function vcogGradeFromBeapAppetite(score) {
+  const value = Number(score)
+  if (!Number.isFinite(value)) return null
+  return VCOG_GRADE_BY_BEAP_APPETITE[value] ?? null
+}
+
+export function beapAppetiteFromVcogGrade(grade) {
   const index = Number(grade)
   if (!Number.isFinite(index)) return null
-  return APPETITE_SCORE_BY_VCOG_GRADE[index] ?? null
+  return BEAP_APPETITE_BY_VCOG_GRADE[index] ?? null
 }
 
 // Owner-facing text for each grade, lowest first. Falls back to an empty list

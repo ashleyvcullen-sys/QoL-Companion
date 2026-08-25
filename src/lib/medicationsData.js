@@ -16,6 +16,7 @@ function mapMedicationRow(row) {
     frequencyCount: row.frequency_count,
     frequencyPeriod: row.frequency_period,
     remindersEnabled: row.reminders_enabled ?? true,
+    reminderTime: row.reminder_time ?? null,
     notes: row.notes,
     active: row.active,
     // Null means "not recorded", never "today". An owner who does not know
@@ -100,7 +101,7 @@ export async function fetchDosesSince(petId, fromDate) {
 
 export async function createMedication({
   petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod,
-  remindersEnabled, startedOn, endedOn,
+  remindersEnabled, startedOn, endedOn, reminderTime,
 }) {
   const { data, error } = await supabase
     .from('medications')
@@ -116,6 +117,7 @@ export async function createMedication({
       notes: notes || null,
       started_on: startedOn || null,
       ended_on: endedOn || null,
+      reminder_time: scheduleMode === 'frequency' ? (reminderTime || null) : null,
     })
     .select()
     .single()
@@ -126,7 +128,7 @@ export async function createMedication({
 
 export async function updateMedication(medicationId, {
   name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod,
-  remindersEnabled, startedOn, endedOn,
+  remindersEnabled, startedOn, endedOn, reminderTime,
 }) {
   const patch = {}
   if (name !== undefined) patch.name = name
@@ -148,6 +150,9 @@ export async function updateMedication(medicationId, {
     patch.times = scheduleMode === 'times' ? (times ?? []) : []
     patch.frequency_count = scheduleMode === 'frequency' ? frequencyCount : null
     patch.frequency_period = scheduleMode === 'frequency' ? frequencyPeriod : null
+    // Part of the same set: a reminder time left on a medication switched to
+    // clock times would schedule a reminder nothing asks for.
+    patch.reminder_time = scheduleMode === 'frequency' ? (reminderTime || null) : null
   } else if (times !== undefined) {
     patch.times = times
   }

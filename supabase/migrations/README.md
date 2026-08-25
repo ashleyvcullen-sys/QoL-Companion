@@ -33,6 +33,8 @@ order by kind, name;
 | `20260823150000_create_condition_monitoring.sql` | 23 Aug 2026 | `pet_conditions` (7 cols) and `condition_entries` (7 cols) present, verified via information_schema |
 | `20260823160000_create_condition_events.sql` | 23 Aug 2026 | `condition_events` (8 cols) present, verified via information_schema |
 | `20260824000000_add_condition_config.sql` | 24 Aug 2026 | `config` present on `pet_conditions`: `jsonb`, default `'{}'::jsonb`, confirmed via information_schema. Adds `config` jsonb to `pet_conditions` so a condition's parameter list can be composed per pet rather than fixed — cancer monitoring needs it; every other condition defaults to `'{}'` and behaves exactly as before, so there was nothing to back-fill. Written `add column if not exists`, so re-running is a no-op. |
+| `20260825000000_medication_monthly_frequency.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor. Widens `medications_frequency_period_check` to `('day', 'week', 'month')` so "N times per month" can be saved. Drop-and-recreate rather than alter, because Postgres cannot widen a check in place; `if exists` on the drop makes it re-runnable. Nothing to back-fill — the new set is a strict superset, so every existing row already satisfies it. |
+| `20260825010000_medication_dates.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `started_on` and `ended_on` both present via information_schema. Adds the two dates, back-fills `started_on` from `created_at` (the best available answer for rows added as they were prescribed), and adds `medications_dates_order_check` so an end date cannot precede a start. Both columns stay nullable: "I don't know when this started" is a real answer, and a guess drawn on a calendar as fact would be worse than a gap. |
 
 Both were applied as a single combined paste, which is why the second one
 reports as already satisfied if re-run. Both are written to be re-runnable.
@@ -41,17 +43,6 @@ reports as already satisfied if re-run. Both are written to be re-runnable.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
-| `20260825010000_medication_dates.sql` | Adds `started_on` and `ended_on` dates to `medications`, back-fills `started_on` from `created_at`, and adds a check that an end date cannot precede a start date | The calendars mark the day a medication started or stopped, so an owner can see whether the days improved afterwards. **Until this is run, the medication form's date fields fail to save.** |
-| `20260825000000_medication_monthly_frequency.sql` | Widens the `medications_frequency_period_check` constraint from `('day', 'week')` to `('day', 'week', 'month')` | The app now offers "N times per month" in the medication frequency dropdown. **Until this is run, saving a monthly medication fails with a constraint violation** — the option appears but cannot be saved. |
-
-To verify after running it:
-
-```sql
-select pg_get_constraintdef(oid)
-from pg_constraint
-where conname = 'medications_frequency_period_check';
-```
-
-It should mention `month`.
+| `20260825020000_medication_reminder_time.sql` | Adds a nullable `reminder_time` to `medications` | Medications scheduled by frequency ("twice a day", "once a month") can now remind, at a time of day the owner chooses. **Until this is run, saving a frequency medication with reminders on fails.** |
 
 Update these tables whenever a migration is applied.
