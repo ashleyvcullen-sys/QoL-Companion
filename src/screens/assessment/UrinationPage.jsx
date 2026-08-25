@@ -4,13 +4,14 @@ import SectionTitle from '../../components/SectionTitle'
 import IconLabelHeader from '../../components/IconLabelHeader'
 import ChoiceButtons from '../../components/ChoiceButtons'
 import SymptomChips from '../../components/SymptomChips'
+import PetText from '../../components/PetText'
 import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
 import { URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_OPTIONS } from '../../lib/assessmentOptions'
 
 const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all']
 
-export default function UrinationPage({ value, onChange, icon, species, sex }) {
+export default function UrinationPage({ value, onChange, icon, species, sex, pet }) {
   const { status, symptoms } = value
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
 
@@ -30,7 +31,7 @@ export default function UrinationPage({ value, onChange, icon, species, sex }) {
     <div className="assessment-page">
       <SectionTitle>Urination</SectionTitle>
       <IconLabelHeader icon={icon} label="Urination" />
-      <p>How has your pet's urination been?</p>
+      <p><PetText template="How has {name}'s urination been?" pet={pet} /></p>
       <ChoiceButtons
         options={URINATION_STATUS_OPTIONS}
         value={status}

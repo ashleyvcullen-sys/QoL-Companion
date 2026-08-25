@@ -15,6 +15,7 @@ import UrinationPage from './assessment/UrinationPage'
 import DrinkingPage from './assessment/DrinkingPage'
 import SliderOnlyPage from './assessment/SliderOnlyPage'
 import BeapCategoryPage from './assessment/BeapCategoryPage'
+import SleepPage from './assessment/SleepPage'
 import FelineGrimacePage from './assessment/FelineGrimacePage'
 import ReviewPage from './assessment/ReviewPage'
 import {
@@ -26,7 +27,12 @@ import {
 } from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
 import { BEAP_CATEGORIES, computeBeapWorst, computeGeneralQolResult } from '../lib/scoring'
-import { beapAppetiteFromVcogGrade, vcogGradeFromBeapAppetite } from '../lib/conditions'
+import {
+  beapAppetiteFromVcogGrade,
+  sleepScoreFromSeverity,
+  sleepSeverityFromScore,
+  vcogGradeFromBeapAppetite,
+} from '../lib/conditions'
 import { CONDITION_LIST } from '../lib/conditions'
 import {
   saveConditionEntry,
@@ -43,7 +49,6 @@ import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } 
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
-import SleepIcon from '../components/icons/SleepIcon'
 import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
 
@@ -172,8 +177,12 @@ export default function QualityOfLifeAssessment() {
   // `condition.parameters` would find nothing there.
   const { conditions: petConditions } = usePetConditions(pet.id)
 
-  const beapFromConditions = useMemo(() => {
+  // Two maps: BEAAAAPP categories, and the everyday-function scores. Same
+  // idea either way — a condition asked this question today, so this screen
+  // shows the answer rather than asking again.
+  const { beap: beapFromConditions, scores: scoresFromConditions } = useMemo(() => {
     const found = {}
+    const foundScores = {}
     for (const condition of CONDITION_LIST) {
       const todaysEntry = (conditionEntriesByCondition[condition.key] ?? [])
         .find((conditionEntry) => conditionEntry.date === todayDate)
@@ -181,6 +190,20 @@ export default function QualityOfLifeAssessment() {
 
       const petCondition = petConditions.find((row) => row.conditionKey === condition.key) ?? null
       for (const parameter of parametersFor(condition, petCondition?.config ?? {}, pet.species)) {
+        if (parameter.scoreKey) {
+          const severity = Number(todaysEntry.values?.[parameter.key])
+          if (!Number.isFinite(severity)) continue
+          foundScores[parameter.scoreKey] = {
+            value: sleepScoreFromSeverity(severity),
+            conditionKey: condition.key,
+            conditionLabel: condition.label,
+            parameterKey: parameter.key,
+            entryValues: todaysEntry.values ?? {},
+            entryNotes: todaysEntry.notes ?? '',
+          }
+          continue
+        }
+
         if (!parameter.beapKey) continue
         const raw = Number(todaysEntry.values?.[parameter.key])
         if (!Number.isFinite(raw)) continue
@@ -199,7 +222,7 @@ export default function QualityOfLifeAssessment() {
         }
       }
     }
-    return found
+    return { beap: found, scores: foundScores }
   }, [conditionEntriesByCondition, petConditions, todayDate, pet.species])
 
   // Set once the assessment is saved. Holds what was just recorded so the
@@ -250,6 +273,26 @@ export default function QualityOfLifeAssessment() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [historyLoading, generalEntries, pet.id])
+
+  // Sleep, seeded from a condition form the same way. 'unsure' is the
+  // untouched default here, so it counts as unanswered — a real "not sure"
+  // the owner chose deliberately is indistinguishable from it, which is a
+  // known limitation of that default and not one this introduces.
+  useEffect(() => {
+    const keys = Object.keys(scoresFromConditions)
+    if (keys.length === 0) return
+    setEntry((previous) => {
+      let changed = false
+      const scores = { ...previous.scores }
+      for (const key of keys) {
+        if (scores[key] == null || scores[key] === 'unsure') {
+          scores[key] = scoresFromConditions[key].value
+          changed = true
+        }
+      }
+      return changed ? { ...previous, scores } : previous
+    })
+  }, [scoresFromConditions])
 
   // Seeds only categories still unanswered here. A value the owner has
   // already set on this screen — or resumed from a draft — always wins, so
@@ -390,6 +433,18 @@ export default function QualityOfLifeAssessment() {
     // collected today, and only where the owner has moved the answer on this
     // screen — the condition entry is otherwise left exactly as it was.
     try {
+      for (const [key, source] of Object.entries(scoresFromConditions)) {
+        const score = entry.scores[key]
+        if (score == null || score === 'unsure' || score === source.value) continue
+        await saveConditionEntry({
+          petId: pet.id,
+          conditionKey: source.conditionKey,
+          entryDate,
+          values: { ...source.entryValues, [source.parameterKey]: sleepSeverityFromScore(score) },
+          notes: source.entryNotes,
+        })
+      }
+
       for (const [category, source] of Object.entries(beapFromConditions)) {
         const score = entry.beap[category]
         if (score == null || score === source.value) continue
@@ -450,6 +505,7 @@ export default function QualityOfLifeAssessment() {
       title="Stool quality"
       sliderValue={entry.scores.stool}
       onSliderChange={(v) => updateScore('stool', v)}
+      pet={pet}
       chipOptions={STOOL_SYMPTOM_OPTIONS}
       chipValue={entry.stoolSymptoms}
       onChipChange={(v) => updateField('stoolSymptoms', v)}
@@ -460,6 +516,7 @@ export default function QualityOfLifeAssessment() {
     />,
     <VomitingPage
       key="vomiting"
+      pet={pet}
       value={entry.vomiting}
       onChange={(v) => updateField('vomiting', v)}
       icon={PuddleIcon}
@@ -467,6 +524,7 @@ export default function QualityOfLifeAssessment() {
     />,
     <UrinationPage
       key="urination"
+      pet={pet}
       value={entry.urination}
       onChange={(v) => updateField('urination', v)}
       icon={DropletsIcon}
@@ -475,6 +533,7 @@ export default function QualityOfLifeAssessment() {
     />,
     <DrinkingPage
       key="drinking"
+      pet={pet}
       value={entry.waterIntake.status}
       onChange={(v) => updateField('waterIntake', { status: v })}
       icon={Droplet}
@@ -506,14 +565,17 @@ export default function QualityOfLifeAssessment() {
       icon={Bell}
       scaleLabels={['Doesn\'t respond to name or sounds', 'Slower to respond', 'Responds normally to sounds and name']}
     />,
-    <SliderOnlyPage
+    <SleepPage
       key="sleep"
-      title="Sleep"
+      pet={pet}
       value={entry.scores.sleep}
       onChange={(v) => updateScore('sleep', v)}
-      icon={SleepIcon}
       description={SLEEP_NOTES[pet.species] ?? SLEEP_NOTES.dog}
-      scaleLabels={['Restless, disrupted, or reversed day/night pattern', 'Some restless nights', 'Settles and sleeps normally']}
+      note={
+        scoresFromConditions.sleep
+          ? `Filled in from today's ${scoresFromConditions.sleep.conditionLabel} assessment, because this is the same question. You can change it — it will change in both places.`
+          : null
+      }
     />,
     ...BEAP_CATEGORIES.map((category) =>
       category === 'eyes' && pet.species === 'cat' ? (

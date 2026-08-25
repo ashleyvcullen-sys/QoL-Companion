@@ -38,7 +38,8 @@ import {
   KidneyOrganIcon,
   SeizureOrganIcon,
 } from '../components/icons/OrganIcon'
-import { BEAP_SCALES } from './beapScales'
+import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
+import { SLEEP_NOTES } from './assessmentOptions'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
@@ -349,7 +350,7 @@ export const CONDITIONS = {
           key: 'syncope_notes',
           label: 'What Happened?',
           type: 'text',
-          placeholder: 'e.g. after excitement at the door, out for a few seconds, came round on their own',
+          placeholder: 'e.g. after excitement at the door, out for a few seconds, came round on {their} own',
         },
       },
       sharedParameter('gum_colour'),
@@ -463,16 +464,26 @@ export const CONDITIONS = {
     key: 'cognitive',
     label: 'Cognitive Decline',
     Icon: CognitiveOrganIcon,
-    // PENDING ASH — written by me, not reviewed.
+    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. {canineOrFeline} resolves to
+    // "canine" or "feline" from the pet's species, so a dog owner reads
+    // "canine dementia" rather than being asked to pick their half of it.
     summary:
-      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called canine or feline dementia.',
+      'Changes in memory, orientation, sleep patterns and interaction that can come with ageing, sometimes called {canineOrFeline} dementia.',
     // PENDING ASH — confirm the instrument and the exact wording. Nothing from
     // DISHAA is reproduced here; the domains are followed and the owner
     // wording is drafted.
     citation: 'Adapted from DISHAA.',
-    // PENDING ASH.
+    // The caution comes FIRST, before the "changes are gradual" framing.
+    // Everything below this line teaches an owner to watch and wait; this
+    // sentence is the one that might send them to a vet instead, and a
+    // caveat placed after the instructions is a caveat nobody acts on.
+    // Bolded because PetText renders **runs** as <strong>, and this is the
+    // one instruction on the screen that changes what someone does today.
+    //
+    // PENDING ASH — the first two sentences are mine. The rest is yours,
+    // approved 25 Aug 2026.
     intro:
-      'Cognitive change happens slowly, and it is the things that stop happening that are easiest to miss. Answering the same questions every so often makes the direction of travel visible.',
+      '**Many signs of cognitive decline can also be signs of illness.** A veterinary assessment is important to rule out other causes before assuming cognitive decline. Cognitive decline usually happens gradually, which makes the small changes easy to miss. Regular check ins and filling out this questionnaire can help to highlight any trends or consistent changes worth flagging with your vet.',
     parameters: [
       // --- Disorientation -------------------------------------------------
       {
@@ -483,7 +494,7 @@ export const CONDITIONS = {
         concernFrom: 4, // PENDING ASH
         levels: {
           dog: [
-            'Finds their way around the house and garden normally.',
+            'Finds {their} way around the house and garden normally.',
             'Occasionally pauses, as if working out where to go next.',
             'Sometimes goes to the hinge side of a door, or stands in a room without settling.',
             'Often looks lost in familiar places, or gets stuck behind or under furniture.',
@@ -498,14 +509,19 @@ export const CONDITIONS = {
         label: 'Orientation',
         type: 'scale',
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026, for every level EXCEPT
+        // moderate. That one ("Sometimes stares at walls or into space") is
+        // still mine — it was the one level not sent, and it is the only rung
+        // between "occasionally hesitates" and "often seems unsure", so it is
+        // worth a look.
         levels: {
           cat: [
-            'Moves around the house normally and settles in the usual places.',
-            'Occasionally hesitates before jumping up or going through a door.',
-            'Sometimes stares at walls or into space for a while.',
-            'Often seems unsure where they are, or sits in unusual places.',
-            'Frequently disoriented, and cannot find the litter tray or food bowl.',
-            'Appears lost most of the time, even in one familiar room.',
+            'Moves around the house confidently and settles in the usual places.',
+            'Occasionally hesitates before entering a room, walking through a doorway or jumping onto usual perches.',
+            'Sometimes stares at walls or into space for a while.', // PENDING ASH
+            'Often seems unsure of where {they} {are}, or hides/settles in unusual places.',
+            'Frequently disorientated, cannot find the litter tray or food. May vocalise or become distressed if alone. Sometimes gets \'stuck\' in unusual places.',
+            'Constantly disorientated, needs constant guidance to food, water and/or litter tray. Often vocalises or gets distressed if left alone. Often gets \'stuck\' in unusual places.',
           ],
         },
       },
@@ -526,7 +542,7 @@ export const CONDITIONS = {
           dog: [
             'Greets you, seeks attention and enjoys being stroked as always.',
             'Slightly less inclined to come and find you.',
-            'Greets you less often, and asks for attention less than they used to.',
+            'Greets you less often, and asks for attention less than {they} used to.',
             'Rarely greets you, and often moves away when stroked.',
             'Seldom interacts, and does not seem to recognise family members every time.',
             'No longer greets or seeks contact, and may not recognise familiar people.',
@@ -540,15 +556,25 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. The same point the dog
+        // anxiety question makes, and for the same reason: a scale that reads
+        // as "less affectionate is worse" would mark an aloof cat down from
+        // the first day for being exactly {them}self.
+        why:
+          'Not all cats naturally seek affection or attention. The main thing is to know what is normal for {name}, and to recognise if things are changing.',
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. "OR" left capitalised as
+        // written: it separates two opposite presentations on one rung, and
+        // level text has no bold, so the capitals are the only emphasis
+        // available.
         levels: {
           cat: [
-            'Comes to find you, settles nearby and enjoys being stroked as always.',
-            'Slightly less inclined to come and sit with you.',
-            'Comes to find you less often, or is less tolerant of being handled.',
-            'Rarely seeks contact, and often moves away when approached.',
-            'Seldom interacts, or has become unusually clingy and follows you constantly.',
-            'No longer seeks contact, or is distressed whenever left alone.',
+            'Seeks attention or settles nearby, enjoys being patted (or usual level of affection).',
+            'Slightly less inclined to seek attention or be around you.',
+            'Seeking attention notably less. Less tolerant of being handled (or usual level of affection).',
+            'Rarely seeks contact and may move away / hide when approached.',
+            'Rarely interacts OR has become unusually clingy and follows you often.',
+            'No longer interacts OR has become unusually clingy and gets distressed when left alone.',
           ],
         },
       },
@@ -557,44 +583,35 @@ export const CONDITIONS = {
       {
         key: 'sleep_wake',
         species: 'dog',
-        label: 'Sleeping At Night',
+        label: 'Sleep',
         type: 'scale',
-        // The daily assessment scores sleep as a slider — how well they
-        // slept. This asks about the day/night reversal that defines
-        // cognitive decline, which a good night's sleep at the wrong end of
-        // the clock would score well on.
+        // Literally the same question as the daily assessment's sleep
+        // section — same six levels, from the same definition — so the two
+        // are kept in step rather than asked twice. `scoreKey` says which
+        // general score it fills; the daily one stores 0-10 with 10 as best,
+        // this stores severity with 0 as best, and the conversion between
+        // them is a subtraction.
         covers: 'sleep',
         relationship: RELATIONSHIP.SUPERSEDES,
+        scoreKey: 'sleep',
+        // The normal hours, the same sentence the daily assessment shows, so
+        // an owner judging "is this a lot?" has the number in front of them
+        // wherever they are asked.
+        why: `${SLEEP_NOTES.dog[0]} ${SAME_AS_ASSESSMENT}`,
         concernFrom: 4, // PENDING ASH
-        levels: {
-          dog: [
-            'Sleeps through the night and is awake during the day, as always.',
-            'Occasionally unsettled at night, but settles again quickly.',
-            'Wakes once or twice most nights, and naps more during the day.',
-            'Awake and restless for long stretches at night, sleeping much of the day.',
-            'Up most of the night, pacing or panting, and asleep most of the day.',
-            'Day and night are completely reversed, and the household is not sleeping.',
-          ],
-        },
+        levels: { dog: SLEEP_SCALE.dog },
       },
       {
         key: 'sleep_wake',
         species: 'cat',
-        label: 'Sleeping At Night',
+        label: 'Sleep',
         type: 'scale',
         covers: 'sleep',
         relationship: RELATIONSHIP.SUPERSEDES,
+        scoreKey: 'sleep',
+        why: `${SLEEP_NOTES.cat[0]} ${SAME_AS_ASSESSMENT}`,
         concernFrom: 4, // PENDING ASH
-        levels: {
-          cat: [
-            'Sleeps and wakes in their usual pattern.',
-            'Occasionally restless or vocal at night, then settles.',
-            'Calls out or wanders at night once or twice most nights.',
-            'Vocalising or pacing for long stretches at night, most nights.',
-            'Loud, distressed calling at night, and asleep most of the day.',
-            'Awake and calling most of the night, and the household is not sleeping.',
-          ],
-        },
+        levels: { cat: SLEEP_SCALE.cat },
       },
 
       // --- House-soiling --------------------------------------------------
@@ -609,14 +626,16 @@ export const CONDITIONS = {
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation, full stops
+        // and one comma normalised; "uses doggy door" given its article.
         levels: {
           dog: [
-            'Asks to go out and toilets outside, as always.',
-            'The occasional accident, but still asks to go out.',
-            'Asks to go out less reliably, with accidents indoors now and then.',
-            'Often toilets indoors without asking, sometimes soon after being outside.',
-            'Regularly toilets indoors, and no longer signals the need to go out.',
-            'No longer house-trained at all.',
+            'Asks to go out (or uses a doggy door) and toilets outside as usual.',
+            'Occasional toileting inside, but still regularly asks/attempts to go out.',
+            'Asks/attempts to go out less reliably, with toileting inside happening more frequently.',
+            'Often toilets inside and rarely asks/attempts to go outside. Sometimes this occurs soon after being outside.',
+            'Regularly toileting inside and no longer signals the need to go out.',
+            'Always toileting inside. May no longer posture to toilet and may have accidents even when asleep (incontinent).',
           ],
         },
       },
@@ -625,6 +644,10 @@ export const CONDITIONS = {
         species: 'cat',
         label: 'Litter Tray Habits',
         type: 'scale',
+        // Plenty of cats never use one — outdoor cats, cat flaps, farm cats.
+        // Without this they would be marked down every time for not doing
+        // something they have never done.
+        notApplicableLabel: 'My cat does not use a litter tray',
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
@@ -638,8 +661,8 @@ export const CONDITIONS = {
             'The occasional accident just outside the tray.',
             'Toilets outside the tray now and then, in the same few places.',
             'Often toilets away from the tray, in different places around the house.',
-            'Rarely uses the tray, and toilets wherever they happen to be.',
-            'No longer uses the tray at all.',
+            'Rarely uses the tray, and toilets wherever {they} happen{s} to be.',
+            'No longer uses the tray at all. May no longer posture to toilet, or may have accidents while {they} {are} sleeping (incontinence).',
           ],
         },
       },
@@ -656,14 +679,17 @@ export const CONDITIONS = {
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation and full
+        // stops normalised (severe ended on a colon), and "the world around
+        // them" made a pronoun token so it follows the pet's sex.
         levels: {
           dog: [
-            'Play, exploring and routines are all as purposeful as ever.',
-            'Slightly less interested in toys or exploring.',
-            'Less interest in play, or occasional aimless wandering.',
-            'Wanders or paces without apparent purpose, or repeats the same route.',
-            'Long spells of pacing, circling or staring, and little real play.',
-            'Almost all activity is repetitive or aimless.',
+            'Playing and exploring as usual. Engaged in sniffing and investigating new things.',
+            'Slightly less interested in play or exploring.',
+            'Notably less interested in play or exploring. Occasionally seems to wander aimlessly.',
+            'Wanders or paces without any obvious purpose.',
+            'Long periods of pacing, circling or staring into space. Not interested in sniffing or investigating new things.',
+            'Almost all activity is repetitive or aimless. Disengaged from the world around {them}.',
           ],
         },
       },
@@ -675,14 +701,15 @@ export const CONDITIONS = {
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         levels: {
           cat: [
-            'Grooming, play and routines are all as purposeful as ever.',
-            'Slightly less interested in play or in watching the window.',
-            'Less interest in play, or occasional aimless wandering.',
-            'Wanders or paces without apparent purpose, or repeats the same route.',
-            'Long spells of pacing, circling or staring at nothing.',
-            'Almost all activity is repetitive or aimless.',
+            'Grooming, playing and investigating new things per usual. Regular routines are intact.',
+            'Slightly less interested in regular activities and routines.',
+            'Notably less interested in regular activities and routines. Occasional aimless wandering.',
+            'Wanders or paces without apparent purpose. No longer interested in regular activities.',
+            'Extended periods of pacing, circling or staring into space.',
+            'Almost all activity is seemingly aimless.',
           ],
         },
       },
@@ -693,15 +720,33 @@ export const CONDITIONS = {
         species: 'dog',
         label: 'Anxiety',
         type: 'scale',
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        why:
+          'Anxiety from cognitive decline looks different in every dog, and some dogs are naturally more anxious than others. The main thing is to know what is normal for {name}, and to watch for a change from that.',
+        howToTitle: 'Common Signs Of Anxiety In Dogs',
+        // PENDING ASH — the list is mine. Written as things an owner can see
+        // from across a room rather than as clinical signs, since that is who
+        // is reading it.
+        howTo: [
+          'Panting or drooling when it is not warm and {they} {have} not been exercising.',
+          'Pacing, circling, or being unable to settle anywhere for long.',
+          'Trembling or shaking.',
+          'Lip-licking, repeated yawning, or turning the head away.',
+          'Ears held back, tail tucked, body held low.',
+          'Hiding, or pressing hard against you.',
+          'Barking, whining or howling, particularly when left alone.',
+          'Chewing, scratching at doors, or toileting indoors when left.',
+          'Turning down food that would normally be taken.',
+        ],
         concernFrom: 4, // PENDING ASH
         levels: {
           dog: [
-            'Settles easily and copes with being alone as always.',
-            'Occasionally unsettled by things that never used to bother them.',
-            'Noticeably more clingy, or restless when left.',
-            'Often anxious — following you room to room, or distressed when alone.',
-            'Anxious for much of the day, and difficult to settle at all.',
-            'Constantly distressed, and cannot be comforted.',
+            'Settled and content with small changes or being left alone.',
+            'Occasionally unsettled by things that never used to bother {them}.',
+            'Notably more anxious or restless when left alone.',
+            'Notably more anxious when left alone. More clingy than usual — follows you around the house and does not want to be alone.',
+            'Anxious for most of the day, regardless of whether you are home or not. Has difficulty relaxing at all.',
+            'Constantly distressed and cannot be comforted.',
           ],
         },
       },
@@ -710,15 +755,38 @@ export const CONDITIONS = {
         species: 'cat',
         label: 'Anxiety',
         type: 'scale',
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        why:
+          'All cats have different thresholds for anxiety. The main thing is to know what is normal for {name}, and to notice a change from that.',
+        howToTitle: 'Common Signs Of Anxiety In Cats',
+        // PENDING ASH — the list is mine. Deliberately not the dog list with
+        // the words changed: a frightened dog is loud and busy, a frightened
+        // cat mostly does LESS of everything, and half of these are things
+        // stopping rather than starting. The over-grooming and under-grooming
+        // pair are both here on purpose — anxiety pushes cats either way, and
+        // an owner watching for only one would miss the other.
+        howTo: [
+          'Hiding for long stretches, or keeping to somewhere {they} can watch the room from.',
+          'Crouched and tense, with the tail wrapped tightly in or tucked under.',
+          'Ears flattened or turned back, and pupils wide in normal light.',
+          'Startling at ordinary household sounds that never used to matter.',
+          'Over-grooming, often the belly or flanks, to the point of thin fur or bald patches.',
+          'Grooming much less, so the coat starts to look unkempt.',
+          'Growling, hissing or swiping when approached or handled.',
+          'Yowling or calling out, particularly at night.',
+          'Eating less, or only eating when nobody else is in the room.',
+          'Toileting outside the litter tray, or spraying indoors.',
+        ],
         concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         levels: {
           cat: [
-            'Settles easily and copes with the usual household comings and goings.',
-            'Occasionally startled by things that never used to bother them.',
-            'Noticeably more jumpy, or hiding more than usual.',
-            'Often anxious — hiding for long spells, or calling when alone.',
-            'Anxious for much of the day, and difficult to settle at all.',
-            'Constantly distressed, and cannot be comforted.',
+            'Copes with the usual household comings and goings.',
+            'Occasionally frightened or upset by things that never used to bother {them}.',
+            'Notably more skittish, or hiding more than usual for no apparent reason.',
+            'Often hiding for long periods of time, or calling out when left alone.',
+            'Hiding, distressed or vocalising for most of the day. Difficult to settle at all.',
+            'Constantly hiding, distressed or vocalising. Cannot be comforted.',
           ],
         },
       },
@@ -730,9 +798,10 @@ export const CONDITIONS = {
     label: 'Arthritis and Mobility Issues',
     Icon: BoneOrganIcon,
     summary:
-      'Stiffness, lameness and willingness to move, and how well pain relief is holding.',
+      'Stiffness, lameness and willingness to move.',
+    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
     intro:
-      'Arthritis changes slowly, so gradual differences are easier to see over weeks than day to day.',
+      'Symptoms of arthritis are usually gradual. Changes are therefore easier to see over weeks to months, rather than day to day.',
     // PENDING ASH — confirm both instruments and the exact wording. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
@@ -1076,6 +1145,22 @@ export function vcogGradeFromBeapAppetite(score) {
   const value = Number(score)
   if (!Number.isFinite(value)) return null
   return VCOG_GRADE_BY_BEAP_APPETITE[value] ?? null
+}
+
+// The daily assessment stores sleep as a SCORE — 10 is sleeping normally,
+// 0 is not — because that is the direction every everyday-function question
+// runs and what the sleep pillar multiplies up for display. A condition
+// stores the same answer as a SEVERITY, 0 best. Same six levels either way,
+// so the conversion is a subtraction and nothing is lost in either
+// direction.
+export function sleepScoreFromSeverity(severity) {
+  const value = Number(severity)
+  return Number.isFinite(value) ? 10 - value : null
+}
+
+export function sleepSeverityFromScore(score) {
+  const value = Number(score)
+  return Number.isFinite(value) ? 10 - value : null
 }
 
 export function beapAppetiteFromVcogGrade(grade) {

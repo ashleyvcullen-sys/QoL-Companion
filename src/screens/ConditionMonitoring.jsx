@@ -16,11 +16,13 @@ import {
   beapAppetiteFromVcogGrade,
   conditionByKey,
   evaluateParameter,
+  sleepScoreFromSeverity,
+  sleepSeverityFromScore,
   vcogGradeFromBeapAppetite,
 } from '../lib/conditions'
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
-import { buildDailySeries, updateBeapCategory } from '../lib/qolData'
+import { buildDailySeries, updateBeapCategory, updateGeneralScore } from '../lib/qolData'
 import { useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
@@ -136,8 +138,17 @@ export default function ConditionMonitoring() {
   // outcome: showing Tuesday's ambulation score on Friday's form, in a field
   // that looks answered, would be presenting stale data as current.
   const todaysPain = painEntries.find((entry) => entry.date === today) ?? null
+  const todaysGeneral = generalEntries.find((entry) => entry.date === today) ?? null
 
   function assessmentValueFor(parameter) {
+    // Questions that fill a general score rather than a BEAAAAPP category —
+    // sleep. Stored there as a score, shown here as a severity.
+    if (parameter.scoreKey) {
+      const recorded = todaysGeneral?.scores?.[parameter.scoreKey]
+      if (recorded == null || recorded === 'unsure') return null
+      return sleepSeverityFromScore(recorded)
+    }
+
     if (!parameter.beapKey || !todaysPain) return null
     const recorded = todaysPain.beap?.[parameter.beapKey] ?? null
     if (recorded == null) return null
@@ -269,6 +280,20 @@ export default function ConditionMonitoring() {
       // an unchanged answer needs no write, and 'unsure' is not a score.
       try {
         for (const parameter of parameters) {
+          if (parameter.scoreKey) {
+            const severity = Number(stored[parameter.key])
+            if (!Number.isFinite(severity)) continue
+            const asScore = sleepScoreFromSeverity(severity)
+            if (todaysGeneral?.scores?.[parameter.scoreKey] === asScore) continue
+            await updateGeneralScore({
+              petId: pet.id,
+              date: today,
+              key: parameter.scoreKey,
+              value: asScore,
+            })
+            continue
+          }
+
           if (!parameter.beapKey) continue
           const raw = Number(stored[parameter.key])
           if (!Number.isFinite(raw)) continue

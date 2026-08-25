@@ -204,7 +204,7 @@ export default function ConditionParameter({ parameter, values, pet, number, not
         <>
           <SeverityOptionList
             levels={optionTexts}
-            value={value === '' || isUnsure ? null : Number(value)}
+            value={isBlanked || value === '' ? null : Number(value)}
             onChange={(next) => set(parameter.key, next)}
             // Thumbnails only where the option text came from a BEAAAAPP
             // category, since that's where the photo set exists. A parameter
@@ -212,10 +212,16 @@ export default function ConditionParameter({ parameter, values, pet, number, not
             species={parameter.type === 'beap' && !parameter.hideImages ? species : undefined}
             categoryKey={parameter.type === 'beap' && !parameter.hideImages ? parameter.beapKey : undefined}
           />
+          {/* "Does not apply" alongside "Not sure", where the parameter
+              offers it. A cat with no litter tray is not an owner who is
+              unsure — it is a question that does not apply to that cat, and
+              filing one as the other loses the difference. Selecting it
+              clears any level already picked, and the day is scored as
+              though the question were never asked. */}
           <ChoiceButtons
-            options={[UNSURE_OPTION]}
-            value={isUnsure ? UNSURE : null}
-            onChange={() => set(parameter.key, isUnsure ? '' : UNSURE)}
+            options={naOption ? [naOption, UNSURE_OPTION] : [UNSURE_OPTION]}
+            value={isBlanked ? value : null}
+            onChange={(next) => set(parameter.key, value === next ? '' : next)}
           />
         </>
       )}

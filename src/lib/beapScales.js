@@ -9,6 +9,44 @@ export function beapCategoryDisplayName(species, key) {
   return category.label.split('(')[0].trim()
 }
 
+// Sleep, on the same six-level shape as everything else.
+//
+// Lives here rather than inside the cognitive condition because BOTH ask it:
+// the daily assessment's sleep question IS this scale, and cognitive decline
+// asks the same thing again in the context of dementia. One definition, so
+// the two can never describe sleep differently.
+//
+// Ordered best first, like every scale in this file — the caller decides
+// whether that maps to 0 (a severity) or to 10 (a score).
+//
+// Level 0 is shared word for word between the species — a normal night is a
+// normal night — and the dog levels below it are Ash's. The cat levels from
+// "occasionally restless" down are still mine.
+//
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, for level 0 and the dog scale.
+// PENDING ASH for cat levels 1 to 5.
+const SLEEPS_NORMALLY =
+  'Sleeps through the night and is awake, or can be woken easily, throughout the day (napping throughout the day is normal).'
+
+export const SLEEP_SCALE = {
+  dog: [
+    SLEEPS_NORMALLY,
+    'Occasional and brief moments of being unsettled at night, but will settle quickly.',
+    'Wakes once or twice most nights but eventually settles. Sleeping more than usual throughout the day.',
+    'Restless and unsettled for long periods throughout the night. Sleeps most of the day.',
+    'Awake and unsettled most of the night. Pacing, panting or barking even if nothing is there. Sleeps most of the day.',
+    'Day and night sleep cycles are completely reversed. Pacing, panting or barking all night, then sleeping throughout the whole day.',
+  ],
+  cat: [
+    SLEEPS_NORMALLY,
+    'Occasionally restless or vocal at night, then settles.',
+    'Calls out or wanders at night once or twice most nights.',
+    'Vocalising or pacing for long stretches at night, most nights.',
+    'Loud, distressed calling at night, and asleep most of the day.',
+    'Awake and calling all night, seeming very distressed, then sleeps all day.',
+  ],
+}
+
 export const BEAP_SCALES = {
   dog: [
     { key: "breathing", letter: "B", label: "Breathing", levels: [

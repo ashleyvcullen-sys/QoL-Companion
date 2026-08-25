@@ -95,6 +95,37 @@ export async function updateBeapCategory({ petId, date, category, value }) {
   return mapPainLogRow({ ...data, beap, beap_worst: beapWorst })
 }
 
+// Write one everyday-function score into an existing assessment for a date.
+//
+// The counterpart to updateBeapCategory above, for the questions that live in
+// `scores` rather than in `beap` — sleep being the first, because cognitive
+// decline asks exactly the same question.
+//
+// Same rule: it only ever UPDATES a row that already exists. A general entry
+// conjured from a single sleep answer would put a day into the history that
+// the owner never assessed, and the overall percentage would be computed from
+// one question.
+export async function updateGeneralScore({ petId, date, key, value }) {
+  const { data, error } = await supabase
+    .from('general_qol_entries')
+    .select('*')
+    .eq('pet_id', petId)
+    .eq('entry_date', date)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const scores = { ...(data.scores ?? {}), [key]: value }
+  const { error: updateError } = await supabase
+    .from('general_qol_entries')
+    .update({ scores })
+    .eq('id', data.id)
+
+  if (updateError) throw updateError
+  return mapGeneralQolRow({ ...data, scores })
+}
+
 export async function fetchGeneralQolEntries(petId) {
   const { data, error } = await supabase
     .from('general_qol_entries')

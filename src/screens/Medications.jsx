@@ -37,10 +37,28 @@ const EMPTY_FORM = {
   frequencyPeriod: 'day',
   remindersEnabled: true,
   reminderTime: '08:00',
+  reminderDays: [],
   notes: '',
   startedOn: '',
   endedOn: '',
 }
+
+// Monday first, the way a week is read here. Values are JavaScript weekday
+// numbers so nothing has to translate them on the way to a notification.
+const WEEKDAY_OPTIONS = [
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+  { value: 0, label: 'Sun' },
+]
+
+// Stops at 28. A reminder set for the 29th, 30th or 31st simply would not
+// fire in the months that have no such date — silently, five times a year for
+// the 31st — and an owner would have no way of knowing.
+const MONTH_DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }))
 
 const MODE_OPTIONS = [
   { value: 'times', label: 'At set times' },
@@ -138,6 +156,16 @@ export default function Medications() {
     && notifStatus !== 'granted'
     && active.some((m) => m.scheduleMode !== 'as_needed' && m.remindersEnabled)
 
+  function toggleReminderDay(day) {
+    const chosen = form.reminderDays ?? []
+    setForm({
+      ...form,
+      reminderDays: chosen.includes(day)
+        ? chosen.filter((entry) => entry !== day)
+        : [...chosen, day].sort((a, b) => a - b),
+    })
+  }
+
   function startAdd() {
     setEditingId('new')
     setForm(EMPTY_FORM)
@@ -151,6 +179,7 @@ export default function Medications() {
       dose: medication.dose ?? '',
       startedOn: medication.startedOn ?? '',
       reminderTime: medication.reminderTime ?? '08:00',
+      reminderDays: medication.reminderDays ?? [],
       endedOn: medication.endedOn ?? '',
       scheduleMode: medication.scheduleMode,
       times: medication.times.length > 0 ? [...medication.times] : ['08:00'],
@@ -181,6 +210,7 @@ export default function Medications() {
       frequencyPeriod: saved.frequencyPeriod,
       frequencyCount: saved.frequencyCount,
       reminderTime: saved.reminderTime,
+      reminderDays: saved.reminderDays,
       startedOn: saved.startedOn,
     })
   }
@@ -214,6 +244,7 @@ export default function Medications() {
         // not to a clock. Frequency can, at a time the owner picked.
         remindersEnabled: form.scheduleMode === 'as_needed' ? false : form.remindersEnabled,
         reminderTime: form.reminderTime,
+        reminderDays: form.reminderDays,
         startedOn: form.startedOn,
         endedOn: form.endedOn,
       }
@@ -603,6 +634,47 @@ export default function Medications() {
                     </p>
                   )}
                 </div>
+                )}
+
+                {/* Which days, once there is more than one day it could be.
+                    A medication given twice a week has two days, and only the
+                    owner knows which two — putting both on the day the course
+                    started would be two reminders on one day and none on the
+                    other. */}
+                {form.remindersEnabled && form.frequencyPeriod !== 'day' && (
+                  <div className="field">
+                    <label>
+                      {form.frequencyPeriod === 'week' ? 'Which days?' : 'Which dates?'}
+                    </label>
+                    <div className="symptom-chips">
+                      {(form.frequencyPeriod === 'week' ? WEEKDAY_OPTIONS : MONTH_DAY_OPTIONS).map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`chip ${(form.reminderDays ?? []).includes(option.value) ? 'selected' : ''}`.trim()}
+                          onClick={() => toggleReminderDay(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="assessment-hint">
+                      {(form.reminderDays ?? []).length === 0
+                        ? 'Pick nothing and you\'ll be reminded on the same day the course started.'
+                        : form.frequencyPeriod === 'month'
+                          ? 'Dates stop at the 28th, so a reminder never falls on a date some months do not have.'
+                          : 'One reminder on each day you have picked.'}
+                    </p>
+                    {(form.reminderDays ?? []).length > 0
+                      && (form.reminderDays ?? []).length !== Number(form.frequencyCount) && (
+                      <p className="assessment-hint">
+                        You have picked {(form.reminderDays ?? []).length}{' '}
+                        {(form.reminderDays ?? []).length === 1 ? 'day' : 'days'} for a medication given{' '}
+                        {form.frequencyCount}× per {form.frequencyPeriod}. That may be exactly what you
+                        want — it is only worth a second look.
+                      </p>
+                    )}
+                  </div>
                 )}
               </>
             )}

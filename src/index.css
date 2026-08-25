@@ -664,11 +664,17 @@ code {
   align-self: center;
 }
 
+/* Icon above the title rather than beside it.
+   As a row, the icon and the title were centred together as one block — so a
+   long title like "Arthritis and Mobility Issues", which wraps to two lines,
+   sat visibly pushed to the right of the card by the icon's width. Stacking
+   centres the title against the card itself, which is what the eye is
+   measuring it against. */
 .condition-heading {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 

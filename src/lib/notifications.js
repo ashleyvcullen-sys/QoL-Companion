@@ -171,6 +171,7 @@ function localDateFromIso(iso) {
 export async function scheduleMedicationReminders({
   medicationId, medicationName, petName, dose, times, active, remindersEnabled = true,
   scheduleMode = 'times', frequencyPeriod, frequencyCount, reminderTime, startedOn,
+  reminderDays,
 }) {
   if (!medicationId) return
 
@@ -196,20 +197,28 @@ export async function scheduleMedicationReminders({
       }
     })
   } else if (scheduleMode === 'frequency' && reminderTime) {
+    // One notification per chosen day. A medication given twice a week has
+    // two days and needs two reminders; the single anchored reminder that
+    // came before this could only ever nudge on one of them.
     // One reminder for the whole period, at a time the OWNER chose. The app
     // still never invents a time — it just stopped refusing to use one it was
     // given. Weekly and monthly are anchored to the day the course started,
     // which is the only day in the record that means anything: a monthly
     // injection given on the 3rd should be raised on the 3rd.
     const [hour, minute] = reminderTime.split(':').map(Number)
-    const on = { hour, minute }
-    const anchor = localDateFromIso(startedOn)
+    const anchor = localDateFromIso(startedOn) ?? new Date()
+    const chosen = (reminderDays ?? []).filter((day) => Number.isFinite(Number(day)))
 
+    // Days to put a reminder on. With none chosen, the day the course started
+    // — which is what happened before an owner could choose at all, and is
+    // the right answer for a once-a-month injection.
+    let days = []
     if (frequencyPeriod === 'week') {
-      // Capacitor's weekday is 1-7 starting at Sunday; getDay() is 0-6.
-      on.weekday = (anchor ?? new Date()).getDay() + 1
+      days = chosen.length ? chosen : [anchor.getDay()]
     } else if (frequencyPeriod === 'month') {
-      on.day = (anchor ?? new Date()).getDate()
+      days = chosen.length ? chosen : [anchor.getDate()]
+    } else {
+      days = [null] // daily: no day component at all
     }
 
     const count = frequencyCount ?? 1
@@ -217,13 +226,20 @@ export async function scheduleMedicationReminders({
       : frequencyPeriod === 'month' ? 'this month'
         : 'today'
 
-    notifications = [{
-      id: medicationReminderId(medicationId, 0),
-      title,
-      body: `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
-      schedule: { on, repeats: true, allowWhileIdle: true },
-      extra: { screen: 'medications', medicationId },
-    }]
+    notifications = days.slice(0, MAX_MEDICATION_SLOTS).map((day, index) => {
+      const on = { hour, minute }
+      // Capacitor's weekday is 1-7 starting at Sunday; getDay() is 0-6.
+      if (frequencyPeriod === 'week') on.weekday = Number(day) + 1
+      else if (frequencyPeriod === 'month') on.day = Number(day)
+
+      return {
+        id: medicationReminderId(medicationId, index),
+        title,
+        body: `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
+        schedule: { on, repeats: true, allowWhileIdle: true },
+        extra: { screen: 'medications', medicationId },
+      }
+    })
   }
 
   // As-needed medications answer to no clock, so there is nothing to raise.

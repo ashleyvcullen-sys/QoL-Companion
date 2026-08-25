@@ -7,8 +7,13 @@ import ScoreSlider from '../../components/ScoreSlider'
 // together as one block above a slider is a paragraph nobody reads.
 function Description({ description }) {
   if (!description) return null
-  if (!Array.isArray(description)) return <p>{description}</p>
-  return description.map((text, index) => <p key={index}>{text}</p>)
+  // The app's subtext style, the same class every explanatory line uses. As
+  // plain paragraphs these sat at body size and read as the question itself
+  // rather than as context for it.
+  if (!Array.isArray(description)) return <p className="assessment-hint">{description}</p>
+  return description.map((text, index) => (
+    <p key={index} className="assessment-hint">{text}</p>
+  ))
 }
 
 export default function SliderOnlyPage({ title, description, value, onChange, icon, scaleLabels }) {

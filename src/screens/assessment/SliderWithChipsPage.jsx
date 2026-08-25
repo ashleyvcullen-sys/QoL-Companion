@@ -5,6 +5,7 @@ import ScoreSlider from '../../components/ScoreSlider'
 import SymptomChips from '../../components/SymptomChips'
 import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
+import { fillPetText } from '../../lib/petText'
 
 // `emergency` is optional and shaped { chips, title, warning, advice }. Only
 // Stool passes it; Hygiene renders exactly as before.
@@ -25,6 +26,7 @@ export default function SliderWithChipsPage({
   scaleLabels,
   extraOption,
   emergency = null,
+  pet = null,
 }) {
   const [showEmergency, setShowEmergency] = useState(false)
 
@@ -38,7 +40,7 @@ export default function SliderWithChipsPage({
   return (
     <div className="assessment-page">
       <SectionTitle>{title}</SectionTitle>
-      {description && <p>{description}</p>}
+      {description && <p className="assessment-hint">{description}</p>}
       <ScoreSlider label={title} value={sliderValue} onChange={onSliderChange} icon={icon} scaleLabels={scaleLabels} extraOption={extraOption} />
       <SymptomChips options={chipOptions} selected={chipValue} onChange={onChipChange} />
 
@@ -46,9 +48,9 @@ export default function SliderWithChipsPage({
         <Modal title={emergency.title} onClose={() => setShowEmergency(false)}>
           <div className="warning-banner">
             <AlertTriangle size={20} />
-            <p>{emergency.warning}</p>
+            <p>{fillPetText(emergency.warning, pet)}</p>
           </div>
-          <p>{emergency.advice}</p>
+          <p>{fillPetText(emergency.advice, pet)}</p>
           <Btn type="button" variant="danger" className="btn-block" onClick={() => setShowEmergency(false)}>
             I understand
           </Btn>

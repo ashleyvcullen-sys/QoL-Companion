@@ -43,6 +43,7 @@ reports as already satisfied if re-run. Both are written to be re-runnable.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
+| `20260825030000_medication_reminder_days.sql` | Adds a nullable `reminder_days` integer array to `medications` | A medication given more than once a week or month needs a reminder on each of its days, and only the owner knows which days those are. **Until this is run, choosing reminder days fails to save.** |
 | `20260825020000_medication_reminder_time.sql` | Adds a nullable `reminder_time` to `medications` | Medications scheduled by frequency ("twice a day", "once a month") can now remind, at a time of day the owner chooses. **Until this is run, saving a frequency medication with reminders on fails.** |
 
 Update these tables whenever a migration is applied.

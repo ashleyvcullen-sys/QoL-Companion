@@ -29,27 +29,23 @@ export const STOOL_EMERGENCY = {
     'Black, tarry stools usually mean digested blood, which comes from bleeding higher up in the gut. '
     + 'It can look like ordinary dark stool, so it is easily missed.',
   advice:
-    'Please contact your vet today, even if your pet seems otherwise well in themselves.',
+    'Please contact your vet today, even if {name} seems otherwise well in {them}self.',
 }
 
 // Sleep, in numbers. Owners consistently ask two things — how much is normal,
-// and whether what they are seeing is just age — and the honest answer to
-// both is that the pattern matters more than the hours. Species-specific
-// because a dog owner does not need to read about cats.
+// and whether what they are seeing is just age — and the answer to both is
+// that the pattern matters more than the hours. Species-specific because a
+// dog owner does not need to read about cats.
 //
-// PENDING ASH — drafted by me, not reviewed. Two things to confirm:
-// the hour ranges, and the last cat line. Cats are crepuscular rather than
-// nocturnal (most active at dawn and dusk), which is what the wording says,
-// but you asked for nocturnal — your call which goes in front of owners.
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, except where noted below.
 export const SLEEP_NOTES = {
   dog: [
-    'Most adult dogs sleep somewhere between 8 and 14 hours across a full day and night, and a good deal of that is daytime napping.',
-    'Older dogs often sleep more in total but less soundly — more naps by day, and more waking or unsettledness at night. A change in the pattern usually tells you more than the number of hours does.',
+    'Most dogs sleep between 8-14 hours out of a 24-hour day, and a good deal of that is daytime napping. A change in sleep pattern is what matters.',
+    'A dog who has started pacing, panting or is unsettled at night is worth mentioning to your vet.',
   ],
   cat: [
-    'Most adult cats sleep between 12 and 16 hours a day. Kittens sleep more still, and older cats often drift back up towards that.',
-    'Cats are naturally most active around dawn and dusk, so one who is busy in the early hours is not necessarily unsettled — that is normal feline wiring rather than a problem.',
-    'A change is what matters. An older cat who has started pacing, calling out at night, or sleeping somewhere unusual is worth mentioning to your vet.',
+    'Most cats sleep between 12-16 hours out of a 24-hour day. Cats are naturally most active around dawn and dusk, so one who is busy in the early hours is not necessarily unsettled.',
+    'A change is what matters. A cat who has started pacing, vocalising at night, or sleeping somewhere unusual is worth mentioning to your vet.',
   ],
 }
 

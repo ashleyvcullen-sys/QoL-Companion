@@ -13,7 +13,7 @@ export default function IntroPage({ petName, isFirstAssessment }) {
         </p>
       ) : (
         <p>
-          This check-in walks through how your pet has been doing lately. It only takes a
+          This check-in walks through how {petName} has been doing lately. It only takes a
           few minutes, and the more you can answer the more useful the trends will be — but
           "Not sure" is always a fine answer too.
         </p>
