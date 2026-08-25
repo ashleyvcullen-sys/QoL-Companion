@@ -12,7 +12,6 @@ import DayAnswersModal from '../components/DayAnswersModal'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import {
-  MONITORING_DISCLAIMER,
   SAME_AS_ASSESSMENT,
   SEVERITY,
   askedParameters,
@@ -424,10 +423,6 @@ export default function ConditionMonitoring() {
                   <PetText template={paragraph} pet={pet} />
                 </p>
               ))}
-            {/* The same sentence as the monitoring list, on the screen where
-                the monitoring actually happens. Someone who lands here from a
-                notification or a bookmark never passes the list. */}
-            <p className="assessment-hint condition-intro">{MONITORING_DISCLAIMER}</p>
           </Card>
 
           {asksAboutMedication && (

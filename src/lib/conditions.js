@@ -249,10 +249,10 @@ export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessm
 
 // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, verbatim.
 //
-// Shown on the disease monitoring list AND at the top of each individual
-// condition. Defined once rather than typed twice: the list screen carried a
-// near-identical sentence of its own before this, and two almost-the-same
-// disclaimers are how one of them ends up saying something the other doesn't.
+// Shown once, under the Disease-Specific Monitoring title. It was on each
+// individual condition page too for a while; repeating it at the top of every
+// disease was a sentence someone had already read, sitting between them and
+// the thing they came to do.
 export const MONITORING_DISCLAIMER =
   "This does not replace your vet's advice or clinical assessment, but will help make monitoring at home easier between visits."
 
