@@ -464,6 +464,31 @@ export const MEASURES_BY_INSTANCE_TYPE = {
 }
 
 // ---------------------------------------------------- treatment modules
+// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, wording and thresholds both,
+// and shared between dogs and cats on her instruction.
+//
+// Defined once and referenced from both species keys rather than pasted
+// twice. Two identical arrays are two things to edit, and the second one is
+// the one that gets forgotten — which is how a cat ends up being asked a
+// subtly different question to a dog about the same treated patch of skin.
+const RADIATION_SKIN_LEVELS = [
+  'Skin at the treated site looks normal.',
+  'Slightly pink or red, like mild sunburn. {name} is not bothered by it.',
+  'Clearly red, and the hair is thinning or coming away. May look dry or flaky.',
+  'Skin is moist, weeping or peeling in places. {name} may lick or scratch at it.',
+  'Raw and open over a larger area, weeping or crusted. Clearly sore to touch.',
+  'Open wound, bleeding, or a bad smell coming from the site. (emergency)',
+]
+
+const RADIATION_DISCOMFORT_LEVELS = [
+  'Not bothered by the site at all.',
+  'Occasionally notices it — a glance or a quick lick, then moves on.',
+  'Licks, scratches or rubs at the site now and then.',
+  'Flinches or pulls away when the site is touched, and returns to licking it.',
+  'Clearly sore without being touched. Restless, will not settle, or guards the area.',
+  'Cries out, will not let anyone near the site, or will not stop licking it. (emergency)',
+]
+
 export const TREATMENT_MODULES = {
   none: { key: 'none', label: 'No treatment, or comfort care only', parameters: [] },
 
@@ -487,7 +512,17 @@ export const TREATMENT_MODULES = {
         // normal, which is what the daily activity score measures.
         covers: 'activity',
         relationship: RELATIONSHIP.SUPERSEDES,
-        concernFromGrade: 3, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Amber from grade 2, red
+        // from grade 3. The earliest amber of any cancer parameter, and
+        // deliberately: a dog sleeping most of the day after chemotherapy is
+        // the finding that most often turns out to be the start of something,
+        // and the one owners most often wait on.
+        //
+        // Grade 4 also carries the (emergency) marker in its own text, which
+        // drives the hazard icon; emergencyFromGrade is what makes grade 3
+        // red as well.
+        concernFromGrade: 2,
+        emergencyFromGrade: 3,
         grades: [
           { grade: 0, owner: 'Normal energy.' },
           { grade: 1, owner: 'Slightly quieter, but doing everything {they} normally would.' },
@@ -506,7 +541,23 @@ export const TREATMENT_MODULES = {
         // rather than a slightly lower score.
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
-        concernMessage: 'PENDING ASH — this is the neutropenic sepsis question. The wording matters more here than anywhere else in the module.',
+        // PENDING ASH — drafted by me, and the most urgent of the outstanding
+        // ones. Until now this field held a note to myself, which meant an
+        // owner answering "yes" was shown "PENDING ASH — this is the
+        // neutropenic sepsis question" as their alert.
+        //
+        // Three deliberate choices in the wording, all yours to overrule:
+        //
+        //   1. "Today, not tomorrow" rather than a severity word. Neutropenic
+        //      sepsis is not something an owner can grade, and asking them to
+        //      judge how bad it is invites waiting.
+        //   2. It says to ring even if the pet seems otherwise well, because
+        //      the early hours of this often look like an off day.
+        //   3. It mentions chemotherapy by name so the owner has the reason
+        //      to give the person who answers the phone, which is what gets
+        //      them seen rather than triaged to tomorrow.
+        //
+        concernMessage: 'Ring your vet today, not tomorrow, and tell them {name} is having chemotherapy. Being very quiet, shivering or feeling hot can be the first sign of a serious infection in the week or so after a treatment, and it needs treating quickly. Do this even if {they} otherwise seem{s} well.',
         // PENDING ASH — drafted for review. The point being made: chemo drops
         // the white cells that fight infection, the dip lands roughly a week
         // after treatment, and at that point an ordinary infection can become
@@ -520,21 +571,38 @@ export const TREATMENT_MODULES = {
   radiation: {
     key: 'radiation',
     label: 'Radiation therapy',
-    summary: 'Skin and comfort at the treated site.', // PENDING ASH
+    summary: 'Skin and comfort at the treated site.', // APPROVED — Ash Cullen (BVSc), 25 Aug 2026
     parameters: [
       {
         key: 'skin_at_site',
         label: 'Skin At The Treated Site',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        levels: { dog: ['PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH'] },
+        // Follows the course of an acute radiation skin reaction as an OWNER
+        // would see it: nothing, redness, dry flaking, then moist breakdown,
+        // then an open wound. Written to what can be seen rather than what it
+        // is called, so nobody is asked to decide whether something counts as
+        // "desquamation".
+        //
+        // Amber from 4 — the first level where the hair is going and the
+        // reaction is more than colour.
+        concernFrom: 4,
+        levels: { dog: RADIATION_SKIN_LEVELS, cat: RADIATION_SKIN_LEVELS },
       },
       {
         key: 'pain_at_site',
         label: 'Discomfort At The Treated Site',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        levels: { dog: ['PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH', 'PENDING ASH'] },
+        // Deliberately not the same question as the skin one above. Skin
+        // describes what the site LOOKS like; this describes what {name} does
+        // about it, and the two come apart in both directions — a site that
+        // looks alarming can be comfortable once it has settled, and a site
+        // that looks mild can be very sore early on. Grading them together
+        // would let one hide the other.
+        //
+        // Amber from 4 — the first level where the licking is habitual rather
+        // than a passing glance.
+        concernFrom: 4,
+        levels: { dog: RADIATION_DISCOMFORT_LEVELS, cat: RADIATION_DISCOMFORT_LEVELS },
       },
     ],
   },

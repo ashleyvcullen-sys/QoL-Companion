@@ -49,13 +49,21 @@ function HowTo({ title, steps, footer, pet }) {
   )
 }
 
-function Verdict({ verdict }) {
+// The alert shown when an answer flags.
+//
+// Through PetText, like every other owner-facing string. This rendered the
+// message raw until now, which meant an alert could not use the pet's name —
+// a {name} token would have printed as literal braces. No existing message
+// used one, so nothing was visibly broken; it just quietly ruled out the
+// naming convention the rest of the app follows, on the sentences where
+// being spoken to about YOUR animal matters most.
+function Verdict({ verdict, pet }) {
   if (!verdict?.message) return null
   if (verdict.severity === SEVERITY.EMERGENCY) {
     return (
       <p className="condition-emergency" role="alert">
         <AlertTriangle size={17} />
-        <span>{verdict.message}</span>
+        <span><PetText template={verdict.message} pet={pet} /></span>
       </p>
     )
   }
@@ -63,7 +71,7 @@ function Verdict({ verdict }) {
     return (
       <p className="condition-flag" role="status">
         <AlertTriangle size={15} />
-        <span>{verdict.message}</span>
+        <span><PetText template={verdict.message} pet={pet} /></span>
       </p>
     )
   }
@@ -226,7 +234,7 @@ export default function ConditionParameter({ parameter, values, pet, number, not
         </>
       )}
 
-      <Verdict verdict={verdict} />
+      <Verdict verdict={verdict} pet={pet} />
 
       {followUpVisible && (
         <div className="condition-followup">

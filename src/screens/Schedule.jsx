@@ -470,7 +470,7 @@ export default function Schedule() {
       {showFrequencyInfo && (
         <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>
           <p>
-            For young, healthy pets, checking in at least fortnightly is a reasonable
+            For young, healthy pets, checking in at least weekly is a reasonable
             baseline — enough to catch any gradual changes without it feeling like a chore.
           </p>
           <p>

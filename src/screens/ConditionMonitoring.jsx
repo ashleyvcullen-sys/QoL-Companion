@@ -26,7 +26,7 @@ import {
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries, updateBeapCategory, updateGeneralScore } from '../lib/qolData'
-import { useMedications } from '../lib/medicationsData'
+import { describeMedicationSchedule, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -60,6 +60,10 @@ export default function ConditionMonitoring() {
   // query on a page that is already fetching three.
   const { generalEntries, painEntries } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
+  // Only what {name} is on NOW. A finished course is history, and listing it
+  // under "is she currently on any medication?" would answer that question
+  // wrongly.
+  const activeMedications = medications.filter((medication) => medication.active)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
 
   // Which condition is determined by the URL, so each one is a real page you
@@ -441,25 +445,58 @@ export default function ConditionMonitoring() {
                 onChange={handleMedicationAnswer}
               />
 
-              {/* Offered, never done for them. The app does not know the drug,
-                  the dose or the schedule, and inventing a medication entry on
-                  an owner's behalf would be wrong in the one place where being
-                  wrong matters most. */}
+              {/* What is actually recorded, shown here rather than only on
+                  the medications screen. Saying "yes" and then being asked to
+                  go and look somewhere else to find out what you said yes to
+                  is a round trip for information the app already has.
+                  Offered, never invented: the app does not know the drug, the
+                  dose or the schedule, so an empty list asks rather than
+                  guesses. */}
               {onMedication === 'yes' && (
                 <>
-                  <p className="assessment-hint">
-                    Would you like to add it to {pet.name}'s medications, so you can set up
-                    reminders and record each dose?
-                  </p>
-                  <Btn
-                    type="button"
-                    variant="outline"
-                    className="btn-block"
-                    onClick={goToMedications}
-                    disabled={busy}
-                  >
-                    Add to medications
-                  </Btn>
+                  {activeMedications.length > 0 ? (
+                    <>
+                      <div className="condition-medication-list">
+                        {activeMedications.map((medication) => (
+                          <div key={medication.id} className="condition-medication-row">
+                            <span className="condition-medication-name">{medication.name}</span>
+                            <span className="assessment-hint">
+                              {[medication.dose, describeMedicationSchedule(medication)]
+                                .filter(Boolean).join(' — ')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Every medication on record, not just this
+                          condition's — the app has never asked which
+                          condition a medication is for, so narrowing the list
+                          would mean guessing, and a drug quietly missing from
+                          this list is worse than one shown that belongs to
+                          something else. */}
+                      <p className="assessment-hint">
+                        Everything currently recorded for {pet.name}, across all conditions.
+                      </p>
+                      <button type="button" className="subtle-link" onClick={goToMedications}>
+                        Edit in Medications
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="assessment-hint">
+                        Nothing recorded yet. Would you like to add it to {pet.name}'s
+                        medications, so you can set up reminders and record each dose?
+                      </p>
+                      <Btn
+                        type="button"
+                        variant="outline"
+                        className="btn-block"
+                        onClick={goToMedications}
+                        disabled={busy}
+                      >
+                        Add to medications
+                      </Btn>
+                    </>
+                  )}
                 </>
               )}
             </Card>

@@ -252,3 +252,32 @@ export function useMedications(petId) {
 
   return { medications, doses, loading, refresh }
 }
+
+// "2× per day", "as needed", "8:00am, 8:00pm" — one medication's schedule in
+// the fewest words that are still true.
+//
+// Lives here rather than on a screen because three screens now show it:
+// Medications itself, the Reminders list, and the condition pages, where an
+// owner who has said "yes, {name} is on medication" should be able to see
+// what they recorded without leaving the page.
+export function describeMedicationSchedule(medication) {
+  if (medication.scheduleMode === 'as_needed') return 'as needed'
+  if (medication.scheduleMode === 'frequency') {
+    const count = medication.frequencyCount ?? 1
+    const period = medication.frequencyPeriod === 'week' ? 'week'
+      : medication.frequencyPeriod === 'month' ? 'month'
+        : 'day'
+    return `${count}\u00d7 per ${period}`
+  }
+  const times = (medication.times ?? []).filter(Boolean)
+  return times.length ? times.map(formatMedicationTime).join(', ') : 'no times set'
+}
+
+// '08:00' as a person reads it.
+export function formatMedicationTime(value) {
+  if (!value) return ''
+  const [hour, minute] = String(value).split(':').map(Number)
+  const suffix = hour >= 12 ? 'pm' : 'am'
+  const display = hour % 12 === 0 ? 12 : hour % 12
+  return `${display}:${String(minute).padStart(2, '0')}${suffix}`
+}

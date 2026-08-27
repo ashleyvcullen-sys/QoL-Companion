@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Btn from './Btn'
 
 export default function SwipeableWizard({
@@ -14,8 +14,17 @@ export default function SwipeableWizard({
   // should not push the buttons down the screen.
   pageFooters = [],
   initialPageIndex = 0,
+  // Told to the caller whenever the page changes, so a half-finished
+  // assessment can be saved with the page the owner was standing on rather
+  // than one worked out afterwards from which answers are filled in.
+  onPageChange,
 }) {
   const [pageIndex, setPageIndex] = useState(initialPageIndex)
+
+  useEffect(() => {
+    onPageChange?.(pageIndex)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex])
   const isLastPage = pageIndex === pages.length - 1
 
   // Per-page scroll offsets, captured whenever a page is left. Forward

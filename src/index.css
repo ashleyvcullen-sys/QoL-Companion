@@ -2857,3 +2857,42 @@ code {
   padding-top: 16px;
   border-top: 1px solid var(--border);
 }
+
+/* A date field with a way back to empty beside it. */
+.med-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.med-date-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.med-date-row .subtle-link {
+  flex: 0 0 auto;
+}
+
+/* The medications recorded for a pet, listed under the condition's
+   medication question. */
+.condition-medication-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.condition-medication-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.condition-medication-name {
+  font-size: var(--type-item);
+  font-weight: 600;
+  color: var(--text-h);
+}

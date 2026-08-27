@@ -499,24 +499,51 @@ export default function Medications() {
                 Both optional: a guess drawn as a fact is worse than a gap. */}
             <div className="field">
               <label htmlFor="med-started">Started (optional)</label>
-              <input
-                id="med-started"
-                type="date"
-                value={form.startedOn}
-                max={todayIsoDate()}
-                onChange={(e) => setForm({ ...form, startedOn: e.target.value })}
-              />
+              <div className="med-date-row">
+                <input
+                  id="med-started"
+                  type="date"
+                  value={form.startedOn}
+                  max={todayIsoDate()}
+                  onChange={(e) => setForm({ ...form, startedOn: e.target.value })}
+                />
+                {/* iOS's own picker has a Reset, and Reset there means "back
+                    to today" — not "no date". Since both of these are
+                    genuinely optional, there has to be a way back to empty,
+                    and the native control does not offer one. Only shown when
+                    there is something to clear. */}
+                {form.startedOn && (
+                  <button
+                    type="button"
+                    className="subtle-link"
+                    onClick={() => setForm({ ...form, startedOn: '' })}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="field">
               <label htmlFor="med-ended">Stopped (optional)</label>
-              <input
-                id="med-ended"
-                type="date"
-                value={form.endedOn}
-                min={form.startedOn || undefined}
-                onChange={(e) => setForm({ ...form, endedOn: e.target.value })}
-              />
+              <div className="med-date-row">
+                <input
+                  id="med-ended"
+                  type="date"
+                  value={form.endedOn}
+                  min={form.startedOn || undefined}
+                  onChange={(e) => setForm({ ...form, endedOn: e.target.value })}
+                />
+                {form.endedOn && (
+                  <button
+                    type="button"
+                    className="subtle-link"
+                    onClick={() => setForm({ ...form, endedOn: '' })}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <p className="assessment-hint">
                 Leave this empty while {pet.name} is still taking it. Marking a medication as
                 finished fills it in for you.

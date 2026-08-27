@@ -263,8 +263,12 @@ export const CONDITIONS = {
     Icon: HeartOrganIcon,
     // Shown on the condition list to say what monitoring involves before
     // someone commits to it.
+    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Murmurs added, and named
+    // FIRST: an owner who has been told "there's a murmur, we'll keep an eye
+    // on it" and nothing more is the person most likely to think this section
+    // is not for them, and is exactly who it is for.
     summary:
-      'Includes conditions such as myxomatous mitral valve disease (MMVD), dilated cardiomyopathy (DCM) and hypertrophic cardiomyopathy (HCM).',
+      'For pets with a heart murmur — including where the underlying cause has not been determined — and for conditions such as myxomatous mitral valve disease (MMVD), dilated cardiomyopathy (DCM) and hypertrophic cardiomyopathy (HCM).',
     intro:
       'Monitoring parameters such as resting breathing rate and exercise tolerance can help catch subtle changes over time. Earlier detection often leads to earlier intervention and better outcomes.',
     // PENDING ASH — see the 'acvim-cardiac' entry in lib/references.js.
@@ -514,9 +518,9 @@ export const CONDITIONS = {
           dog: [
             'Finds {their} way around the house and garden normally.',
             'Occasionally pauses, as if working out where to go next.',
-            'Sometimes goes to the hinge side of a door, or stands in a room without settling.',
+            'Sometimes goes to the hinge side of a door, or stands in a room staring into space.',
             'Often looks lost in familiar places, or gets stuck behind or under furniture.',
-            'Frequently disoriented, and needs help finding the way out of a room.',
+            'Frequently disoriented, and needs help finding the way out of a room. Gets stuck or disorientated often.',
             'Appears lost most of the time, even in a single familiar room.',
           ],
         },
@@ -582,7 +586,7 @@ export const CONDITIONS = {
         // as "less affectionate is worse" would mark an aloof cat down from
         // the first day for being exactly {them}self.
         why:
-          'Not all cats naturally seek affection or attention. The main thing is to know what is normal for {name}, and to recognise if things are changing.',
+          'Not all cats actively seek attention or affection. The main thing is to know what is normal for {name}, and to recognise if things are changing.',
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. "OR" left capitalised as
         // written: it separates two opposite presentations on one rung, and
@@ -858,17 +862,47 @@ export const CONDITIONS = {
       // now that the answer is shared both ways, asking costs them nothing:
       // whichever screen they reach first fills in the other.
       {
-        key: 'ambulation',
-        // Named the same as the BEAAAAPP category it reuses. It IS that
-        // question, so calling it something friendlier here only made the two
-        // look like different measures on the same day.
-        label: 'Ambulation',
-        type: 'beap',
-        beapKey: 'ambulation',
-        hideImages: true,
+        key: 'limping',
+        // Ambulation was here until 25 Aug 2026 and has gone on Ash's
+        // instruction. It borrowed the BEAAAAPP ambulation category, which
+        // grades getting about as one thing — limping, stiffness, stairs and
+        // jumping all folded into a single rung. In arthritis those come
+        // apart: a cat that has quietly stopped jumping is not limping, and a
+        // dog with one sore elbow may be limping while getting about fine.
+        // Jumping already has its own question, so this one asks only about
+        // the limp.
+        label: 'Limping',
+        type: 'scale',
+        // `distinct`, not `supersedes`, and that difference is the point of
+        // this change. It names ambulation as the measure it sits near — the
+        // overlap check requires that — while declaring it is NOT the same
+        // question, so the two are no longer kept in step. The assessment
+        // still grades getting about as a whole; this asks only about the
+        // limp.
         covers: 'ambulation',
-        relationship: RELATIONSHIP.SUPERSEDES,
+        relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // PENDING ASH — all six levels drafted by me. Written to what an
+        // owner can see from across a room: whether there is a limp, when it
+        // shows, and whether it settles.
+        levels: {
+          dog: [
+            'Walks evenly. No limp at any time.',
+            'A slight limp now and then, usually after getting up or after a long walk.',
+            'A limp that is easy to see after rest or exercise, but wears off as {they} {do} more.',
+            'Limping most of the time. It does not fully wear off.',
+            'Obvious limp at every step, and sometimes carries the leg for a few strides.',
+            'Will not put the leg down at all, or cannot walk without help. (emergency)',
+          ],
+          cat: [
+            'Walks evenly. No limp at any time.',
+            'A slight limp now and then, usually after getting up or after being still for a while.',
+            'A limp that is easy to see after rest, but wears off as {they} move around.',
+            'Limping most of the time. It does not fully wear off.',
+            'Obvious limp at every step, and sometimes holds the leg up.',
+            'Will not put the leg down at all, or cannot walk without help. (emergency)',
+          ],
+        },
       },
       {
         key: 'stiffness_after_rest',

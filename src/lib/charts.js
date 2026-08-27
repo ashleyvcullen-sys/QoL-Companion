@@ -159,9 +159,18 @@ function overallChart(dailySeries) {
     title: 'Overall QoL Over Time',
     kind: 'line',
     data: dailySeries,
-    dataKey: 'generalTotal',
+    // The percentage, not the raw total. A total is out of a maximum that
+    // changes with how many questions were answered, so two days scoring 84
+    // could mean quite different things and the axis had no fixed top. A
+    // percentage is the same number the assessment shows at the end and the
+    // same one the Good / Bad Days calendar colours by — one scale for the
+    // whole app, 100% being the best day.
+    dataKey: 'generalPercent',
+    domain: [0, 100],
+    unit: '%',
     colour: OVERALL_COLOUR,
     height: 200,
+    caption: 'Higher is better. 100% is the best possible day.',
   }
 }
 

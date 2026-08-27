@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Droplet, FileDown, House } from 'lucide-react'
 import Card from '../components/Card'
@@ -237,11 +237,12 @@ export default function QualityOfLifeAssessment() {
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [showExitConfirm, setShowExitConfirm] = useState(false)
-  const [draftToResume, setDraftToResume] = useState(null)
   const [showExistingTodayChoice, setShowExistingTodayChoice] = useState(false)
   const [readyToPersist, setReadyToPersist] = useState(false)
   const [initialPageIndex, setInitialPageIndex] = useState(0)
   const [wizardKey, setWizardKey] = useState(0)
+  // The page the owner is standing on right now, saved with the draft.
+  const currentPageRef = useRef(0)
 
   // Runs once history has loaded. A completed entry for today takes
   // priority over the local in-progress draft entirely — if today's
@@ -262,13 +263,28 @@ export default function QualityOfLifeAssessment() {
     }
 
     let cancelled = false
-    loadTodaysAssessmentDraft(pet.id).then((draftEntry) => {
+    loadTodaysAssessmentDraft(pet.id).then((draft) => {
       if (cancelled) return
-      if (draftEntry) {
-        setDraftToResume(draftEntry)
-      } else {
+      const draftEntry = draft?.entry ?? null
+      if (!draftEntry) {
         setReadyToPersist(true)
+        return
       }
+      // Picked up silently, at the page they were on, rather than asked
+      // about. Coming back to an app you stepped away from ten seconds ago
+      // and being made to answer a question about your own half-finished
+      // work is friction for its own sake — and "Start fresh" was one
+      // mis-tap away from deleting the lot. Starting again is still
+      // available from the finished screen, deliberately, where it cannot
+      // be hit by accident.
+      setEntry(draftEntry)
+      const page = Number.isInteger(draft?.pageIndex)
+        ? draft.pageIndex
+        : findResumeIndex(draftEntry)
+      setInitialPageIndex(page)
+      currentPageRef.current = page
+      setWizardKey((k) => k + 1)
+      setReadyToPersist(true)
     })
     return () => {
       cancelled = true
@@ -320,7 +336,7 @@ export default function QualityOfLifeAssessment() {
   useEffect(() => {
     if (!readyToPersist) return
     const timeout = setTimeout(() => {
-      saveAssessmentDraft(pet.id, entry)
+      saveAssessmentDraft(pet.id, entry, currentPageRef.current)
     }, 400)
     return () => clearTimeout(timeout)
   }, [entry, readyToPersist, pet.id])
@@ -328,22 +344,17 @@ export default function QualityOfLifeAssessment() {
   // Forces SwipeableWizard to remount with the new starting index — plain
   // prop changes wouldn't do anything once it's already mounted, since its
   // pageIndex is only ever initialized from props on first mount.
+  // Turning a page is itself worth saving: an owner who reads a question,
+  // answers nothing and moves on has still told us where they are, and
+  // without this that move would be lost the moment the app was reloaded.
+  function handlePageChange(index) {
+    currentPageRef.current = index
+    if (readyToPersist) saveAssessmentDraft(pet.id, entry, index)
+  }
+
   function jumpTo(hydratedEntry) {
     setInitialPageIndex(findResumeIndex(hydratedEntry))
     setWizardKey((k) => k + 1)
-  }
-
-  function handleResumeDraft() {
-    setEntry(draftToResume)
-    jumpTo(draftToResume)
-    setDraftToResume(null)
-    setReadyToPersist(true)
-  }
-
-  function handleStartFresh() {
-    clearAssessmentDraft(pet.id)
-    setDraftToResume(null)
-    setReadyToPersist(true)
   }
 
   function handleStartNewToday() {
@@ -705,6 +716,7 @@ export default function QualityOfLifeAssessment() {
           key={wizardKey}
           pages={pages}
           initialPageIndex={initialPageIndex}
+          onPageChange={handlePageChange}
           finishLabel={saving ? 'Saving…' : 'Save'}
           onComplete={handleComplete}
           pageFooters={pageFooters}
@@ -724,20 +736,6 @@ export default function QualityOfLifeAssessment() {
             </Btn>
             <Btn type="button" variant="danger" onClick={() => navigate('/')}>
               Exit
-            </Btn>
-          </div>
-        </Modal>
-      )}
-
-      {draftToResume && (
-        <Modal title="Resume assessment?" onClose={handleStartFresh}>
-          <p>You have an assessment in progress — resume where you left off, or start fresh?</p>
-          <div className="modal-actions">
-            <Btn type="button" variant="outline" onClick={handleStartFresh}>
-              Start fresh
-            </Btn>
-            <Btn type="button" onClick={handleResumeDraft}>
-              Resume
             </Btn>
           </div>
         </Modal>

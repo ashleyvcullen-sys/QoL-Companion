@@ -32,13 +32,17 @@ export async function loadTodaysAssessmentDraft(petId) {
     return null
   }
 
-  return draft.entry ?? null
+  // The page too, where one was saved. Answers alone can only say which
+  // sections are FILLED IN, which is not the same as where someone was
+  // standing — an owner who skipped a question and moved on gets sent back
+  // to the one they chose to skip.
+  return { entry: draft.entry ?? null, pageIndex: draft.pageIndex ?? null }
 }
 
-export async function saveAssessmentDraft(petId, entry) {
+export async function saveAssessmentDraft(petId, entry, pageIndex = null) {
   await Preferences.set({
     key: draftKey(petId),
-    value: JSON.stringify({ date: todayDateString(), entry }),
+    value: JSON.stringify({ date: todayDateString(), entry, pageIndex }),
   })
 }
 
