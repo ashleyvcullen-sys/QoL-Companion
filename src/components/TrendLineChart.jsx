@@ -1,9 +1,9 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush, ReferenceLine } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush, ReferenceArea, ReferenceLine } from 'recharts'
 
 const DEFAULT_VISIBLE_DAYS = 14
 const BRUSH_HEIGHT = 24
 
-export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, markers = [], isAnimationActive = true, brush = false }) {
+export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, markers = [], isAnimationActive = true, brush = false }) {
   const containerHeight = brush ? height + BRUSH_HEIGHT + 10 : height
 
   return (
@@ -13,6 +13,27 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
         <XAxis dataKey="date" tick={{ fontSize: 11 }} />
         <YAxis domain={domain} tick={{ fontSize: 11 }} />
         <Tooltip />
+        {/* A healthy band, drawn behind everything else.
+            
+            A threshold line answers "am I above the line?". A band answers
+            "am I inside it?", which is the question body condition actually
+            asks — 4 and 5 are ideal and BOTH directions away from that are
+            worse, so a single line cannot say it. Declared before the Line so
+            it paints underneath rather than over the data.
+            
+            `ifOverflow="extendDomain"` is deliberately NOT set: the band is
+            only meaningful inside the fixed 1–9 axis, and letting it stretch
+            the domain would move the axis to fit the band. */}
+        {band && (
+          <ReferenceArea
+            y1={band.from}
+            y2={band.to}
+            fill={band.colour ?? '#3D8259'}
+            fillOpacity={0.12}
+            stroke="none"
+            label={band.label ? { value: band.label, position: 'insideLeft', fontSize: 10, fill: band.colour ?? '#3D8259' } : undefined}
+          />
+        )}
         {/* A threshold drawn on the chart rather than left in the caption —
             "is today above the line?" is the question being asked, and it
             shouldn't require holding a number in your head. */}

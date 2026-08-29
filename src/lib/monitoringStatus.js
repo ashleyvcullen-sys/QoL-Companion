@@ -25,11 +25,17 @@ export function daysBetween(fromIso, toIso) {
 
 // How often this condition should be filled in, for this pet.
 //
-// The owner's own choice wins; failing that, the cadence the condition itself
-// recommends (arthritis is weekly, most things are daily); failing that,
-// daily. An explicit 0 means the owner turned this condition's reminder off,
-// and is preserved rather than falling through to a default — "off" is an
-// answer, not an absence.
+// The owner's own choice wins; failing that, daily.
+//
+// A definition MAY carry its own `cadence` and none currently does — Ash's
+// call, 29 Aug 2026: everything starts daily and the owner changes it in
+// Reminders if they want to. The fallback is kept because the alternative is
+// hard-coding 1 here and rediscovering later that some condition needed a
+// different starting point.
+//
+// An explicit 0 means the owner turned this condition's reminder off, and is
+// preserved rather than falling through to a default — "off" is an answer,
+// not an absence.
 export function cadenceDaysFor(definition, schedule) {
   const saved = schedule?.conditions?.[definition?.key]
   if (saved?.days === 0) return 0

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, FileDown, Trash2 } from 'lucide-react'
+import { FileDown, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -13,13 +13,11 @@ import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import {
   SAME_AS_ASSESSMENT,
-  SEVERITY,
   askedParameters,
   describeConditionDay,
   visibleParameters,
   beapAppetiteFromVcogGrade,
   conditionByKey,
-  evaluateParameter,
   sleepScoreFromSeverity,
   sleepSeverityFromScore,
   vcogGradeFromBeapAppetite,
@@ -119,11 +117,6 @@ export default function ConditionMonitoring() {
 
   const today = todayIsoDate()
 
-  // How often this condition is worth filling in. Absent means daily, which
-  // is how every condition behaved before arthritis. Used for the wording
-  // only — the arithmetic goes through the shared helper below.
-  const cadence = definition?.cadence ?? null
-
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
   const latestEntry = entries[entries.length - 1] ?? null
 
@@ -146,9 +139,15 @@ export default function ConditionMonitoring() {
   })
 
 
-  // Any emergency answer anywhere in the condition, surfaced at the top of
-  // the card as well as beside the question — an owner scrolling to save
-  // shouldn't be able to miss it.
+  // The emergency alert appears ONCE, beside the question that raised it.
+  //
+  // It used to be repeated at the top of the card too, on the reasoning that
+  // an owner scrolling to save shouldn't be able to miss it. In practice
+  // answering one question put the same red panel on screen twice, which
+  // reads as two separate problems rather than one emphasised — and the copy
+  // at the top was rendered raw, so it could never have used the pet's name
+  // anyway.
+  //
   // For a fixed condition this is definition.parameters; for cancer it is
   // composed from the owner's module selection and their list of masses.
   // A composed condition shows no questions until setup has been done. The
@@ -304,10 +303,6 @@ export default function ConditionMonitoring() {
     })
   }
 
-  const emergencies = parameters
-    .map((parameter) => evaluateParameter(parameter, values[parameter.key], pet?.species))
-    .filter((verdict) => verdict?.severity === SEVERITY.EMERGENCY)
-
   async function handleRemove(condition) {
     setErrorMessage('')
     setBusy(true)
@@ -448,6 +443,10 @@ export default function ConditionMonitoring() {
     : null
 
   const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
+  // The measured numbers that draw a line — at most one per condition today
+  // (heart's RRR, kidney's daily water intake), but written as a list so a
+  // third needs no change here.
+  const parameterCharts = charts.filter((chart) => chart.parameterKey)
 
 
   return (
@@ -586,13 +585,6 @@ export default function ConditionMonitoring() {
 
           {!needsSetup && (
           <Card>
-            {emergencies.length > 0 && (
-              <p className="condition-emergency" role="alert">
-                <AlertTriangle size={17} />
-                <span>{emergencies[0].message}</span>
-              </p>
-            )}
-
             {treatmentDay != null && (
               <p className="condition-flag" role="status">
                 <span>
@@ -660,11 +652,6 @@ export default function ConditionMonitoring() {
               </p>
             )}
 
-            {!entriesLoading && !latestEntry && cadence && (
-              <p className="assessment-hint">
-                This one is worth filling in {cadence.label} rather than every day.
-              </p>
-            )}
             {definition.composed && (
               <Link to={`/conditions/${definition.key}/setup`} className="subtle-link">
                 Change what you're monitoring
@@ -680,6 +667,16 @@ export default function ConditionMonitoring() {
             </Card>
           )}
 
+          {/* Below the calendar, not above it. The calendar is the answer to
+              "how has {name} been?" and this is the answer to a narrower
+              question the owner has to already be asking. */}
+          {parameterCharts.map((chart) => (
+            <Card key={chart.key}>
+              <SectionTitle>{chart.title}</SectionTitle>
+              <ChartView chart={chart} />
+            </Card>
+          ))}
+
           {/* Offered where the record is, not on a menu somewhere else. The
               moment an owner decides their vet should see this is the moment
               they are looking at it. */}
@@ -687,9 +684,9 @@ export default function ConditionMonitoring() {
             <Card>
               <SectionTitle>Take This To Your Vet</SectionTitle>
               <p className="assessment-hint">
-                Export {pet.name}'s {definition.label.toLowerCase()} record as a report. This
-                page's summary is selected to start with, and you can add {pet.name}'s general
-                quality of life trends on the next screen.
+                Export {pet.name}'s {definition.label.toLowerCase()} record as a report.
+                Everything on this page is selected to start with, and you can add {pet.name}'s
+                general quality of life trends on the next screen.
               </p>
               <Btn
                 type="button"

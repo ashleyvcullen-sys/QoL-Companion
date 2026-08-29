@@ -23,7 +23,7 @@
 // PENDING ASH: owner-facing strings drafted by Claude are marked. Anything
 // NOT marked came from Ash directly.
 
-import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
+import { RELATIONSHIP, SEEK_VET_ASAP, SEVERITY, sharedParameter } from './conditions'
 
 // ---------------------------------------------------------------- core
 //
@@ -89,6 +89,9 @@ export const CORE_PARAMETERS = [
     covers: 'attitude',
     relationship: RELATIONSHIP.SUPERSEDES,
     concernFrom: 4, // PENDING ASH
+    // The most severe rung carries the "(emergency)" marker; this is the line
+    // that appears under it.
+    emergencyMessage: SEEK_VET_ASAP,
     levels: {
       dog: [
         'Completely {them}self.',

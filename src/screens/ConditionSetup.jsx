@@ -413,7 +413,7 @@ export default function ConditionSetup() {
               <p className="assessment-hint">
                 {!hasDiagnosis
                   ? 'Choose a diagnosis above to carry on.'
-                  : `That's ${questionCount} question${questionCount === 1 ? '' : 's'} to answer each day.`}
+                  : `That's ${questionCount} question${questionCount === 1 ? '' : 's'} to answer.`}
               </p>
             <Btn
               type="button"

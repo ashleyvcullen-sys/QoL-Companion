@@ -322,6 +322,23 @@ export default function Schedule() {
         </p>
       </Card>
 
+      {/* Above the cadence control, not below it. Someone who does not know
+          how often to assess needs the answer BEFORE they are asked to pick a
+          number, not after they have already guessed at one. It sat at the
+          foot of the screen originally, then directly under the control; this
+          is the third position and the first one that comes before the
+          decision it informs. */}
+      <Card>
+        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
+          <div className="welcome-help-row">
+            <span className="icon-badge">
+              <HelpCircle size={20} color="#fff" />
+            </span>
+            <span>How often should I be assessing my pet's quality of life?</span>
+          </div>
+        </button>
+      </Card>
+
       <Card>
         {loading ? (
           <p>Loading…</p>
@@ -335,20 +352,6 @@ export default function Schedule() {
             onDayChange={updateCadenceDay}
           />
         )}
-      </Card>
-
-      {/* Directly under the box that asks for a cadence, because that is the
-          moment the question occurs to someone. At the foot of the screen it
-          was four cards past the only control it explains. */}
-      <Card>
-        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
-          <div className="welcome-help-row">
-            <span className="icon-badge">
-              <HelpCircle size={20} color="#fff" />
-            </span>
-            <span>How often should I be assessing my pet's quality of life?</span>
-          </div>
-        </button>
       </Card>
 
       {/* Each condition sets its own cadence, the same way the assessment
@@ -389,11 +392,6 @@ export default function Schedule() {
                 })}
                 onDayChange={(nextDay) => updateConditionSchedule(definition.key, { day: nextDay })}
               />
-              {definition.cadence && (
-                <p className="assessment-hint">
-                  Suggested: {definition.cadence.label}.
-                </p>
-              )}
               <Link to={`/conditions/${definition.key}`} className="subtle-link">
                 Open {definition.label}
               </Link>

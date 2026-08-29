@@ -34,7 +34,11 @@ const EMPTY_VOMITING = { hasVomited: null, frequency: '', unit: 'times/day', cha
 // is exactly when the owner is trying to read it and count at the same time.
 function HowTo({ title, steps, footer, pet }) {
   const [open, setOpen] = useState(false)
-  const heading = title ?? 'How to Measure This'
+  // Templated, like the steps below it. This rendered raw until 29 Aug 2026,
+  // so the kidney guide's title printed "Measuring What {name} Drinks" with
+  // the braces showing. It went unnoticed because the only other howToTitle
+  // in the app has no token in it.
+  const heading = fillPetText(title ?? 'How to Measure This', pet)
 
   return (
     <>
@@ -110,6 +114,24 @@ export default function ConditionParameter({
   returnLabel,
 }) {
   const species = pet?.species
+
+  // Every owner-facing string that has to arrive as a PLAIN STRING rather
+  // than as React children — placeholders, dialog titles, option labels.
+  //
+  // This exists because those are exactly the ones that keep getting missed.
+  // PetText is obvious at the call site: you can see the templating. A bare
+  // `placeholder={parameter.placeholder}` looks completely fine and silently
+  // ships braces to the owner, and that has now happened three times — alert
+  // messages, choice labels, and the howTo title above. One helper, used for
+  // all of them, so there is no version of this that looks correct and is not.
+  //
+  // Species first, then tokens: a string may be written once for both species
+  // or keyed by species, and either form can contain {name}.
+  //
+  // Declared HERE, above its first use. It read perfectly well sitting lower
+  // down next to the other derived values, and would have thrown "Cannot
+  // access 'plain' before initialization" on every condition question.
+  const plain = (value) => fillPetText(textForSpecies(value, species), pet)
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
   const isUnsure = value === UNSURE
@@ -118,7 +140,7 @@ export default function ConditionParameter({
   // stored differently — see NOT_APPLICABLE in conditions.js.
   const isBlanked = isUnsure || isNotApplicable
   const naOption = parameter.notApplicableLabel
-    ? { value: NOT_APPLICABLE, label: parameter.notApplicableLabel }
+    ? { value: NOT_APPLICABLE, label: plain(parameter.notApplicableLabel) }
     : null
 
   function set(key, next) {
@@ -217,14 +239,18 @@ export default function ConditionParameter({
               disabled={isBlanked}
               placeholder={
                 isNotApplicable
-                  ? parameter.notApplicableLabel
+                  ? plain(parameter.notApplicableLabel)
                   : isUnsure
                     ? 'Not sure'
-                    : (parameter.placeholder ?? '')
+                    : plain(parameter.placeholder ?? '')
               }
               onChange={(e) => set(parameter.key, e.target.value)}
             />
-            {parameter.unit && <span className="input-unit">{parameter.unit}</span>}
+            {/* Through `plain` like everything else, even though no unit has
+                ever carried a token. The point of the helper is that there is
+                no render site here that looks right and is not; leaving one
+                exception is how the next one gets added. */}
+            {parameter.unit && <span className="input-unit">{plain(parameter.unit)}</span>}
           </div>
           <ChoiceButtons
             options={naOption ? [naOption, UNSURE_OPTION] : [UNSURE_OPTION]}
@@ -324,7 +350,7 @@ export default function ConditionParameter({
             <textarea
               rows={2}
               value={followUpValue}
-              placeholder={textForSpecies(followUp.placeholder, species)}
+              placeholder={plain(followUp.placeholder)}
               onChange={(e) => set(followUp.key, e.target.value)}
             />
           )}

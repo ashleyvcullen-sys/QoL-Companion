@@ -73,8 +73,8 @@ export const NOT_APPLICABLE = 'na'
 // a daily measure names it in `covers` and says what it is doing about it in
 // `relationship`:
 //
-//   reference   Not asked here at all. The daily assessment's answer is what
-//               this condition charts. Removes a question from the form.
+//   reference   Not asked here at all. The daily assessment's answer stands
+//               for this condition's.
 //   supersedes  Asked here, in more detail or in a context the daily
 //               assessment does not cover. Both answers are kept; neither is
 //               derived from the other.
@@ -82,24 +82,36 @@ export const NOT_APPLICABLE = 'na'
 //               same domain. The comment above it has to say how — `why` is
 //               owner-facing text and is not the place for it.
 //
-// Only `reference` changes behaviour today. The other two are declarations —
-// they exist so scripts/check-parameter-overlap.mjs can fail when a NEW
-// parameter quietly overlaps a daily measure and says nothing about it, which
-// is exactly how the appetite duplication got in.
+// NOTHING USES `reference` RIGHT NOW, and anything that did would be
+// invisible. Its whole point was that the condition still SHOWED the measure
+// by charting the daily assessment's series — so when charts left the
+// condition pages (29 Aug 2026, Ash's call: calendars here, trends in
+// Overall Quality of Life), a referenced parameter stopped producing
+// anything at all. It is not asked, not summarised, not drawn. Heart
+// Disease's appetite was the only one and has been deleted.
+//
+// Left in the vocabulary because the decision it records is still a real one
+// — "the daily assessment already asks this, so we do not" — and the overlap
+// check accepts it as an answer. But do not reach for it expecting the owner
+// to see anything.
+//
+// The other two are declarations only. They exist so
+// scripts/check-parameter-overlap.mjs can fail when a NEW parameter quietly
+// overlaps a daily measure and says nothing about it, which is exactly how
+// the appetite duplication got in.
 //
 // `covers` names a key from INDIVIDUAL_MEASURES in scoring.js. A `reference`
-// additionally has to name one of OVERVIEW_PILLAR_KEYS, because those are the
-// only series the condition page can currently plot from — the check enforces
-// that too, so a reference cannot silently lose its chart.
+// additionally has to name one of OVERVIEW_PILLAR_KEYS — the check still
+// enforces that, and it costs nothing to keep.
 export const RELATIONSHIP = {
   REFERENCE: 'reference',
   SUPERSEDES: 'supersedes',
   DISTINCT: 'distinct',
 }
 
-// Whether the owner is actually asked this. A referenced parameter still
-// belongs to the condition — it is charted on the condition page and offered
-// in the report — it just is not a question on the form.
+// Whether the owner is actually asked this. See the note above RELATIONSHIP:
+// a referenced parameter is not asked here, and since charts left the
+// condition pages it is not shown here either. Nothing uses it today.
 export function isAsked(parameter) {
   return parameter?.relationship !== RELATIONSHIP.REFERENCE
 }
@@ -145,6 +157,22 @@ export function visibleParameters(parameters = [], values = {}) {
 //
 // Consumers may override any field (a condition-specific `why`, say) while
 // keeping the measurement itself identical.
+// The line shown under an emergency answer when there is nothing more
+// specific to say than "this needs a vet now".
+//
+// A shared constant because nine questions across five conditions use it.
+// Nine copies of one sentence is nine chances for one to drift into saying
+// something slightly different about the same urgency.
+//
+// Declared HERE, above the shared parameter blocks, and that placement is
+// load-bearing: `breathing_effort` below is built at module load, so a
+// definition further down the file threw "Cannot access 'SEEK_VET_ASAP'
+// before initialization" the moment anything imported this file.
+//
+// PENDING ASH — wording. Phrased to match the aspiration alert in the GI
+// section rather than inventing a second way to say it.
+export const SEEK_VET_ASAP = 'Seek veterinary attention as soon as possible.'
+
 export const SHARED_PARAMETERS = {
   gum_colour: {
     key: 'mucous_membranes',
@@ -195,6 +223,11 @@ export const SHARED_PARAMETERS = {
     // Moderate (4) and moderate-to-severe (6) mark the day amber. 8 and 10
     // carry the "(emergency)" marker and are handled by that.
     concernFrom: 4,
+    // The top two rungs carry the "(emergency)" marker, which sets the
+    // colour; this is the line that appears under them. Without it the panel
+    // drew red with no words in it — true of six questions across the app
+    // until 29 Aug 2026, this one included.
+    emergencyMessage: SEEK_VET_ASAP,
     levels: {
       dog: [
         'Effortless. The chest moves gently and evenly, mouth closed.',
@@ -316,6 +349,11 @@ export const CONDITIONS = {
         key: 'resting_respiratory_rate',
         label: 'Resting Respiratory (Breathing) Rate (RRR)',
         type: 'number',
+        // Graphed. One of two questions in the app that draw a line — see
+        // numberChartFor. A rate creeping from 24 to 38 over a summer is the
+        // whole reason this question exists, and it is invisible on a
+        // calendar that only knows whether the day was flagged.
+        chart: true,
         unit: 'breaths/min',
         min: 1,
         max: 200,
@@ -429,21 +467,6 @@ export const CONDITIONS = {
           placeholder: 'e.g. noticeably rounder than last week, firm to touch',
         },
       },
-      // Referenced, not asked.
-      //
-      // This was the BEAAAAPP appetite scale a second time — same six levels,
-      // same wording, on a form filled in on the same day as the assessment
-      // that already asks it. Removing it removes a question, not a measure:
-      // the appetite trend on this page is now drawn from the daily
-      // assessment, which is where the number was coming from anyway.
-      {
-        key: 'appetite',
-        label: 'Appetite',
-        relationship: RELATIONSHIP.REFERENCE,
-        covers: 'appetite',
-        why:
-          'Appetite can often reduce gradually as heart failure progresses.',
-      },
     ],
   },
 
@@ -556,7 +579,6 @@ export const CONDITIONS = {
     // approved 25 Aug 2026.
     intro: [
       '**Many signs of cognitive decline can also be signs of illness.** A veterinary assessment is important to rule out other causes before assuming cognitive decline.',
-      'Cognitive decline usually happens gradually, which makes the small changes easy to miss. Regular check ins and filling out this questionnaire can help to highlight any trends or consistent changes worth flagging with your vet.',
     ],
     parameters: [
       // --- Disorientation -------------------------------------------------
@@ -919,7 +941,7 @@ export const CONDITIONS = {
       'Stiffness, lameness and willingness to move.',
     // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
     intro:
-      'Symptoms of arthritis are usually gradual. Changes are therefore easier to see over weeks to months, rather than day to day.',
+      'Symptoms of arthritis are usually gradual.',
     // PENDING ASH — confirm both instruments and the exact wording. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
@@ -957,6 +979,9 @@ export const CONDITIONS = {
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // The most severe rung carries the "(emergency)" marker; this is the
+        // line that appears under it.
+        emergencyMessage: SEEK_VET_ASAP,
         // PENDING ASH — all six levels drafted by me. Written to what an
         // owner can see from across a room: whether there is a limp, when it
         // shows, and whether it settles.
@@ -989,6 +1014,9 @@ export const CONDITIONS = {
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
         concernFrom: 4, // PENDING ASH
+        // The most severe rung carries the "(emergency)" marker; this is the
+        // line that appears under it.
+        emergencyMessage: SEEK_VET_ASAP,
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, one set for
         // both species: nothing in it is dog- or cat-specific, so the drafted
         // versions that differed at moderate-to-severe are gone. Only
@@ -1178,14 +1206,331 @@ export const CONDITIONS = {
     ],
   },
 
+  // Chronic kidney disease only. Acute kidney injury and lower urinary tract
+  // disease are deliberately out: a blocked cat is an emergency measured in
+  // hours, and putting it on a form designed for a condition tracked over
+  // months would be the wrong shape for both.
+  //
+  // Owner-observable signs only. No creatinine, no SDMA, no blood pressure —
+  // Ash's call, and the same principle the rest of the app follows: a
+  // question an owner cannot answer without phoning the vet is a question
+  // that makes the form feel like it is not for them.
   kidney: {
     key: 'kidney',
     label: 'Kidney Disease',
     Icon: KidneyOrganIcon,
+    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+    //
+    // Both sentences sit in `summary` rather than one here and one in
+    // `intro`, because they are one thought: here is what to watch for, and
+    // here is why you are the one watching. The page renders summary and
+    // intro as consecutive paragraphs, so splitting them would put a
+    // paragraph break in the middle of a point.
+    //
+    // Weight is deliberately not mentioned. It matters in kidney disease and
+    // it matters in most of the others too, which is exactly why it has its
+    // own Body Condition tile rather than a pointer from inside one disease.
     summary:
-      'Appetite, weight, drinking and urination, nausea and vomiting.',
-    comingSoon: true,
-    parameters: [],
+      'Loss of appetite, changes in drinking and urination, nausea and vomiting are all common side effects of kidney disease. '
+      + 'It is important to monitor these symptoms closely at home.',
+    // Its own paragraph deliberately. This is the point that home monitoring
+    // does not replace a vet, and running it on from the sentence above
+    // buries it.
+    //
+    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with a comma
+    // added after "home monitoring".
+    intro:
+      'Regular vet checks are important in conjunction with home monitoring, to monitor blood pressure, check urine concentration and perform blood tests to check the progression of kidney disease.',
+    // No citation. The questions below follow the signs of chronic kidney
+    // disease as they present at home; they are not taken from a published
+    // instrument, and crediting one the content does not actually draw on
+    // would be worse than crediting none.
+    parameters: [
+      // The BEAAAAPP appetite category, asked here rather than referenced.
+      //
+      // Referencing is what Heart Disease does, and for kidney it would be
+      // the wrong call: appetite is the single sign owners notice first in
+      // CKD, and an owner who opens this page without having done the daily
+      // assessment would end up with a kidney entry missing the measure that
+      // matters most in it. Because the answer is shared both ways, asking
+      // costs them nothing — whichever screen they reach first fills in the
+      // other.
+      {
+        key: 'appetite',
+        label: 'Appetite',
+        type: 'beap',
+        beapKey: 'appetite',
+        covers: 'appetite',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        concernFrom: 4, // PENDING ASH
+        // The top two rungs of the shared appetite scale already carry the
+        // emergency marker; this is the line that appears under them. Set on
+        // the kidney parameter, not on the scale in beapScales.js — the scale
+        // is shared with the daily assessment and with any other condition
+        // that borrows it, and what to do about a pet refusing food is not
+        // the same sentence in every context.
+        emergencyMessage: SEEK_VET_ASAP,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Appetite loss or reduction is one of the most common side effects of kidney disease. '
+          + 'It is a valuable indicator of how well {name} is feeling each day.',
+      },
+
+      // Drinking and urinating are both in the daily assessment, and both are
+      // asked again here in a sharper form — Ash's call.
+      //
+      // `distinct`, not `supersedes`, and the difference matters. Supersedes
+      // means the same question kept in step through a shared field, the way
+      // vomiting and appetite are. These are NOT the same question: the
+      // assessment asks whether drinking looks normal today, and this asks
+      // how it compares to what was normal for {name} before the kidneys
+      // were involved. Keeping them in step would force one answer to stand
+      // for both, and the two can honestly differ.
+      {
+        key: 'water_intake',
+        // "Drinking", not "Water Intake" — Ash's call. The measured question
+        // directly below it is "Daily Water Intake", and two questions one
+        // after the other whose names differ by one word is a reliable way to
+        // get an impression typed into the box meant for millilitres.
+        //
+        // The KEY stays `water_intake`: it is what every entry already
+        // logged is stored against, and renaming it would orphan them.
+        label: 'Drinking',
+        type: 'scale',
+        covers: 'waterIntake',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // The scale branch of evaluateParameter reads `emergencyMessage`, and
+        // a parameter without one draws the hazard colour with no words
+        // under it. The marker in the level text makes it an emergency; this
+        // is what tells the owner to act on it.
+        emergencyMessage: SEEK_VET_ASAP,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Increased thirst is a very common symptom of kidney disease. '
+          + 'Measuring daily water intake can help your vet to determine whether {name} is drinking excessively.',
+        levels: {
+          dog: [
+            'Drinking the amount {they} normally {do}.',
+            'Drinking slightly more than usual, or emptying the bowl a little sooner.',
+            'Noticeably more than usual. The bowl needs refilling more often than it used to.',
+            'Drinking a lot more. Seeking out other water — puddles, the toilet, taps.',
+            'Drinking almost constantly, and {their} bowl needs refilling several times a day.',
+            'Barely drinking at all, or cannot keep water down. (emergency)',
+          ],
+          cat: [
+            'Drinking the amount {they} normally {do}.',
+            'Drinking slightly more than usual, or visiting the bowl a little more often.',
+            'Noticeably more than usual. Spending longer at the bowl, or going back more often.',
+            'Drinking a lot more. Seeking out other water — taps, glasses, the shower, plant pots.',
+            'Drinking almost constantly, and {their} bowl needs refilling several times a day.',
+            'Barely drinking at all, or cannot keep water down. (emergency)',
+          ],
+        },
+      },
+
+      // The measured number, alongside the scale rather than instead of it.
+      //
+      // Two questions about water looks like duplication and is not. The
+      // scale is answerable by anyone — it asks how this compares to what was
+      // normal — and a millilitre figure is the one an owner can hand to a
+      // vet. Plenty of households cannot produce the number at all (two cats,
+      // one bowl; a dog who drinks from puddles), which is exactly why the
+      // scale has to stand on its own and the number has to be skippable.
+      // "Not sure" comes free with every parameter type, and the note at the
+      // bottom of the guide points at it deliberately.
+      {
+        key: 'water_intake_ml',
+        label: 'Daily Water Intake',
+        type: 'number',
+        // Graphed, for the same reason as RRR. The whole point of measuring
+        // in millilitres rather than judging it is the trend across days, and
+        // the guide on this question says exactly that.
+        chart: true,
+        unit: 'ml',
+        min: 0,
+        max: 10000,
+        step: 1,
+        placeholder: 'e.g. 450',
+        covers: 'waterIntake',
+        relationship: RELATIONSHIP.DISTINCT,
+        // NO THRESHOLD, deliberately. What counts as too much depends on body
+        // weight, and this form does not know what {name} weighs — a number
+        // that flags 800ml would be wrong for a Labrador and far too late for
+        // a cat. Trend over days is what this is for.
+        //
+        // PENDING ASH — if you want a threshold here it needs to be per kg,
+        // and the form would need {name}'s weight to apply it.
+        why:
+          'A measured amount is more useful to your vet than an impression, and the trend over several days is more useful than any single day.',
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her steps, verbatim,
+        // with sentence capitals and full stops added and "this will =" in
+        // step 3 written out as "is".
+        howToTitle: 'How To Measure Daily Water Intake',
+        howTo: [
+          'Measure how much (in ml) water goes into {name}\'s bowl at the start of the day. (Starting amount.)',
+          'Measure how much (in ml) is left after 24 hours. (Finishing amount.)',
+          'Subtract the finishing amount from the starting amount. This is {name}\'s daily water intake.',
+          'Do this over a few days to get an idea of the average daily intake.',
+        ],
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her note, verbatim.
+        howToFooter:
+          'Note: this can be difficult/impossible to measure if there are multiple pets in the house that share the same water bowl. If you cannot measure {name}\'s water intake, that\'s ok! Just select "Not sure".',
+      },
+
+      // Same reasoning as water intake above: the daily assessment asks whether
+      // urination looks normal, this asks how much and how often against
+      // {name}'s own baseline. Species-split because the evidence is
+      // different — a litter tray can be weighed and a garden cannot.
+      {
+        key: 'urination',
+        label: 'Urination',
+        type: 'scale',
+        covers: 'urination',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // The scale branch of evaluateParameter reads `emergencyMessage`, and
+        // a parameter without one draws the hazard colour with no words
+        // under it. The marker in the level text makes it an emergency; this
+        // is what tells the owner to act on it.
+        emergencyMessage: SEEK_VET_ASAP,
+        // PENDING ASH — wording.
+        why:
+          'Kidneys that are struggling to concentrate urine produce more of it, so drinking more and passing more usually go together. A sudden drop in how much is being passed matters just as much as an increase.',
+        levels: {
+          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+          // sentence capitals and full stops added.
+          //
+          // The top rung folds in complete anuria, the same way the cat list
+          // below does — which is what made the separate "Passing No Urine At
+          // All" question redundant.
+          dog: [
+            'No changes in urination patterns noted.',
+            'Urinating slightly more than usual, or asking to go out more frequently.',
+            'Urinating more often and larger amounts. Asking to go out more frequently, including at night time.',
+            'Urinating frequently throughout the day and night. Occasional accidents inside.',
+            'Urinating or trying to urinate constantly. Frequent accidents inside or incontinence.',
+            'Constantly trying to urinate but only passing small amounts, or not passing anything at all (end-stage kidney failure). (emergency)',
+          ],
+          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+          // sentence capitals and full stops added.
+          //
+          // The top rung folds in complete anuria, which is why the separate
+          // "Passing No Urine At All" question that used to sit at the bottom
+          // of this section has gone: it was asking again, less well, what
+          // this rung already asks.
+          cat: [
+            'No changes in urination noted lately.',
+            'Urinating slightly more often than usual.',
+            'Urinating more often than usual and larger amounts.',
+            'Urinating frequently, often large amounts at a time and sometimes outside of the litter tray.',
+            'Urinating constantly, often outside of the litter tray. May be incontinent.',
+            'Constant dribbling of urine/incontinence OR urinating less / complete lack of urination (end-stage kidney failure). (emergency)',
+          ],
+        },
+      },
+
+      // Nausea, separately from appetite.
+      //
+      // Declared against appetite even though the overlap check does not
+      // demand it — nothing in "nausea" matches its appetite pattern. It is
+      // declared anyway because the honest answer is that they are related
+      // and the decision was made on purpose: a pet can be nauseous and still
+      // eat, and can be off food for reasons that have nothing to do with
+      // nausea, so these do not collapse into one question.
+      {
+        key: 'nausea',
+        label: 'Nausea',
+        type: 'scale',
+        // The scale branch of evaluateParameter reads `emergencyMessage`, and
+        // a parameter without one draws the hazard colour with no words
+        // under it. The marker in the level text makes it an emergency; this
+        // is what tells the owner to act on it.
+        emergencyMessage: SEEK_VET_ASAP,
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Nausea is a common side effect of kidney disease. It is worth mentioning it to your vet as it can often be relieved with certain medications.',
+        levels: {
+          dog: [
+            'No signs of nausea.',
+            'Occasional lip licking or swallowing, but eating normally.',
+            'Lip licking, drooling or turning away from food at times.',
+            'Frequently drooling or lip licking. Approaches food then walks away from it.',
+            'Clearly nauseous for much of the day. Refusing food.',
+            'Constantly nauseous, drooling heavily, or retching without bringing anything up. (emergency)',
+          ],
+          cat: [
+            'No signs of nausea.',
+            'Occasional lip licking or swallowing, but eating normally.',
+            'Lip licking, drooling, or sitting hunched over the bowl without eating.',
+            'Frequently drooling or lip licking. Approaches food then walks away from it.',
+            'Clearly nauseous for much of the day. Refusing food.',
+            'Constantly nauseous, drooling heavily, or retching without bringing anything up. (emergency)',
+          ],
+        },
+      },
+
+      // The shared vomiting question, exactly as Gastrointestinal Disease
+      // uses it. Two records of how much a pet vomited on one day, free to
+      // disagree, is the problem this mechanism exists to prevent — and a pet
+      // with both kidney disease and a GI condition would otherwise have
+      // three.
+      {
+        key: 'vomiting',
+        label: 'Vomiting',
+        type: 'vomiting',
+        assessmentField: 'vomiting',
+        covers: 'vomiting',
+        relationship: RELATIONSHIP.SUPERSEDES,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        concernMessage:
+          'Worth mentioning to your vet. Vomiting secondary to kidney disease can often be relieved with certain medications.',
+        // PENDING ASH — wording.
+        emergencyMessage:
+          'Blood in the vomit needs veterinary attention as soon as possible.',
+      },
+
+      // PENDING ASH — the levels and the threshold. Uraemic signs in the mouth are
+      // specific to kidney disease and easy for an owner to check, which is
+      // an unusual combination and the reason this is here rather than folded
+      // into nausea.
+      {
+        key: 'mouth',
+        label: 'Breath And Mouth',
+        type: 'scale',
+        // The scale branch of evaluateParameter reads `emergencyMessage`, and
+        // a parameter without one draws the hazard colour with no words
+        // under it. The marker in the level text makes it an emergency; this
+        // is what tells the owner to act on it.
+        emergencyMessage: SEEK_VET_ASAP,
+        // Declared against breathing because the overlap check reads the word
+        // "breath" and asks. It is right to ask and the answer is no: this is
+        // halitosis, and the daily assessment's breathing question is about
+        // how hard {name} is working to breathe. Same five letters, nothing
+        // else in common — the same situation as the cardiac cough question.
+        covers: 'breathing',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026, for the first two
+        // sentences. The closing line is kept from the draft.
+        why:
+          'When the kidneys aren\'t functioning properly, waste products can build up. This can cause bad breath and sores in the mouth. It is worth a look every few days.',
+        levels: {
+          dog: [
+            'Breath and mouth look normal for {them}.',
+            'Breath is a little stronger than usual.',
+            'Noticeably unpleasant breath.',
+            'Strong breath, and the gums or tongue look red or sore.',
+            'Visible sores or ulcers in the mouth.',
+            'Refusing to let you look, drooling, or bleeding from the mouth. (emergency)',
+          ],
+        },
+      },
+
+    ],
   },
 }
 
@@ -1734,6 +2079,44 @@ export function summariseEntry(condition, values, species) {
   ))
 
   return { severity, emergencies, concerns, flags: emergencies + concerns, flagged, answered, unsure }
+}
+
+// How a NUMBER parameter is turned into a line.
+//
+// Charts left the condition pages on 29 Aug 2026 — calendars here, trends in
+// Overall Quality of Life. This is the deliberate exception, and it is
+// opt-in: a parameter draws a line only if it says `chart: true`.
+//
+// Numbers only, and that is the point rather than a limitation. The scales
+// were what made a condition page a column of lines nobody read — six rungs
+// plotted against time says little the calendar has not already said in
+// colour. A measured quantity is different: 24 breaths a minute in June and
+// 38 in August is a trend an owner cannot see any other way, and it is the
+// number a vet will want. Two questions in the whole app qualify, and if a
+// third ever does it will be a number too.
+export function numberChartFor(parameter, entries, species) {
+  if (!parameter.chart || parameter.type !== 'number') return null
+
+  const points = entries
+    .map((entry) => ({ date: entry.date, value: Number(entry.values?.[parameter.key]) }))
+    .filter((point) => Number.isFinite(point.value))
+  if (points.length === 0) return null
+
+  const values = points.map((point) => point.value)
+  // A little headroom either side so the highest reading is not drawn on the
+  // frame of the chart.
+  const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
+  const threshold = thresholdFor(parameter.concernAbove, species)
+
+  return {
+    points,
+    domain: [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad],
+    unit: parameter.unit ? ` ${parameter.unit}` : undefined,
+    threshold,
+    caption: threshold != null
+      ? `The dashed line is ${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}. Readings above it are worth mentioning to your vet, especially if they stay there.`
+      : null,
+  }
 }
 
 export const SEVERITY_COLOURS = {

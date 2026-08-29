@@ -72,6 +72,7 @@ export default function ChartView({
         unit={chart.unit}
         referenceValue={chart.threshold}
         referenceLabel={chart.thresholdLabel}
+        band={chart.band}
         markers={chart.markers ?? []}
         brush={brush}
         isAnimationActive={isAnimationActive}

@@ -22,6 +22,7 @@ import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import {
   SEVERITY,
   SEVERITY_COLOURS,
+  numberChartFor,
   SEVERITY_LABELS,
   conditionByKey,
   summariseEntry,
@@ -29,7 +30,7 @@ import {
 import { eventTypeByValue } from './conditionsData'
 import { resolveDefinition } from './cancerConfig'
 import { computeGeneralQolResult } from './scoring'
-import { BCS_MIN, BCS_MAX } from './bcsScale'
+import { BCS_MIN, BCS_MAX, BCS_IDEAL_MIN, BCS_IDEAL_MAX } from './bcsScale'
 
 export const CHART_GROUPS = {
   OVERALL: 'overall',
@@ -41,6 +42,7 @@ export const CHART_GROUPS = {
 export const OVERALL_COLOUR = '#C97B8C'
 export const BCS_COLOUR = '#5C6F8A'
 export const WEIGHT_COLOUR = '#7A9A7E'
+export const CONDITION_COLOUR = '#8A5C6F'
 // What the three colours on a calendar mean, in the owner's words rather
 // than the scoring vocabulary. Green covers both "nothing flagged" and the
 // mildly-reduced band that shares its colour, so "good day" is the honest
@@ -50,6 +52,24 @@ export const SEVERITY_KEY_ITEMS = [
   { colour: SEVERITY_COLOURS[SEVERITY.CONCERN], label: 'Average day' },
   { colour: SEVERITY_COLOURS[SEVERITY.EMERGENCY], label: 'Bad day' },
 ]
+
+// Recharts can only place a vertical line on an x value present in the
+// series, so an event on a day with no reading simply isn't drawn. It still
+// appears in the event list on the condition page — the marker is a bonus,
+// not the record.
+function markersFor(points, events) {
+  if (!events?.length) return undefined
+  const dates = new Set(points.map((point) => point.date))
+  const marks = events
+    .filter((event) => dates.has(event.date))
+    .map((event) => ({
+      date: event.date,
+      label: event.title,
+      short: event.type === 'medication_started' ? 'Rx' : '',
+      colour: eventTypeByValue(event.type)?.colour,
+    }))
+  return marks.length ? marks : undefined
+}
 
 // Which days carry a medical event, as one entry per day.
 //
@@ -237,10 +257,22 @@ function bodyCharts(bcsEntries) {
       // rescale to the data would make a move from 5 to 6 look like a
       // dramatic swing.
       domain: [BCS_MIN, BCS_MAX],
+      // The ideal range, shaded green, from the same constants the scoring
+      // uses. This chart is the one place in the app where the middle is
+      // best and both directions away from it are worse, and a caption
+      // saying so is a worse way to say it than showing it: "is the line in
+      // the green?" is answerable at a glance, and "is 6 better or worse
+      // than 4?" is not.
+      band: {
+        from: BCS_IDEAL_MIN,
+        to: BCS_IDEAL_MAX,
+        colour: SEVERITY_COLOURS[SEVERITY.OK],
+        label: 'Ideal',
+      },
       height: 180,
       caption:
-        '4–5 is ideal. Both lower and higher scores move away from ideal, so this chart reads '
-        + 'differently to the others — the middle is best, not the top.',
+        'The green band is the ideal range. Both lower and higher scores move away from ideal, so '
+        + 'this chart reads differently to the others — the middle is best, not the top.',
     })
   }
 
@@ -275,7 +307,7 @@ function bodyCharts(bcsEntries) {
 }
 
 // Everything a condition contributes to the registry: its summary calendar,
-// and nothing else.
+// plus a line for any parameter that has explicitly opted into one.
 //
 // Condition pages used to draw lines too — a concern count, one per graphable
 // parameter, and a borrowed line for each parameter the condition referenced
@@ -285,10 +317,17 @@ function bodyCharts(bcsEntries) {
 // above it does at a glance, while costing the owner a scroll past half a
 // dozen of them to reach the events list.
 //
-// So the calendar is the whole picture here: colour per day, what was
-// flagged on the day you tap. Trends over time are drawn where there is
-// enough data to make a trend mean something — the Overall Quality of Life
-// section — and that is now the only place in the app that draws a line.
+// So the calendar carries the picture here: colour per day, what was flagged
+// on the day you tap. Trends live in the Overall Quality of Life section.
+//
+// The exception, added 29 Aug 2026 on Ash's instruction, is a MEASURED
+// NUMBER — resting respiratory rate, daily water intake in millilitres.
+// Those were never the problem: the column of lines was six-rung scales
+// plotted against time, which say little the calendar has not already said
+// in colour. A number an owner went and counted is different, and it is the
+// one a vet will ask for. A parameter opts in with `chart: true`; see
+// numberChartFor in lib/conditions.js, which refuses anything that is not a
+// number.
 export function chartsForCondition({
   definition,
   entries = [],
@@ -355,6 +394,37 @@ export function chartsForCondition({
         }
       },
       severityKey: true,
+    })
+  }
+
+  // Any parameter that has opted into a line. Two in the whole app: Heart
+  // Disease's resting respiratory rate and Kidney Disease's measured daily
+  // water intake. Both are numbers, and numberChartFor refuses anything else.
+  //
+  // Event markers are carried here and nowhere else: a rate climbing for a
+  // week reads very differently when a diuretic was stopped four days ago.
+  for (const parameter of resolved.parameters) {
+    const config = numberChartFor(parameter, entries, species)
+    if (!config) continue
+    charts.push({
+      key: `${resolved.key}:${parameter.key}`,
+      group: CHART_GROUPS.CONDITION,
+      groupLabel,
+      conditionKey: resolved.key,
+      parameterKey: parameter.key,
+      label: parameter.label,
+      title: parameter.label,
+      kind: 'line',
+      data: config.points,
+      dataKey: 'value',
+      unit: config.unit,
+      colour: CONDITION_COLOUR,
+      domain: config.domain,
+      height: 180,
+      threshold: config.threshold,
+      thresholdLabel: config.threshold != null ? `${config.threshold}` : undefined,
+      markers: markersFor(config.points, events) ?? [],
+      caption: config.caption ?? undefined,
     })
   }
 
