@@ -66,6 +66,29 @@ export const REFERENCES = [
     full: 'Heart disease monitoring incorporates ideas from the American College of Veterinary Internal Medicine (ACVIM) consensus guidelines for the diagnosis and treatment of myxomatous mitral valve disease in dogs (Keene BW, Atkins CE, Bonagura JD, et al. J Vet Intern Med. 2019;33(3):1127-1140), and from published guidance on owner monitoring of sleeping and resting respiratory rate.',
   },
   {
+    key: 'pvas',
+    where: 'condition',
+    // PENDING ASH — confirm both instruments and the exact wording.
+    //
+    // TWO scales, not one. The canine PVAS does not apply to cats, and the
+    // feline instrument was published thirteen years later precisely because
+    // cats show pruritus differently. Crediting only the dog one would be
+    // crediting the wrong paper to half the users.
+    //
+    //   PVAS   Rybnicek J, Lau-Gillard PJ, Harvey R, Hill PB. "Further
+    //          validation of a pruritus severity scale for use in dogs."
+    //          Veterinary Dermatology 2009;20(2):115-122.
+    //   VAScat Colombo S, Sartori R, Schievano C, Borio S. "Development and
+    //          validation of an owner-assessed Visual Analog Scale for feline
+    //          pruritus severity scoring (VAScat)." Veterinary Dermatology
+    //          2022. PMID 35920060.
+    //
+    // Nothing from either is reproduced: the 0-10 owner-rated structure is
+    // followed and the wording at each level is drafted.
+    short: 'Incorporates assessment structures from published owner-assessed pruritus severity scales for dogs and cats.',
+    full: 'Itch scoring incorporates assessment structures from published owner-assessed pruritus severity scales — the Pruritus Visual Analog Scale (PVAS) in dogs (Rybnicek J, Lau-Gillard PJ, Harvey R, Hill PB, Veterinary Dermatology, 2009) and VAScat in cats (Colombo S, Sartori R, Schievano C, Borio S, Veterinary Dermatology, 2022).',
+  },
+  {
     key: 'wsava-bcs',
     where: 'app',
     short: 'Incorporates the WSAVA/Purina 9-point body condition scoring structure.',

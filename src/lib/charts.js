@@ -27,9 +27,10 @@ import {
   conditionByKey,
   summariseEntry,
 } from './conditions'
-import { eventTypeByValue } from './conditionsData'
+import { eventTypeByValue, todayIsoDate } from './conditionsData'
 import { resolveDefinition } from './cancerConfig'
 import { computeGeneralQolResult } from './scoring'
+import { fillPetText } from './petText'
 import { BCS_MIN, BCS_MAX, BCS_IDEAL_MIN, BCS_IDEAL_MAX } from './bcsScale'
 
 export const CHART_GROUPS = {
@@ -69,6 +70,67 @@ function markersFor(points, events) {
       colour: eventTypeByValue(event.type)?.colour,
     }))
   return marks.length ? marks : undefined
+}
+
+// Days on which a standing fact CHANGED, as one entry per day.
+//
+// The calendar already marks readings, medications, notes and events. What it
+// could not show was the shape of a diet trial: the day it started, and the
+// day each re-challenge food went in. Those are the two dates an owner and a
+// vet read the whole allergy record against — "the itch dropped three weeks
+// after the diet started, then jumped four days after the chicken" is the
+// point of keeping the record at all, and it was invisible.
+//
+// Driven by data, not a hard-coded list of keys: a parameter says
+// `milestone: { on, label, withAnswer }` and this finds the days its answer
+// first appears or changes. `on: 'date'` marks the DAY THE ANSWER NAMES — a
+// trial start date is about the day the trial started, not the day it was
+// typed in — and anything else marks the day the entry was saved.
+export function milestoneDayLabels(parameters = [], entries = []) {
+  const byDate = new Map()
+  const add = (date, text) => {
+    if (!date || !text) return
+    const existing = byDate.get(date)
+    if (existing?.includes(text)) return
+    byDate.set(date, existing ? `${existing} — ${text}` : text)
+  }
+
+  for (const parameter of parameters) {
+    const milestone = parameter.milestone
+    if (!milestone) continue
+
+    // `when` marks EVERY day carrying a particular answer, rather than the
+    // days the answer changed. A diet trial broken on Tuesday and again on
+    // Friday is two breaks, and change-detection would draw one mark and
+    // silently swallow the second — which is the opposite of what the owner
+    // needs to see when the trial's result is being judged.
+    //
+    // `detailFrom` pulls the follow-up's answer in, so the mark says what
+    // {name} actually had rather than only that something happened.
+    if (milestone.when != null) {
+      for (const entry of entries) {
+        if (entry?.values?.[parameter.key] !== milestone.when) continue
+        const detail = milestone.detailFrom ? entry.values?.[milestone.detailFrom] : null
+        add(entry.date, detail ? `${milestone.label}: ${detail}` : milestone.label)
+      }
+      continue
+    }
+
+    let previous = null
+    for (const entry of entries) {
+      const value = entry?.values?.[parameter.key]
+      if (value == null || value === '') continue
+      if (value === previous) continue
+      previous = value
+
+      // The answer goes in the label where the answer is the interesting part
+      // ("Re-challenge: chicken").
+      const detail = milestone.withAnswer ? `${milestone.label}: ${value}` : milestone.label
+      add(milestone.on === 'date' ? String(value) : entry.date, detail)
+    }
+  }
+
+  return byDate
 }
 
 // Which days carry a medical event, as one entry per day.
@@ -335,6 +397,11 @@ export function chartsForCondition({
   medications = [],
   species,
   config,
+  // Only for templating the names of flagged questions into the calendar's
+  // day text. Optional: without it the labels read as they are written, which
+  // is what happened until 29 Aug 2026 — the line under the calendar said
+  // "Worth watching: Has {name} Had A Seizure Today?", braces and all.
+  pet,
 }) {
   if (!definition) return []
 
@@ -359,9 +426,28 @@ export function chartsForCondition({
   // assessment's. Both belong on this condition's calendar.
   const noteDays = noteDayLabels(entries)
   const eventDays = eventDayLabels(events)
+  // Diet trial started, re-challenge food introduced — see milestoneDayLabels.
+  const milestoneDays = milestoneDayLabels(resolved.parameters, entries)
+
+  // An EXCEPTION LOG rather than a diary.
+  //
+  // Seizures is the only condition where not filling anything in is itself
+  // the good news. Every other condition's calendar is blank on a day nobody
+  // logged, because nobody knows how the pet was. Here, an owner who has
+  // nothing to report has nothing to report — and a page of grey squares
+  // between two seizures hides the very thing they want to see, which is the
+  // length of the gap.
+  //
+  // Green runs from the FIRST logged entry to today, and no further in either
+  // direction. Before the first entry the app genuinely does not know, and
+  // painting those days green would be inventing a seizure-free history. The
+  // future is not green for the same reason.
+  const assumesWell = definition.calendarAssumesWell === true
+  const firstLoggedDate = entries[0]?.date ?? null
+  const todayKey = todayIsoDate()
 
   if (summaries.length > 0 || medicationDays.size > 0
-      || noteDays.size > 0 || eventDays.size > 0) {
+      || noteDays.size > 0 || eventDays.size > 0 || milestoneDays.size > 0) {
     const summaryByDate = new Map(summaries.map((day) => [day.date, day]))
     charts.push({
       key: `${resolved.key}:calendar`,
@@ -376,24 +462,76 @@ export function chartsForCondition({
         const marker = medicationDays.get(dateKey) ?? null
         const note = noteDays.get(dateKey) ?? null
         const event = eventDays.get(dateKey) ?? null
-        if (!day?.severity && !marker && !note && !event) return null
+        const milestone = milestoneDays.get(dateKey) ?? null
+        if (!day?.severity && !marker && !note && !event && !milestone) {
+          // Nothing logged. On an exception log that means the good outcome,
+          // within the window the app can actually vouch for.
+          if (assumesWell && firstLoggedDate && dateKey >= firstLoggedDate && dateKey <= todayKey) {
+            return {
+              colour: SEVERITY_COLOURS[SEVERITY.OK],
+              title: definition.calendarUnloggedTitle ?? 'Nothing recorded',
+            }
+          }
+          return null
+        }
         // Names what was flagged, not just how many. "Worth watching — 1
         // flagged" told the owner there was something without saying what,
         // which on a three-month calendar meant opening days one at a time
         // to find it.
-        const flaggedNames = (day?.flagged ?? []).map((entry) => entry.label)
-        const severityTitle = day?.severity
-          ? `${SEVERITY_LABELS[day.severity]}${flaggedNames.length ? `: ${flaggedNames.join(', ')}` : ''}`
+        //
+        // A condition with its own key labels uses those instead of the
+        // generic ones, and lists only its EMERGENCY flags. On the seizure
+        // log the generic version read "Worth watching: Has Bailey Had A
+        // Seizure Today?" — a question quoted back as if it were a finding,
+        // where "Seizure" says the same thing and says it as a fact. The
+        // concern-level flag on such a log is the event itself, so naming it
+        // adds nothing; a red day still names what escalated it.
+        const keyLabels = definition.calendarKeyLabels
+        const named = (day?.flagged ?? [])
+          .filter((entry) => !keyLabels || entry.severity === SEVERITY.EMERGENCY)
+          .map((entry) => ({ text: fillPetText(entry.label, pet), isFinding: entry.isFinding === true }))
+        // Question names are a list; statements are sentences.
+        //
+        // Where every flag on the day carries a finding (see findingFor in
+        // lib/conditions.js) the line reads "The diet trial was broken —
+        // Bailey had half a dental chew. Bailey's stool — Very soft." Commas
+        // would run those two together into one unparseable clause. Where
+        // any flag is still a bare question name, the old comma list is
+        // right, because "Appetite. Drinking." is not a sentence either.
+        const asFindings = named.length > 0 && named.every((entry) => entry.isFinding)
+        const namedText = asFindings
+          ? named.map((entry) => (/[.!?]$/.test(entry.text) ? entry.text : `${entry.text}.`)).join(' ')
+          : named.map((entry) => entry.text).join(', ')
+        const severityWord = day?.severity
+          ? (keyLabels?.[day.severity] ?? SEVERITY_LABELS[day.severity])
+          : null
+        const severityTitle = severityWord
+          ? `${severityWord}${named.length ? `: ${namedText}` : ''}`
           : null
         return {
           colour: day?.severity ? SEVERITY_COLOURS[day.severity] : null,
-          title: [severityTitle, marker, note, event].filter(Boolean).join(' — '),
+          title: [severityTitle, marker, note, event, milestone].filter(Boolean).join(' — '),
           marker,
           note,
-          event,
+          // Drawn with the same mark as a medical event: starting a diet trial
+          // IS an event in the case, and a fourth kind of dot would be a new
+          // thing for the owner to learn for no new meaning.
+          event: event ?? milestone,
         }
       },
       severityKey: true,
+      // Wording per condition where the default is wrong. "Good day" is right
+      // for a quality of life calendar; on an epilepsy log green means one
+      // specific thing, and saying so is the difference between a colour the
+      // owner reads and a colour they interpret.
+      severityKeyItems: definition.calendarKeyLabels
+        ? [
+          { colour: SEVERITY_COLOURS[SEVERITY.OK], label: definition.calendarKeyLabels.ok },
+          { colour: SEVERITY_COLOURS[SEVERITY.CONCERN], label: definition.calendarKeyLabels.concern },
+          { colour: SEVERITY_COLOURS[SEVERITY.EMERGENCY], label: definition.calendarKeyLabels.emergency },
+        ]
+        : undefined,
+      caption: definition.calendarCaption ?? undefined,
     })
   }
 
@@ -451,6 +589,7 @@ export function buildChartRegistry({
   eventsByCondition = {},
   configByCondition = {},
   species,
+  pet,
 } = {}) {
   // The assessment and the pain log are saved together but keep separate
   // notes fields, so a day's note can be in either. Built once and shared by
@@ -473,6 +612,7 @@ export function buildChartRegistry({
         events: eventsByCondition[definition.key] ?? [],
         medications,
         species,
+        pet,
         config: configByCondition[definition.key],
       }),
     )

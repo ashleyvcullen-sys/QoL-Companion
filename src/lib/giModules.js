@@ -1,4 +1,4 @@
-import { RELATIONSHIP, SEVERITY } from './conditions'
+import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
 
 // Gastrointestinal disease, composed the way cancer is.
 //
@@ -17,48 +17,9 @@ import { RELATIONSHIP, SEVERITY } from './conditions'
 // Asked of every GI pet, whatever they have. These are the measures that mean
 // something across the whole system and that a vet will want a trend of.
 export const GI_CORE_PARAMETERS = [
-  {
-    key: 'faecal_consistency',
-    label: 'Stool Consistency',
-    type: 'scale',
-    // Distinct from the assessment's stool question, not a duplicate of it.
-    // That one is a 0-10 impression with symptom chips; this is a described
-    // scale where each rung is a recognisable stool, which is what a vet
-    // manages a chronic enteropathy on. Declaring `covers` keeps them charted
-    // together without keeping them in step.
-    covers: 'stool',
-    relationship: RELATIONSHIP.DISTINCT,
-    concernFrom: 4, // PENDING ASH
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026, wording and severities both.
-    // Severe and very severe are emergencies: the stool itself is not the
-    // problem, what leaves with it is.
-    emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
-    // PENDING ASH — all six levels drafted by me, following the shape of a
-    // published faecal scoring chart without reproducing one. Written to what
-    // an owner sees when they pick it up.
-    levels: {
-      dog: [
-        'Firm and formed. Holds its shape and leaves nothing behind.',
-        'Formed but softer. Holds its shape, though it leaves a mark.',
-        'Soft and losing shape. Log-shaped but flattens, and is hard to pick up cleanly.',
-        'Very soft, piles rather than holds shape. Cannot pick up cleanly.',
-        'Mostly watery. Cannot be picked up. (emergency)',
-        'Entirely liquid. (emergency)',
-      ],
-      // PENDING ASH — the cat wording is mine, following the structure of the
-      // dog levels above rather than inventing a second way of describing the
-      // same thing. Same six rungs, same escalation through the scoop test:
-      // hard to scoop cleanly, cannot scoop cleanly, cannot be scooped.
-      cat: [
-        'Firm and formed. Holds its shape when scooped from the tray.',
-        'Formed but softer. Holds its shape, though it sticks to the litter.',
-        'Soft and losing shape. Clumps with the litter and is hard to scoop cleanly.',
-        'Very soft, piles rather than holds shape. Cannot scoop cleanly.',
-        'Mostly watery. Cannot be scooped. (emergency)',
-        'Entirely liquid. (emergency)',
-      ],
-    },
-  },
+  // The shared definition, so Allergies and GI cannot drift apart on what
+  // a stool looks like. See SHARED_PARAMETERS in lib/conditions.js.
+  sharedParameter('stool_consistency'),
   {
     key: 'stool_frequency',
     label: 'Stool Frequency',
@@ -77,6 +38,29 @@ export const GI_CORE_PARAMETERS = [
       { value: 'decreased', label: 'Decreased', severity: SEVERITY.CONCERN },
     ],
     concernMessage: 'Worth noting for your vet, particularly if this has been going on for more than a day or two.', // PENDING ASH
+    // Moved here from the constipation module on 29 Aug 2026, Ash's call.
+    //
+    // It was a standalone question that every GI owner monitoring
+    // constipation answered every day, including the ones whose pet had just
+    // been. Asked only of the owners who have said stool frequency is DOWN,
+    // it is the obvious next question rather than a daily chore — and the
+    // number is what tells a vet whether this is a slow day or an
+    // obstruction.
+    //
+    // No threshold on it, and none is lost: the old `concernAbove: 2` gave
+    // amber, and answering "Decreased" above already does. Follow-ups are
+    // never scored, so the flag lives on the parent where it belongs.
+    followUp: {
+      key: 'days_since_stool',
+      when: 'decreased',
+      label: 'Days Since The Last Stool',
+      type: 'number',
+      unit: 'days',
+      min: 0,
+      max: 14,
+      step: 1,
+      placeholder: 'e.g. 1',
+    },
   },
   {
     key: 'vomiting',
@@ -204,27 +188,33 @@ export const GI_CORE_PARAMETERS = [
     // floors the whole day's summary to red.
     emergencyMessage: 'A hunched, stretching dog with a tense, painful tummy needs to be seen today. Contact your vet or the nearest emergency clinic.', // PENDING ASH
   },
-  {
-    key: 'aspiration_signs',
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
-    //
-    // A core question rather than a megaoesophagus one, on her instruction.
-    // Aspiration follows any significant vomiting or regurgitation — a
-    // pancreatitis patient or a chronic enteropathy flare can do it too — so
-    // asking it only of the one condition would have missed the owners most
-    // likely to see it without expecting it.
-    //
-    // Temperature dropped from the question: an owner cannot take one, and
-    // asking for a sign they have no way of checking makes the whole
-    // question feel like it is not for them. Coughing and noisy breathing
-    // are both things anyone can hear from across a room.
-    label: 'Coughing Or Noisy Breathing',
-    type: 'yesno',
-    emergencyWhen: 'yes',
-    why: 'These are signs that food may have entered the airways instead of the GI tract (aspiration). This can occur after vomiting or regurgitation of food.',
-    emergencyMessage: 'Seek veterinary attention as soon as possible.',
-  },
 ]
+
+// Aspiration, asked only of the conditions where food comes back up.
+//
+// It was a core question until 29 Aug 2026, asked of every GI owner every
+// day — including someone monitoring anal glands, who has no reason to be
+// asked daily whether their dog is coughing. Ash's call: it belongs to the
+// conditions that involve vomiting or reflux, and nowhere else.
+//
+// Defined once and referenced from each module rather than pasted into
+// several. parametersForGi deduplicates by key, so an owner who has selected
+// both reflux and pancreatitis is asked it once.
+//
+// APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
+//
+// Temperature was dropped from the question: an owner cannot take one, and
+// asking for a sign they have no way of checking makes the whole question
+// feel like it is not for them. Coughing and noisy breathing are both things
+// anyone can hear from across a room.
+const ASPIRATION_SIGNS = {
+  key: 'aspiration_signs',
+  label: 'Coughing Or Noisy Breathing',
+  type: 'yesno',
+  emergencyWhen: 'yes',
+  why: 'These are signs that food may have entered the airways instead of the GI tract (aspiration). This can occur after vomiting or regurgitation of food.',
+  emergencyMessage: 'Seek veterinary attention as soon as possible.',
+}
 
 // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, verbatim.
 //
@@ -477,27 +467,24 @@ export const GI_MODULES = {
     ],
   },
 
+  // NOW ADDS NO QUESTIONS OF ITS OWN, and that is worth knowing before
+  // anyone wonders whether something is broken.
+  //
+  // Megacolon went first (29 Aug 2026): the question it added was effort in
+  // the tray, which the core Straining question already asks of both species
+  // on six levels with the same emergency at the top. "Days Since The Last
+  // Stool" moved the same day to sit under the core Stool Frequency question,
+  // where it appears only if the owner answers "Decreased" — so every owner
+  // gets it when it is relevant, whether or not they ticked this module.
+  //
+  // Kept as a selectable label rather than deleted, because selecting it is
+  // still meaningful: it records what the owner is monitoring {name} for and
+  // it appears in the setup summary. If that is not wanted, deleting the
+  // module here is all it takes — nothing else references it.
   constipation: {
     key: 'constipation',
-    // Megacolon had its own module here until 29 Aug 2026 and has gone on
-    // Ash's instruction. Nothing was lost by it: the question it added was
-    // effort in the tray, and the core Straining question already asks that
-    // of both species, on six levels, with the same emergency at the top.
     label: 'Constipation',
-    parameters: [
-      {
-        key: 'days_since_stool',
-        label: 'Days Since The Last Stool',
-        type: 'number',
-        unit: 'days',
-        min: 0,
-        max: 14,
-        step: 1,
-        placeholder: 'e.g. 1',
-        concernAbove: 2, // PENDING ASH
-        concernMessage: 'Worth ringing your vet. The longer stool stays in, the harder it gets and the harder it is to pass.', // PENDING ASH
-      },
-    ],
+    parameters: [],
   },
 
   megaoesophagus: {
@@ -531,7 +518,9 @@ export const GI_MODULES = {
         concernMessage: 'Worth recording for your vet. Feeding position, food consistency and meal size can often be adjusted to reduce this.', // PENDING ASH
         emergencyMessage: 'Contact your vet as soon as possible.',
       },
-    ],
+          // Regurgitation IS this condition, and aspiration is what kills these patients — the module intro says so.
+      ASPIRATION_SIGNS,
+],
   },
 
   pancreatitis: {
@@ -551,7 +540,9 @@ export const GI_MODULES = {
         why: 'Front legs down and bottom up, held for longer than a stretch. It is a way of easing tummy pain, and is worth telling your vet about.', // PENDING ASH
         concernMessage: 'This position is often a sign of tummy pain. Ring your vet today, particularly if {name} is also off {their} food.', // PENDING ASH
       },
-    ],
+          // Vomiting is cardinal here, and a vomiting patient can aspirate.
+      ASPIRATION_SIGNS,
+],
   },
 
   epi: {
@@ -609,7 +600,9 @@ export const GI_MODULES = {
           ],
         },
       },
-    ],
+          // Reflux brings stomach contents to the back of the throat, which is the other route into the airway.
+      ASPIRATION_SIGNS,
+],
   },
 
   // Selected at setup, but has no questions of its own. Cancer of the gut is

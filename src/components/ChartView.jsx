@@ -30,10 +30,15 @@ export default function ChartView({
   // What the colours mean. Only the calendars carry it — a line chart draws
   // one line in one colour, and a green/amber/red key under it would be
   // explaining something that isn't there.
+  //
+  // A chart may supply its own wording. Seizures does: "good day" and "bad
+  // day" are the right words for an overall quality of life calendar and the
+  // wrong ones for an epilepsy log, where green means a specific thing —
+  // no seizure — rather than a generally decent day.
   const severityKey = chart.severityKey
     ? (
       <p className="chart-key chart-severity-key">
-        {SEVERITY_KEY_ITEMS.map((item) => (
+        {(chart.severityKeyItems ?? SEVERITY_KEY_ITEMS).map((item) => (
           <span key={item.label} className="chart-severity-item">
             <span className="chart-severity-swatch" style={{ background: item.colour }} />
             {item.label}

@@ -373,6 +373,7 @@ export default function ExportReport() {
     eventsByCondition,
     configByCondition: configsByCondition(conditions),
     species: pet?.species,
+    pet,
   })
 
   const chartGroups = groupCharts(charts)

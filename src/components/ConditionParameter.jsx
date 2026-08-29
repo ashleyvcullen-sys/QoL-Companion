@@ -13,6 +13,8 @@ import {
   SEVERITY,
   UNSURE,
   WHY_LABEL,
+  followUpVisible,
+  followUpsOf,
   textForSpecies,
   VCOG_GRADE_LABELS,
   VCOG_SCORES,
@@ -21,8 +23,11 @@ import {
   vcogColourForIndex,
 } from '../lib/conditions'
 import { fillPetText } from '../lib/petText'
+import { todayIsoDate } from '../lib/conditionsData'
+import { elapsedLabel } from '../lib/monitoringStatus'
 
 const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
+
 
 // The shape VomitingPage expects. A condition form that has never been
 // answered has no value at all, and the page destructures its own props.
@@ -154,18 +159,14 @@ export default function ConditionParameter({
   // no pet-specific wording and no pet to hand.
   const optionTexts = levelsFor(parameter, species).map((text) => fillPetText(text, pet))
 
-  const followUp = parameter.followUp
-  // `when` matches one exact answer, which is right for yes/no and choice.
-  // A graded scale needs a threshold instead — "tell us where" should appear
-  // for every score at or above the concerning level, not only for one of
-  // them. UNSURE and blank both fail the comparison, which is what we want.
-  const followUpVisible = Boolean(
-    followUp &&
-      (followUp.whenAtLeast != null
-        ? value !== '' && value !== UNSURE && Number(value) >= followUp.whenAtLeast
-        : value === followUp.when),
-  )
-  const followUpValue = followUp ? (values[followUp.key] ?? '') : ''
+  // Which follow-ups are on screen, and what has been answered in each.
+  //
+  // The visibility rule lives in lib/conditions.js, not here: the day summary
+  // and the export apply the same rule to decide what was asked, and three
+  // copies of it is three chances for the form and the record to disagree
+  // about whether a question existed.
+  const visibleFollowUps = followUpsOf(parameter).filter((f) => followUpVisible(f, value))
+  const followUpValueOf = (followUp) => values[followUp.key] ?? ''
 
   return (
     <div className="condition-parameter">
@@ -260,6 +261,36 @@ export default function ConditionParameter({
         </>
       )}
 
+      {parameter.type === 'date' && (
+        <>
+          <input
+            type="date"
+            value={isBlanked ? '' : value}
+            disabled={isBlanked}
+            // No future dates. Every date this type asks for is something that
+            // has already happened — the day a diet trial started, the day a
+            // protein was introduced — and a trial that begins next Thursday
+            // would quietly produce a negative number of weeks below.
+            max={todayIsoDate()}
+            onChange={(e) => set(parameter.key, e.target.value)}
+          />
+          {/* How long ago, worked out for them.
+              
+              The whole reason to ask for the date rather than "how many weeks
+              has it been?" is that nobody counts weeks accurately from
+              memory, and an elimination trial is judged on exactly that
+              number. Asked once, correct forever. */}
+          {parameter.showElapsed && !isBlanked && value && (
+            <p className="assessment-hint">{elapsedLabel(value, todayIsoDate())}</p>
+          )}
+          <ChoiceButtons
+            options={[UNSURE_OPTION]}
+            value={isBlanked ? value : null}
+            onChange={(next) => set(parameter.key, value === next ? '' : next)}
+          />
+        </>
+      )}
+
       {/* The assessment's own vomiting question, rendered here. Not a copy of
           it — literally the same component, so the two forms can never drift
           into asking subtly different things. */}
@@ -273,9 +304,39 @@ export default function ConditionParameter({
         />
       )}
 
+      {/* "Not sure" comes free on every question, and `noUnsure` opts out.
+          
+          One question needs to: the allergy form asks what {name} has been
+          diagnosed with and offers "Not known yet" as a real answer, which
+          then sat beside an automatic "Not sure" meaning the same thing. Two
+          ways to say "I don't know", one of which drives the rest of the form
+          and one of which does nothing, is a choice nobody should have to
+          make. */}
+      {/* Free text as a QUESTION IN ITS OWN RIGHT.
+          
+          `text` existed only as a follow-up type until 29 Aug 2026, so a
+          top-level text parameter rendered its label, its subtext and then
+          nothing at all — no box to type in. Three questions were in that
+          state: which elimination diet {name} is on, which food is being
+          re-challenged, and the seizure notes.
+          
+          No "Not sure" chip, unlike every other type. On a free-text box the
+          owner can already write "not sure", and a chip that blanks the field
+          would take their words away to say something they could have typed. */}
+      {parameter.type === 'text' && (
+        <textarea
+          rows={2}
+          value={value}
+          placeholder={plain(parameter.placeholder ?? '')}
+          onChange={(e) => set(parameter.key, e.target.value)}
+        />
+      )}
+
       {parameter.type === 'choice' && (
         <ChoiceButtons
-          options={[...petTextOptions(parameter.options, pet), UNSURE_OPTION]}
+          options={parameter.noUnsure
+            ? petTextOptions(parameter.options, pet)
+            : [...petTextOptions(parameter.options, pet), UNSURE_OPTION]}
           value={value}
           onChange={(next) => set(parameter.key, next)}
         />
@@ -340,8 +401,8 @@ export default function ConditionParameter({
 
       <Verdict verdict={verdict} pet={pet} />
 
-      {followUpVisible && (
-        <div className="condition-followup">
+      {visibleFollowUps.map((followUp) => (
+        <div key={followUp.key} className="condition-followup">
           <span className="condition-parameter-label">
             {fillPetText(followUp.label, pet)}
           </span>
@@ -349,10 +410,30 @@ export default function ConditionParameter({
           {followUp.type === 'text' && (
             <textarea
               rows={2}
-              value={followUpValue}
+              value={followUpValueOf(followUp)}
               placeholder={plain(followUp.placeholder)}
               onChange={(e) => set(followUp.key, e.target.value)}
             />
+          )}
+
+          {/* A number, with its unit beside it. The same shape the top-level
+              number question uses, minus the "doesn't apply" chip: a
+              follow-up only appears because its parent answer already made it
+              apply. */}
+          {followUp.type === 'number' && (
+            <div className="input-with-unit">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={followUp.min}
+                max={followUp.max}
+                step={followUp.step ?? 1}
+                value={followUpValueOf(followUp)}
+                placeholder={plain(followUp.placeholder ?? '')}
+                onChange={(e) => set(followUp.key, e.target.value)}
+              />
+              {followUp.unit && <span className="input-unit">{plain(followUp.unit)}</span>}
+            </div>
           )}
 
           {followUp.type === 'choice' && (
@@ -363,13 +444,13 @@ export default function ConditionParameter({
                   ...(followUp.allowOther ? [{ value: 'other', label: followUp.otherLabel ?? 'Other' }] : []),
                   UNSURE_OPTION,
                 ]}
-                value={followUpValue}
+                value={followUpValueOf(followUp)}
                 onChange={(next) => set(followUp.key, next)}
               />
               {/* Stored under its own key rather than overwriting the choice,
                   so "they picked Other" and "here is what they wrote" stay
                   separate facts in the record. */}
-              {followUpValue === 'other' && (
+              {followUpValueOf(followUp) === 'other' && (
                 <textarea
                   rows={2}
                   value={values[`${followUp.key}_other`] ?? ''}
@@ -401,8 +482,9 @@ export default function ConditionParameter({
               </Link>
             </>
           )}
+        
         </div>
-      )}
+      ))}
     </div>
   )
 }

@@ -73,3 +73,33 @@ export function monitoringStatus({ definition, schedule, lastDate, today }) {
     overdueBy: dueIn <= 0 ? -dueIn : 0,
   }
 }
+
+// "Started 6 weeks and 2 days ago (14/07/2026)".
+//
+// Weeks rather than days, because the thing being counted is measured in
+// weeks: an elimination trial runs at least eight of them, and "58 days"
+// makes the reader do arithmetic to find out where they are.
+//
+// Lives here rather than in the component that first needed it, because two
+// screens now show it — the date question itself, and the condition form on
+// every later day, where the question has stopped being asked.
+export function elapsedLabel(dateIso, today) {
+  const ms = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${dateIso}T00:00:00Z`)
+  if (!Number.isFinite(ms)) return null
+  const days = Math.floor(ms / 86400000)
+  const [year, month, day] = String(dateIso).split('-')
+  if (!year || !month || !day) return null
+  const shown = `${day}/${month}/${year}`
+
+  if (days < 0) return `Set for ${shown}.`
+  if (days === 0) return 'Started today.'
+  if (days === 1) return `Started yesterday (${shown}).`
+  if (days < 14) return `Started ${days} days ago (${shown}).`
+
+  const weeks = Math.floor(days / 7)
+  const spare = days % 7
+  const weekText = spare === 0
+    ? `${weeks} weeks`
+    : `${weeks} weeks and ${spare} day${spare === 1 ? '' : 's'}`
+  return `Started ${weekText} ago (${shown}).`
+}

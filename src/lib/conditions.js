@@ -23,13 +23,30 @@
 //               | 'emergency'.
 //   'yesno'   — Yes / No. `emergencyWhen` or `concernWhen` names the answer
 //               that matters.
+//   'text'    — a free-text box. No "Not sure" chip: the owner can write it.
+//   'date'    — a day that has already happened. Stored ISO, shown
+//               DD/MM/YYYY, and never scored. `showElapsed` adds "started 6
+//               weeks ago" underneath, for the questions where the elapsed
+//               time is the point of asking.
 //
-// Any parameter may carry a `followUp`, shown only when the parent answer
-// matches `followUp.when`. Follow-up answers are stored under their own key.
+// A parameter may carry `dependsOn: { key, equals }` or
+// `dependsOn: { key, equalsAny: [...] }`, and is only asked when it is met —
+// see visibleParameters, which resolves the whole chain rather than one step.
+//
+// Any parameter may carry a `followUp`, or several as `followUps`. Each is
+// shown only when the parent answer matches `when` (one exact answer),
+// `whenAny` (any of several) or `whenAtLeast` (a score at or above a
+// threshold) — or always, with `always: true`, for the ones that are really
+// part of the question rather than a reaction to its answer.
+//
+// Follow-up answers are stored under their own key. Read the list with
+// followUpsOf() rather than either field directly, so a parameter written
+// with one and a parameter written with three behave identically everywhere.
 
 // Imported as named components rather than built here: this file is .js, and
 // Vite does not transform JSX in a .js file.
 import {
+  AllergyOrganIcon,
   BoneOrganIcon,
   CancerOrganIcon,
   CognitiveOrganIcon,
@@ -116,6 +133,33 @@ export function isAsked(parameter) {
   return parameter?.relationship !== RELATIONSHIP.REFERENCE
 }
 
+// A parameter's follow-ups, however they were written.
+//
+// `followUp` (one) came first and most parameters still use it; `followUps`
+// (a list) exists because Skin And Coat needs two — a photo and a description
+// — and "which of these two is the real one?" is not a question the data
+// should have to answer.
+export function followUpsOf(parameter) {
+  if (Array.isArray(parameter?.followUps)) return parameter.followUps
+  return parameter?.followUp ? [parameter.followUp] : []
+}
+
+// Whether a follow-up should be on screen, given the parent's answer.
+//
+// Lives here rather than in the component so that the form, the day summary
+// and the export cannot disagree about which questions were asked.
+export function followUpVisible(followUp, value) {
+  if (!followUp) return false
+  if (followUp.always) return true
+  if (followUp.whenAtLeast != null) {
+    return value !== '' && value !== UNSURE && Number(value) >= followUp.whenAtLeast
+  }
+  if (followUp.whenAny != null) {
+    return value !== '' && value !== UNSURE && followUp.whenAny.includes(value)
+  }
+  return value === followUp.when
+}
+
 export function askedParameters(parameters = []) {
   return parameters.filter(isAsked)
 }
@@ -127,21 +171,148 @@ export function askedParameters(parameters = []) {
 // not on a diet trial, and asking it anyway produces a "no" that reads as a
 // failure rather than as not applicable.
 //
-// Deliberately one level deep and one condition wide. A dependency graph
-// would be more powerful and much harder to reason about, and every case so
-// far is "this question, only if that answer".
+// One step, but see visibleParameters for the chain: this answers "is THIS
+// parameter's own precondition met?" and nothing more.
+//
+// `equals` matches one answer; `equalsAny` matches any of several. The second
+// exists because the allergy form asks what {name} has been diagnosed with —
+// food, environmental, both or unknown — and the diet and gut questions
+// belong to three of those four. Writing that as "not environmental" would be
+// the same rule stated as a negative, and a negative precondition is much
+// harder to read on the parameter it governs.
 export function dependencyMet(parameter, values) {
   const on = parameter?.dependsOn
   if (!on) return true
-  return values?.[on.key] === on.equals
+  const value = values?.[on.key]
+  if (Array.isArray(on.equalsAny)) return on.equalsAny.includes(value)
+  return value === on.equals
 }
 
 // The questions to actually put on screen, given what has been answered so
 // far. Everything downstream — scoring, charts, the day's answers — reads the
 // values that exist rather than this list, so a question that disappears
 // takes its answer out of the summary with it.
+// --- Standing answers ------------------------------------------------------
+//
+// Most condition questions are about today. A few are not: what {name} has
+// been diagnosed with, which diet the trial uses, the day it started. Those
+// are facts about the case, and asking them again every single day is both
+// tedious and a good way to end up with three different answers to one
+// question across a week of entries.
+//
+// Two flags describe that:
+//
+//   carryForward  the last answer given is copied into today's entry, so the
+//                 record for each day is complete and the owner types nothing.
+//   askOnce       once carried, the question leaves the daily form. It does
+//                 NOT leave the record, and the screen offers a way back to
+//                 it — see the standing-answers card in ConditionMonitoring.
+//
+// carryForward without askOnce is the "is she STILL on the trial?" case: the
+// previous answer is offered as the default and the owner confirms or changes
+// it, with `repeatLabel` rewording the question for the second time onwards.
+
+// The most recent answer to each carry-forward question, from entries BEFORE
+// the one being filled in.
+//
+// Walks backwards and takes the first real answer it finds, so a gap — a day
+// where the owner skipped the whole form — does not lose a standing fact.
+export function carriedAnswers(parameters = [], previousEntries = []) {
+  const carried = {}
+  for (const parameter of parameters) {
+    if (!parameter.carryForward) continue
+    // The parameter's own answer AND any follow-up that qualifies it.
+    //
+    // Without the follow-ups this carried "Other" forward and dropped the
+    // owner's typed answer to "what has she been diagnosed with?" — so the
+    // question stopped being asked (askOnce) while the only part of the
+    // answer worth reading disappeared after the first entry.
+    const keys = [parameter.key, ...followUpsOf(parameter).map((followUp) => followUp.key)]
+    for (const key of keys) {
+      for (let i = previousEntries.length - 1; i >= 0; i -= 1) {
+        const value = previousEntries[i]?.values?.[key]
+        if (value != null && value !== '') {
+          carried[key] = value
+          break
+        }
+      }
+    }
+  }
+  return carried
+}
+
+// The parameters as the FORM should show them, given what has been carried.
+//
+// Only the form: the record and the scoring still see every parameter, so a
+// question that has stopped being asked is still reported with its answer.
+export function formParameters(parameters = [], carried = {}, { editStanding = false } = {}) {
+  return parameters
+    .filter((parameter) => editStanding || !(parameter.askOnce && carried[parameter.key] != null))
+    .map((parameter) => (
+      parameter.repeatLabel && carried[parameter.key] != null
+        ? { ...parameter, label: parameter.repeatLabel }
+        : parameter
+    ))
+}
+
+// The questions that have stopped being asked, with the answers standing for
+// them — what the "you told us this already" card is built from.
+export function standingAnswers(parameters = [], carried = {}) {
+  return parameters
+    .filter((parameter) => parameter.askOnce && carried[parameter.key] != null)
+    .map((parameter) => {
+      const value = carried[parameter.key]
+      // A follow-up that qualifies the standing answer belongs on the card
+      // beside it. "Diagnosed with: Other" tells the owner nothing they did
+      // not already know; "Other — flea allergy dermatitis" is the answer
+      // they actually gave.
+      const detail = followUpsOf(parameter)
+        .filter((followUp) => followUpVisible(followUp, value))
+        .map((followUp) => carried[followUp.key])
+        .find((entry) => typeof entry === 'string' && entry.trim() !== '')
+      return { parameter, value, detail: detail ? detail.trim() : null }
+    })
+}
+
+// The questions to actually put on screen, dependencies resolved ALL THE WAY
+// UP rather than one step.
+//
+// The bug this fixes, found 29 Aug 2026: the allergy form asks whether the
+// pet is on a diet trial, then — only if yes — whether the owner is
+// re-challenging, then — only if yes — which food, when, and how the pet
+// reacted. An owner who worked through all of that and then changed the first
+// answer to "no" still saw the last three questions. Their own precondition
+// ("re-challenging = yes") was still satisfied, because the stored answer
+// does not disappear when the question that asked it does.
+//
+// So a parameter is visible only if its own precondition is met AND the
+// parameter it depends on is itself visible. Answers are deliberately NOT
+// cleared: an owner who flips back to "yes" finds their work still there, and
+// summariseEntry applies this same rule, so a hidden answer stays out of the
+// record for as long as it is hidden.
+//
+// Cycle-guarded. A dependsOn loop would be a data error rather than something
+// to support, but it should show up as a hidden question rather than as a
+// hung form.
 export function visibleParameters(parameters = [], values = {}) {
-  return askedParameters(parameters).filter((parameter) => dependencyMet(parameter, values))
+  const asked = askedParameters(parameters)
+  const byKey = new Map(asked.map((parameter) => [parameter.key, parameter]))
+
+  const isVisible = (parameter, seen) => {
+    if (!dependencyMet(parameter, values)) return false
+    const parentKey = parameter.dependsOn?.key
+    if (!parentKey) return true
+    // A dependency on something this form does not ask — a question from
+    // another module, say — is treated as met. dependencyMet has already
+    // checked the stored value, which is the best this can know.
+    const parent = byKey.get(parentKey)
+    if (!parent) return true
+    if (seen.has(parentKey)) return false
+    seen.add(parentKey)
+    return isVisible(parent, seen)
+  }
+
+  return asked.filter((parameter) => isVisible(parameter, new Set([parameter.key])))
 }
 
 // --- Shared parameters -----------------------------------------------------
@@ -275,6 +446,76 @@ export const SHARED_PARAMETERS = {
         { value: 'dry', label: 'Dry or hacking', severity: SEVERITY.CONCERN },
       ],
     },
+  },
+  // Stool consistency, shared between Gastrointestinal Disease and Allergies.
+  //
+  // Lifted here from giModules.js on 29 Aug 2026, when the allergy form
+  // needed it too. Writing a second stool scale would have been two described
+  // clinical scales for one thing, free to drift — the precise problem this
+  // registry exists to stop, and a bad one to have it on, because a vet
+  // managing food-responsive enteropathy is reading both forms.
+  stool_consistency: {
+    key: 'faecal_consistency',
+    label: 'Stool Consistency',
+    type: 'scale',
+    // Distinct from the assessment's stool question, not a duplicate of it.
+    // That one is a 0-10 impression with symptom chips; this is a described
+    // scale where each rung is a recognisable stool, which is what a vet
+    // manages a chronic enteropathy on. Declaring `covers` keeps them charted
+    // together without keeping them in step.
+    covers: 'stool',
+    relationship: RELATIONSHIP.DISTINCT,
+    concernFrom: 4, // PENDING ASH
+    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026, wording and severities both.
+    // Severe and very severe are emergencies: the stool itself is not the
+    // problem, what leaves with it is.
+    emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
+    // PENDING ASH — all six levels drafted by me, following the shape of a
+    // published faecal scoring chart without reproducing one. Written to what
+    // an owner sees when they pick it up.
+    levels: {
+      dog: [
+        'Firm and formed. Holds its shape and leaves nothing behind.',
+        'Formed but softer. Holds its shape, though it leaves a mark.',
+        'Soft and losing shape. Log-shaped but flattens, and is hard to pick up cleanly.',
+        'Very soft, piles rather than holds shape. Cannot pick up cleanly.',
+        'Mostly watery. Cannot be picked up. (emergency)',
+        'Entirely liquid. (emergency)',
+      ],
+      // PENDING ASH — the cat wording is mine, following the structure of the
+      // dog levels above rather than inventing a second way of describing the
+      // same thing. Same six rungs, same escalation through the scoop test:
+      // hard to scoop cleanly, cannot scoop cleanly, cannot be scooped.
+      cat: [
+        'Firm and formed. Holds its shape when scooped from the tray.',
+        'Formed but softer. Holds its shape, though it sticks to the litter.',
+        'Soft and losing shape. Clumps with the litter and is hard to scoop cleanly.',
+        'Very soft, piles rather than holds shape. Cannot scoop cleanly.',
+        'Mostly watery. Cannot be scooped. (emergency)',
+        'Entirely liquid. (emergency)',
+      ],
+    },
+  },
+
+  // THE SAME QUESTION as the Overall Quality of Life Assessment, not a
+  // per-condition version of it. `assessmentField` names the column it
+  // shares: answering it here fills it in there and the other way round.
+  //
+  // Three conditions ask it now — gastrointestinal, kidney and allergies —
+  // and each wants its own wording for what a "yes" means, which is what
+  // `overrides` is for. What must NOT vary is the question itself: three
+  // records of how much a pet vomited on one day, free to disagree, is the
+  // problem this whole mechanism exists to avoid.
+  vomiting: {
+    key: 'vomiting',
+    label: 'Vomiting',
+    type: 'vomiting',
+    assessmentField: 'vomiting',
+    covers: 'vomiting',
+    relationship: RELATIONSHIP.SUPERSEDES,
+    // PENDING ASH — wording. Overridden per condition where there is
+    // something more specific to say.
+    emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.',
   },
 }
 
@@ -476,14 +717,283 @@ export const CONDITIONS = {
   // one. Deliberately carry NO clinical content: no parameters, no
   // thresholds, no wording that could be mistaken for reviewed guidance.
   // `comingSoon` is what stops them being openable.
+  // An episode log wearing the shape of a daily form.
+  //
+  // Every other condition asks "how has {name} been?" on a schedule. Epilepsy
+  // does not work like that: there is nothing to report for six weeks and
+  // then something at three in the morning. So the first question is whether
+  // a seizure happened at all, and everything else hangs off a `dependsOn`
+  // and simply is not shown on a day when the answer is no. An owner opening
+  // this on a quiet day answers one question and leaves.
+  //
+  // One record per day, which is what the entries table stores. A cluster is
+  // captured by "how many" rather than by several records — an owner counting
+  // three seizures before dawn is not going to fill in three forms, and the
+  // count is the number that matters clinically anyway.
   seizures: {
     key: 'seizures',
     label: 'Seizures',
     Icon: SeizureOrganIcon,
     summary:
       'Includes seizures caused by primary epilepsy, brain lesions, metabolic disease and infection.',
-    comingSoon: true,
-    parameters: [],
+    // The calendar reads as an exception log, not a diary — see
+    // calendarAssumesWell in lib/charts.js. Every day from the first entry to
+    // today is green unless a seizure was recorded on it, which means the
+    // owner only has to open this when something happens.
+    calendarAssumesWell: true,
+    // PENDING ASH — wording.
+    calendarKeyLabels: {
+      ok: 'Seizure-free',
+      concern: 'Seizure',
+      emergency: 'Seizure with emergency signs',
+    },
+    // PENDING ASH — wording. Shown under the calendar itself, because the
+    // rule it describes is not one an owner could infer from the colours.
+    calendarUnloggedTitle: 'Seizure-free',
+    calendarCaption:
+      'You do not need to fill this in every day. Any day you have not recorded a seizure on is shown as seizure-free, and so is any day you recorded "no". Only the days with a seizure need an entry.',
+    // Two paragraphs, safety first.
+    //
+    // The ordering is deliberate: someone opening this page in the middle of
+    // a seizure is not reading it top to bottom, and the sentence that keeps
+    // them from being bitten has to be the one their eye lands on. The
+    // explanation of what the section is for can wait — it is still there for
+    // the calm reading.
+    //
+    // Bold rather than a red panel. The red standing alert on the first
+    // question already carries the 5-minute and cluster thresholds, and two
+    // red panels one above the other read as two emergencies rather than one
+    // warning and one emergency.
+    intro: [
+      // PENDING ASH — wording.
+      '**Keep yourself safe.** {name} will not be fully aware of what {they} {are} doing before, during or after a seizure. Keep your face and hands away from {their} head — {they} may bite without meaning to.',
+      // PENDING ASH — wording.
+      'You do not need to fill this in every day — only on a day {name} has a seizure. Every other day is counted as seizure-free, so the gaps between seizures show up on the calendar without you doing anything.',
+      // PENDING ASH — wording.
+      'What your vet needs most is how long it lasted, how many there were, and how long {name} took to come back to {them}self afterwards — so those are asked first, in the order you are most likely to remember them.',
+    ],
+    parameters: [
+      {
+        key: 'had_seizure',
+        label: 'Has {name} Had A Seizure Today?',
+        type: 'yesno',
+        concernWhen: 'yes',
+        // Shown whatever is answered, and before anything is answered —
+        // unlike every other alert in the app, which responds to a choice.
+        //
+        // It has to be standing because the two things that turn a seizure
+        // into an emergency are BOTH knowable before the owner has typed
+        // anything: how long this one has gone on for, and whether it is the
+        // second today. Someone watching a seizure right now needs the five
+        // minute rule in front of them, not three questions further down.
+        //
+        // PENDING ASH — the thresholds and the wording. Five minutes and more
+        // than one in 24 hours are the conventional figures; confirm they are
+        // the ones you want owners acting on.
+        standingAlert:
+          'A seizure lasting more than 5 minutes, or more than one seizure in 24 hours, is an emergency. Contact your vet or the nearest emergency service straight away.',
+        // PENDING ASH — wording.
+        why:
+          'Answer no on days nothing happens and there is nothing else to fill in. A record of the quiet days is what makes the pattern visible.',
+        // PENDING ASH — wording.
+        concernMessage:
+          'Recorded. Tell your vet about any seizure, even a short one that {name} recovered from quickly.',
+        // Offered on every seizure day, not only the first.
+        //
+        // A video is the single most useful thing an owner can bring to a
+        // neurology appointment: what a seizure looked like is very hard to
+        // describe and very easy to film, and by the appointment it is weeks
+        // in the past. It sits on this question rather than on "what did it
+        // look like" because that one already carries the "which part of the
+        // body" box, and a parameter has room for one follow-up.
+        followUp: {
+          key: 'seizure_video',
+          when: 'yes',
+          type: 'photo',
+          // PENDING ASH — wording.
+          label: 'Show your vet',
+          hint: 'If you can film a seizure safely, do — from a distance, and only if {name} is not left alone to do it. A video shows your vet things that are almost impossible to describe, and it matters most early on, before the seizures are under control.',
+        },
+      },
+
+      {
+        key: 'seizure_count',
+        label: 'How Many Seizures Today?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // PENDING ASH — wording.
+        why:
+          'More than one seizure in 24 hours is called a cluster, and it is treated differently to a single seizure.',
+        // Severities here describe ESCALATION, not the event.
+        //
+        // Every option was amber to begin with, which meant a single
+        // straightforward seizure lit the calendar with six or seven
+        // "concerns" — what it looked like, whether she was aware, how long
+        // recovery took. Those are descriptions of one event, not six
+        // separate findings, and listing them all under "Worth watching"
+        // buried the one that mattered.
+        //
+        // So the day flags ONCE, on "has there been a seizure", and after
+        // that only a genuine escalation adds anything: a cluster, over five
+        // minutes, or not recovered a day later.
+        //
+        // PENDING ASH — the severities. Two or more in a day is the
+        // conventional cluster definition and is marked as an emergency here.
+        options: [
+          { value: 'one', label: 'One', severity: SEVERITY.OK },
+          { value: 'two', label: 'Two', severity: SEVERITY.EMERGENCY },
+          { value: 'three_plus', label: 'Three or more', severity: SEVERITY.EMERGENCY },
+        ],
+        // PENDING ASH — wording.
+        emergencyMessage:
+          'More than one seizure in 24 hours is a cluster and needs veterinary attention today. Contact your vet or the nearest emergency service.',
+      },
+
+      {
+        // Bands rather than a typed number, deliberately. Nobody holds a
+        // stopwatch to a seizure, and a form asking for one gets a guess
+        // dressed up as a measurement. The bands are drawn around the five
+        // minute threshold because that is the only boundary that changes
+        // what the owner should do.
+        key: 'seizure_duration',
+        label: 'How Long Did The Longest One Last?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // PENDING ASH — wording.
+        why:
+          'Seizures almost always feel far longer than they are. If you can, look at a clock when it starts — but an honest estimate is much better than nothing.',
+        // PENDING ASH — the bands and their severities.
+        options: [
+          { value: 'under_1', label: 'Less than a minute', severity: SEVERITY.OK },
+          { value: '1_2', label: '1 to 2 minutes', severity: SEVERITY.OK },
+          { value: '2_5', label: '2 to 5 minutes', severity: SEVERITY.OK },
+          { value: 'over_5', label: 'More than 5 minutes', severity: SEVERITY.EMERGENCY },
+          { value: 'still_going', label: 'Still going now', severity: SEVERITY.EMERGENCY },
+        ],
+        // PENDING ASH — wording.
+        emergencyMessage:
+          'A seizure lasting more than 5 minutes needs emergency treatment. Contact your vet or the nearest emergency service now.',
+      },
+
+      {
+        key: 'seizure_type',
+        label: 'What Did It Look Like?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        allowOther: true,
+        otherLabel: 'Describe it yourself',
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Written to be answerable
+        // by someone who has never heard the words focal or generalised.
+        why:
+          'Whether a seizure involves the whole body or only part of it helps your vet narrow down possible causes.',
+        // PENDING ASH — the options and their severities.
+        options: [
+          { value: 'generalised', label: 'Whole body — collapsed, stiff or paddling', severity: SEVERITY.OK },
+          { value: 'focal', label: 'One part only — face, one limb, twitching', severity: SEVERITY.OK },
+          { value: 'started_focal', label: 'Started in one part, then spread to the whole body', severity: SEVERITY.OK },
+        ],
+        // Only for the two answers where "which part?" is a real question.
+        // A whole-body seizure has no part to name, and asking anyway invites
+        // an answer that means nothing.
+        followUp: {
+          key: 'seizure_type_detail',
+          whenAny: ['focal', 'started_focal'],
+          // PENDING ASH — wording.
+          label: 'Which part of the body?',
+          type: 'text',
+          placeholder: 'e.g. left side of the face twitching, then the front leg',
+        },
+      },
+
+      {
+        key: 'consciousness',
+        label: 'Was {name} Aware Of You During It?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Whether a pet is conscious through a seizure is one of the things a vet will ask.',
+        // PENDING ASH — the options and their severities.
+        options: [
+          { value: 'aware', label: 'Aware — responded to me', severity: SEVERITY.OK },
+          { value: 'unaware', label: 'Not aware — no response at all', severity: SEVERITY.OK },
+          { value: 'unsure_aware', label: 'Hard to tell', severity: SEVERITY.OK },
+        ],
+      },
+
+      {
+        // Declared against urination even though the overlap check does not
+        // demand it — neither "bladder" nor "bowels" matches its patterns.
+        // Declared anyway because the honest answer is that it touches both
+        // domains, and the decision is deliberate: this is a description of
+        // one event, not a report on how {name} has been toileting, and the
+        // two must not be kept in step.
+        key: 'incontinence',
+        label: 'Did {name} Lose Control Of {their} Bladder Or Bowels?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        covers: 'urination',
+        relationship: RELATIONSHIP.DISTINCT,
+        // PENDING ASH — wording.
+        why:
+          'This is common during a seizure and is not something {name} can help. It is worth recording because it helps your vet judge how severe the seizure was.',
+        // PENDING ASH — the options and their severities.
+        options: [
+          { value: 'neither', label: 'No', severity: SEVERITY.OK },
+          { value: 'bladder', label: 'Yes — passed urine', severity: SEVERITY.OK },
+          { value: 'bowels', label: 'Yes — passed a stool', severity: SEVERITY.OK },
+          { value: 'both', label: 'Yes — both', severity: SEVERITY.OK },
+        ],
+      },
+
+      {
+        key: 'warning_signs',
+        label: 'Was There Any Warning Beforehand?',
+        type: 'yesno',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // PENDING ASH — wording.
+        why:
+          'Some pets behave oddly in the minutes or hours before a seizure — clingy, restless, hiding, staring. Recognising it can give you time to get somewhere safe.',
+        followUp: {
+          key: 'warning_signs_detail',
+          when: 'yes',
+          label: 'What did you notice?',
+          type: 'text',
+          placeholder: 'e.g. followed me from room to room for an hour, would not settle',
+        },
+      },
+
+      {
+        key: 'recovery',
+        label: 'How Long To Get Back To Normal?',
+        type: 'choice',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // PENDING ASH — wording.
+        why:
+          'The period after a seizure is called the post-ictal phase. Pacing, blindness, hunger, disorientation and clinginess are all normal in it, and how long it lasts is worth tracking — a recovery that gets longer over months is a change your vet will want to know about.',
+        // PENDING ASH — the bands and their severities.
+        options: [
+          { value: 'minutes', label: 'A few minutes', severity: SEVERITY.OK },
+          { value: 'under_hour', label: 'Under an hour', severity: SEVERITY.OK },
+          { value: 'hours', label: 'Several hours', severity: SEVERITY.OK },
+          { value: 'over_day', label: 'More than a day, or not back to normal yet', severity: SEVERITY.EMERGENCY },
+        ],
+        // PENDING ASH — wording.
+        emergencyMessage:
+          'A pet who has not returned to normal more than a day after a seizure needs to be seen. Contact your vet.',
+      },
+
+      {
+        key: 'seizure_notes',
+        label: 'Anything Else You Noticed?',
+        type: 'text',
+        dependsOn: { key: 'had_seizure', equals: 'yes' },
+        // PENDING ASH — wording.
+        why:
+          'What {they} {were} doing beforehand, the time of day, anything different about this one. Small details are what turn a list of dates into a pattern.',
+        placeholder: 'e.g. 2am, asleep on the sofa beforehand, wet {them}self during it',
+      },
+    ],
   },
 
   // Composed rather than declared. `composed: true` is what tells the app to
@@ -1215,6 +1725,618 @@ export const CONDITIONS = {
   // Ash's call, and the same principle the rest of the app follows: a
   // question an owner cannot answer without phoning the vet is a question
   // that makes the form feel like it is not for them.
+  // A fixed core with one gated block, rather than a composed condition.
+  //
+  // Allergic pets look broadly alike whatever the trigger — itch, ears, feet,
+  // skin — so there is no useful setup question to ask up front. The one
+  // thing that genuinely differs is whether the owner is running an
+  // elimination diet trial, and that hangs off a single yes/no rather than a
+  // setup screen. Same mechanism the seizure form uses to hide everything on
+  // a quiet day.
+  allergies: {
+    key: 'allergies',
+    label: 'Allergies and Skin Disease',
+    Icon: AllergyOrganIcon,
+    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her paragraphs, with
+    // sentence capitals and full stops added. Split across summary and intro
+    // so they render as separate paragraphs rather than one block.
+    //
+    // Opening paragraph replaced 29 Aug 2026 on her instruction: it now leads
+    // with skin disease rather than with allergy, and names the non-allergic
+    // causes. One typo corrected — she wrote "cause by", set here as
+    // "caused by".
+    summary:
+      'Most skin disease is due to underlying allergies, caused by food, environment or a combination of both. '
+      + 'Other kinds of skin disease may be caused by parasites, immune-mediated processes or dietary deficiencies.',
+    intro: [
+      // "particularly in cats" rather than a species-keyed string: the intro
+      // paragraphs are rendered through PetText, which fills tokens but does
+      // not resolve a { dog, cat } object, so a species-split here would print
+      // as [object Object]. Naming the species in the sentence is both
+      // correct and useful — a dog owner reading it learns something too.
+      'Signs of allergies include itching, over-grooming (particularly in cats), paw licking/chewing, ear infections '
+      + 'and sometimes gastrointestinal issues. '
+      + 'It is important to intervene early if any of these symptoms are noticed, to prevent inflammation and infection.',
+      'Speak to your vet team about options for allergy diagnosis and management, and use the following questionnaire to track how {name} is responding to treatments.',
+    ],
+    // PENDING ASH — see the 'pvas' entry in lib/references.js.
+    citation: referenceText('pvas'),
+    // Shown above the "is {name} on any medication?" question, because in
+    // skin disease the answer is very often yes-but-they-did-not-think-so.
+    //
+    // PENDING ASH — wording.
+    medicationNote:
+      'Please include topical treatments as well as tablets — medicated shampoos, mousses, sprays, ear drops and creams all count.',
+    parameters: [
+      // Asked first, and it decides what the rest of the form contains.
+      //
+      // An environmentally allergic pet has no diet trial to run and no
+      // food-driven gut signs to record, so those questions are not merely
+      // unnecessary for that owner — they are misleading, because a form that
+      // asks about a diet trial implies one is part of the plan.
+      //
+      // "Not known yet" gets the food questions, deliberately. Not knowing is
+      // the state most owners are in at the start, and the diet trial is how
+      // that question gets answered.
+      {
+        key: 'allergy_type',
+        label: 'What Has {name} Been Diagnosed With?',
+        type: 'choice',
+        // A standing fact, not a daily question. Asked once, carried into
+        // every later entry, and changeable from the card at the top of the
+        // form.
+        carryForward: true,
+        askOnce: true,
+        // PENDING ASH — wording.
+        why:
+          'This decides which questions you are asked. If you are not sure yet, choose "Not known yet" — a food trial is usually how that gets answered, and you can change this at any time.',
+        // Informational: it describes what is being monitored rather than
+        // reporting a sign, so it must not colour the day or count towards
+        // the day having been assessed.
+        informational: true,
+        // No automatic "Not sure": "Not known yet" below IS that answer, and
+        // it is the one that decides which questions follow. See noUnsure in
+        // ConditionParameter.
+        noUnsure: true,
+        options: [
+          { value: 'food', label: 'Food allergy' },
+          { value: 'environmental', label: 'Environmental allergy' },
+          { value: 'both', label: 'Both' },
+          { value: 'unknown', label: 'Not known yet' },
+          // Added 29 Aug 2026 on Ash's instruction, and it follows the
+          // opening paragraph she rewrote the same day: not all skin disease
+          // is allergic. Parasites, immune-mediated disease and dietary
+          // deficiency all bring an owner to this section, and until now the
+          // only honest answer available to them was "Not known yet" — which
+          // is not what they mean and which put them onto a food trial path.
+          { value: 'other', label: 'Other' },
+        ],
+        // PENDING ASH — one decision to confirm. "Other" does NOT open the
+        // diet-trial questions (see on_diet_trial's dependsOn below, which
+        // lists food, both and unknown). The reasoning: a pet diagnosed with
+        // something other than an allergy has no food trial to run, so the
+        // form stays on the skin, ear, paw and sleep questions. If you would
+        // rather "Other" behaved like "Not known yet" and offered the trial,
+        // say so and it is a one-word change.
+        followUp: {
+          key: 'allergy_type_other',
+          when: 'other',
+          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026 ("allow user to enter
+          // condition if known"), phrased as a question.
+          label: 'What has {they} been diagnosed with?',
+          type: 'text',
+          placeholder: 'e.g. flea allergy dermatitis, mange',
+        },
+      },
+      {
+        // The 0-10 itch score, delivered as the app's six-rung scale.
+        //
+        // A `scale` scores index x 2, so these six rungs ARE 0, 2, 4, 6, 8
+        // and 10 — the number a dermatologist recognises, on the picker every
+        // other question in the app uses. The steps are even rather than
+        // continuous, which is the one difference from a true visual analog
+        // scale and is worth knowing when comparing to a clinic's own score.
+        key: 'itch',
+        // PENDING ASH — wording. What the calendar's day line says when this
+        // flags; see findingFor. The level text itself is yours — this only
+        // names which part of {name} it was about.
+        finding: 'Itching — {answer}',
+        // Spelled "pruritus" — Ash wrote "prutitis" in the instruction, which
+        // is the common typo for it. Worth flagging rather than silently
+        // matching, since it is the term that goes to the vet.
+        label: 'Itching (Pruritus Score)',
+        type: 'scale',
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Species-keyed: the cat
+        // version carries Ash's point about over-grooming, which is the whole
+        // reason a cat's itch gets missed.
+        why: {
+          dog:
+            'This is the single most useful thing you can record. It helps determine whether treatments are working or not.',
+          cat:
+            'This is the single most useful thing you can record. It helps determine whether treatments are working or not. '
+            + 'In cats this often presents as over-grooming a particular area — often the tummy or the limbs.',
+        },
+        // PENDING ASH — ALL TWELVE LEVELS ARE MINE, AND THEY ARE NOT THE
+        // VALIDATED DESCRIPTORS.
+        //
+        // Dogs and cats have SEPARATE validated instruments, which is why
+        // these are split rather than sharing one list with a dog fallback:
+        //
+        //   dogs  Pruritus Visual Analog Scale (PVAS) — Rybnicek, Lau-Gillard,
+        //         Harvey & Hill, Veterinary Dermatology 2009.
+        //   cats  VAScat — Colombo, Sartori, Schievano & Borio, Veterinary
+        //         Dermatology 2022. Built for cats specifically because they
+        //         show pruritus as increased licking, increased scratching,
+        //         or both — so the dog wording is the wrong question for a
+        //         cat, not merely a less precise one.
+        //
+        // Both are behind journal paywalls, so their published anchor wording
+        // could not be read, and reproducing it verbatim would be a rights
+        // question in any case. What is written below follows the SHAPE of
+        // those scales — an owner-rated 0-10 built on observable behaviour —
+        // with wording of my own. Until you have checked it against the real
+        // instruments this must not be described to anyone as a PVAS or
+        // VAScat score.
+        //
+        // Both instruments are also CONTINUOUS: the owner marks a point on a
+        // line. These are six fixed rungs at 0, 2, 4, 6, 8 and 10. Ask me for
+        // a slider if you want the input to match as well as the wording.
+        levels: {
+          dog: [
+            'Not scratching, licking or chewing at all.',
+            'A little more than usual, but only now and then, and never for long.',
+            'Scratching or licking several times a day. Stops if distracted.',
+            'Scratching, licking or chewing often through the day. Interrupts what {they} {are} doing.',
+            'Almost constant when awake, and hard to interrupt. Waking at night to scratch.',
+            'Scratching or chewing without stopping. Damaging the skin, or cannot rest at all. (emergency)',
+          ],
+          // Licking as well as scratching throughout, deliberately. A cat's
+          // itch usually shows first as over-grooming — and an owner watching
+          // only for scratching will score a badly itchy cat as a 0.
+          cat: [
+            'Not scratching, and grooming no more than {they} need to.',
+            'Grooming or scratching a little more than usual, now and then.',
+            'Grooming or scratching several times a day. Stops if distracted.',
+            'Long bouts of grooming or scratching through the day. Fur thinning where {they} {have} been licking.',
+            'Almost constantly over-grooming or scratching while awake. Hair loss or thinning may be noted.',
+            'Constantly over-grooming or scratching, causing hair loss and damage to the skin. (emergency)',
+          ],
+        },
+        emergencyMessage: SEEK_VET_ASAP,
+      },
+
+      {
+        key: 'skin',
+        label: 'Skin And Coat',
+        type: 'scale',
+        // PENDING ASH — wording. What the calendar's day line says when this
+        // flags; see findingFor. The level text itself is yours — this only
+        // names which part of {name} it was about.
+        finding: 'Skin and coat — {answer}',
+        // Grooming is the daily assessment's hygiene domain, and a coat in
+        // poor condition can flag there too. Different question, though: that
+        // one asks whether {name} is keeping {them}self clean, and this asks
+        // what the skin underneath looks like. A well-groomed dog can have a
+        // red, sore belly and a matted dog can have perfectly healthy skin.
+        covers: 'hygiene',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // PENDING ASH — wording.
+        why:
+          'Look at the belly, armpits, groin and the inside of the back legs — the thin-haired places where redness shows first.',
+        // PENDING ASH — all six levels drafted by me.
+        levels: {
+          dog: [
+            'Skin and coat look normal.',
+            'Slightly pink in one or two of the thin-haired areas.',
+            'Clearly red in places, or the coat is thinning where {they} {have} been licking.',
+            'Red and sore in several places. Bald patches, scabs or spots.',
+            'Widespread redness, hair loss, scabbing or a hot spot.',
+            'Raw, weeping or bleeding skin, or an open sore spreading by the hour. (emergency)',
+          ],
+        },
+        emergencyMessage: SEEK_VET_ASAP,
+        // Both always offered, not gated on a score — Ash's call.
+        //
+        // The photo used to appear only from moderate upwards, which meant
+        // the owner could not record the early picture that later comparisons
+        // are judged against. And "where" is not a reaction to the severity:
+        // a small red patch in one armpit and the same redness spread over
+        // the whole belly score the same on the rungs above and are not the
+        // same finding.
+        followUps: [
+          {
+            key: 'skin_notes',
+            always: true,
+            // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+            label: 'Additional notes',
+            type: 'text',
+            placeholder: 'e.g. both armpits and the belly, red with small scabs',
+          },
+          {
+            key: 'skin_photo',
+            always: true,
+            type: 'photo',
+            label: 'Show your vet',
+            // PENDING ASH — wording.
+            hint: 'Skin changes fast, and by the appointment it may look completely different. A photo now gives your vet something to compare against, and something to judge from if they cannot see {name} today.',
+          },
+        ],
+      },
+
+      {
+        key: 'ears',
+        label: 'Ears',
+        type: 'scale',
+        // PENDING ASH — wording. What the calendar's day line says when this
+        // flags; see findingFor. The level text itself is yours — this only
+        // names which part of {name} it was about.
+        finding: 'Ears — {answer}',
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Ears are the most common thing to flare alongside allergic skin, and an ear infection left alone gets harder to treat. Head shaking and scratching the ears are worth acting on early.',
+        // PENDING ASH — all six levels drafted by me.
+        levels: {
+          dog: [
+            'Ears look and smell normal.',
+            'The odd head shake or scratch at an ear.',
+            'Shaking or scratching at the ears regularly. Slightly pink inside.',
+            'Red inside, or a smell, or some discharge.',
+            'Sore to touch, obvious discharge or a strong smell. May be tilting the head to one side.',
+            'Crying out when the ear is touched, or losing balance. The ear flap may look fluid-filled or puffy (aural haematoma). (emergency)',
+          ],
+        },
+        emergencyMessage: SEEK_VET_ASAP,
+      },
+
+      {
+        key: 'paws_face',
+        label: 'Paws And Face',
+        type: 'scale',
+        // PENDING ASH — wording. What the calendar's day line says when this
+        // flags; see findingFor. The level text itself is yours — this only
+        // names which part of {name} it was about.
+        finding: 'Paws and face — {answer}',
+        // Dogs only, on Ash's instruction. A cat's itch shows as
+        // over-grooming, which the Itching question above now names
+        // explicitly for cats — asking a cat owner separately about paw
+        // licking and face rubbing was asking the dog's version of a question
+        // they have already answered.
+        species: 'dog',
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Licking or chewing the paws and rubbing the face are very common signs of allergies and itch.',
+        // PENDING ASH — all six levels drafted by me.
+        levels: {
+          dog: [
+            'Not licking the feet or rubbing the face at all.',
+            'Occasional licking at a paw, or the odd face rub.',
+            'Licking the feet most days. Brown staining between the toes.',
+            'Licking or chewing the feet for long stretches. Rubbing the face on the floor or furniture.',
+            'Feet red, sore or swollen between the toes. Face rubbing constantly.',
+            'Chewing the feet raw, or the face is swollen. (emergency)',
+          ],
+        },
+        emergencyMessage: SEEK_VET_ASAP,
+      },
+
+      {
+        key: 'itch_sleep',
+        label: 'Sleep Disturbed By Itching',
+        type: 'scale',
+        // PENDING ASH — wording. What the calendar's day line says when this
+        // flags; see findingFor. The level text itself is yours — this only
+        // names which part of {name} it was about.
+        finding: 'Sleep — {answer}',
+        // Dogs only, on Ash's instruction — the same call as Paws And Face
+        // above. A cat sleeps in short bouts through the day and night and
+        // often somewhere the owner cannot see, so "was she woken by it?" is
+        // a question most cat owners genuinely cannot answer, and one they
+        // would answer wrongly rather than leave blank.
+        species: 'dog',
+        // The daily assessment asks how {name} slept. This asks whether
+        // ITCHING is what disturbed it, which is a different finding and one
+        // of the better measures of how bad a flare really is — an owner
+        // underestimates daytime scratching and never misses being woken by
+        // it at 3am.
+        covers: 'sleep',
+        relationship: RELATIONSHIP.DISTINCT,
+        concernFrom: 4, // PENDING ASH
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Being woken by scratching is one of the clearest signs that a flare is genuinely bad, and it is worth telling your vet about.',
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+        // sentence capitals and full stops added and her "scratch/lick"
+        // written out as "scratch or lick" to read as a sentence.
+        //
+        // Not split by species: licking is if anything the more important
+        // half for a cat, and the wording holds for both without change.
+        levels: {
+          dog: [
+            'Sleeps through the night. Does not wake up to scratch or lick at all.',
+            'Scratches or licks once or twice, but then goes back to sleep.',
+            'Wakes to scratch or lick a few times through the night, but eventually settles.',
+            'Awake and scratching or licking through most of the night. Struggles to settle.',
+            'Awake and scratching or licking all night. Cannot settle.',
+            'Awake and scratching or licking all night. Cannot settle, and is distressed — whining, panting or crying.',
+          ],
+        },
+      },
+
+      // --- The diet trial block -------------------------------------------
+      //
+      // Everything below shows only for an owner running an elimination diet
+      // trial. For everyone else the form ends above, and this gate is the
+      // last question they see.
+      {
+        key: 'on_diet_trial',
+        label: 'Is {name} On An Elimination Diet Trial?',
+        // Asked every time, because it is the one standing fact that
+        // genuinely changes — a trial ends. The previous answer is offered as
+        // the default so nobody re-types it, and the wording changes to
+        // "still" once there is one.
+        repeatLabel: 'Is {name} Still On An Elimination Diet Trial?',
+        carryForward: true,
+        type: 'yesno',
+        // Not asked of an environmentally allergic pet — see allergy_type.
+        dependsOn: { key: 'allergy_type', equalsAny: ['food', 'both', 'unknown'] },
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with
+        // sentence capitals and "This means" added at the front so it reads
+        // as an answer to the question above rather than a fragment.
+        why:
+          'This means feeding a prescription hydrolysed diet or single novel protein diet for at least 8 weeks. '
+          + 'In this time {name} is not allowed anything other than this diet. This will determine whether a food '
+          + 'allergy is present. Speak to your vet if you have questions about what foods are appropriate for an '
+          + 'elimination diet.',
+      },
+
+      // Directly under the gate, not below the gut questions.
+      //
+      // These two ARE the answer to "yes": which diet, and since when. Two
+      // unrelated questions in between meant that tapping yes showed the
+      // owner a vomiting question next, and the diet box was far enough down
+      // to look as though it did not exist.
+      {
+        key: 'diet_trial_food',
+        label: 'Which Diet Is {name} On?',
+        type: 'text',
+        milestone: { label: 'Elimination diet', withAnswer: true },
+        // Declared against appetite because the overlap check reads "Diet"
+        // and asks. It is right to ask and the answer is no: the daily
+        // assessment's appetite question is about how much {name} is eating,
+        // and this names the product in the bowl. It is not even a daily
+        // question — it is a standing fact about the trial.
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+        carryForward: true,
+        askOnce: true,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Word for word the same
+        // as Which Food Are You Using To Re-Challenge?, on her instruction —
+        // it is the same ask, so it should not be two different sentences.
+        why:
+          'Be as specific as possible, and try to name the protein and/or the brand of food.',
+        placeholder: 'e.g. Brand X hydrolysed, or Brand Y kangaroo and potato',
+      },
+
+      {
+        key: 'diet_start_date',
+        label: 'When Did The Diet Trial Start?',
+        type: 'date',
+        carryForward: true,
+        askOnce: true,
+        // Marked on the summary calendar, on the day the answer NAMES rather
+        // than the day it was typed in — see milestoneDayLabels.
+        milestone: { on: 'date', label: 'Elimination diet started' },
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+        // Turns the answer into "started 6 weeks and 2 days ago", which is
+        // the number the whole trial is judged on.
+        showElapsed: true,
+        // PENDING ASH — wording. The figure is Ash's, from the question
+        // above: "at least 8 weeks". It said "six to eight" until 29 Aug
+        // 2026, which put two different numbers for the same protocol on one
+        // form.
+        why:
+          'A food trial needs at least 8 weeks on the diet alone before it has proved anything, because the skin takes that long to settle. Recording the start date once means the app can tell you where you are rather than you having to count back.',
+      },
+
+
+      // --- Gut signs -------------------------------------------------------
+      //
+      // Placed below the diet-trial question on Ash's instruction, so the
+      // skin signs stay together at the top of the form and the gut ones
+      // read as secondary.
+      //
+      // The description tells owners allergies can cause gastrointestinal
+      // issues; until now the form gave nowhere to record them. Both are the
+      // SHARED definitions — the vomiting one writes to the same field as the
+      // Overall Quality of Life Assessment and the GI form, and the stool
+      // scale is the same six rungs GI uses — so a pet with both allergies
+      // and a GI condition has one record rather than two free to disagree.
+      {
+        ...sharedParameter('vomiting', {
+          // PENDING ASH — wording.
+          concernMessage:
+            'Worth recording. Vomiting can be part of a food allergy, so tell your vet — especially if it follows a particular food.',
+          // PENDING ASH — wording. Declared on the allergy copy only, so the
+          // GI and cardiac calendars are untouched. {answer:lower} drops the
+          // capital off "Vomited — 2 today — bile" so it reads as one
+          // sentence.
+          finding: '{name} {answer:lower}',
+        }),
+        // Only while a trial is running — Ash's call.
+        //
+        // Gated on the trial rather than on the diagnosis: answering "no" to
+        // the diet trial now ends the form there, so gut signs are collected
+        // for the weeks the trial is being judged and not otherwise. An
+        // environmentally allergic pet never reaches this at all, because the
+        // gate above is itself hidden for them and the dependency chain
+        // resolves the whole way up.
+        //
+        // NOTE: this does mean a food-allergic pet who is NOT currently on a
+        // trial has nowhere to record vomiting or stool in this section. The
+        // Gastrointestinal Disease section is where that goes.
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+      },
+      {
+        ...sharedParameter('stool_consistency', {
+          // PENDING ASH — wording. Allergy copy only, as above.
+          finding: 'Stool — {answer}',
+        }),
+        // Same gate as vomiting above.
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+      },
+
+      {
+        key: 'diet_adherence',
+        label: 'Has {name} Had Anything Other Than The Trial Food Today?',
+        type: 'yesno',
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+        concernWhen: 'yes',
+        // PENDING ASH — wording. This is the one Ash named: the calendar used
+        // to quote the question back ("Has Bailey Had Anything Other Than The
+        // Trial Food Today?") on the very day the answer was the point.
+        finding: { yes: 'The diet trial was broken' },
+        findingWithDetail: { yes: 'The diet trial was broken — {name} had {detail}' },
+        findingDetail: 'diet_slip_detail',
+        // The daily assessment's appetite question is about how much {name}
+        // is eating. This is about WHAT — a dog eating perfectly well can
+        // still have wrecked a diet trial with one dropped chip.
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        // PENDING ASH — wording.
+        why:
+          'Treats, chews, flavoured medication, toothpaste, someone else\'s bowl, something picked up on a walk. A single slip can restart the clock on the whole trial, so it is worth recording honestly rather than tidily.',
+        // PENDING ASH — wording.
+        concernMessage:
+          'Worth writing down. One slip does not usually ruin a trial, but your vet needs to know about it when they judge the result.',
+        // Marked on the calendar, every time — not just the first. Two breaks
+        // in a trial is a different result to one, and the mark names what
+        // {name} had by pulling in the follow-up's answer.
+        milestone: { when: 'yes', label: 'Diet broken', detailFrom: 'diet_slip_detail' },
+        followUp: {
+          key: 'diet_slip_detail',
+          when: 'yes',
+          label: 'What did {they} have?',
+          type: 'text',
+          placeholder: 'e.g. half a dental chew, licked a plate',
+        },
+      },
+
+      // --- Re-challenge ----------------------------------------------------
+      //
+      // The half of a food trial that most owners never complete.
+      //
+      // Six to eight weeks of a restricted diet only shows THAT food was part
+      // of the problem. It does not say which food, and a pet left on the
+      // trial diet forever is a pet on a needlessly narrow diet for a reason
+      // nobody ever established. Re-challenging — one protein at a time,
+      // long enough for a reaction to show, back to the trial diet in between
+      // — is what turns "it might be food" into a list of what {name} can and
+      // cannot eat.
+      //
+      // Gated behind its own yes/no rather than shown to everyone on a trial:
+      // an owner in week two does not need these questions, and the guidance
+      // on the gate itself is what tells them when they will.
+      {
+        key: 'rechallenge',
+        label: 'Are You Re-Challenging With A New Food?',
+        type: 'yesno',
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+        // Declared against appetite because the overlap check reads the word
+        // "food" and asks. It is right to ask and the answer is no: the daily
+        // assessment's appetite question is about how much {name} is eating,
+        // and this is about WHICH food is being tested. A pet eating
+        // enthusiastically can be reacting to every mouthful.
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with
+        // sentence capitals and full stops added.
+        why:
+          'If {name}\'s skin disease has improved on the elimination diet after the 8 weeks, the next step is to '
+          + '"re-challenge" with one food at a time. This will determine what {name} is allergic to. Speak to your '
+          + 'vet about how to do this.',
+      },
+
+      {
+        key: 'rechallenge_food',
+        label: 'Which Food Are You Using To Re-Challenge?',
+        type: 'text',
+        // Marked on the calendar WITH the food named, on the day the answer
+        // changes — so a record with four re-challenges shows four marks,
+        // each saying which food it was.
+        milestone: { label: 'Re-challenge', withAnswer: true },
+        dependsOn: { key: 'rechallenge', equals: 'yes' },
+        // Declared against appetite because the overlap check reads the word
+        // "food" and asks. It is right to ask and the answer is no: the daily
+        // assessment's appetite question is about how much {name} is eating,
+        // and this is about WHICH food is being tested. A pet eating
+        // enthusiastically can be reacting to every mouthful.
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        why:
+          'Be as specific as possible, and try to name the protein and/or the brand of food.',
+        placeholder: 'e.g. chicken — Brand X chicken and rice',
+      },
+
+      {
+        key: 'rechallenge_start_date',
+        label: 'When Did You Introduce It?',
+        type: 'date',
+        milestone: { on: 'date', label: 'Re-challenge food introduced' },
+        dependsOn: { key: 'rechallenge', equals: 'yes' },
+        showElapsed: true,
+        // PENDING ASH — wording, and the two-week figure.
+        why:
+          'A reaction can take up to two weeks to show, so a food is not cleared until {name} has been on it that long with no flare.',
+      },
+
+      {
+        key: 'rechallenge_reaction',
+        label: 'Any Reaction To The New Food?',
+        type: 'choice',
+        // PENDING ASH — wording. Your option labels, lower-cased to sit after
+        // the dash.
+        finding: 'Re-challenge — {answer:lower}',
+        dependsOn: { key: 'rechallenge', equals: 'yes' },
+        // The itch question above already records how itchy {name} is today.
+        // This asks something the score cannot: whether the owner is
+        // attributing it to the food being tested. Both are kept, because a
+        // rising itch score with "no reaction" ticked is itself worth a vet
+        // seeing.
+        //
+        // Declared against appetite rather than hygiene — the label names a
+        // food, and declaring the domain the checker actually reads is the
+        // honest answer. It is not an appetite question either way.
+        covers: 'appetite',
+        relationship: RELATIONSHIP.DISTINCT,
+        // PENDING ASH — wording.
+        why:
+          'Compare against how {they} {were} on the trial diet alone, not against how {they} {were} before the trial started.',
+        // PENDING ASH — the options and their severities.
+        options: [
+          { value: 'none', label: 'No reaction so far', severity: SEVERITY.OK },
+          { value: 'itch', label: 'More itchy', severity: SEVERITY.CONCERN },
+          { value: 'skin', label: 'Skin or ears have flared', severity: SEVERITY.CONCERN },
+          { value: 'gut', label: 'Upset tummy — vomiting or loose stools', severity: SEVERITY.CONCERN },
+        ],
+        // No emergency option, and therefore no emergencyMessage. The
+        // facial swelling / hives / trouble breathing option was here until
+        // 29 Aug 2026 and has gone on Ash's instruction — so nothing this
+        // question can be answered with flags red, and a message for a
+        // severity that cannot occur would be dead wording.
+        //
+        // PENDING ASH — wording.
+        concernMessage:
+          'Worth recording, and worth stopping this food and going back to the trial diet. Tell your vet what {name} reacted to — that is the result the trial exists to produce.',
+      },
+    ],
+  },
+
   kidney: {
     key: 'kidney',
     label: 'Kidney Disease',
@@ -1922,6 +3044,14 @@ export function describeParameterAnswer(parameter, value, species) {
     return text || null
   }
 
+  // Stored as ISO because that is what a date input gives and what sorts
+  // correctly; read back as DD/MM/YYYY, which is what the rest of the app
+  // shows and what the owner wrote on the calendar in the kitchen.
+  if (parameter.type === 'date') {
+    const [year, month, day] = String(value).split('-')
+    return year && month && day ? `${day}/${month}/${year}` : null
+  }
+
   if (parameter.type === 'vomiting') {
     if (typeof value !== 'object') return null
     if (value.hasVomited === UNSURE) return 'Not sure'
@@ -1975,16 +3105,82 @@ function stripEmergencyMarker(text) {
   return String(text).replace(/\s*\(emergency\)\s*/gi, ' ').trim()
 }
 
+// What a flagged answer SAYS, rather than which question asked it.
+//
+// The calendar's day line named the questions that flagged: "Worth watching:
+// Has Bailey Had Anything Other Than The Trial Food Today?, Stool
+// Consistency". That is the form read back at the owner. It says where to
+// look and nothing about what happened, and on the allergy log — where the
+// interesting days are the ones with a slip and a soft stool — it was the
+// least useful line on the page.
+//
+// A parameter can instead declare a `finding`, which turns its own answer
+// into a statement: "The diet trial was broken — Bailey had half a dental
+// chew. Bailey's stool — Very soft, piles rather than holds shape."
+//
+// Plain data, so the condition definitions stay declarative:
+//
+//   finding: 'Ears — {answer}'              // one template
+//   finding: { yes: '...', no: '...' }      // keyed by the stored value,
+//                                           // with an optional `default`
+//   findingWithDetail: {...}                // used INSTEAD when the
+//   findingDetail: 'diet_slip_detail'       // named key holds text
+//
+// Tokens: {answer} is the same wording describeParameterAnswer gives, and
+// {answer:lower} is that with its first letter lowered so it can sit
+// mid-sentence. {detail} is the findingDetail answer. Pet tokens ({name},
+// {they}, {s}...) are left alone here and filled by the caller, which is what
+// already happens to the labels this replaces.
+//
+// A parameter that declares nothing falls back to its label, so every
+// condition written before this is unchanged.
+export function findingFor(parameter, value, species, values) {
+  if (!parameter) return null
+
+  const detailKey = parameter.findingDetail
+  const rawDetail = detailKey ? values?.[detailKey] : null
+  const detail = typeof rawDetail === 'string' ? rawDetail.trim() : ''
+
+  const spec = (detail && parameter.findingWithDetail) || parameter.finding
+  if (!spec) return null
+
+  let template = null
+  if (typeof spec === 'string') {
+    template = spec
+  } else if (typeof spec === 'object' && !Array.isArray(spec)) {
+    // An object answer (vomiting) has no key to look up, so such a parameter
+    // has to use the string form.
+    const key = value != null && typeof value !== 'object' ? String(value) : null
+    template = (key != null ? spec[key] : undefined) ?? spec.default ?? null
+  }
+  if (typeof template !== 'string' || template === '') return null
+
+  let text = template
+  if (text.includes('{answer}') || text.includes('{answer:lower}')) {
+    const answer = describeParameterAnswer(parameter, value, species)
+    // No answer means no statement. Falling back to the label here would put
+    // a question mid-sentence, which is the thing this exists to stop.
+    if (answer == null) return null
+    text = text.split('{answer:lower}').join(answer.charAt(0).toLowerCase() + answer.slice(1))
+    text = text.split('{answer}').join(answer)
+  }
+  if (text.includes('{detail}')) text = text.split('{detail}').join(detail)
+
+  return text.trim() || null
+}
+
 // Every question on a condition form for one day, with the answer given and
 // whether it flagged. Follow-ups sit under the question they belong to, and
 // questions that were never answered are dropped rather than listed blank.
 export function describeConditionDay(condition, values, species) {
   const rows = []
 
-  for (const parameter of parametersOf(condition)) {
-    if (!isAsked(parameter)) continue
-    if (!dependencyMet(parameter, values)) continue
-
+  // visibleParameters rather than a per-parameter dependency check: it
+  // resolves the whole chain, so a question whose PARENT is hidden stays out
+  // of the record even though its own stored answer still satisfies its own
+  // precondition. The form and the record have to agree about which
+  // questions existed.
+  for (const parameter of visibleParameters(parametersOf(condition), values)) {
     const value = values?.[parameter.key]
     const answer = describeParameterAnswer(parameter, value, species)
     if (answer == null) continue
@@ -1999,17 +3195,17 @@ export function describeConditionDay(condition, values, species) {
 
     // A follow-up is only meaningful next to the answer that triggered it —
     // "Hips, lower back" on its own is not a finding.
-    const followUp = parameter.followUp
-    if (!followUp) continue
-    const followAnswer = describeParameterAnswer(followUp, values?.[followUp.key], species)
-    if (followAnswer == null) continue
-    rows.push({
-      key: followUp.key,
-      label: typeof followUp.label === 'string' ? followUp.label : 'More detail',
-      answer: followAnswer,
-      severity: null,
-      isFollowUp: true,
-    })
+    for (const followUp of followUpsOf(parameter)) {
+      const followAnswer = describeParameterAnswer(followUp, values?.[followUp.key], species)
+      if (followAnswer == null) continue
+      rows.push({
+        key: followUp.key,
+        label: typeof followUp.label === 'string' ? followUp.label : 'More detail',
+        answer: followAnswer,
+        severity: null,
+        isFollowUp: true,
+      })
+    }
   }
 
   return rows
@@ -2026,20 +3222,16 @@ export function summariseEntry(condition, values, species) {
   // time until they hit the right one.
   const flagged = []
 
-  for (const parameter of parametersOf(condition)) {
+  // visibleParameters handles two of the three skips: it drops referenced
+  // parameters, and it resolves dependencies ALL THE WAY UP — so an owner who
+  // came off a diet trial is not still flagged by yesterday's answer to a
+  // question the app has stopped asking, nor by an answer to a question whose
+  // parent has stopped being asked.
+  for (const parameter of visibleParameters(parametersOf(condition), values)) {
     // Skipped before the answered count, not just before the flag count. A
     // day where the owner filled in nothing but the steroid module has not
     // been assessed for concern, and colouring it green would say it had.
     if (parameter.informational) continue
-
-    // A referenced parameter is never answered on this form, so it can
-    // neither flag a day nor count towards the day having been assessed.
-    if (!isAsked(parameter)) continue
-
-    // Nor can one whose precondition is no longer met. An owner who came off
-    // a diet trial should not keep being flagged by yesterday's answer to a
-    // question the app has stopped asking.
-    if (!dependencyMet(parameter, values)) continue
 
     const value = values?.[parameter.key]
     if (value == null || value === '') continue
@@ -2051,12 +3243,20 @@ export function summariseEntry(condition, values, species) {
     answered += 1
 
     const verdict = evaluateParameter(parameter, value, species)
+    // A statement of what was answered where the parameter provides one,
+    // otherwise the question's name — see findingFor.
+    const finding = findingFor(parameter, value, species, values)
+    const named = finding ?? labelOf(parameter)
     if (verdict?.severity === SEVERITY.EMERGENCY) {
       emergencies += 1
-      flagged.push({ key: parameter.key, label: labelOf(parameter), severity: SEVERITY.EMERGENCY })
+      flagged.push({
+        key: parameter.key, label: named, isFinding: finding != null, severity: SEVERITY.EMERGENCY,
+      })
     } else if (verdict?.severity === SEVERITY.CONCERN) {
       concerns += 1
-      flagged.push({ key: parameter.key, label: labelOf(parameter), severity: SEVERITY.CONCERN })
+      flagged.push({
+        key: parameter.key, label: named, isFinding: finding != null, severity: SEVERITY.CONCERN,
+      })
     }
   }
 

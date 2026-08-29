@@ -14,6 +14,10 @@ import { usePets } from '../lib/PetsContext'
 import {
   SAME_AS_ASSESSMENT,
   askedParameters,
+  carriedAnswers,
+  describeParameterAnswer,
+  formParameters,
+  standingAnswers,
   describeConditionDay,
   visibleParameters,
   beapAppetiteFromVcogGrade,
@@ -27,7 +31,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../lib/qolData'
 import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
-import { monitoringStatus } from '../lib/monitoringStatus'
+import { elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -105,6 +109,9 @@ export default function ConditionMonitoring() {
   const [errorMessage, setErrorMessage] = useState('')
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
+  // Whether the standing answers — diagnosis, diet, start date — are open
+  // for editing rather than summarised.
+  const [editStanding, setEditStanding] = useState(false)
   // Confirmation exists because this now genuinely deletes the readings. It
   // did not before — the button used to remove the condition and silently
   // leave every entry behind, so a mis-tap was recoverable by re-adding it.
@@ -214,16 +221,34 @@ export default function ConditionMonitoring() {
     if (prefilled != null) assessmentPrefill[parameter.key] = prefilled
   }
 
+  // Standing facts, carried from the last entry that answered them.
+  //
+  // Which allergy {name} has been diagnosed with, which diet the trial uses,
+  // the day it started — none of those change from Tuesday to Wednesday, and
+  // asking again daily is how one question ends up with three answers across
+  // a week. Entries before today only: today's own answer, if there is one,
+  // comes through `todaysEntry` below and must win.
+  const carried = carriedAnswers(askedList, entries.filter((entry) => entry.date !== today))
+
   // Order matters: anything the owner has actually typed or saved on this
-  // form wins over the pre-filled answer. The pre-fill is a starting point,
-  // not an override.
-  const values = { ...assessmentPrefill, ...(draft ?? todaysEntry?.values ?? {}) }
+  // form wins over a carried or pre-filled answer. Both are starting points,
+  // not overrides.
+  const values = { ...carried, ...assessmentPrefill, ...(draft ?? todaysEntry?.values ?? {}) }
+
+  // The questions that have stopped being asked, and the answers standing for
+  // them. Shown as a card at the top with a way back in, so "asked once" does
+  // not mean "answered forever".
+  const standing = standingAnswers(askedList, carried)
 
   // What actually goes on the form. A question whose precondition is not met
   // is not shown at all — and because this is recomputed from `values` on
   // every render, answering "yes, on a diet trial" makes the follow-on
   // question appear immediately rather than after a save.
-  const parameters = visibleParameters(askedList, values)
+  //
+  // formParameters then drops the standing ones and rewords the repeats
+  // ("is she STILL on a diet trial?"). It runs last so the dependency chain
+  // is resolved against the real answers rather than the trimmed list.
+  const parameters = formParameters(visibleParameters(askedList, values), carried, { editStanding })
 
   // Credited at the foot of the page: the condition's own source, plus any
   // belonging to the questions on screen right now.
@@ -431,6 +456,9 @@ export default function ConditionMonitoring() {
     // lives on its own screen.
     medications,
     species: pet?.species,
+    // For templating {name} into the names of flagged questions on the
+    // calendar's day line.
+    pet,
     config,
   })
 
@@ -505,6 +533,16 @@ export default function ConditionMonitoring() {
                 Is {pet.name} currently on any medication for{' '}
                 <PetText template="{their}" pet={pet} /> {definition.label.toLowerCase()}?
               </p>
+              {/* A condition may add a line about what counts as medication
+                  for it. Allergies does: an owner asked about "medication"
+                  thinks tablets, and a medicated shampoo is a treatment they
+                  would never think to list — which then makes the record look
+                  like nothing is being done. */}
+              {definition.medicationNote && (
+                <p className="assessment-hint">
+                  <PetText template={definition.medicationNote} pet={pet} />
+                </p>
+              )}
               <ChoiceButtons
                 options={[
                   { value: 'yes', label: 'Yes' },
@@ -591,6 +629,40 @@ export default function ConditionMonitoring() {
                   Day {treatmentDay} after {pet.name}'s last treatment.
                 </span>
               </p>
+            )}
+
+            {/* What you have already told us, and a way back to it.
+                
+                These questions have left the daily form — the diagnosis, the
+                diet, the day the trial started. Summarising them here rather
+                than dropping them silently matters for two reasons: the owner
+                can see the app has not lost the answer, and a trial start date
+                is the number they most want on screen ("am I at 8 weeks
+                yet?"). The Change button puts the questions back. */}
+            {standing.length > 0 && !editStanding && (
+              <div className="standing-answers">
+                {standing.map(({ parameter, value, detail }) => (
+                  <p key={parameter.key} className="assessment-hint">
+                    <PetText template={parameter.label} pet={pet} />
+                    {': '}
+                    {parameter.type === 'date'
+                      ? elapsedLabel(value, today)
+                      : describeParameterAnswer(parameter, value, pet?.species)}
+                    {/* What the owner typed to qualify the answer — the
+                        condition behind "Other", for instance. Without it the
+                        card shows the category and hides the answer. */}
+                    {detail ? ` — ${detail}` : ''}
+                  </p>
+                ))}
+                <button type="button" className="subtle-link" onClick={() => setEditStanding(true)}>
+                  Change these
+                </button>
+              </div>
+            )}
+            {editStanding && (
+              <button type="button" className="subtle-link" onClick={() => setEditStanding(false)}>
+                Done changing
+              </button>
             )}
 
             {parameters.map((parameter, index) => (

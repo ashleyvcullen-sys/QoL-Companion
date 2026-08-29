@@ -37,6 +37,7 @@ order by kind, name;
 | `20260825010000_medication_dates.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `started_on` and `ended_on` both present via information_schema. Adds the two dates, back-fills `started_on` from `created_at` (the best available answer for rows added as they were prescribed), and adds `medications_dates_order_check` so an end date cannot precede a start. Both columns stay nullable: "I don't know when this started" is a real answer, and a guess drawn on a calendar as fact would be worse than a gap. |
 | `20260825020000_medication_reminder_time.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `reminder_time` present via information_schema. Adds a nullable `reminder_time text` to `medications` — one time of day at which to raise a frequency medication's doses, chosen by the owner. Kept separate from `times`, which are the prescribed clock times a dose is due at and each get their own tick box and reminder. Nullable because a medication on set times, or given as needed, or with reminders off, has no such time. `add column if not exists`, so re-running is a no-op. |
 | `20260825030000_medication_reminder_days.sql` | 25 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `reminder_days` present via information_schema. Adds a nullable `reminder_days integer[]` to `medications`. Meaning depends on `frequency_period`: for `'week'` these are JavaScript weekdays (0 Sunday – 6 Saturday), for `'month'` they are dates of the month. Capped at 28 by the app rather than by the database — a reminder set for the 31st would silently skip five months a year, and the owner would have no way of knowing. Null or empty means "no days chosen" and the app falls back to the day the course started, which is the behaviour from before the column existed. |
+| `20260829000000_medication_conditions.sql` | 29 Aug 2026 | Ash ran it in the SQL Editor, and confirmed `condition_keys` present via information_schema — one row, `ARRAY`, nullable. Adds a nullable `condition_keys text[]` to `medications`, so a medication can say which condition (or conditions) it is for and a disease page can list only that condition's drugs instead of every active one. An array rather than a single key because one drug genuinely can treat two things at once. Deliberately NOT a foreign key: conditions are defined in `lib/conditions.js`, not in the database, and a pet can be prescribed something for a condition they are not tracking. Null or empty means "not tied to a condition", which is a real answer for a wormer or a supplement — so there was nothing to back-fill. `add column if not exists`, so re-running is a no-op. |
 
 The 25 Aug medication migrations were applied in two sittings: the monthly
 frequency and dates pair together, then the two reminder columns. All four are
@@ -64,6 +65,7 @@ this document exists to remove.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
-| `20260829000000_medication_conditions.sql` | Adds a nullable `condition_keys text[]` to `medications` | Lets a medication say which condition it is for, so a disease page can list only that condition's medications instead of every active one. **Until this is run, saving a medication fails if a condition is chosen for it.** |
+
+Nothing outstanding as of 29 Aug 2026.
 
 Update these tables whenever a migration is applied.

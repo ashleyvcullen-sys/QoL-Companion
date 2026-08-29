@@ -44,7 +44,12 @@ const DOMAIN_HINTS = [
   ['appetite', /appetit|inappet|eating|food|hungr|anorex/],
   ['vomiting', /vomit/],
   ['stool', /stool|diarrh|faec/],
-  ['urination', /urin|litter|toilet/],
+  // \b on `urin` because without it this matched the word "during", and
+  // flagged a seizure question about consciousness as a urination question.
+  // Over-eager is the design; matching a substring in the middle of a common
+  // English word is just wrong, and the fix for a wrong match is not to make
+  // the parameter declare something untrue about itself.
+  ['urination', /\burin|litter|toilet/],
   ['waterIntake', /drink|water|thirst/],
   ['breathing', /breath|respirat|pant|cough/],
   ['ambulation', /ambulat|mobilit|walk|jump|stiff|lame|limp|weight.bearing|getting about/],

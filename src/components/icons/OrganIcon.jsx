@@ -50,3 +50,9 @@ export const CognitiveOrganIcon = (props) => <OrganIcon name="cognitive" {...pro
 // Cancer has no single organ, so it borrows the cell-division glyph rather
 // than picking one site and implying the others don't count.
 export const CancerOrganIcon = (props) => <OrganIcon name="cancer" {...props} />
+
+// Allergies. Ash's line art, converted to a mask: the drawing arrived as
+// black ink on white paper, and this file needs the opposite — white pixels
+// carrying the shape in the alpha channel, so one file works white on a
+// coloured badge and dark on a card.
+export const AllergyOrganIcon = (props) => <OrganIcon name="allergy" {...props} />

@@ -873,40 +873,6 @@ code {
   flex-shrink: 0;
 }
 
-.status-timeline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.status-cell {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-swatch);
-  flex-shrink: 0;
-}
-
-.status-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.status-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--type-meta);
-  color: var(--text-muted);
-}
-
-.status-swatch {
-  width: 11px;
-  height: 11px;
-  border-radius: var(--radius-swatch);
-}
-
 /* The takeaway line under the steps. Given a tinted panel rather than just
    bold text so it reads as the point of the dialog rather than a fourth
    step the owner might skim past. */
@@ -2846,6 +2812,29 @@ code {
    So this is a line of text with an arrow: unmistakably tappable, and
    unmistakably not the point of the screen. The question and the answers keep
    the visual weight, which is the right order. */
+/* The "you already told us this" block, above the day's questions.
+   
+   Deliberately quiet — a tinted panel would compete with the emergency alerts
+   for the same visual language, and this is the least urgent thing on the
+   page. It only needs to be findable, not noticed. */
+.standing-answers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-stack-tight);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+
+.standing-answers p {
+  margin: 0;
+}
+
+.standing-answers .subtle-link {
+  align-self: flex-start;
+  margin: 4px 0 0;
+}
+
 .expandable-note {
   display: flex;
   flex-direction: column;
