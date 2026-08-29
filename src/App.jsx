@@ -22,6 +22,7 @@ import Medications from './screens/Medications'
 import PetMedia from './screens/PetMedia'
 import ConditionMonitoring from './screens/ConditionMonitoring'
 import ConditionSetup from './screens/ConditionSetup'
+import GastrointestinalSetup from './screens/GastrointestinalSetup'
 import CancerContentReview from './screens/CancerContentReview'
 import Conditions from './screens/Conditions'
 import Legal from './screens/Legal'
@@ -122,6 +123,10 @@ function App() {
         <Route path="/media" element={<PetMedia />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/conditions/:conditionKey" element={<ConditionMonitoring />} />
+        {/* Before the generic setup route. GI composes differently to cancer
+            — no diagnosis layer, no per-instance measures — so it has its own
+            screen rather than a branch inside one built around cancer's flow. */}
+        <Route path="/conditions/gastrointestinal/setup" element={<GastrointestinalSetup />} />
         <Route path="/conditions/:conditionKey/setup" element={<ConditionSetup />} />
         {/* Unlinked. Reachable by URL only — see the note in the file. */}
         <Route path="/conditions/cancer/review" element={<CancerContentReview />} />

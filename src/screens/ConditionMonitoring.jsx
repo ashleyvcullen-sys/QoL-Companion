@@ -16,6 +16,7 @@ import {
   SEVERITY,
   askedParameters,
   describeConditionDay,
+  visibleParameters,
   beapAppetiteFromVcogGrade,
   conditionByKey,
   evaluateParameter,
@@ -25,9 +26,10 @@ import {
 } from '../lib/conditions'
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
-import { buildDailySeries, updateBeapCategory, updateGeneralScore } from '../lib/qolData'
-import { describeMedicationSchedule, useMedications } from '../lib/medicationsData'
+import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../lib/qolData'
+import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
+import { GI_KEY, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
 import ConditionEvents from '../components/ConditionEvents'
@@ -54,17 +56,22 @@ export default function ConditionMonitoring() {
   const pet = selectedPet
   const { conditions, loading, refresh } = usePetConditions(pet?.id)
 
-  // Loaded for one reason: a referenced parameter is charted from the daily
-  // assessment rather than from this condition's own entries. A condition
-  // with nothing referenced never reads it, and the extra fetch costs one
-  // query on a page that is already fetching three.
+  // Loaded for the prefill: a question this condition shares with the
+  // Overall Quality of Life Assessment is answered once, and today's
+  // assessment is where that answer lives. Without this the owner would be
+  // asked the same thing twice on the same day.
   const { generalEntries, painEntries } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
   // Only what {name} is on NOW. A finished course is history, and listing it
   // under "is she currently on any medication?" would answer that question
   // wrongly.
-  const activeMedications = medications.filter((medication) => medication.active)
-  const dailySeries = buildDailySeries(generalEntries, painEntries)
+  // This condition's medications, not every medication. Anything the owner
+  // has not assigned still shows — "I have not said what this is for" is far
+  // more common than "this is definitely not for the thing I am looking at".
+  const activeMedications = medicationsForCondition(
+    medications.filter((medication) => medication.active),
+    definition?.key,
+  )
 
   // Which condition is determined by the URL, so each one is a real page you
   // can navigate back to rather than a tab inside a single screen.
@@ -90,7 +97,6 @@ export default function ConditionMonitoring() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [chartKey, setChartKey] = useState(null)
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
   // Confirmation exists because this now genuinely deletes the readings. It
@@ -137,11 +143,21 @@ export default function ConditionMonitoring() {
   // core parameters exist regardless of configuration, so testing
   // parameters.length here would always pass and the form would appear
   // before the owner had told us anything about the diagnosis.
-  const needsSetup = Boolean(definition?.composed) && !isCancerConfigured(config)
+  // Each composed condition answers "has this been set up?" its own way.
+  // Cancer keys it on a diagnosis having been answered; GI on a condition
+  // having been picked or typed. Asking cancer's question of a GI config
+  // would send every GI owner back to setup forever.
+  const isConfigured = definition?.key === GI_KEY ? isGiConfigured(config) : isCancerConfigured(config)
+  const needsSetup = Boolean(definition?.composed) && !isConfigured
   // Asked parameters only. A referenced one (cardiac appetite) belongs to the
   // condition and is charted below, but the owner already answered it in the
   // daily assessment and is not asked again here.
-  const parameters = needsSetup
+  //
+  // This is the list BEFORE preconditions are applied, and it has to be:
+  // `values` is built from it, and the visible list is built from `values`.
+  // Deriving the visible list here instead would be circular — and would
+  // throw on first render rather than fail quietly.
+  const askedList = needsSetup
     ? []
     : askedParameters(parametersFor(definition, config, pet?.species))
 
@@ -154,6 +170,17 @@ export default function ConditionMonitoring() {
   const todaysGeneral = generalEntries.find((entry) => entry.date === today) ?? null
 
   function assessmentValueFor(parameter) {
+    // A whole field on the assessment row rather than a score — vomiting is
+    // an object, not a number, so it comes back as it was stored.
+    if (parameter.assessmentField) {
+      const recorded = todaysGeneral?.[parameter.assessmentField]
+      // An untouched vomiting question is a shape with nothing chosen in it,
+      // not an answer. Pre-filling from that would mark the question answered
+      // on the strength of the assessment having been opened.
+      if (!recorded || recorded.hasVomited == null) return null
+      return recorded
+    }
+
     // Questions that fill a general score rather than a BEAAAAPP category —
     // sleep. Stored there as a score, shown here as a severity.
     if (parameter.scoreKey) {
@@ -171,7 +198,7 @@ export default function ConditionMonitoring() {
   }
 
   const assessmentPrefill = {}
-  for (const parameter of parameters) {
+  for (const parameter of askedList) {
     const prefilled = assessmentValueFor(parameter)
     if (prefilled != null) assessmentPrefill[parameter.key] = prefilled
   }
@@ -180,6 +207,27 @@ export default function ConditionMonitoring() {
   // form wins over the pre-filled answer. The pre-fill is a starting point,
   // not an override.
   const values = { ...assessmentPrefill, ...(draft ?? todaysEntry?.values ?? {}) }
+
+  // What actually goes on the form. A question whose precondition is not met
+  // is not shown at all — and because this is recomputed from `values` on
+  // every render, answering "yes, on a diet trial" makes the follow-on
+  // question appear immediately rather than after a save.
+  const parameters = visibleParameters(askedList, values)
+
+  // Credited at the foot of the page: the condition's own source, plus any
+  // belonging to the questions on screen right now.
+  // A citation may be a plain string, or keyed by species where only one
+  // species' wording follows the instrument — the same shape alert messages
+  // use.
+  const citationFor = (citation) => (
+    citation == null || typeof citation === 'string'
+      ? citation
+      : citation[pet?.species] ?? null
+  )
+  const pageCitations = [...new Set(
+    [definition?.citation, ...parameters.map((parameter) => citationFor(parameter.citation))]
+      .filter(Boolean),
+  )]
 
   // Days since the last treatment, derived from the event the owner already
   // logs rather than asked. "Lethargic on day 8" is a different question to
@@ -206,7 +254,11 @@ export default function ConditionMonitoring() {
   // Cancer is excluded — its treatment module already asks this, and asking
   // twice on one screen is exactly the duplication we have spent the day
   // removing.
-  const asksAboutMedication = Boolean(definition) && !definition.composed
+  // Skipped for cancer, which asks about treatment in its own setup. GI is
+  // composed too but has no treatment step, so without this a GI owner would
+  // never be asked about medication at all.
+  const asksAboutMedication = Boolean(definition)
+    && (!definition.composed || definition.key === GI_KEY)
   const onMedication = config?.onMedication ?? null
 
   async function handleMedicationAnswer(answer) {
@@ -294,6 +346,20 @@ export default function ConditionMonitoring() {
       let syncFailed = false
       try {
         for (const parameter of parameters) {
+          if (parameter.assessmentField) {
+            const answer = stored[parameter.key]
+            if (!answer || typeof answer !== 'object') continue
+            // Nothing to write if the assessment already says this.
+            if (JSON.stringify(todaysGeneral?.[parameter.assessmentField]) === JSON.stringify(answer)) continue
+            await updateGeneralField({
+              petId: pet.id,
+              date: today,
+              field: parameter.assessmentField,
+              value: answer,
+            })
+            continue
+          }
+
           if (parameter.scoreKey) {
             const severity = Number(stored[parameter.key])
             if (!Number.isFinite(severity)) continue
@@ -346,17 +412,14 @@ export default function ConditionMonitoring() {
     }
   }
 
-  // Every chart for this condition — the calendar, the concern count, and one
-  // per graphable parameter — described in lib/charts.js so the report draws
-  // exactly the same things from exactly the same descriptors.
+  // This condition's summary calendar, and only that — described in
+  // lib/charts.js so the report draws exactly the same thing from exactly the
+  // same descriptor. Lines live in the Overall Quality of Life section now;
+  // see the note above chartsForCondition for why.
   const charts = chartsForCondition({
     definition,
     entries,
     events,
-    // Needed for referenced parameters only — a chart this condition shows
-    // but does not collect. Loaded here rather than threaded down from Trends
-    // because this page is reached directly.
-    dailySeries,
     // Only for the calendar's start/stop marks — the medication list itself
     // lives on its own screen.
     medications,
@@ -373,11 +436,6 @@ export default function ConditionMonitoring() {
     : null
 
   const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
-  const flagsChart = definition ? chartByKey(charts, `${definition.key}:flags`) : null
-  // Only the per-parameter charts belong in the picker: the calendar and the
-  // concern count have their own cards above it.
-  const parameterCharts = charts.filter((chart) => chart.parameterKey)
-  const activeChart = chartByKey(parameterCharts, chartKey) ?? parameterCharts[0] ?? null
 
 
   return (
@@ -467,14 +525,8 @@ export default function ConditionMonitoring() {
                           </div>
                         ))}
                       </div>
-                      {/* Every medication on record, not just this
-                          condition's — the app has never asked which
-                          condition a medication is for, so narrowing the list
-                          would mean guessing, and a drug quietly missing from
-                          this list is worse than one shown that belongs to
-                          something else. */}
                       <p className="assessment-hint">
-                        Everything currently recorded for {pet.name}, across all conditions.
+                        Anything not assigned to a condition is shown here too.
                       </p>
                       <button type="button" className="subtle-link" onClick={goToMedications}>
                         Edit in Medications
@@ -561,6 +613,8 @@ export default function ConditionMonitoring() {
                       ? SAME_AS_ASSESSMENT
                       : null
                   }
+                  returnTo={`/conditions/${definition.key}`}
+                  returnLabel={`${definition.label} monitoring`}
                   number={index + 1}
                   onChange={setDraft}
                 />
@@ -614,43 +668,15 @@ export default function ConditionMonitoring() {
             </Card>
           )}
 
-          {flagsChart && (
-            <Card>
-              <SectionTitle>{flagsChart.title}</SectionTitle>
-              <ChartView chart={flagsChart} />
-            </Card>
-          )}
-
-          {activeChart && (
-            <Card>
-              <SectionTitle>Graph a Parameter</SectionTitle>
-
-              <div className="field">
-                <label htmlFor="condition-chart-picker">Parameter</label>
-                <select
-                  id="condition-chart-picker"
-                  value={activeChart.key}
-                  onChange={(e) => setChartKey(e.target.value)}
-                >
-                  {parameterCharts.map((chart) => (
-                    <option key={chart.key} value={chart.key}>{chart.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <ChartView chart={activeChart} />
-            </Card>
-          )}
-
-          {/* Offered where the charts are, not on a menu somewhere else. The
+          {/* Offered where the record is, not on a menu somewhere else. The
               moment an owner decides their vet should see this is the moment
               they are looking at it. */}
           {charts.length > 0 && (
             <Card>
               <SectionTitle>Take This To Your Vet</SectionTitle>
               <p className="assessment-hint">
-                Export {pet.name}'s {definition.label.toLowerCase()} charts as a report. Everything
-                on this page is selected to start with, and you can add {pet.name}'s general
+                Export {pet.name}'s {definition.label.toLowerCase()} record as a report. This
+                page's summary is selected to start with, and you can add {pet.name}'s general
                 quality of life trends on the next screen.
               </p>
               <Btn
@@ -660,7 +686,7 @@ export default function ConditionMonitoring() {
                   state: { preselect: charts.map((chart) => chart.key) },
                 })}
               >
-                <FileDown size={16} /> Export these charts
+                <FileDown size={16} /> Export this record
               </Btn>
             </Card>
           )}
@@ -669,7 +695,7 @@ export default function ConditionMonitoring() {
             <SectionTitle>Events</SectionTitle>
             <p className="assessment-hint">
               Episodes, diagnoses, and medications started or stopped. Anything recorded on a
-              day that also has a reading is marked on the charts above.
+              day is marked on the calendar above.
             </p>
             <ConditionEvents
               petId={pet.id}
@@ -764,9 +790,19 @@ export default function ConditionMonitoring() {
       {/* Credits at the foot of the page, not under the intro. They are read
           once, if at all, and sitting between the description and the first
           question they pushed the thing the owner came to do further down
-          every single visit. */}
-      {definition?.citation && (
-        <p className="beap-citation page-references">{definition.citation}</p>
+          every single visit.
+          
+          The condition's own citation, plus any carried by the questions
+          actually on screen — a composed condition only credits the
+          instruments the owner's selections brought in, rather than every
+          instrument the section could ever use. Deduplicated, because two
+          questions may draw on the same source. */}
+      {pageCitations.length > 0 && (
+        <div className="page-references">
+          {pageCitations.map((citation) => (
+            <p key={citation} className="beap-citation">{citation}</p>
+          ))}
+        </div>
       )}
 
       {openDay && (

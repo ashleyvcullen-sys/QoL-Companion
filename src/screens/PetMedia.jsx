@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Trash2, Upload } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -41,6 +42,14 @@ export default function PetMedia() {
   // closed. An index rather than the item itself, so the viewer can step
   // through the gallery without being handed the whole list twice.
   const [lightboxIndex, setLightboxIndex] = useState(null)
+
+  // Where the owner came from, if a question sent them here for a photo.
+  // Captured once so it survives an upload rather than being re-read from a
+  // location that may have changed.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [returnTo] = useState(() => location.state?.returnTo ?? null)
+  const [returnLabel] = useState(() => location.state?.returnLabel ?? 'where you were')
 
   function handleFileChosen(event) {
     const file = event.target.files?.[0]
@@ -89,6 +98,15 @@ export default function PetMedia() {
   return (
     <div className="screen">
       <HomeLink />
+
+      {/* The way back, for someone sent here from a question that asked for a
+          photo. Read once on mount so it survives the uploads that follow —
+          the same round trip Medications already offers. */}
+      {returnTo && (
+        <button type="button" className="subtle-link" onClick={() => navigate(returnTo)}>
+          ← Back to {returnLabel}
+        </button>
+      )}
 
       <Card className="bcs-intro">
         <SectionTitle>Photos &amp; Videos</SectionTitle>

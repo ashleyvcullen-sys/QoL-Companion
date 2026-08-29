@@ -1,14 +1,17 @@
 import { useState } from 'react'
-import { AlertTriangle, Info } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, Camera, Info } from 'lucide-react'
 import Btn from './Btn'
 import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
 import PetText from './PetText'
+import VomitingPage from '../screens/assessment/VomitingPage'
 import SeverityOptionList from './SeverityOptionList'
 import {
   NOT_APPLICABLE,
   SEVERITY,
   UNSURE,
+  textForSpecies,
   VCOG_GRADE_LABELS,
   VCOG_SCORES,
   evaluateParameter,
@@ -18,6 +21,10 @@ import {
 import { fillPetText } from '../lib/petText'
 
 const UNSURE_OPTION = { value: UNSURE, label: 'Not sure' }
+
+// The shape VomitingPage expects. A condition form that has never been
+// answered has no value at all, and the page destructures its own props.
+const EMPTY_VOMITING = { hasVomited: null, frequency: '', unit: 'times/day', character: [] }
 
 // A button opening a dialog rather than an inline expander. The instructions
 // matter enormously the first few times and are noise thereafter, and an
@@ -57,6 +64,15 @@ function HowTo({ title, steps, footer, pet }) {
 // used one, so nothing was visibly broken; it just quietly ruled out the
 // naming convention the rest of the app follows, on the sentences where
 // being spoken to about YOUR animal matters most.
+// Option labels through the pet's own words, like every other string on the
+// screen. They were passed to ChoiceButtons raw, so an option reading "Normal
+// for {name}" would have printed the braces — the same gap the alert messages
+// had, in the one place an owner has to read every option to choose between
+// them.
+function petTextOptions(options = [], pet) {
+  return options.map((option) => ({ ...option, label: fillPetText(option.label, pet) }))
+}
+
 function Verdict({ verdict, pet }) {
   if (!verdict?.message) return null
   if (verdict.severity === SEVERITY.EMERGENCY) {
@@ -78,7 +94,19 @@ function Verdict({ verdict, pet }) {
   return null
 }
 
-export default function ConditionParameter({ parameter, values, pet, number, note, onChange }) {
+export default function ConditionParameter({
+  parameter,
+  values,
+  pet,
+  number,
+  note,
+  onChange,
+  // Where a photo prompt should send the owner back to. Given by the
+  // condition page; without it a `photo` follow-up still works, it just
+  // returns them to the media screen with no way back.
+  returnTo,
+  returnLabel,
+}) {
   const species = pet?.species
   const value = values[parameter.key] ?? ''
   const verdict = evaluateParameter(parameter, value, species)
@@ -124,8 +152,32 @@ export default function ConditionParameter({ parameter, values, pet, number, not
             which is the kind of thing that only shows up on a real pet. */}
         <span>{fillPetText(parameter.label, pet)}</span>
       </span>
-      {parameter.why && (
-        <p className="assessment-hint"><PetText template={parameter.why} pet={pet} /></p>
+      {/* Through textForSpecies: a subtext may be written once for both
+          species, or keyed by species where part of it is only true for one —
+          "chews" belongs in a dog's list of things that break a diet trial and
+          not in a cat's. */}
+      {textForSpecies(parameter.why, species) && (
+        <p className="assessment-hint">
+          <PetText template={textForSpecies(parameter.why, species)} pet={pet} />
+        </p>
+      )}
+
+      {/* A standing alert, shown whatever the answer — unlike every other
+          alert in the app, which appears in response to one.
+          
+          It exists for the case where the DANGER IS IN THE QUESTION rather
+          than in any of its answers: straining to urinate looks exactly like
+          straining to pass stool, and an owner who reads this question as
+          being about constipation will answer it accurately and still miss a
+          blocked cat. Nothing they could pick would raise it, so it cannot
+          wait for an answer. */}
+      {textForSpecies(parameter.standingAlert, species) && (
+        <p className="condition-emergency" role="alert">
+          <AlertTriangle size={17} />
+          <span>
+            <PetText template={textForSpecies(parameter.standingAlert, species)} pet={pet} />
+          </span>
+        </p>
       )}
       {/* Below `why`, not above it: the explanation of what the question means
           comes first, and where this particular answer came from second. */}
@@ -169,9 +221,22 @@ export default function ConditionParameter({ parameter, values, pet, number, not
         </>
       )}
 
+      {/* The assessment's own vomiting question, rendered here. Not a copy of
+          it — literally the same component, so the two forms can never drift
+          into asking subtly different things. */}
+      {parameter.type === 'vomiting' && (
+        <VomitingPage
+          value={value && typeof value === 'object' ? value : EMPTY_VOMITING}
+          onChange={(next) => set(parameter.key, next)}
+          species={species}
+          pet={pet}
+          embedded
+        />
+      )}
+
       {parameter.type === 'choice' && (
         <ChoiceButtons
-          options={[...parameter.options, UNSURE_OPTION]}
+          options={[...petTextOptions(parameter.options, pet), UNSURE_OPTION]}
           value={value}
           onChange={(next) => set(parameter.key, next)}
         />
@@ -246,7 +311,7 @@ export default function ConditionParameter({ parameter, values, pet, number, not
             <textarea
               rows={2}
               value={followUpValue}
-              placeholder={followUp.placeholder}
+              placeholder={textForSpecies(followUp.placeholder, species)}
               onChange={(e) => set(followUp.key, e.target.value)}
             />
           )}
@@ -255,7 +320,7 @@ export default function ConditionParameter({ parameter, values, pet, number, not
             <>
               <ChoiceButtons
                 options={[
-                  ...followUp.options,
+                  ...petTextOptions(followUp.options, pet),
                   ...(followUp.allowOther ? [{ value: 'other', label: followUp.otherLabel ?? 'Other' }] : []),
                   UNSURE_OPTION,
                 ]}
@@ -273,6 +338,28 @@ export default function ConditionParameter({ parameter, values, pet, number, not
                   onChange={(e) => set(`${followUp.key}_other`, e.target.value)}
                 />
               )}
+            </>
+          )}
+
+          {/* Not an input. Some answers are better shown than described — a
+              worm in a stool is the case this exists for — and the app already
+              has a place for photos a vet will look at. This is the way
+              across, offered only once the answer that makes it useful has
+              been given. */}
+          {followUp.type === 'photo' && (
+            <>
+              {followUp.hint && (
+                <p className="assessment-hint">
+                  <PetText template={followUp.hint} pet={pet} />
+                </p>
+              )}
+              <Link
+                to="/media"
+                state={{ returnTo, returnLabel }}
+                className="subtle-link"
+              >
+                <Camera size={14} /> Add a photo or video
+              </Link>
             </>
           )}
         </div>

@@ -11,5 +11,8 @@
         "swiftToolsVersion": "6.0"
       }
     }
+  },
+  "android": {
+    "webContentsDebuggingEnabled": true
   }
 }

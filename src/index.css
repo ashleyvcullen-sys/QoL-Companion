@@ -39,6 +39,11 @@
   --type-support: 14px;
   --type-meta: 13px;
   --type-label: 12px;
+  /* Below the label size. These were hardcoded in eight places — badges,
+     calendar cells, weekday initials, chart labels — which is exactly how a
+     scale stops being a scale. */
+  --type-micro: 11px;
+  --type-nano: 9px;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -477,7 +482,7 @@ code {
 }
 
 .icon-tile-sublabel {
-  font-size: 11px;
+  font-size: var(--type-micro);
   color: var(--text-muted);
   line-height: 130%;
 }
@@ -942,7 +947,7 @@ code {
 
 
 .concept-label {
-  font-size: 11px;
+  font-size: var(--type-micro);
   color: var(--text-h);
   font-weight: 500;
 }
@@ -1777,11 +1782,11 @@ code {
 }
 
 .overview-bar-label--compact {
-  font-size: 9px;
+  font-size: var(--type-nano);
 }
 
 .overview-bar-percent--compact {
-  font-size: 9px;
+  font-size: var(--type-nano);
 }
 
 .calendar {
@@ -1828,7 +1833,7 @@ code {
 }
 
 .calendar-weekday {
-  font-size: 11px;
+  font-size: var(--type-micro);
   color: var(--text-muted);
   text-align: center;
   padding-bottom: 2px;
@@ -1848,7 +1853,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--type-micro);
   font-weight: 600;
 }
 
@@ -2074,7 +2079,7 @@ code {
 }
 
 .schedule-badge {
-  font-size: 11px;
+  font-size: var(--type-micro);
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
@@ -2581,7 +2586,7 @@ code {
 .reminder-cell {
   background: var(--border);
   color: var(--text-h);
-  font-size: 11px;
+  font-size: var(--type-micro);
 }
 
 .reminder-cell.chosen {
@@ -2856,6 +2861,9 @@ code {
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* A date field with a way back to empty beside it. */
@@ -2895,4 +2903,13 @@ code {
   font-size: var(--type-item);
   font-weight: 600;
   color: var(--text-h);
+}
+
+/* An assessment page rendered inside a condition question. Keeps the page's
+   internal spacing but drops the outer padding it uses as a standalone
+   screen. */
+.condition-embedded-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }

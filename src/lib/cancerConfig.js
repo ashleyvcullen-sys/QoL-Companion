@@ -6,7 +6,7 @@
 // are measuring — and this file expands that into the same flat parameter
 // array everything downstream already understands.
 //
-// That is the whole trick. evaluateParameter, summariseEntry, chartConfigFor,
+// That is the whole trick. evaluateParameter, summariseEntry,
 // chartsForCondition, ConditionParameter and the export picker all take a
 // parameter object and none of them need to know a parameter was composed
 // rather than declared.
@@ -19,6 +19,7 @@ import {
   modulesForDiagnoses,
   modulesForDiagnosisDetail,
 } from './cancerModules'
+import { parametersForGi } from './giConfig'
 
 export const CANCER_KEY = 'cancer'
 
@@ -181,9 +182,22 @@ function forSpecies(parameters, species) {
   return parameters.filter((parameter) => !parameter.species || parameter.species === species)
 }
 
+// Which composer builds a composed condition's parameter list.
+//
+// `composed: true` used to mean "this is cancer", because cancer was the only
+// one. Gastrointestinal Disease is composed too and composes differently — no
+// diagnosis layer, no per-instance measures — so a definition now names its
+// own composer rather than every composed condition being assumed to be
+// cancer.
+const COMPOSERS = {
+  cancer: (config) => parametersForCancer(config),
+  gastrointestinal: (config, species) => parametersForGi(config, species),
+}
+
 export function parametersFor(definition, config, species) {
   if (!definition) return []
-  const base = definition.composed ? parametersForCancer(config) : (definition.parameters ?? [])
+  const composer = definition.composed ? COMPOSERS[definition.key] : null
+  const base = composer ? composer(config, species) : (definition.parameters ?? [])
   return forSpecies(base, species)
 }
 

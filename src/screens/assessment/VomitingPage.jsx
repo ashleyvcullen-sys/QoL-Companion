@@ -13,7 +13,11 @@ import {
 
 const FREQUENCY_QUALIFIER_VALUES = VOMITING_FREQUENCY_QUALIFIER_OPTIONS.map((o) => o.value)
 
-export default function VomitingPage({ value, onChange, icon, species, pet }) {
+// `embedded` drops the page's own title and icon header. On the assessment
+// this IS the page and needs both; inside a condition form the question
+// already has a numbered label above it, and a second heading saying
+// "Vomiting" underneath the one that says "3. Vomiting" reads as a mistake.
+export default function VomitingPage({ value, onChange, icon, species, pet, embedded = false }) {
   const { hasVomited, frequency, unit, character } = value
   const isFrequencyQualifier = FREQUENCY_QUALIFIER_VALUES.includes(frequency)
   const characterOptions = species === 'cat'
@@ -25,9 +29,13 @@ export default function VomitingPage({ value, onChange, icon, species, pet }) {
   }
 
   return (
-    <div className="assessment-page">
-      <SectionTitle>Vomiting</SectionTitle>
-      <IconLabelHeader icon={icon} label="Vomiting" />
+    <div className={embedded ? 'condition-embedded-page' : 'assessment-page'}>
+      {!embedded && (
+        <>
+          <SectionTitle>Vomiting</SectionTitle>
+          <IconLabelHeader icon={icon} label="Vomiting" />
+        </>
+      )}
       <p><PetText template="Has {name} been vomiting?" pet={pet} /></p>
       <ChoiceButtons
         options={VOMITING_HAS_VOMITED_OPTIONS}

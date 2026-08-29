@@ -126,6 +126,45 @@ export async function updateGeneralScore({ petId, date, key, value }) {
   return mapGeneralQolRow({ ...data, scores })
 }
 
+// A whole column on the assessment row, rather than a key inside `scores`.
+//
+// Vomiting, urination and water intake are stored as their own jsonb columns
+// because each is a small object rather than a number. A condition form that
+// asks one of those questions has to write back to the column, not into
+// scores — otherwise the answer lands somewhere the assessment never reads.
+//
+// UPDATE-only, like updateGeneralScore. Creating a row here would put a day
+// into the history the owner never assessed, with one field filled and the
+// rest of the assessment blank.
+const GENERAL_FIELD_COLUMNS = {
+  vomiting: 'vomiting',
+  urination: 'urination',
+  waterIntake: 'water_intake',
+}
+
+export async function updateGeneralField({ petId, date, field, value }) {
+  const column = GENERAL_FIELD_COLUMNS[field]
+  if (!column) return null
+
+  const { data, error } = await supabase
+    .from('general_qol_entries')
+    .select('*')
+    .eq('pet_id', petId)
+    .eq('entry_date', date)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) return null
+
+  const { error: updateError } = await supabase
+    .from('general_qol_entries')
+    .update({ [column]: value })
+    .eq('id', data.id)
+
+  if (updateError) throw updateError
+  return mapGeneralQolRow({ ...data, [column]: value })
+}
+
 export async function fetchGeneralQolEntries(petId) {
   const { data, error } = await supabase
     .from('general_qol_entries')

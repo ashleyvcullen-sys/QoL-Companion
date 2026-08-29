@@ -22,6 +22,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- The magic-link redirect target.
+
+                 Sign-in emails a link back to com.qolcompanion.app://login-callback,
+                 which is the same custom scheme iOS registers in Info.plist
+                 (CFBundleURLTypes). Without this filter Android has nothing
+                 registered for that scheme: tapping the link in the email opens
+                 a browser, the browser cannot open it either, and the person is
+                 left outside the app with no way in and no error explaining it.
+
+                 BROWSABLE is what lets it be opened from an email or browser
+                 rather than only by another app. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.qolcompanion.app" android:host="login-callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
@@ -38,6 +56,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android 13 (API 33) and up will not deliver ANY notification without
+         this, and asks the user at runtime as well. Missing, reminders fail
+         silently: nothing errors, they simply never arrive, which is the
+         worst way for a reminder feature to break.
+
+         @capacitor/local-notifications raises the runtime prompt through the
+         permission request the app already makes before scheduling. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Lets reminder notifications fire at the exact scheduled time rather
          than within the OS's default battery-saving delivery window. Not

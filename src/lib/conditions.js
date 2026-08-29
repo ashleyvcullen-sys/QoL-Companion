@@ -108,6 +108,30 @@ export function askedParameters(parameters = []) {
   return parameters.filter(isAsked)
 }
 
+// Whether a parameter's precondition is met.
+//
+// Some questions only make sense once another has been answered a particular
+// way — "did {name} stick to the diet today?" is meaningless for a pet who is
+// not on a diet trial, and asking it anyway produces a "no" that reads as a
+// failure rather than as not applicable.
+//
+// Deliberately one level deep and one condition wide. A dependency graph
+// would be more powerful and much harder to reason about, and every case so
+// far is "this question, only if that answer".
+export function dependencyMet(parameter, values) {
+  const on = parameter?.dependsOn
+  if (!on) return true
+  return values?.[on.key] === on.equals
+}
+
+// The questions to actually put on screen, given what has been answered so
+// far. Everything downstream — scoring, charts, the day's answers — reads the
+// values that exist rather than this list, so a question that disappears
+// takes its answer out of the summary with it.
+export function visibleParameters(parameters = [], values = {}) {
+  return askedParameters(parameters).filter((parameter) => dependencyMet(parameter, values))
+}
+
 // --- Shared parameters -----------------------------------------------------
 //
 // Questions that mean the same thing in more than one condition. Gum colour
@@ -196,7 +220,7 @@ export const SHARED_PARAMETERS = {
   // the reason it matters differs, which is what the `why` override is for.
   coughing: {
     key: 'coughing',
-    label: 'Coughing',
+    label: 'Coughing?',
     type: 'yesno',
     // Sits in the breathing domain but is not breathing effort: a pet can
     // cough all week and breathe effortlessly in between, and the daily
@@ -359,7 +383,7 @@ export const CONDITIONS = {
       },
       {
         key: 'syncope',
-        label: 'Fainting or Collapsing',
+        label: 'Fainting or Collapsing?',
         type: 'yesno',
         emergencyWhen: 'yes',
         why:
@@ -377,7 +401,7 @@ export const CONDITIONS = {
       sharedParameter('gum_colour'),
       {
         key: 'abdominal_distension',
-        label: 'Swollen or Bloated Tummy (Ascites)',
+        label: 'Swollen or Bloated Tummy (Ascites)?',
         type: 'yesno',
         concernWhen: 'yes',
         why:
@@ -456,9 +480,23 @@ export const CONDITIONS = {
     key: 'gastrointestinal',
     label: 'Gastrointestinal Disease',
     Icon: GutOrganIcon,
+    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
     summary:
-      'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else, like Addison\'s disease or pancreatitis.',
-    comingSoon: true,
+      'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else, like Addison\'s disease. It is therefore important to always consult your vet first.',
+    // Composed, like cancer: the owner says which conditions apply and gets
+    // those questions. GI is not one disease — a cat with EPI, a dog on a
+    // food trial and a dog recovering from a foreign body removal share an
+    // organ system and almost nothing else, and one fixed form would be mostly
+    // irrelevant to all three of them every day.
+    //
+    // See lib/giModules.js for the questions and lib/giConfig.js for how a
+    // config becomes a parameter list.
+    composed: true,
+    // PENDING ASH — the whole section. Every owner-facing string in
+    // giModules.js is drafted by me, including all the thresholds.
+    intro: [
+      'Tell us what applies to {name} and this section will ask about those things only.',
+    ],
     parameters: [],
   },
 
@@ -1022,7 +1060,7 @@ export const CONDITIONS = {
       {
         key: 'cold_or_damp',
         species: 'dog',
-        label: 'Worse In Cold Or Damp Weather',
+        label: 'Worse In Cold Or Damp Weather?',
         type: 'yesno',
         // Informational: weather is not deterioration, and flagging it amber
         // every wet week would drag the trend down for something that
@@ -1294,6 +1332,33 @@ export function levelsFor(parameter, species) {
 // Kept as the old name for existing callers.
 export const beapLevelsFor = levelsFor
 
+// Any owner-facing string may be a plain string, or keyed by species where
+// part of what it says is only true for one of them.
+//
+// Used for alert messages, question subtexts, placeholders and citations —
+// all of which have now needed it. Falls back to the dog wording for an
+// unexpected species, the same way `levelsFor` does, so a string is never
+// silently dropped.
+export function textForSpecies(value, species) {
+  if (value == null || typeof value === 'string') return value
+  return value[species] ?? value.dog ?? null
+}
+
+// An alert message may be a plain string, or keyed by species where part of
+// what it says is only true for one of them.
+//
+// Straining is why this exists: a dog and a cat straining and producing
+// nothing both need to be seen today, but only in the cat is a urinary
+// blockage on the list — and telling a dog owner that is noise in the one
+// message that most needs to be read and acted on.
+//
+// Falls back to the dog wording for an unexpected species, the same way
+// `levelsFor` does, so an alert is never silently dropped.
+function messageFor(message, species) {
+  if (message == null || typeof message === 'string') return message
+  return message[species] ?? message.dog ?? null
+}
+
 // A threshold may be a single number or keyed by species.
 function thresholdFor(threshold, species) {
   if (threshold == null) return null
@@ -1319,6 +1384,27 @@ export function evaluateParameter(parameter, value, species) {
   // water intake is worth showing a vet — they just aren't deterioration.
   if (parameter.informational) return null
 
+  // A shared assessment field rather than a scale — vomiting is the only one
+  // today. The answer is an object, so none of the numeric branches below
+  // apply.
+  //
+  // PENDING ASH — the rule, not just the wording. Drafted as: blood is an
+  // emergency, any vomiting at all is worth watching, nothing is fine. The
+  // assessment scores this question its own way for the quality of life
+  // percentage; this is only about whether the condition's DAY is flagged.
+  if (parameter.type === 'vomiting') {
+    if (typeof value !== 'object') return null
+    if (value.hasVomited == null || value.hasVomited === UNSURE) return null
+    if (!value.hasVomited) return { severity: SEVERITY.OK }
+    if ((value.character ?? []).some((entry) => String(entry).toLowerCase().includes('blood'))) {
+      return {
+        severity: SEVERITY.EMERGENCY,
+        message: messageFor(parameter.emergencyMessage, species),
+      }
+    }
+    return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
+  }
+
   if (parameter.type === 'number') {
     const numeric = Number(value)
     if (!Number.isFinite(numeric)) return null
@@ -1327,10 +1413,10 @@ export function evaluateParameter(parameter, value, species) {
     const below = thresholdFor(parameter.concernBelow, species)
 
     if (above != null && numeric > above) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     if (below != null && numeric < below) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
   }
@@ -1339,20 +1425,20 @@ export function evaluateParameter(parameter, value, species) {
     const option = parameter.options.find((entry) => entry.value === value)
     if (!option) return null
     if (option.severity === SEVERITY.EMERGENCY) {
-      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+      return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
     if (option.severity === SEVERITY.CONCERN) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
   }
 
   if (parameter.type === 'yesno') {
     if (parameter.emergencyWhen != null && value === parameter.emergencyWhen) {
-      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+      return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
     if (parameter.concernWhen != null && value === parameter.concernWhen) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
   }
@@ -1366,10 +1452,10 @@ export function evaluateParameter(parameter, value, species) {
     // and grade 3 lethargy are not the same phone call — so neither is
     // assumed here.
     if (parameter.emergencyFromGrade != null && grade >= parameter.emergencyFromGrade) {
-      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+      return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
     if (parameter.concernFromGrade != null && grade >= parameter.concernFromGrade) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
   }
@@ -1385,14 +1471,14 @@ export function evaluateParameter(parameter, value, species) {
     // and then contributed nothing to the summary.
     const level = levelsFor(parameter, species)[score / 2]
     if (typeof level === 'string' && level.includes('(emergency)')) {
-      return { severity: SEVERITY.EMERGENCY, message: parameter.emergencyMessage }
+      return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
 
     // Opt-in per parameter, because how much of a scale counts as concerning
     // is a clinical judgement rather than something to assume. See BEAP_BANDS
     // in scoring.js: 4 is Moderate, 6 Moderate to severe.
     if (parameter.concernFrom != null && score >= parameter.concernFrom) {
-      return { severity: SEVERITY.CONCERN, message: parameter.concernMessage }
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
   }
@@ -1452,6 +1538,18 @@ export function describeParameterAnswer(parameter, value, species) {
     return text || null
   }
 
+  if (parameter.type === 'vomiting') {
+    if (typeof value !== 'object') return null
+    if (value.hasVomited === UNSURE) return 'Not sure'
+    if (value.hasVomited == null) return null
+    if (!value.hasVomited) return 'No vomiting'
+    const frequency = value.frequency === '' || value.frequency == null
+      ? null
+      : `${value.frequency}${value.unit ? ` ${value.unit}` : ''}`
+    const character = (value.character ?? []).filter(Boolean).join(', ')
+    return ['Vomited', frequency, character].filter(Boolean).join(' — ')
+  }
+
   if (parameter.type === 'number') {
     const numeric = Number(value)
     if (!Number.isFinite(numeric)) return null
@@ -1501,6 +1599,7 @@ export function describeConditionDay(condition, values, species) {
 
   for (const parameter of parametersOf(condition)) {
     if (!isAsked(parameter)) continue
+    if (!dependencyMet(parameter, values)) continue
 
     const value = values?.[parameter.key]
     const answer = describeParameterAnswer(parameter, value, species)
@@ -1553,6 +1652,11 @@ export function summariseEntry(condition, values, species) {
     // neither flag a day nor count towards the day having been assessed.
     if (!isAsked(parameter)) continue
 
+    // Nor can one whose precondition is no longer met. An owner who came off
+    // a diet trial should not keep being flagged by yesterday's answer to a
+    // question the app has stopped asking.
+    if (!dependencyMet(parameter, values)) continue
+
     const value = values?.[parameter.key]
     if (value == null || value === '') continue
     // Not counted as answered OR as unsure. A lymph node that cannot be felt
@@ -1603,118 +1707,4 @@ export const SEVERITY_LABELS = {
   [SEVERITY.OK]: 'Nothing flagged',
   [SEVERITY.CONCERN]: 'Worth watching',
   [SEVERITY.EMERGENCY]: 'Needs attention',
-}
-
-// How a parameter is turned into something graphable.
-//
-// Four shapes behind one picker, each with its own axis and its own caption,
-// because pretending they share a scale would be worse than not charting
-// them. BEAAAAPP values are inverted so that, like every other chart in the
-// app, up means better — the raw scale runs the other way.
-export function chartConfigFor(parameter, entries, species) {
-  const read = (entry) => entry.values?.[parameter.key]
-
-  if (parameter.type === 'number') {
-    const points = entries
-      .map((entry) => ({ date: entry.date, value: Number(read(entry)) }))
-      .filter((point) => Number.isFinite(point.value))
-    if (points.length === 0) return null
-
-    const values = points.map((point) => point.value)
-    const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
-    const above = parameter.concernAbove
-    const threshold = above == null
-      ? null
-      : typeof above === 'number' ? above : (above[species] ?? above.dog ?? null)
-
-    return {
-      points,
-      domain: [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad],
-      unit: parameter.unit ? ` ${parameter.unit}` : undefined,
-      threshold,
-      caption: threshold != null
-        ? `The dashed line is ${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}. Readings above it are worth mentioning to your vet, especially if they stay there.`
-        : null,
-    }
-  }
-
-  if (parameter.type === 'vcog') {
-    const points = entries
-      .map((entry) => ({ date: entry.date, value: Number(read(entry)) }))
-      .filter((point) => Number.isFinite(point.value))
-    if (points.length === 0) return null
-
-    return {
-      points,
-      // Fixed 0-4, never fitted to the data. A patient who has only ever been
-      // grade 0 and grade 1 would otherwise get a chart where grade 1 touches
-      // the top of the axis and looks like the worst thing that can happen.
-      domain: [VCOG_MIN_GRADE, VCOG_MAX_GRADE],
-      threshold: parameter.concernFromGrade ?? null,
-      // Where the scale came from is credited ONCE at the top of the
-      // assessment, the same way BEAAAAPP and the WSAVA chart are. Repeating
-      // it under every chart is noise on a screen an owner reads daily.
-      caption: parameter.concernFromGrade != null
-        ? `Graded 0 to 4. A rising line means worsening. The dashed line is grade ${parameter.concernFromGrade}.`
-        : 'Graded 0 to 4. A rising line means worsening.',
-    }
-  }
-
-  if (parameter.type === 'beap' || parameter.type === 'scale') {
-    // Direction is per-parameter, not global.
-    //
-    // Stored values are always BEAAAAPP severity: 0 = no abnormalities,
-    // 10 = worst. Most parameters plot that raw, so the chart shows back the
-    // number the owner picked and a rising line means deterioration. Appetite
-    // sets chartHigherIsBetter, because a line that climbs as a pet stops
-    // eating reads backwards no matter how it is captioned.
-    const flip = parameter.chartHigherIsBetter === true
-    const points = entries
-      .map((entry) => {
-        const raw = Number(read(entry))
-        return { date: entry.date, value: flip ? 10 - raw : raw }
-      })
-      .filter((point) => Number.isFinite(point.value))
-    if (points.length === 0) return null
-    return {
-      points,
-      domain: [0, 10],
-      caption: flip
-        ? '10 is best, 0 is worst. A falling line means things are getting worse.'
-        : '0 is best, 10 is worst — the same scale you picked from above. A rising line means things are getting worse.',
-    }
-  }
-
-  if (parameter.type === 'yesno') {
-    const points = entries
-      .map((entry) => ({ date: entry.date, value: read(entry) === 'yes' ? 1 : read(entry) === 'no' ? 0 : null }))
-      .filter((point) => point.value != null)
-    if (points.length === 0) return null
-    return {
-      points,
-      domain: [0, 1],
-      caption: 'The line sits at the top on days you answered yes, and at the bottom on days you answered no.',
-    }
-  }
-
-  if (parameter.type === 'choice') {
-    // Plotted by severity rather than by which option was chosen: the options
-    // are named states, and a line drawn between "pale pink" and "blue" as if
-    // they were adjacent numbers would invent a scale that doesn't exist.
-    const rank = { [SEVERITY.OK]: 0, [SEVERITY.CONCERN]: 1, [SEVERITY.EMERGENCY]: 2 }
-    const points = entries
-      .map((entry) => {
-        const option = parameter.options.find((o) => o.value === read(entry))
-        return option ? { date: entry.date, value: rank[option.severity] ?? 0 } : null
-      })
-      .filter(Boolean)
-    if (points.length === 0) return null
-    return {
-      points,
-      domain: [0, 2],
-      caption: '0 means nothing flagged, 1 worth watching, 2 needs attention.',
-    }
-  }
-
-  return null
 }

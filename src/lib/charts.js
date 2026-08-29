@@ -20,12 +20,9 @@
 
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import {
-  RELATIONSHIP,
   SEVERITY,
   SEVERITY_COLOURS,
   SEVERITY_LABELS,
-  askedParameters,
-  chartConfigFor,
   conditionByKey,
   summariseEntry,
 } from './conditions'
@@ -44,8 +41,6 @@ export const CHART_GROUPS = {
 export const OVERALL_COLOUR = '#C97B8C'
 export const BCS_COLOUR = '#5C6F8A'
 export const WEIGHT_COLOUR = '#7A9A7E'
-export const CONDITION_COLOUR = '#8A5C6F'
-export const FLAGS_COLOUR = '#C97A2E'
 // What the three colours on a calendar mean, in the owner's words rather
 // than the scoring vocabulary. Green covers both "nothing flagged" and the
 // mildly-reduced band that shares its colour, so "good day" is the honest
@@ -55,24 +50,6 @@ export const SEVERITY_KEY_ITEMS = [
   { colour: SEVERITY_COLOURS[SEVERITY.CONCERN], label: 'Average day' },
   { colour: SEVERITY_COLOURS[SEVERITY.EMERGENCY], label: 'Bad day' },
 ]
-
-// Recharts can only place a vertical line on an x value present in the
-// series, so an event on a day with no reading simply isn't drawn. It still
-// appears in the event list on the condition page — the marker is a bonus,
-// not the record.
-function markersFor(points, events) {
-  if (!events?.length) return undefined
-  const dates = new Set(points.map((point) => point.date))
-  const marks = events
-    .filter((event) => dates.has(event.date))
-    .map((event) => ({
-      date: event.date,
-      label: event.title,
-      short: event.type === 'medication_started' ? 'Rx' : '',
-      colour: eventTypeByValue(event.type)?.colour,
-    }))
-  return marks.length ? marks : undefined
-}
 
 // Which days carry a medical event, as one entry per day.
 //
@@ -297,54 +274,25 @@ function bodyCharts(bcsEntries) {
   return charts
 }
 
-// A chart for a parameter this condition REFERENCES rather than asks.
+// Everything a condition contributes to the registry: its summary calendar,
+// and nothing else.
 //
-// The series is the daily assessment's, not the condition's — the same key on
-// the same 0-100 higher-is-better scale as the wellbeing pillar charts,
-// because it is literally the same number. This exists so that deleting a
-// duplicated question from a condition form does not also delete its trend
-// from the condition page: the owner answers appetite once and still sees how
-// it has moved on the page where it matters.
+// Condition pages used to draw lines too — a concern count, one per graphable
+// parameter, and a borrowed line for each parameter the condition referenced
+// rather than asked. Ash's call is that they don't earn their place. A
+// condition form is a handful of questions answered every few days, and a
+// line drawn through that many points says less than the calendar sitting
+// above it does at a glance, while costing the owner a scroll past half a
+// dozen of them to reach the events list.
 //
-// Returns null when the pet has no assessments carrying that measure, which
-// is also what happens if `covers` names something buildDailySeries does not
-// produce. The overlap check is what stops that reaching here.
-function referencedChart(parameter, dailySeries, definition) {
-  const points = dailySeries.filter((day) => day[parameter.covers] != null)
-  if (points.length === 0) return null
-
-  return {
-    key: `${definition.key}:${parameter.key}`,
-    group: CHART_GROUPS.CONDITION,
-    groupLabel: definition.label,
-    conditionKey: definition.key,
-    parameterKey: parameter.key,
-    // Marks the chart as coming from somewhere else, so a screen can say so
-    // without having to know which parameters are referenced.
-    referenced: true,
-    label: parameter.label,
-    title: parameter.label,
-    kind: 'line',
-    data: points,
-    dataKey: parameter.covers,
-    colour: CONDITION_COLOUR,
-    // Fixed, like the pillar charts this borrows from — the axis means the
-    // same thing on both pages.
-    domain: [0, 100],
-    height: 180,
-    caption:
-      'Taken from your Overall Quality of Life Assessment rather than asked again here. A higher line is better.',
-  }
-}
-
-// Every chart belonging to one condition: its calendar, its concern count,
-// and one per graphable parameter. Exported on its own because the condition
-// page wants exactly this set and nothing else.
+// So the calendar is the whole picture here: colour per day, what was
+// flagged on the day you tap. Trends over time are drawn where there is
+// enough data to make a trend mean something — the Overall Quality of Life
+// section — and that is now the only place in the app that draws a line.
 export function chartsForCondition({
   definition,
   entries = [],
   events = [],
-  dailySeries = [],
   medications = [],
   species,
   config,
@@ -361,8 +309,7 @@ export function chartsForCondition({
   const charts = []
   const groupLabel = resolved.label
 
-  // One summary per logged day, oldest first — feeds both the calendar and
-  // the concern-count chart from a single pass.
+  // One summary per logged day, oldest first — the calendar's whole source.
   const summaries = entries.map((entry) => ({
     date: entry.date,
     ...summariseEntry(resolved, entry.values, species),
@@ -411,71 +358,6 @@ export function chartsForCondition({
     })
   }
 
-  if (summaries.length > 1) {
-    charts.push({
-      key: `${resolved.key}:flags`,
-      group: CHART_GROUPS.CONDITION,
-      groupLabel,
-      conditionKey: resolved.key,
-      // Cadence-neutral wording. "Each day" was wrong the moment a
-      // condition became weekly, and "each week" would be wrong for the
-      // daily ones — what is true for both is "each time you filled it in".
-      label: 'Things flagged',
-      title: 'Things Flagged',
-      kind: 'line',
-      data: summaries,
-      dataKey: 'flags',
-      colour: FLAGS_COLOUR,
-      // Referenced parameters are excluded: they are never answered on this
-      // form, so they can never be flagged, and counting them would make the
-      // axis taller than anything that can be plotted on it.
-      domain: [0, Math.max(2, askedParameters(resolved.parameters).length)],
-      height: 160,
-      caption:
-        'How many findings were flagged each time you filled this in. A colour tells you '
-        + 'something was wrong; this tells you how much — one thing off and four things off look '
-        + 'very different on a chart, and the difference matters.',
-    })
-  }
-
-  for (const parameter of resolved.parameters) {
-    if (parameter.relationship === RELATIONSHIP.REFERENCE) {
-      const referenced = referencedChart(parameter, dailySeries, definition)
-      if (referenced) charts.push(referenced)
-      continue
-    }
-
-    const config = chartConfigFor(parameter, entries, species)
-    if (!config) continue
-    charts.push({
-      key: `${resolved.key}:${parameter.key}`,
-      group: CHART_GROUPS.CONDITION,
-      groupLabel,
-      conditionKey: resolved.key,
-      parameterKey: parameter.key,
-      // A chart has no heading to sit under, so a per-mass measure carries
-      // the mass name here even though the form does not. Otherwise a pet
-      // with three lumps gets three charts all called "Size".
-      label: parameter.instanceLabel ? `${parameter.label} — ${parameter.instanceLabel}` : parameter.label,
-      title: parameter.instanceLabel ? `${parameter.label} — ${parameter.instanceLabel}` : parameter.label,
-      kind: 'line',
-      data: config.points,
-      dataKey: 'value',
-      unit: config.unit,
-      colour: CONDITION_COLOUR,
-      domain: config.domain,
-      height: 180,
-      threshold: config.threshold,
-      thresholdLabel: config.threshold != null ? `${config.threshold}` : undefined,
-      // Events only. Medication and note marks used to be merged in here
-      // too; they now sit on this condition's summary calendar instead, for
-      // the same reason as the overall chart above — a line with a mark on
-      // every second reading is a line nobody can read.
-      markers: markersFor(config.points, events) ?? [],
-      caption: config.caption ?? undefined,
-    })
-  }
-
   return charts
 }
 
@@ -519,7 +401,6 @@ export function buildChartRegistry({
         definition,
         entries: entriesByCondition[definition.key] ?? [],
         events: eventsByCondition[definition.key] ?? [],
-        dailySeries,
         medications,
         species,
         config: configByCondition[definition.key],

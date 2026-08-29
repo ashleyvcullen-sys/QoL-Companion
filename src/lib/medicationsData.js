@@ -18,6 +18,10 @@ function mapMedicationRow(row) {
     remindersEnabled: row.reminders_enabled ?? true,
     reminderTime: row.reminder_time ?? null,
     reminderDays: row.reminder_days ?? [],
+    // Which conditions this medication is for, as condition keys. Empty means
+    // not tied to one — a wormer or a supplement belongs to no diagnosis in
+    // particular, and that is a real answer rather than a gap.
+    conditionKeys: row.condition_keys ?? [],
     notes: row.notes,
     active: row.active,
     // Null means "not recorded", never "today". An owner who does not know
@@ -102,7 +106,7 @@ export async function fetchDosesSince(petId, fromDate) {
 
 export async function createMedication({
   petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod,
-  remindersEnabled, startedOn, endedOn, reminderTime, reminderDays,
+  remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
   const { data, error } = await supabase
     .from('medications')
@@ -120,6 +124,7 @@ export async function createMedication({
       ended_on: endedOn || null,
       reminder_time: scheduleMode === 'frequency' ? (reminderTime || null) : null,
       reminder_days: scheduleMode === 'frequency' ? (reminderDays ?? []) : null,
+      condition_keys: conditionKeys ?? [],
     })
     .select()
     .single()
@@ -130,7 +135,7 @@ export async function createMedication({
 
 export async function updateMedication(medicationId, {
   name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod,
-  remindersEnabled, startedOn, endedOn, reminderTime, reminderDays,
+  remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
   const patch = {}
   if (name !== undefined) patch.name = name
@@ -143,6 +148,9 @@ export async function updateMedication(medicationId, {
   // skipped as though they had never touched it.
   if (startedOn !== undefined) patch.started_on = startedOn || null
   if (endedOn !== undefined) patch.ended_on = endedOn || null
+  // Independent of schedule mode: what a drug is FOR does not change because
+  // of how often it is given.
+  if (conditionKeys !== undefined) patch.condition_keys = conditionKeys ?? []
 
   // Mode drives the other three, so they're written as a set. Leaving a
   // stale frequency on a medication switched to clock times would make the
@@ -280,4 +288,18 @@ export function formatMedicationTime(value) {
   const suffix = hour >= 12 ? 'pm' : 'am'
   const display = hour % 12 === 0 ? 12 : hour % 12
   return `${display}:${String(minute).padStart(2, '0')}${suffix}`
+}
+
+// The medications recorded for one condition.
+//
+// A medication with no conditions chosen is deliberately included: "I have not
+// said what this is for" is far more common than "this is definitely not for
+// the thing I am looking at", and a drug missing from the list where an owner
+// expects it is worse than one shown that turns out to belong elsewhere.
+export function medicationsForCondition(medications = [], conditionKey) {
+  if (!conditionKey) return medications
+  return medications.filter((medication) => {
+    const keys = medication.conditionKeys ?? []
+    return keys.length === 0 || keys.includes(conditionKey)
+  })
 }

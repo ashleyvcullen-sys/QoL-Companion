@@ -206,7 +206,7 @@ export const SIGN_MODULES = {
     parameters: [
       {
         key: 'unable_to_pass_urine',
-        label: 'Unable To Pass Urine',
+        label: 'Unable To Pass Urine?',
         type: 'yesno',
         emergencyWhen: 'yes',
         // The daily urination question asks how it has been. This asks
@@ -218,7 +218,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'straining_to_urinate',
-        label: 'Straining To Urinate',
+        label: 'Straining To Urinate?',
         type: 'yesno',
         concernWhen: 'yes',
         covers: 'urination',
@@ -226,7 +226,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'blood_in_urine',
-        label: 'Blood In The Urine',
+        label: 'Blood In The Urine?',
         type: 'yesno',
         concernWhen: 'yes',
         covers: 'urination',
@@ -282,7 +282,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'black_tarry_stool',
-        label: 'Black, Tarry Stools',
+        label: 'Black, Tarry Stools?',
         type: 'yesno',
         concernWhen: 'yes',
         // Sits in the stool domain and is not a stool score. Melaena is
@@ -303,12 +303,12 @@ export const SIGN_MODULES = {
     parameters: [
       {
         key: 'collapse_episode',
-        label: 'Collapse Or Fainting',
+        label: 'Collapse Or Fainting?',
         type: 'yesno',
         emergencyWhen: 'yes',
         emergencyMessage: 'Collapse in a pet with a tumour that can bleed needs veterinary attention immediately. Contact your vet or the nearest emergency clinic now.', // PENDING ASH
       },
-      { key: 'swollen_abdomen', label: 'Swollen Or Bloated Tummy', type: 'yesno', concernWhen: 'yes' },
+      { key: 'swollen_abdomen', label: 'Swollen Or Bloated Tummy?', type: 'yesno', concernWhen: 'yes' },
     ],
   },
 
@@ -332,7 +332,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'facial_swelling',
-        label: 'Swelling Of The Face',
+        label: 'Swelling Of The Face?',
         type: 'yesno',
         concernWhen: 'yes',
         followUp: {
@@ -346,7 +346,7 @@ export const SIGN_MODULES = {
       // Noise, not effort: a nasal tumour makes a pet snore and snuffle long
       // before it makes {them} work to breathe, which is the earlier sign and
       // the one the daily breathing grade will not show.
-      { key: 'noisy_breathing', label: 'Noisy Breathing Through The Nose', type: 'yesno', concernWhen: 'yes', covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'noisy_breathing', label: 'Noisy Breathing Through The Nose?', type: 'yesno', concernWhen: 'yes', covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
     ],
   },
 
@@ -360,10 +360,10 @@ export const SIGN_MODULES = {
       // The two mechanics questions sit in the appetite domain and are not
       // appetite: this patient is hungry. Declared so the check can see the
       // distinction was made on purpose rather than missed.
-      { key: 'dropping_food', label: 'Dropping Food While Eating', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'avoiding_hard_food', label: 'Avoiding Hard Food Or Chewing On One Side', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'oral_bleeding', label: 'Bleeding From The Mouth', type: 'yesno', concernWhen: 'yes' },
-      { key: 'drooling', label: 'Drooling More Than Usual', type: 'yesno', concernWhen: 'yes' },
+      { key: 'dropping_food', label: 'Dropping Food While Eating?', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'avoiding_hard_food', label: 'Avoiding Hard Food Or Chewing On One Side?', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'oral_bleeding', label: 'Bleeding From The Mouth?', type: 'yesno', concernWhen: 'yes' },
+      { key: 'drooling', label: 'Drooling More Than Usual?', type: 'yesno', concernWhen: 'yes' },
     ],
   },
 }
@@ -533,7 +533,7 @@ export const TREATMENT_MODULES = {
       },
       {
         key: 'unusually_quiet_or_hot',
-        label: 'Very Quiet, Shivering Or Feels Hot',
+        label: 'Very Quiet, Shivering Or Feels Hot?',
         type: 'yesno',
         concernWhen: 'yes',
         // Reads like the attitude category and is not it. Quiet here is one
@@ -621,10 +621,10 @@ export const TREATMENT_MODULES = {
       // different question, because the expected answer is different: on
       // steroids, drinking more is the drug working, not the patient
       // declining. Declared rather than left to be rediscovered.
-      { key: 'drinking_more', label: 'Drinking More Than Usual', type: 'yesno', informational: true, covers: 'waterIntake', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'urinating_more', label: 'Urinating More Than Usual', type: 'yesno', informational: true, covers: 'urination', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'panting', label: 'Panting More Than Usual', type: 'yesno', informational: true, covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'appetite_increase', label: 'Hungrier Than Usual', type: 'yesno', informational: true, covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'drinking_more', label: 'Drinking More Than Usual?', type: 'yesno', informational: true, covers: 'waterIntake', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'urinating_more', label: 'Urinating More Than Usual?', type: 'yesno', informational: true, covers: 'urination', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'panting', label: 'Panting More Than Usual?', type: 'yesno', informational: true, covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'appetite_increase', label: 'Hungrier Than Usual?', type: 'yesno', informational: true, covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
     ],
   },
 }
@@ -672,6 +672,16 @@ export const DIAGNOSES = [
   { key: 'splenic', label: 'Splenic tumour', modules: ['haemorrhage', 'gums', 'respiratory'] },
   { key: 'tcc', label: 'Bladder or urethral tumour', modules: ['urinary'] },
   { key: 'nasal', label: 'Nasal tumour', modules: ['nasal', 'respiratory'] },
+  {
+    key: 'git',
+    label: 'Gastrointestinal (GIT) tumour',
+    // PENDING ASH — the suggested modules, as with every other diagnosis
+    // here. `gi` covers appetite, nausea, vomiting and diarrhoea; `haemorrhage`
+    // is here because a bleeding gut tumour presents as collapse and a pale,
+    // swollen pet rather than as anything an owner would call a gut sign, and
+    // `gums` is how they would see it first.
+    modules: ['gi', 'haemorrhage', 'gums'],
+  },
   { key: 'oral', label: 'Oral tumour', modules: ['oral', 'mass'] },
   { key: 'mammary', label: 'Mammary tumour', modules: ['mass', 'respiratory'] },
   {

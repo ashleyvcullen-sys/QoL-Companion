@@ -9,6 +9,8 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import ReminderDayPicker from '../components/ReminderDayPicker'
 import { usePets } from '../lib/PetsContext'
+import { usePetConditions } from '../lib/conditionsData'
+import { resolveTrackedConditions } from '../lib/charts'
 import {
   createMedication,
   deleteMedication,
@@ -41,6 +43,7 @@ const EMPTY_FORM = {
   notes: '',
   startedOn: '',
   endedOn: '',
+  conditionKeys: [],
 }
 
 // What the reminders will actually do, in words, for the line under the time
@@ -100,6 +103,11 @@ export default function Medications() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const { medications, doses, loading, refresh } = useMedications(pet?.id)
+  // What {name} is actually being monitored for. Only these are offered — a
+  // list of every condition the app supports would mostly be things this pet
+  // does not have.
+  const { conditions } = usePetConditions(pet?.id)
+  const trackedConditions = resolveTrackedConditions(conditions)
 
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -192,6 +200,7 @@ export default function Medications() {
       startedOn: medication.startedOn ?? '',
       reminderTime: medication.reminderTime ?? '08:00',
       reminderDays: medication.reminderDays ?? [],
+      conditionKeys: medication.conditionKeys ?? [],
       endedOn: medication.endedOn ?? '',
       // Medications saved before the mode buttons were removed open as
       // what they always were: three times of day IS three times a day. The
@@ -259,6 +268,7 @@ export default function Medications() {
         remindersEnabled: form.scheduleMode === 'as_needed' ? false : form.remindersEnabled,
         reminderTime: form.reminderTime,
         reminderDays: form.reminderDays,
+        conditionKeys: form.conditionKeys ?? [],
         startedOn: form.startedOn,
         endedOn: form.endedOn,
       }
@@ -497,6 +507,41 @@ export default function Medications() {
                 on the Trends and condition calendars, so an owner can see
                 what the days looked like either side of starting something.
                 Both optional: a guess drawn as a fact is worse than a gap. */}
+            {/* Which condition this is for. Chips rather than a dropdown,
+                because more than one can be true: steroids for an inflamed
+                gut and a sore joint is the ordinary case, and making the
+                owner pick one would file the drug wrongly and then hide it
+                from half the places it belongs. */}
+            {trackedConditions.length > 0 && (
+              <div className="field">
+                <label>What is this for? (optional)</label>
+                <div className="symptom-chips">
+                  {trackedConditions.map((definition) => {
+                    const chosen = (form.conditionKeys ?? []).includes(definition.key)
+                    return (
+                      <button
+                        key={definition.key}
+                        type="button"
+                        className={`chip ${chosen ? 'selected' : ''}`.trim()}
+                        onClick={() => setForm({
+                          ...form,
+                          conditionKeys: chosen
+                            ? form.conditionKeys.filter((key) => key !== definition.key)
+                            : [...(form.conditionKeys ?? []), definition.key],
+                        })}
+                      >
+                        {definition.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="assessment-hint">
+                  Choose none and it will show under every condition {pet.name} is
+                  monitored for.
+                </p>
+              </div>
+            )}
+
             <div className="field">
               <label htmlFor="med-started">Started (optional)</label>
               <div className="med-date-row">
