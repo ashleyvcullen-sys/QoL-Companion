@@ -29,6 +29,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../lib/qolData'
 import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
+import { monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -62,16 +63,6 @@ export default function ConditionMonitoring() {
   // asked the same thing twice on the same day.
   const { generalEntries, painEntries } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
-  // Only what {name} is on NOW. A finished course is history, and listing it
-  // under "is she currently on any medication?" would answer that question
-  // wrongly.
-  // This condition's medications, not every medication. Anything the owner
-  // has not assigned still shows — "I have not said what this is for" is far
-  // more common than "this is definitely not for the thing I am looking at".
-  const activeMedications = medicationsForCondition(
-    medications.filter((medication) => medication.active),
-    definition?.key,
-  )
 
   // Which condition is determined by the URL, so each one is a real page you
   // can navigate back to rather than a tab inside a single screen.
@@ -79,6 +70,23 @@ export default function ConditionMonitoring() {
   const { conditionKey } = useParams()
   const currentKey = conditionKey ?? null
   const definition = conditionByKey(currentKey)
+
+  // Declared AFTER `definition`, and that ordering is load-bearing: this
+  // reads it, and a `const` cannot be read on a line above its own
+  // declaration. Written the other way round — which is how it shipped — the
+  // screen threw "Cannot access 'definition' before initialization" on every
+  // condition, before drawing anything.
+  //
+  // Only what {name} is on NOW: a finished course is history, and listing it
+  // under "is she currently on any medication?" would answer that question
+  // wrongly. And only THIS condition's medications — though anything the
+  // owner has not assigned still shows, because "I have not said what this is
+  // for" is far more common than "this is definitely not for the thing I am
+  // looking at".
+  const activeMedications = medicationsForCondition(
+    medications.filter((medication) => medication.active),
+    definition?.key,
+  )
 
   // The row for THIS condition, which carries the per-pet config. Only a
   // composed condition (cancer) uses it; for everything else it is `{}` and
@@ -112,26 +120,30 @@ export default function ConditionMonitoring() {
   const today = todayIsoDate()
 
   // How often this condition is worth filling in. Absent means daily, which
-  // is how every condition behaved before arthritis.
+  // is how every condition behaved before arthritis. Used for the wording
+  // only — the arithmetic goes through the shared helper below.
   const cadence = definition?.cadence ?? null
-
-  // Whole days between the last entry and today. Parsed as UTC midnight on
-  // both sides so a clock change cannot make this off by one.
-  function daysSince(dateIso) {
-    if (!dateIso) return null
-    const ms = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${dateIso}T00:00:00Z`)
-    return Number.isFinite(ms) ? Math.floor(ms / 86400000) : null
-  }
 
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
   const latestEntry = entries[entries.length - 1] ?? null
 
-  // Declared AFTER latestEntry, and that ordering is the whole point: these
-  // two read it, and a `const` cannot be read on a line above its own
+  // Declared AFTER latestEntry, and that ordering is the whole point: this
+  // reads it, and a `const` cannot be read on a line above its own
   // declaration. Reversed, every render of this screen threw "Cannot access
   // 'latestEntry' before initialization" before it drew anything.
-  const sinceLast = daysSince(latestEntry?.date)
-  const dueIn = cadence && sinceLast != null ? cadence.days - sinceLast : null
+  //
+  // Through lib/monitoringStatus rather than a local subtraction, so this
+  // screen, the condition list and the Schedule screen cannot tell the same
+  // owner three different things about the same pet. It also picks up the
+  // owner's OWN chosen frequency, which this screen used to ignore: someone
+  // who set arthritis to fortnightly was still told it was due on day seven,
+  // because the sum here only ever read the clinical default.
+  const status = monitoringStatus({
+    definition,
+    schedule: pet?.schedule,
+    lastDate: latestEntry?.date ?? null,
+    today,
+  })
 
 
   // Any emergency answer anywhere in the condition, surfaced at the top of
@@ -638,10 +650,10 @@ export default function ConditionMonitoring() {
             {!entriesLoading && latestEntry && (
               <p className="assessment-hint">
                 Last recorded {formatDateDDMMYYYY(latestEntry.date)}.
-                {cadence && dueIn != null && (
-                  dueIn > 1
-                    ? ` Next one due in ${dueIn} days.`
-                    : dueIn === 1
+                {status.dueIn != null && (
+                  status.dueIn > 1
+                    ? ` Next one due in ${status.dueIn} days.`
+                    : status.dueIn === 1
                       ? ' Next one due tomorrow.'
                       : ' Due now.'
                 )}
@@ -706,26 +718,32 @@ export default function ConditionMonitoring() {
             />
           </Card>
 
-          <Card>
-            <SectionTitle>Stop Tracking</SectionTitle>
-            <p className="assessment-hint">
-              Removing {definition.label} deletes the readings and events recorded for it. Your
-              general quality of life history isn't affected.
-            </p>
-            {conditions
-              .filter((condition) => condition.conditionKey === definition.key)
-              .map((condition) => (
-                <Btn
-                  key={condition.id}
-                  type="button"
-                  variant="danger"
-                  className="btn-block"
-                  onClick={() => setConfirmRemove(condition)}
-                >
-                  <Trash2 size={16} /> Stop tracking {definition.label}
-                </Btn>
-              ))}
-          </Card>
+          {/* Only once there is something to stop.
+              
+              This used to render the heading and the warning about deleting
+              readings whatever the state, with the button mapped from a list
+              that was empty until the owner's first save — so anyone reading
+              about a condition they had never tracked was shown a "Stop
+              Tracking" card, told their readings would be deleted, and given
+              no button. An empty destructive section is worse than no
+              section: it implies something is being tracked. */}
+          {petCondition && (
+            <Card>
+              <SectionTitle>Stop Tracking</SectionTitle>
+              <p className="assessment-hint">
+                Removing {definition.label} deletes the readings and events recorded for it. Your
+                general quality of life history isn't affected.
+              </p>
+              <Btn
+                type="button"
+                variant="danger"
+                className="btn-block"
+                onClick={() => setConfirmRemove(petCondition)}
+              >
+                <Trash2 size={16} /> Stop tracking {definition.label}
+              </Btn>
+            </Card>
+          )}
 
         </>
       )}

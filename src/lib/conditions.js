@@ -220,7 +220,7 @@ export const SHARED_PARAMETERS = {
   // the reason it matters differs, which is what the `why` override is for.
   coughing: {
     key: 'coughing',
-    label: 'Coughing?',
+    label: 'Coughing',
     type: 'yesno',
     // Sits in the breathing domain but is not breathing effort: a pet can
     // cough all week and breathe effortlessly in between, and the daily
@@ -277,6 +277,20 @@ export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessm
 // individual condition page too for a while; repeating it at the top of every
 // disease was a sentence someone had already read, sitting between them and
 // the thing they came to do.
+// The label on the button that reveals a question's subtext.
+//
+// The subtext explains what a question is really asking — what "straining"
+// looks like, why coughing after a vomit matters. That is worth reading once
+// and worth having available forever, which is not the same as worth having
+// on screen every time. A GI form with eleven questions carried eleven
+// paragraphs of it, and the questions themselves were what got scrolled past.
+//
+// A parameter can override this with `whyLabel` where the generic phrasing
+// does not fit what its subtext actually says.
+//
+// APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+export const WHY_LABEL = 'More info'
+
 export const MONITORING_DISCLAIMER =
   "This does not replace your vet's advice or clinical assessment, but will help make monitoring at home easier between visits."
 
@@ -383,7 +397,7 @@ export const CONDITIONS = {
       },
       {
         key: 'syncope',
-        label: 'Fainting or Collapsing?',
+        label: 'Fainting or Collapsing',
         type: 'yesno',
         emergencyWhen: 'yes',
         why:
@@ -401,7 +415,7 @@ export const CONDITIONS = {
       sharedParameter('gum_colour'),
       {
         key: 'abdominal_distension',
-        label: 'Swollen or Bloated Tummy (Ascites)?',
+        label: 'Swollen or Bloated Tummy (Ascites)',
         type: 'yesno',
         concernWhen: 'yes',
         why:
@@ -482,7 +496,7 @@ export const CONDITIONS = {
     Icon: GutOrganIcon,
     // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
     summary:
-      'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else, like Addison\'s disease. It is therefore important to always consult your vet first.',
+      'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else. It is therefore important to always consult your vet first.',
     // Composed, like cancer: the owner says which conditions apply and gets
     // those questions. GI is not one disease — a cat with EPI, a dog on a
     // food trial and a dog recovering from a foreign body removal share an
@@ -551,6 +565,11 @@ export const CONDITIONS = {
         species: 'dog',
         label: 'Orientation',
         type: 'scale',
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her cut: the examples
+        // that followed are already the six levels below, and repeating them
+        // above the scale asks the owner to read the same list twice.
+        why:
+          'This is about whether {name} still finds {their} way around places {they} {have} always known.',
         concernFrom: 4, // PENDING ASH
         levels: {
           dog: [
@@ -568,6 +587,10 @@ export const CONDITIONS = {
         species: 'cat',
         label: 'Orientation',
         type: 'scale',
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Same cut as the dog
+        // version, for the same reason.
+        why:
+          'This is about whether {name} still moves around {their} own home with confidence.',
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026, for every level EXCEPT
         // moderate. That one ("Sometimes stares at walls or into space") is
@@ -741,6 +764,13 @@ export const CONDITIONS = {
         // circuit for an hour is busy and not well.
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Two sentences, and the
+        // second is the one doing the work: an owner who has already answered
+        // the daily activity question will otherwise read this as the same
+        // question and give it the same answer.
+        why:
+          'Your Overall Quality of Life Assessment asks how much {name} is doing. '
+          + 'This asks whether it still has a point to it.',
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation and full
         // stops normalised (severe ended on a colon), and "the world around
@@ -763,6 +793,13 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
+        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Two sentences, and the
+        // second is the one doing the work: an owner who has already answered
+        // the daily activity question will otherwise read this as the same
+        // question and give it the same answer.
+        why:
+          'Your Overall Quality of Life Assessment asks how much {name} is doing. '
+          + 'This asks whether it still has a point to it.',
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         levels: {
@@ -987,8 +1024,10 @@ export const CONDITIONS = {
       {
         key: 'palpation',
         // Same reasoning as Ambulation above: named for the BEAAAAPP category
-        // it reuses, so the two never read as separate measures.
-        label: 'Palpation',
+        // it reuses, so the two never read as separate measures — including
+        // the "(response to touch)" gloss, which is the whole point of the
+        // heading for an owner who does not use the word palpation.
+        label: 'Palpation (response to touch)',
         type: 'beap',
         beapKey: 'palpation',
         hideImages: true,
@@ -1060,7 +1099,7 @@ export const CONDITIONS = {
       {
         key: 'cold_or_damp',
         species: 'dog',
-        label: 'Worse In Cold Or Damp Weather?',
+        label: 'Worse In Cold Or Damp Weather',
         type: 'yesno',
         // Informational: weather is not deterioration, and flagging it amber
         // every wet week would drag the trend down for something that

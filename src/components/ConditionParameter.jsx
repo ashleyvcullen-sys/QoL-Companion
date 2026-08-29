@@ -4,6 +4,7 @@ import { AlertTriangle, Camera, Info } from 'lucide-react'
 import Btn from './Btn'
 import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
+import ExpandableNote from './ExpandableNote'
 import PetText from './PetText'
 import VomitingPage from '../screens/assessment/VomitingPage'
 import SeverityOptionList from './SeverityOptionList'
@@ -11,6 +12,7 @@ import {
   NOT_APPLICABLE,
   SEVERITY,
   UNSURE,
+  WHY_LABEL,
   textForSpecies,
   VCOG_GRADE_LABELS,
   VCOG_SCORES,
@@ -152,14 +154,25 @@ export default function ConditionParameter({
             which is the kind of thing that only shows up on a real pet. */}
         <span>{fillPetText(parameter.label, pet)}</span>
       </span>
-      {/* Through textForSpecies: a subtext may be written once for both
+      {/* Folded away behind a button rather than printed under every
+          question. Eleven questions with a paragraph each turns a form into
+          an essay, and the owner filling it in for the thirtieth time is
+          scrolling past all of it to reach the answers.
+
+          Never the standing alert below, which is the opposite case: that one
+          has to be read before the question is answered, so it is not
+          something an owner can choose not to open.
+
+          Through textForSpecies: a subtext may be written once for both
           species, or keyed by species where part of it is only true for one —
           "chews" belongs in a dog's list of things that break a diet trial and
           not in a cat's. */}
       {textForSpecies(parameter.why, species) && (
-        <p className="assessment-hint">
-          <PetText template={textForSpecies(parameter.why, species)} pet={pet} />
-        </p>
+        <ExpandableNote label={fillPetText(parameter.whyLabel ?? WHY_LABEL, pet)}>
+          <p className="assessment-hint">
+            <PetText template={textForSpecies(parameter.why, species)} pet={pet} />
+          </p>
+        </ExpandableNote>
       )}
 
       {/* A standing alert, shown whatever the answer — unlike every other

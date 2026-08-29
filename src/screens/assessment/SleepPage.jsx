@@ -1,5 +1,7 @@
+import ExpandableNote from '../../components/ExpandableNote'
 import SectionTitle from '../../components/SectionTitle'
 import SeverityOptionList from '../../components/SeverityOptionList'
+import { SLEEP_NOTES_LABEL } from '../../lib/assessmentOptions'
 import { SLEEP_SCALE } from '../../lib/beapScales'
 import { snapToOption } from '../../lib/conditions'
 import { fillPetText } from '../../lib/petText'
@@ -23,11 +25,17 @@ export default function SleepPage({ value, onChange, pet, description, note }) {
     <div className="assessment-page">
       <SectionTitle>Sleep</SectionTitle>
 
-      {Array.isArray(description)
-        ? description.map((text, index) => (
-          <p key={index} className="assessment-hint">{text}</p>
-        ))
-        : description && <p className="assessment-hint">{description}</p>}
+      {/* Behind a tap rather than always on screen. It answers "how much is
+          normal?", which is a first-visit question — after that it is two
+          paragraphs between the owner and the thing they opened the app to
+          do. */}
+      {description && (
+        <ExpandableNote label={SLEEP_NOTES_LABEL[pet?.species] ?? SLEEP_NOTES_LABEL.dog}>
+          {(Array.isArray(description) ? description : [description]).map((text, index) => (
+            <p key={index} className="assessment-hint">{text}</p>
+          ))}
+        </ExpandableNote>
+      )}
 
       {/* Where this answer came from, when a condition form collected it
           first. Above the options rather than below, so it is read before

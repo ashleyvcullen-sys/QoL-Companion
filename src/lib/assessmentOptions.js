@@ -49,6 +49,19 @@ export const SLEEP_NOTES = {
   ],
 }
 
+// The label on the button that reveals SLEEP_NOTES.
+//
+// It names the question the notes answer rather than the notes themselves —
+// "Read more" tells an owner nothing about whether it is worth the tap.
+// Species-keyed for the same reason the notes are: a dog owner asking this
+// is not asking about cats.
+//
+// PENDING ASH — wording.
+export const SLEEP_NOTES_LABEL = {
+  dog: 'How much sleep is normal for a dog?',
+  cat: 'How much sleep is normal for a cat?',
+}
+
 export const HYGIENE_SYMPTOM_OPTIONS = [
   'None',
   'Matting',

@@ -15,7 +15,8 @@ import {
   scheduleQolReminder,
 } from '../lib/notifications'
 import { useMedications } from '../lib/medicationsData'
-import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
+import { daysBetween } from '../lib/monitoringStatus'
 import ReminderDayPicker from '../components/ReminderDayPicker'
 import { resolveTrackedConditions } from '../lib/charts'
 import Card from '../components/Card'
@@ -90,11 +91,6 @@ function describeMedicationReminder(medication) {
   return `${when}, daily`
 }
 
-function daysSince(dateStr) {
-  const last = new Date(dateStr)
-  const now = new Date()
-  return Math.floor((now - last) / (1000 * 60 * 60 * 24))
-}
 
 function openNotificationSettings() {
   // Cross-platform: opens the app's own notification settings on Android
@@ -119,7 +115,13 @@ function ScheduleRow({
   reminderOff = false,
 }) {
   // Nothing is overdue when there is no schedule to be overdue against.
-  const isOverdue = !reminderOff && (!lastDate || daysSince(lastDate) >= cadenceDays)
+  //
+  // Through the shared helper rather than a local date subtraction. The one
+  // that used to live here built a Date from the ISO string (UTC midnight)
+  // and compared it to `new Date()` (local now), which is a day out in either
+  // direction depending on the timezone and the hour — so this row and the
+  // condition list could disagree about the same pet on the same evening.
+  const isOverdue = !reminderOff && (!lastDate || daysBetween(lastDate, todayIsoDate()) >= cadenceDays)
   const dayMode = reminderOff ? null : dayModeFor(cadenceDays)
 
   return (

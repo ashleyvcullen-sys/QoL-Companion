@@ -57,14 +57,13 @@ Two rows means both are present.
 
 ## Not yet applied
 
-**Nothing outstanding as of 25 Aug 2026.**
-
-Every migration file in this folder has been run. Add a row here the moment a
-new migration file is written, not when someone remembers — a file sitting in
-the folder with no row in either table is indistinguishable from one that has
-been applied, and that ambiguity is what this document exists to remove.
+Add a row here the moment a new migration file is written, not when someone
+remembers — a file sitting in the folder with no row in either table is
+indistinguishable from one that has been applied, and that ambiguity is what
+this document exists to remove.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
+| `20260829000000_medication_conditions.sql` | Adds a nullable `condition_keys text[]` to `medications` | Lets a medication say which condition it is for, so a disease page can list only that condition's medications instead of every active one. **Until this is run, saving a medication fails if a condition is chosen for it.** |
 
 Update these tables whenever a migration is applied.

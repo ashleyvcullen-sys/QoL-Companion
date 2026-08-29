@@ -44,6 +44,42 @@
      scale stops being a scale. */
   --type-micro: 11px;
   --type-nano: 9px;
+  /* One step above `item`, one below `heading`. Text on a button, and a
+     heading inside a long-form document where the card-heading size would
+     shout. It was written as a bare 16px in both places. */
+  --type-action: 16px;
+
+  /* Corner radius scale. Eleven different radii were in use, several of them
+     one or two apart, which is the kind of difference nobody can name but
+     everybody can feel. Each role below has one value, and a component picks
+     a role rather than a number:
+
+       pill     anything fully rounded — buttons, chips, choices
+       modal    the sheet that covers the screen
+       card     a card, and the large controls shaped like one
+       panel    a boxed passage: callouts, photos, summary blocks
+       control  a thing you type in, and the tighter callouts
+       thumb    a small image, and the small round-cornered controls
+       cell     a calendar cell, a video frame
+       tiny     slider steps and small badges
+       swatch   a colour chip a few pixels across                      */
+  --radius-pill: 999px;
+  --radius-modal: 24px;
+  --radius-card: 20px;
+  --radius-panel: 14px;
+  --radius-control: 12px;
+  --radius-thumb: 10px;
+  --radius-cell: 8px;
+  --radius-tiny: 6px;
+  --radius-swatch: 3px;
+
+  /* An icon, dot or swatch sitting beside its own label. This was 5px, 6px
+     or 7px depending on which component you happened to be looking at. */
+  --gap-inline: 6px;
+  /* A label sitting directly above the value it names — a date over a note,
+     a medication name over its dose. Ten of these agreed on 2px and two did
+     not, so the two moved. */
+  --gap-stack-tight: 2px;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -150,7 +186,7 @@ code {
   font-size: var(--type-item);
   line-height: 135%;
   padding: 4px 8px;
-  background: var(--code-bg);
+  background: var(--accent-tint);
 }
 
 .screen {
@@ -165,7 +201,7 @@ code {
 .card {
   background: #fff;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   padding: 28px 24px;
   box-shadow: 0 2px 10px rgba(61, 43, 48, 0.06);
   box-sizing: border-box;
@@ -210,7 +246,7 @@ code {
 .field textarea {
   font: inherit;
   padding: 11px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text-h);
@@ -254,9 +290,9 @@ code {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-inline);
   padding: 9px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
@@ -290,9 +326,9 @@ code {
   justify-content: center;
   gap: 8px;
   padding: 13px 22px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: var(--type-action);
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
@@ -357,7 +393,7 @@ code {
   flex: 0 0 auto;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   padding: 6px 14px;
   font: inherit;
   font-size: var(--type-meta);
@@ -407,9 +443,9 @@ code {
 .pet-switcher-add {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 9px 14px;
-  border-radius: 999px;
+  gap: var(--gap-inline);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
   border: 1px dashed var(--border);
   background: none;
   color: var(--text-muted);
@@ -518,7 +554,7 @@ code {
 .icon-label-header {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gap-inline);
   font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
@@ -543,7 +579,7 @@ code {
   align-items: flex-start;
   gap: 8px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: rgba(163, 58, 46, 0.1);
   border: 1px solid var(--severity-severe);
   color: var(--severity-severe);
@@ -598,7 +634,7 @@ code {
   padding: 16px 74px 16px 18px;
   border: 2px solid var(--accent);
   background: rgba(201, 123, 140, 0.06);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
 }
 
 .condition-parameter .input-with-unit input[type="number"]:disabled {
@@ -625,7 +661,7 @@ code {
 .condition-followup textarea {
   font: inherit;
   padding: 11px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text-h);
@@ -639,14 +675,14 @@ code {
   flex-direction: column;
   gap: 10px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: var(--bg);
 }
 
 .how-to-button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gap-inline);
   align-self: flex-start;
   font-size: var(--type-support);
 }
@@ -760,6 +796,33 @@ code {
   color: var(--severity-good);
 }
 
+/* Two lines of status, stacked, at the right-hand end of the tile.
+   
+   Stacked rather than side by side because the tile already carries a 34px
+   organ icon and a condition name, and "Gastrointestinal Disease" beside
+   "Tracking · Due — 3 days late" leaves the name about nine characters. */
+.condition-tile-statuses {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--gap-stack-tight);
+  flex-shrink: 0;
+}
+
+/* Red for due, green for on track — Ash's call, and it matches what the
+   Schedule screen has always done: `.schedule-badge.overdue` is
+   --severity-severe and `.ok` is --severity-good. The tiles were amber and
+   muted grey, which meant the same two states wore different colours on two
+   screens an owner moves between. */
+.condition-tile-status.due {
+  color: var(--severity-severe);
+  font-weight: 600;
+}
+
+.condition-tile-status.on-track {
+  color: var(--severity-good);
+}
+
 .event-list {
   display: flex;
   flex-direction: column;
@@ -790,7 +853,7 @@ code {
 .event-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   flex: 1;
   min-width: 0;
 }
@@ -819,7 +882,7 @@ code {
 .status-cell {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
+  border-radius: var(--radius-swatch);
   flex-shrink: 0;
 }
 
@@ -841,7 +904,7 @@ code {
 .status-swatch {
   width: 11px;
   height: 11px;
-  border-radius: 3px;
+  border-radius: var(--radius-swatch);
 }
 
 /* The takeaway line under the steps. Given a tinted panel rather than just
@@ -850,7 +913,7 @@ code {
 .how-to-footer {
   margin-top: 14px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: rgba(201, 123, 140, 0.1);
   color: var(--text-h);
   font-size: var(--type-support);
@@ -862,7 +925,7 @@ code {
   padding-left: 20px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   font-size: var(--type-support);
   line-height: 150%;
   color: var(--text);
@@ -874,7 +937,7 @@ code {
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-tiny);
   background: rgba(201, 123, 140, 0.12);
   color: var(--accent);
   flex-shrink: 0;
@@ -896,12 +959,12 @@ code {
 }
 
 .legal-doc .section-title {
-  font-size: 16px;
+  font-size: var(--type-action);
   color: var(--text-h);
 }
 
 .legal-doc .emergency-list {
-  gap: 7px;
+  gap: 8px;
 }
 
 /* Tighter cards too: full padding around 14px text leaves each clause
@@ -954,7 +1017,7 @@ code {
 
 .concept-definition {
   background: rgba(201, 123, 140, 0.08);
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   padding: 12px 14px;
   font-size: var(--type-support);
   color: var(--text);
@@ -969,7 +1032,7 @@ code {
 
 .choice-button {
   padding: 9px 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
@@ -992,7 +1055,7 @@ code {
 
 .chip {
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
@@ -1088,7 +1151,7 @@ code {
 .welcome-callout {
   background: rgba(201, 123, 140, 0.08);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: 16px;
 }
 
@@ -1106,7 +1169,7 @@ code {
   gap: 10px;
   align-items: flex-start;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: var(--accent-tint);
   border: 1px solid var(--border);
   margin-bottom: 14px;
@@ -1169,7 +1232,7 @@ code {
   gap: 12px;
   background: rgba(163, 58, 46, 0.08);
   border: 1px solid rgba(163, 58, 46, 0.25);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   padding: 16px;
   color: var(--severity-severe);
 }
@@ -1213,7 +1276,7 @@ code {
   gap: 10px;
   text-align: left;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text-h);
@@ -1248,7 +1311,7 @@ code {
 .severity-option-thumb {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radius-thumb);
   object-fit: contain;
   object-position: center;
   background: #fff;
@@ -1271,7 +1334,7 @@ code {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 10px;
+  border-radius: var(--radius-thumb);
   background: #fff;
 }
 
@@ -1370,9 +1433,9 @@ code {
 .med-slot {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
+  gap: var(--gap-inline);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
@@ -1403,7 +1466,7 @@ code {
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius-thumb);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text-muted);
@@ -1427,7 +1490,7 @@ code {
 .med-list-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   min-width: 0;
 }
 
@@ -1488,7 +1551,7 @@ code {
 
 .med-frequency-per {
   font-size: var(--type-item);
-  color: var(--text-b);
+  color: var(--text);
   flex: 0 0 auto;
 }
 
@@ -1512,7 +1575,7 @@ code {
   position: relative;
   margin: 0;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   overflow: hidden;
   background: #fff;
 }
@@ -1531,7 +1594,7 @@ code {
 .media-item figcaption {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   padding: 8px 10px 10px;
 }
 
@@ -1562,7 +1625,7 @@ code {
   flex-direction: column;
   gap: 10px;
   background: rgba(201, 123, 140, 0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: 16px;
 }
 
@@ -1601,7 +1664,7 @@ code {
   max-width: 480px;
   max-height: 85vh;
   overflow-y: auto;
-  border-radius: 24px;
+  border-radius: var(--radius-modal);
   padding: 24px;
   box-sizing: border-box;
 }
@@ -1660,8 +1723,8 @@ code {
 }
 
 .age-bracket-button {
-  padding: 9px 14px;
-  border-radius: 999px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
@@ -1681,14 +1744,14 @@ code {
   flex-direction: column;
   gap: 10px;
   background: rgba(201, 123, 140, 0.08);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   padding: 14px;
 }
 
 .age-bracket-row-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--gap-stack-tight);
 }
 
 .age-bracket-field-label {
@@ -1712,7 +1775,7 @@ code {
 .overview-bar-block {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
 }
 
 .overview-bar-row {
@@ -1743,14 +1806,14 @@ code {
 
 .overview-bar-track {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--border);
   overflow: hidden;
 }
 
 .overview-bar-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   transition: width 0.2s ease;
 }
 
@@ -1849,7 +1912,7 @@ code {
   font: inherit;
   cursor: pointer;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: var(--radius-cell);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1867,9 +1930,9 @@ code {
 }
 
 .calendar-detail {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-size: var(--type-meta);
-  color: var(--text-b);
+  color: var(--text);
   text-align: center;
 }
 
@@ -1932,29 +1995,6 @@ code {
 
 /* The heading is the collapse control, so it takes the remaining width and
    the whole row is a tap target rather than just the chevron. */
-.chart-collapse-heading {
-  margin: 0;
-  flex: 1;
-  min-width: 0;
-  /* Room for the absolutely-positioned icon on the left, mirrored on the
-     right so the centred text stays optically centred rather than nudged. */
-  padding: 0 34px;
-}
-
-.chart-collapse {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: center;
-  cursor: pointer;
-}
 
 .chart-chevron {
   flex-shrink: 0;
@@ -1998,9 +2038,9 @@ code {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   padding: 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: rgba(201, 123, 140, 0.06);
   border: 1px solid var(--border);
   text-align: center;
@@ -2041,7 +2081,7 @@ code {
 .grimace-action-unit-thumb {
   width: 56px;
   height: 56px;
-  border-radius: 10px;
+  border-radius: var(--radius-thumb);
   object-fit: cover;
   object-position: top center;
   flex-shrink: 0;
@@ -2082,7 +2122,7 @@ code {
   font-size: var(--type-micro);
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: #fff;
   flex-shrink: 0;
 }
@@ -2113,7 +2153,7 @@ code {
 .report-note {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -2190,7 +2230,7 @@ code {
 
 .home-tour-spotlight {
   position: fixed;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   box-shadow: 0 0 0 9999px rgba(61, 43, 48, 0.72);
   pointer-events: none;
   transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
@@ -2382,8 +2422,8 @@ code {
 
 .chip-other-modal input {
   font: inherit;
-  padding: 9px 12px;
-  border-radius: 10px;
+  padding: 11px 14px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--border);
   box-sizing: border-box;
 }
@@ -2395,8 +2435,8 @@ code {
 
 .chip-other-modal-actions button {
   font: inherit;
-  padding: 8px 14px;
-  border-radius: 999px;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: #fff;
   cursor: pointer;
@@ -2426,7 +2466,7 @@ code {
 .score-slider-label {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gap-inline);
   font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
@@ -2435,7 +2475,7 @@ code {
 .score-slider-icon {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-tiny);
   background: var(--accent-tint);
   color: var(--accent);
   display: inline-flex;
@@ -2469,7 +2509,7 @@ code {
   flex: 1 1 0;
   min-width: 0;
   height: 30px;
-  border-radius: 6px;
+  border-radius: var(--radius-tiny);
   cursor: pointer;
   padding: 0;
   font-size: var(--type-label);
@@ -2522,7 +2562,7 @@ code {
   font-size: var(--type-label);
   font-weight: 600;
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   cursor: pointer;
   border: 1px solid var(--border-strong);
   background: var(--surface);
@@ -2653,13 +2693,13 @@ code {
 .chart-severity-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--gap-inline);
 }
 
 .chart-severity-swatch {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-swatch);
   flex-shrink: 0;
 }
 
@@ -2685,7 +2725,7 @@ code {
 .day-answers-date {
   font-size: var(--type-meta);
   color: var(--text-muted);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .day-answers {
@@ -2698,7 +2738,7 @@ code {
 .day-answer-row {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-stack-tight);
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
@@ -2730,7 +2770,7 @@ code {
 .day-answer-value {
   margin: 0;
   font-size: var(--type-item);
-  color: var(--text-b);
+  color: var(--text);
   line-height: 150%;
 }
 
@@ -2791,14 +2831,97 @@ code {
   /* Leaves room for the caption underneath rather than pushing it off. */
   max-height: 78vh;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: var(--radius-cell);
+}
+
+/* A short explanation folded away behind its own question.
+
+   Quiet on purpose. The first version of this was a filled, bordered bar —
+   which looked right on the sleep question, where there is one of them, and
+   wrong on a GI form, where there are eleven. Eleven tinted bars down a page
+   read as eleven things to deal with, and the one panel on that page that
+   genuinely IS something to deal with — the red emergency notice — was
+   sitting in the middle of them wearing almost the same shape.
+
+   So this is a line of text with an arrow: unmistakably tappable, and
+   unmistakably not the point of the screen. The question and the answers keep
+   the visual weight, which is the right order. */
+.expandable-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.expandable-note-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-inline);
+  /* Vertical padding for the tap target, none horizontally so the label
+     lines up with the question above it rather than sitting indented. */
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.expandable-note-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-tiny);
+}
+
+.expandable-note-chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.expandable-note-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expandable-note-chevron {
+    transition: none;
+  }
+}
+
+/* The paragraphs keep their own hint styling; this only gives the revealed
+   block its space. No left indent — the text sits under the question it
+   belongs to, in the same column as everything else. */
+.expandable-note-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+/* Without this the note never closes.
+   
+   The browser hides a [hidden] element with `[hidden] { display: none }` in
+   its own stylesheet, which is a single attribute selector — and the rule
+   directly above is a class, which outranks it. So `display: flex` won every
+   time and every note rendered permanently open.
+   
+   Any rule that gives an element a `display` has to say what `hidden` means
+   for that element too, or the attribute silently stops working. */
+.expandable-note-body[hidden] {
+  display: none;
+}
+
+.expandable-note-body p {
+  margin: 0;
 }
 
 .lightbox-caption {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: var(--gap-stack-tight);
   text-align: center;
   color: rgba(255, 255, 255, 0.85);
   font-size: var(--type-meta);

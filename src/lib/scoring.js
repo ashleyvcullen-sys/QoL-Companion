@@ -357,7 +357,7 @@ export const INDIVIDUAL_MEASURE_GROUPS = [
       { key: 'appetite', label: 'Appetite' },
       { key: 'attitude', label: 'Attitude' },
       { key: 'posture', label: 'Posture' },
-      { key: 'palpation', label: 'Palpation' },
+      { key: 'palpation', label: 'Palpation (response to touch)' },
     ],
   },
 ]

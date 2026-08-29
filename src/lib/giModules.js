@@ -218,7 +218,7 @@ export const GI_CORE_PARAMETERS = [
     // asking for a sign they have no way of checking makes the whole
     // question feel like it is not for them. Coughing and noisy breathing
     // are both things anyone can hear from across a room.
-    label: 'Coughing Or Noisy Breathing?',
+    label: 'Coughing Or Noisy Breathing',
     type: 'yesno',
     emergencyWhen: 'yes',
     why: 'These are signs that food may have entered the airways instead of the GI tract (aspiration). This can occur after vomiting or regurgitation of food.',
@@ -340,7 +340,7 @@ export const GI_MODULES = {
       },
       {
         key: 'diet_adhered',
-        label: 'Adhered To The Diet Today?',
+        label: 'Adhered To The Diet Today',
         type: 'yesno',
         concernWhen: 'no',
         // Only asked of a pet actually on a trial. Asked of one who is not,
@@ -510,7 +510,7 @@ export const GI_MODULES = {
     parameters: [
       {
         key: 'regurgitation',
-        label: 'Bringing Food Back Up?',
+        label: 'Bringing Food Back Up',
         type: 'choice',
         // Regurgitation is not vomiting and the difference matters — no
         // heaving, no warning, and it comes back undigested. Asked as its own
@@ -545,7 +545,7 @@ export const GI_MODULES = {
         // than stretching, so asking a cat owner to watch for it invites a
         // "no" that means nothing.
         species: 'dog',
-        label: 'Stretching Or Praying Position?',
+        label: 'Stretching Or Praying Position',
         type: 'yesno',
         concernWhen: 'yes',
         why: 'Front legs down and bottom up, held for longer than a stretch. It is a way of easing tummy pain, and is worth telling your vet about.', // PENDING ASH
