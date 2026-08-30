@@ -29,6 +29,33 @@
 // RevenueCatContext is still what buys and restores. It is not what decides.
 const ENTITLEMENT_PREMIUM = 'premium'
 
+// Postgres timestamptz has two literals JavaScript's Date cannot parse:
+// 'infinity' and '-infinity'. PostgREST passes them through as exactly those
+// strings, and `new Date('infinity')` is an Invalid Date whose every
+// comparison is false — so `expires_at >= now` and `expires_at < now` are
+// BOTH false for the same row.
+//
+// That asymmetry is what made this so quiet. petLimitFromRow guards with `<`
+// and so fell through to the correct branch; hasPremiumAccess asserted with
+// `>=` and so returned false. A manual grant got the right pet limit and no
+// premium access, which reads as "the grant half worked" rather than as a
+// date-parsing bug.
+//
+// And it was the documented value. The migration header and the comment on
+// petLimitFromRow both tell you a manual grant must carry an explicit
+// 'infinity' — the one value that could not be parsed.
+//
+// Returns milliseconds, Infinity, or null for "no usable expiry". Null is
+// deliberately what an UNPARSEABLE value returns too: a date this cannot read
+// must fail closed, because the alternative is granting premium on a typo.
+function expiryMillis(value) {
+  if (!value) return null
+  if (value === 'infinity') return Infinity
+  if (value === '-infinity') return -Infinity
+  const ms = new Date(value).getTime()
+  return Number.isNaN(ms) ? null : ms
+}
+
 // Mirrors public.has_premium() in
 // supabase/migrations/20260830010000_premium_feature_gating.sql, clause for
 // clause. Note the part that surprises people and is shared with
@@ -37,8 +64,9 @@ const ENTITLEMENT_PREMIUM = 'premium'
 export function hasPremiumAccess(entitlementRow) {
   if (!entitlementRow) return false
   if (entitlementRow.tier !== ENTITLEMENT_PREMIUM) return false
-  if (!entitlementRow.expires_at) return false
-  return new Date(entitlementRow.expires_at) >= new Date()
+  const expiry = expiryMillis(entitlementRow.expires_at)
+  if (expiry === null) return false
+  return expiry >= Date.now()
 }
 
 // --- Pet limit ---------------------------------------------------------
@@ -75,6 +103,13 @@ export function petLimitFromRow(row) {
   //
   // Note this means a manually granted row must carry an explicit expiry —
   // 'infinity' rather than null. The migration header spells this out.
-  if (!row.expires_at || new Date(row.expires_at) < new Date()) return FREE_PET_LIMIT
+  //
+  // Through expiryMillis for the same reason hasPremiumAccess is: 'infinity'
+  // is unparseable as a Date. This one happened to behave correctly anyway —
+  // `NaN < now` is false, so it fell through to the grant — but it was
+  // reaching the right answer by accident, and an unreadable date was
+  // silently granting the full limit rather than falling back to free.
+  const expiry = expiryMillis(row.expires_at)
+  if (expiry === null || expiry < Date.now()) return FREE_PET_LIMIT
   return Math.max(row.pet_limit ?? FREE_PET_LIMIT, FREE_PET_LIMIT)
 }

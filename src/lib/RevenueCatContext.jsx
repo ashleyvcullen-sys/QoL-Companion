@@ -11,25 +11,66 @@ const RevenueCatContext = createContext(undefined)
 // import.meta.env at all (see .env / vite's env-var rules).
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_API_KEY
 
+// Verbose SDK logging, opt-in per build.
+//
+// This used to be `import.meta.env.DEV ? DEBUG : INFO`, which never once
+// produced a debug log on a device. DEV is a VITE flag, not an Xcode one, and
+// the native app always runs the output of `npm run build` — a production
+// bundle where DEV is false and the DEBUG branch is tree-shaken away. So an
+// Xcode Debug build, running against a StoreKit configuration file, still got
+// INFO, and the per-product diagnostics that say WHY an offering came back
+// empty were never printed.
+//
+// An explicit variable rather than reusing DEV, because the thing being asked
+// is "is this a native build I am debugging", which no Vite flag knows.
+const REVENUECAT_DEBUG_LOGGING = import.meta.env.VITE_REVENUECAT_DEBUG === 'true'
+
 export function RevenueCatProvider({ children }) {
   const { user } = useAuth()
   const [customerInfo, setCustomerInfo] = useState(null)
   const [offerings, setOfferings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [configureError, setConfigureError] = useState('')
+  const [offeringsError, setOfferingsError] = useState('')
 
   const configuredRef = useRef(false)
   const identifiedUserId = useRef(null)
   const listenerIdRef = useRef(null)
 
+  // Two independent calls, settled independently.
+  //
+  // This was one Promise.all, which meant a rejection from EITHER call threw
+  // the pair and landed in the configure catch — so a failed getOfferings
+  // reported as "Premium isn't available right now" (the SDK could not be set
+  // up) when the truth was that the SDK was fine and the offering had not
+  // loaded. The two need different answers: a configure failure is not worth
+  // retrying in-place, a missing offering is.
+  //
+  // getCustomerInfo still throws, because failing to read who the customer is
+  // IS a configure-level problem. getOfferings does not; it records its own
+  // error and leaves the rest of the SDK usable. Note that nothing gating
+  // access depends on either — see EntitlementsContext, which is the source
+  // of truth for what an account may do.
   const refresh = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return
-    const [{ customerInfo: info }, offeringsResult] = await Promise.all([
+
+    const [infoResult, offeringsResult] = await Promise.allSettled([
       Purchases.getCustomerInfo(),
       Purchases.getOfferings(),
     ])
-    setCustomerInfo(info)
-    setOfferings(offeringsResult)
+
+    if (offeringsResult.status === 'fulfilled') {
+      setOfferings(offeringsResult.value)
+      setOfferingsError('')
+    } else {
+      const message = offeringsResult.reason?.message || 'Could not load the subscription options.'
+      console.error('Failed to load RevenueCat offerings:', message)
+      setOfferings(null)
+      setOfferingsError(message)
+    }
+
+    if (infoResult.status === 'rejected') throw infoResult.reason
+    setCustomerInfo(infoResult.value.customerInfo)
   }, [])
 
   // Removes the CustomerInfo listener only on the provider's true final
@@ -71,7 +112,9 @@ export function RevenueCatProvider({ children }) {
         // between signed-in users afterwards goes through logIn()/logOut()
         // instead, matching RevenueCat's recommended pattern.
         if (!configuredRef.current) {
-          await Purchases.setLogLevel({ level: import.meta.env.DEV ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO })
+          await Purchases.setLogLevel({
+            level: REVENUECAT_DEBUG_LOGGING ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO,
+          })
           await Purchases.configure({ apiKey: REVENUECAT_API_KEY })
           configuredRef.current = true
         }
@@ -128,6 +171,7 @@ export function RevenueCatProvider({ children }) {
     offerings,
     loading,
     configureError,
+    offeringsError,
     refresh,
     purchasePackage,
     restorePurchases,
