@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Check, X } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
@@ -8,6 +8,7 @@ import Btn from '../components/Btn'
 import { useRevenueCat } from '../lib/RevenueCatContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { usePets } from '../lib/PetsContext'
+import { PRIVACY_POLICY_URL, TERMS_URL } from '../lib/legalUrls'
 import {
   APPLE_DISCLOSURE,
   PAYWALL_FEATURE_LIST,
@@ -290,9 +291,22 @@ export default function Paywall() {
           {restoring ? 'Restoring…' : 'Restore Purchases'}
         </button>
         <span aria-hidden="true">·</span>
-        <Link to="/terms" className="subtle-link">Terms of Use</Link>
+        {/* The WEBSITE documents, not the in-app Legal & Privacy screen these
+            used to point at.
+            Apple expects the EULA linked from a subscription paywall to cover
+            auto-renewal, cancellation and refunds, and the privacy policy to
+            be the real one. The in-app page is a plain-language summary that
+            does not cover those terms, so linking it here is a Guideline
+            3.1.2 rejection waiting to happen.
+            Plain anchors with target="_blank" so they open in the system
+            browser rather than an SFSafariViewController inside the app. */}
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="subtle-link">
+          Terms of Use
+        </a>
         <span aria-hidden="true">·</span>
-        <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
+        <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer" className="subtle-link">
+          Privacy Policy
+        </a>
       </div>
 
       {/* Shown before the link out, not after it — once the user has left for

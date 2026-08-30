@@ -4,27 +4,65 @@ import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import { allReferencesText } from '../lib/references'
+import {
+  PRIVACY_POLICY_LABEL,
+  PRIVACY_POLICY_URL,
+  TERMS_LABEL,
+  TERMS_URL,
+} from '../lib/legalUrls'
 
+// The full documents live on the website; see lib/legalUrls.js.
+//
+// Linked with a plain anchor and target="_blank" rather than the Capacitor
+// Browser plugin the footer uses: Browser.open() is an
+// SFSafariViewController, which is still inside this app. A legal document
+// should open in the system browser, where the reader has their own address
+// bar, their own history and an unambiguous way out.
 const SECTIONS = [
   {
     heading: 'Privacy & data collection',
     paragraphs: [
-      "This app stores the information you enter directly — your pet's name, species, age, weight, sex, and the assessments, notes, and schedule items you log. That data is used only to show you your own pet's information: to display history, calculate trends, and generate the summaries and reports you ask for.",
+      "This app stores what you enter — your pet's details, quality of life assessments, notes, schedule items, medications, body condition and weight records, disease-specific monitoring responses, and any photos or videos you add. It's used only to show you your own pet's information: history, trends, and the summaries and reports you ask for.",
+      "If you subscribe, we store a record of your subscription status so the app knows which features to make available to you. Payments are processed by Apple — we never see your card details.",
+      "Your data is stored in Australia. The only exception is the limited subscription information we share with RevenueCat, our subscription management provider, which is based in the United States.",
       "Data isn't sold, and isn't shared with third parties for advertising or marketing.",
+    ],
+  },
+  {
+    heading: 'Subscriptions',
+    paragraphs: [
+      "Some features require a QoL Companion Premium subscription. If your subscription ends, information you created using those features is hidden from view within the app, but is not deleted. It remains stored and is restored in full if you resubscribe.",
+      "You can request a copy of any of your information at any time — including anything currently hidden — by contacting us at info@qolcompanion.com.au.",
     ],
   },
   {
     heading: 'Data deletion',
     paragraphs: [
-      "You can remove a pet's data at any time from the Home screen, which deletes that pet's stored record. If you'd like all data associated with your account deleted, contact whoever provided you this app to request full deletion.",
+      "You can remove a pet's data at any time from Settings, which deletes that pet's stored record.",
+      "You can also delete your entire account from within the app. This permanently removes all of your information, including anything hidden because a subscription has ended. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
     ],
   },
   {
     heading: 'Terms of use',
+    // The "as is, without warranty of any kind" that used to open this
+    // section is deliberately gone. Australian Consumer Law guarantees cannot
+    // be excluded by a term in an app, so a blanket disclaimer is not merely
+    // unenforceable here — asserting it is itself a problem. The ACL
+    // paragraph below replaces it.
     paragraphs: [
-      "This app is provided as an informational and organisational tool for pet owners, \"as is,\" without warranty of any kind. You're responsible for verifying anything important with a qualified veterinarian before acting on it.",
+      "This app is provided as an informational and organisational tool for pet owners. You're responsible for verifying anything important with a qualified veterinarian before acting on it.",
       "By using this app you agree not to rely on it as a substitute for professional veterinary diagnosis, treatment, or emergency care.",
+      "Nothing here excludes, restricts or modifies any guarantee, right or remedy you have under the Australian Consumer Law that cannot lawfully be excluded.",
     ],
+    // Rendered after the paragraphs. A structured field rather than markup
+    // inside a paragraph string, because these paragraphs are plain text by
+    // design and putting HTML in one of them would mean escaping decisions in
+    // every other.
+    link: {
+      prefix: 'Our full Terms and Conditions are at',
+      url: TERMS_URL,
+      label: TERMS_LABEL,
+    },
   },
   {
     heading: 'AI disclaimer',
@@ -66,6 +104,14 @@ export default function Legal() {
           A plain-language summary of how this app handles your data, what it can and
           can't do, and where its content comes from.
         </p>
+        <p>
+          Our full Privacy Policy is at{' '}
+          {/* rel="noopener noreferrer" because target="_blank" otherwise hands
+              the opened page a reference back to this one. */}
+          <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer">
+            {PRIVACY_POLICY_LABEL}
+          </a>
+        </p>
       </Card>
 
       {SECTIONS.map((section) => (
@@ -74,6 +120,14 @@ export default function Legal() {
           {section.paragraphs.map((paragraph, i) => (
             <p key={i}>{paragraph}</p>
           ))}
+          {section.link && (
+            <p>
+              {section.link.prefix}{' '}
+              <a href={section.link.url} target="_blank" rel="noopener noreferrer">
+                {section.link.label}
+              </a>
+            </p>
+          )}
         </Card>
       ))}
 
