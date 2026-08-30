@@ -318,7 +318,7 @@ export default function Schedule() {
       <HomeLink />
 
       <Card>
-        <SectionTitle>Schedule</SectionTitle>
+        <SectionTitle>Reminders</SectionTitle>
         <p>
           Set how often to repeat each assessment. The badge shows when one is due, counting
           from your last entry.
