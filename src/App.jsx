@@ -17,6 +17,7 @@ import HomeCareTips from './screens/HomeCareTips'
 import Schedule from './screens/Schedule'
 import ExportReport from './screens/ExportReport'
 import About from './screens/About'
+import Settings from './screens/Settings'
 import Paywall from './screens/Paywall'
 import BodyConditionScore from './screens/BodyConditionScore'
 import Medications from './screens/Medications'
@@ -146,6 +147,10 @@ function App() {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
+        {/* Inside RequireOnboardedPet with the rest: Settings names the
+            selected pet in "Remove {name}", so it has nothing coherent to
+            show to an account that has not been through onboarding yet. */}
+        <Route path="/settings" element={<Settings />} />
         <Route path="/paywall" element={<Paywall />} />
         <Route element={<RequirePremium feature="bcs" />}>
           <Route path="/body-condition" element={<BodyConditionScore />} />

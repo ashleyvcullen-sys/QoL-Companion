@@ -613,18 +613,21 @@ code {
   line-height: 145%;
 }
 
-/* Pets hidden by a lapsed subscription, as a quiet line at the foot of the
-   pet list. This was a bordered, padded panel, which gave a one-line
-   statement of fact the visual weight of an alert — a box drawn round text
-   is a claim that the text needs attention, and this text does not. Now it
-   is simply secondary type: --type-meta and --text-muted, the pair the app
-   uses for dates, counts and legends, which is exactly what this is. No
-   border, no ground, no icon, no colour. */
-.pets-hidden-line {
-  margin-top: var(--gap-inline);
-  color: var(--text-muted);
-  font-size: var(--type-meta);
+/* The current plan, on Settings. The one line on that card that states a
+   fact about the account rather than explaining one, so it takes the item
+   size and weight the app gives the name of a row — the hidden-pets line
+   under it is .assessment-hint, and reads as subordinate to this. */
+.settings-plan-name {
+  font-size: var(--type-item);
+  font-weight: 600;
+  color: var(--text-h);
   line-height: 145%;
+}
+
+/* The hint under it needs air, the way a label and its explanation do
+   everywhere else in a card. */
+.settings-plan-name + .assessment-hint {
+  margin-top: var(--gap-inline);
 }
 
 /* Sub-label inside the assessment pages — a field label, not a section

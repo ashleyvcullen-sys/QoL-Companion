@@ -32,6 +32,19 @@ export function petSpeciesWords(pet) {
   return SPECIES_WORDS[pet?.species] ?? { species: 'pet', canineOrFeline: 'canine or feline' }
 }
 
+// A pet's name in the possessive: always "'s", never a bare apostrophe.
+// "Gus's", not "Gus'". The bare form is a convention some style guides keep
+// for classical and biblical names, and applied to a dog called Gus it reads
+// as a missing letter rather than as a choice.
+//
+// Falls back to "your pet's" — the same fallback {name} uses — so the copy
+// still reads as a sentence before onboarding and when nothing is selected.
+// `||` rather than `??`, because a pet row with an empty name should take
+// the fallback too.
+export function petPossessive(pet) {
+  return `${pet?.name || 'your pet'}'s`
+}
+
 // {do} exists because the verb-s token cannot make it: "do" + "s" is "dos".
 // Any other irregular verb needs the same treatment rather than {s}.
 //
