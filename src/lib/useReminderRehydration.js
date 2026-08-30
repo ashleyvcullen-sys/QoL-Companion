@@ -25,7 +25,10 @@ import { fetchMedications } from './medicationsData'
 // they opened the app. A medication reminder repeats forever, so if it is
 // missing it was genuinely lost.
 export function useReminderRehydration() {
-  const { pets } = usePets()
+  // Visible pets only. Re-arming medication reminders for a pet the
+  // account cannot currently see would notify someone about an animal the
+  // app will not show them.
+  const { visiblePets: pets } = usePets()
   const ranRef = useRef(false)
 
   useEffect(() => {

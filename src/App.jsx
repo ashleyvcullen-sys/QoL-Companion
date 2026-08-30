@@ -31,6 +31,7 @@ import Privacy from './screens/Privacy'
 import Support from './screens/Support'
 import StartupErrorScreen from './components/StartupErrorScreen'
 import { useReminderRehydration } from './lib/useReminderRehydration'
+import { useHiddenPetReminderSync } from './lib/useHiddenPetReminderSync'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
@@ -68,6 +69,13 @@ function App() {
   // the whole failure mode is the owner NOT visiting that screen: they trust
   // the reminders and only find out when a dose is missed.
   useReminderRehydration()
+
+  // Cancels check-in reminders for pets a lapsed subscription has hidden,
+  // and re-arms them on resubscribe. Same reasoning as above for living
+  // here: the owner has no reason to visit any particular screen after a
+  // subscription changes, and a reminder for a pet the app will not show
+  // them is worse than no reminder at all.
+  useHiddenPetReminderSync()
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return

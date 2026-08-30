@@ -65,7 +65,38 @@ this document exists to remove.
 
 | Migration | What it does | Why it is needed |
 |---|---|---|
+| `20260830000000_subscription_pet_gating.sql` | Adds `user_entitlements`, the `pet_limit_for` / `pet_count_for` / `visible_pet_ids` functions, and replaces every RLS policy on `pets` | Client-side gating is bypassable with the anon key and the user's own JWT. Until this is applied the pet limit is a suggestion. |
 
-Nothing outstanding as of 29 Aug 2026.
+**Read the header of that file before running it.** It drops and recreates
+all RLS policies on `public.pets`, which was created in the Dashboard, so
+this repo has no record of what its policies are currently called. Run the
+`pg_policies` query in the header first and keep the output.
+
+After applying, verify — the second query is the one that matters, because a
+`NULL` limit would make the whole thing fail open:
+
+```sql
+select public.pet_limit_for(auth.uid());          -- must be 1, never null
+select count(*) from public.visible_pet_ids(auth.uid());
+select policyname, cmd from pg_policies
+ where schemaname = 'public' and tablename = 'pets';
+```
+
+Also confirm these two inherit the restriction rather than checking a
+`user_id` column directly — if either does, its select policy needs the
+`pet_id in (select public.visible_pet_ids(auth.uid()))` clause adding:
+
+```sql
+select tablename, policyname, qual from pg_policies
+ where schemaname = 'public'
+   and tablename in ('general_qol_entries', 'pain_log_entries');
+```
+
+The `revenuecat-webhook` Edge Function must be deployed with JWT
+verification **off** (`--no-verify-jwt`), and `REVENUECAT_WEBHOOK_SECRET`
+set in Edge Function secrets to the same value as the Authorization header
+configured in the RevenueCat dashboard. With verify_jwt left on, every
+delivery is rejected before the function runs and the only symptom is that
+subscriptions silently never apply.
 
 Update these tables whenever a migration is applied.

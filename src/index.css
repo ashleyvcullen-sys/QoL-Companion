@@ -555,6 +555,20 @@ code {
   line-height: 145%;
 }
 
+/* Pets hidden by a lapsed subscription. Muted and bordered rather than
+   coloured as a warning — nothing has gone wrong and nothing is at risk,
+   so styling it as an error would frighten someone about records that are
+   perfectly safe. */
+.pets-hidden-notice {
+  margin-top: var(--gap-inline);
+  padding: var(--gap-inline);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--text-muted);
+  font-size: var(--type-support);
+  line-height: 145%;
+}
+
 /* Sub-label inside the assessment pages — a field label, not a section
    heading, so it stays left-aligned and small. Moved out of inline styles:
    it hardcoded #3D2B30 and #C97B8C, which meant it was the one piece of the

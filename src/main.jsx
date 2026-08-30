@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/AuthContext'
+import { EntitlementsProvider } from './lib/EntitlementsContext'
 import { PetsProvider } from './lib/PetsContext'
 import { RevenueCatProvider } from './lib/RevenueCatContext'
 
@@ -17,11 +18,14 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <PetsProvider>
-            <RevenueCatProvider>
-              <App />
-            </RevenueCatProvider>
-          </PetsProvider>
+          {/* Above PetsProvider, which reads the pet limit from it. */}
+          <EntitlementsProvider>
+            <PetsProvider>
+              <RevenueCatProvider>
+                <App />
+              </RevenueCatProvider>
+            </PetsProvider>
+          </EntitlementsProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

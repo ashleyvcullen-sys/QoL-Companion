@@ -13,11 +13,14 @@ import { usePets } from '../lib/PetsContext'
 // still hidden (a switcher with one option is noise), but the add control has
 // to be reachable or a one-pet account can never become a two-pet account.
 export default function PetSwitcher() {
-  const { pets, selectedPetId, selectPet } = usePets()
+  // visiblePets, not pets: a pet hidden by a lapsed subscription must not
+  // appear as a switchable option. The database will not return its data
+  // either, so selecting it would land on an empty screen.
+  const { visiblePets, selectedPetId, selectPet } = usePets()
 
   return (
     <div className="pet-switcher" role="group" aria-label="Select pet">
-      {pets.length > 1 && pets.map((pet) => (
+      {visiblePets.length > 1 && visiblePets.map((pet) => (
         <button
           key={pet.id}
           type="button"

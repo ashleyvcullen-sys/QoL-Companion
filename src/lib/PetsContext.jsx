@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
 import { useAuth } from './AuthContext'
+import { useEntitlements } from './EntitlementsContext'
 import { logStartupIssue } from './diagnostics'
 import { loadSelectedPetId, saveSelectedPetId } from './selectedPetStorage'
 
@@ -8,6 +9,7 @@ const PetsContext = createContext(undefined)
 
 export function PetsProvider({ children }) {
   const { user } = useAuth()
+  const { petLimit, loading: entitlementsLoading } = useEntitlements()
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
   const [petsError, setPetsError] = useState(null)
@@ -97,11 +99,48 @@ export function PetsProvider({ children }) {
     }
   }, [user?.id])
 
-  // `pets` is ordered newest-first, so pets[0] is the default when there's
-  // no valid stored selection. A stored id can go stale — the pet was
-  // deleted here, or on another device — in which case fall back rather
-  // than leaving the app pointing at a pet that no longer exists.
-  const selectedPet = pets.find((pet) => pet.id === selectedPetId) ?? pets[0] ?? null
+  // Which of this account's pets the current subscription lets it see.
+  //
+  // `pets` above stays complete and untouched — the full list is what the
+  // banner counts against, and it is the honest answer to "what does this
+  // account have". Hiding is a view, not a deletion: nothing here or on the
+  // server removes a pet, so letting a subscription lapse and renewing it
+  // brings every record back with no restore step.
+  //
+  // The cut is oldest-first, matching public.visible_pet_ids() in
+  // supabase/migrations/20260830000000_subscription_pet_gating.sql exactly.
+  // On a downgrade the pet that survives is the one with the longest history
+  // behind it, which is almost always the animal the account was opened for.
+  //
+  // Sorted here rather than relying on the query, which orders newest-first
+  // for display. `id` breaks a created_at tie so the same pets are hidden on
+  // every render and on every device, rather than whichever way the sort
+  // happened to fall — two pets added in the same second must not swap
+  // places between launches.
+  const visiblePets = useMemo(() => {
+    if (pets.length <= petLimit) return pets
+    const keep = new Set(
+      [...pets]
+        .sort((a, b) => {
+          if (a.created_at !== b.created_at) return a.created_at < b.created_at ? -1 : 1
+          return a.id < b.id ? -1 : 1
+        })
+        .slice(0, petLimit)
+        .map((pet) => pet.id),
+    )
+    // Filtered out of `pets` rather than returned from the sort, so the
+    // visible list keeps the newest-first order the rest of the app expects.
+    return pets.filter((pet) => keep.has(pet.id))
+  }, [pets, petLimit])
+
+  const hiddenPetCount = pets.length - visiblePets.length
+
+  // Selection resolves against the VISIBLE list. A stored id can go stale —
+  // the pet was deleted here or on another device — and can now also point
+  // at a pet that still exists but has been hidden by a downgrade. Both fall
+  // back to the first visible pet rather than leaving a null selection,
+  // which would strand every pet-scoped screen on an empty state.
+  const selectedPet = visiblePets.find((pet) => pet.id === selectedPetId) ?? visiblePets[0] ?? null
 
   // If the stored id didn't resolve to a real pet but we did fall back to
   // one, write that correction back so the stale id doesn't linger.
@@ -127,12 +166,23 @@ export function PetsProvider({ children }) {
   const petsFetchedForCurrentUser = !user || fetchedForUserId === user.id
 
   const value = {
+    // The complete list, unfiltered. Route guards and "has this account
+    // onboarded at all" checks want this, not visiblePets — an account with
+    // three pets and a lapsed subscription has certainly onboarded.
     pets,
+    // What the UI should show. Everything user-facing reads this.
+    visiblePets,
+    hiddenPetCount,
+    petLimit,
     // Kept true until the persisted selection is known too, so consumers
     // never render against a provisional pet — and until this user's pets
     // have actually been fetched, so an empty list from the no-user pass is
     // never mistaken for "this account has no pets".
-    loading: loading || selectionLoading || !petsFetchedForCurrentUser,
+    //
+    // Entitlements are folded in for the same reason: rendering before the
+    // limit is known would show the free view to a subscriber for a frame,
+    // and the reminder sync below would act on it and cancel real reminders.
+    loading: loading || selectionLoading || entitlementsLoading || !petsFetchedForCurrentUser,
     petsError,
     refresh,
     selectedPet,

@@ -58,6 +58,29 @@ export function hasMultiPetAccess(customerInfo) {
   return hasPlusAccess(customerInfo)
 }
 
+// --- Pet limit ---------------------------------------------------------
+//
+// How many pet profiles an account may see at once. Everything above the
+// limit is HIDDEN, never deleted — see PetsContext.visiblePets and
+// supabase/migrations/20260830000000_subscription_pet_gating.sql.
+//
+// This mirrors public.pet_limit_for() in that migration, and the two must
+// agree exactly. They are read at different moments — the client from a
+// cached row, the database from the row itself — so a difference in the rule
+// shows up as the app listing a pet that every query then refuses to return.
+// If you change the rule here, change it there in the same commit.
+
+export const FREE_PET_LIMIT = 1
+
+export function petLimitFromRow(row) {
+  if (!row) return FREE_PET_LIMIT
+  // An entitlement with no expiry, or one that has passed, is not an
+  // entitlement. Same clause as the SQL, deliberately written the same way
+  // round so the two read as obviously identical.
+  if (!row.expires_at || new Date(row.expires_at) < new Date()) return FREE_PET_LIMIT
+  return Math.max(row.pet_limit ?? FREE_PET_LIMIT, FREE_PET_LIMIT)
+}
+
 export function hasBcsAccess(customerInfo) {
   return hasPlusAccess(customerInfo)
 }

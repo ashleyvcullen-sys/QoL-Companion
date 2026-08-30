@@ -58,7 +58,7 @@ const NAV_SECTIONS = [
 const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items)
 
 export default function Home() {
-  const { pets, refresh, selectedPet, selectPet } = usePets()
+  const { visiblePets, hiddenPetCount, refresh, selectedPet, selectPet } = usePets()
   const pet = selectedPet
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
@@ -137,9 +137,13 @@ export default function Home() {
       console.error('Failed to cancel reminder for deleted pet:', err.message)
     })
 
-    // Work out the replacement *before* refreshing, while `pets` still
+    // Work out the replacement *before* refreshing, while the list still
     // includes the one just deleted.
-    const remaining = pets.filter((p) => p.id !== pet.id)
+    //
+    // From visiblePets, not pets: the full list contains pets hidden by a
+    // lapsed subscription, and selecting one of those would point the whole
+    // app at a pet the database will refuse to return anything for.
+    const remaining = visiblePets.filter((p) => p.id !== pet.id)
 
     setShowDeleteConfirm(false)
     setDeleting(false)
@@ -200,6 +204,17 @@ export default function Home() {
           Designed by a vet to help you follow {petName}'s quality of life.
         </p>
         <PetSwitcher />
+
+        {/* Only ever a statement of fact plus a reassurance. No upgrade
+            button: someone who has just lost access does not need to be
+            sold to in the same breath, and the records being safe is the
+            thing they actually want to know. */}
+        {hiddenPetCount > 0 && (
+          <p className="pets-hidden-notice" role="status">
+            {hiddenPetCount} pet {hiddenPetCount === 1 ? 'profile is' : 'profiles are'} hidden
+            on the free plan. Your records are saved and will return if you resubscribe.
+          </p>
+        )}
       </Card>
 
       {NAV_SECTIONS.map((section) => (
