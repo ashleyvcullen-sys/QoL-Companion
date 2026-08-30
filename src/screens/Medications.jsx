@@ -103,7 +103,7 @@ function describeSchedule(medication) {
 export default function Medications() {
   const { selectedPet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
-  const premiumOr = usePremiumDenial('Track medications')
+  const premiumOr = usePremiumDenial('medications')
   const pet = selectedPet
   const { medications, doses, loading, refresh } = useMedications(pet?.id)
   // What {name} is actually being monitored for. Only these are offered — a

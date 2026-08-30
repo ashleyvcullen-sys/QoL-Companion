@@ -27,7 +27,7 @@ function todayIsoDate() {
 export default function PetMedia() {
   const { selectedPet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
-  const premiumOr = usePremiumDenial('Save photos and videos')
+  const premiumOr = usePremiumDenial('media')
   const pet = selectedPet
   const { items, urls, loading, refresh } = usePetMedia(pet?.id)
 

@@ -35,10 +35,10 @@ const NAV_SECTIONS = [
       // is the phrase the paywall headline uses, so someone who tapped
       // Medications is answered about medications rather than being handed a
       // generic pitch.
-      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale, premium: true, feature: 'Track body condition and weight' },
-      { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'Track medications' },
-      { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope, premium: true, feature: 'Monitor a diagnosed condition' },
-      { to: '/media', label: 'Photos & Videos', Icon: Camera, premium: true, feature: 'Save photos and videos' },
+      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale, premium: true, feature: 'bcs' },
+      { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'medications' },
+      { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope, premium: true, feature: 'conditions' },
+      { to: '/media', label: 'Photos & Videos', Icon: Camera, premium: true, feature: 'media' },
     ],
   },
   {

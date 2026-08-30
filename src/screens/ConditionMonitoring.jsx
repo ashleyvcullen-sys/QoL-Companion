@@ -54,7 +54,7 @@ import {
 export default function ConditionMonitoring() {
   const { selectedPet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
-  const premiumOr = usePremiumDenial('Monitor a diagnosed condition')
+  const premiumOr = usePremiumDenial('conditions')
   const pet = selectedPet
   const { conditions, loading, refresh } = usePetConditions(pet?.id)
 

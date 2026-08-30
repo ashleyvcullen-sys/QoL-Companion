@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Check, X } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
-import Card from '../components/Card'
-import SectionTitle from '../components/SectionTitle'
-import Btn from '../components/Btn'
-import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import { Browser } from '@capacitor/browser'
+import Card from '../components/Card'
+import Btn from '../components/Btn'
 import { useRevenueCat } from '../lib/RevenueCatContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { usePets } from '../lib/PetsContext'
+import {
+  APPLE_DISCLOSURE,
+  PAYWALL_FEATURE_LIST,
+  PAYWALL_SUBHEAD,
+  paywallHeadline,
+} from '../lib/paywallCopy'
 
 // Apple's own subscription management page. Deliberately not a deep link
 // into Settings: this URL is the one Apple documents for the purpose, it
@@ -44,81 +48,179 @@ async function settleEntitlement(refreshEntitlements, refreshPets) {
   await refreshPets()
 }
 
+// Three outcomes wear three different responses, and conflating them is the
+// usual way a paywall becomes infuriating.
+//
+//  - The user dismissed Apple's sheet. This is not an error and must show
+//    NOTHING. RevenueCat signals it with userCancelled rather than a code,
+//    which is why that flag is checked first and on its own.
+//  - The network failed. Retrying genuinely might work, so say so. The raw
+//    text here is usually an NSURLErrorDomain string, which tells a pet
+//    owner nothing.
+//  - Anything else genuinely failed. Show what we know.
+//
+// The plugin reports codes inconsistently across versions — a numeric `code`
+// on some, a readableErrorCode string on others — so both are checked rather
+// than trusting one shape.
+function describePurchaseError(err) {
+  if (err?.userCancelled) return null
+
+  const readable = String(err?.readableErrorCode ?? '')
+  const code = String(err?.code ?? '')
+  const isNetwork = readable === 'NETWORK_ERROR' || code === '10'
+
+  if (isNetwork) {
+    return "Couldn't reach the App Store. Check your connection and try again."
+  }
+  return err?.message || 'Something went wrong with that purchase.'
+}
+
+// Per-month equivalent for the annual plan — spec section 4 calls this the
+// single most effective element in shifting mix toward annual.
+//
+// Computed from the product's own numeric price and currency rather than
+// written into the copy. A hardcoded "$7.50" would be wrong in every
+// storefront but one, and showing a price that does not match what StoreKit
+// is about to charge is both a rejection risk and a straightforward lie.
+// Falls back to null — the line is simply omitted — if the SDK gives us no
+// numeric price to divide.
+function perMonthEquivalent(annualPackage) {
+  const price = annualPackage?.product?.price
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null
+
+  const currency = annualPackage.product.currencyCode
+  const monthly = price / 12
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(monthly)
+  } catch {
+    // Unknown currency code — better to drop the line than print a number
+    // with no unit on it.
+    return null
+  }
+}
+
 export default function Paywall() {
   const { offerings, loading, configureError, purchasePackage, restorePurchases } = useRevenueCat()
-  const { refresh: refreshEntitlements } = useEntitlements()
-  // Set when the user arrived by tapping a locked tile, so the headline
-  // answers the thing they actually reached for. Absent when they came
-  // here on purpose, which gets the general heading instead.
-  const { state } = useLocation()
-  const feature = state?.feature ?? null
+  const { refresh: refreshEntitlements, hasPremium } = useEntitlements()
   const { refresh: refreshPets } = usePets()
-  const [purchasingId, setPurchasingId] = useState(null)
+  const navigate = useNavigate()
+
+  // Which locked control sent the user here. Absent when they came on
+  // purpose, which gets the generic headline.
+  const { state } = useLocation()
+  const headline = paywallHeadline(state?.feature)
+
+  const [selectedId, setSelectedId] = useState(null)
+  const [purchasing, setPurchasing] = useState(false)
   const [restoring, setRestoring] = useState(false)
   const [actionError, setActionError] = useState('')
-  const [actionMessage, setActionMessage] = useState('')
+  const [restoreMessage, setRestoreMessage] = useState('')
 
   const packages = offerings?.current?.availablePackages ?? []
 
-  async function handlePurchase(pkg) {
-    setPurchasingId(pkg.identifier)
+  // RevenueCat labels these on the package, so this does not depend on
+  // product identifiers we would otherwise have to keep in sync by hand.
+  const annual = packages.find((p) => p.packageType === 'ANNUAL')
+  const monthly = packages.find((p) => p.packageType === 'MONTHLY')
+  const ordered = [annual, monthly].filter(Boolean)
+
+  // Annual pre-selected, per spec section 4. In an effect rather than in
+  // useState's initialiser because offerings arrive asynchronously — at
+  // first render there is nothing to select.
+  useEffect(() => {
+    if (selectedId || ordered.length === 0) return
+    setSelectedId((annual ?? ordered[0]).identifier)
+  }, [selectedId, ordered, annual])
+
+  const selected = ordered.find((p) => p.identifier === selectedId) ?? null
+  const perMonth = perMonthEquivalent(annual)
+
+  async function handlePurchase() {
+    if (!selected || purchasing) return
+    setPurchasing(true)
     setActionError('')
-    setActionMessage('')
     try {
-      await purchasePackage(pkg)
+      await purchasePackage(selected)
       await settleEntitlement(refreshEntitlements, refreshPets)
-      setActionMessage('Purchase successful — thank you for your support!')
+      // No success banner. The entitlement has landed, every locked control
+      // is now open, and leaving the user on the sales screen to read a
+      // thank-you is a worse answer than putting them back where they were.
+      navigate(-1)
     } catch (err) {
-      // RevenueCat rejects with a userCancelled flag rather than treating
-      // it as a real failure — don't show an error for a simple cancel.
-      if (!err?.userCancelled) {
-        setActionError(err?.message || 'Something went wrong with that purchase.')
-      }
+      // null for a dismissed sheet — the user chose that, and telling them
+      // it "failed" would be both wrong and slightly insulting.
+      const message = describePurchaseError(err)
+      if (message) setActionError(message)
     } finally {
-      setPurchasingId(null)
+      setPurchasing(false)
     }
   }
 
   async function handleRestore() {
     setRestoring(true)
     setActionError('')
-    setActionMessage('')
+    setRestoreMessage('')
     try {
-      await restorePurchases()
+      const info = await restorePurchases()
       await settleEntitlement(refreshEntitlements, refreshPets)
-      setActionMessage('Purchases restored.')
+      // Restoring when there is nothing to restore succeeds — RevenueCat
+      // returns customerInfo with no active entitlement rather than
+      // throwing. Silence there reads as a broken button, so say plainly
+      // that nothing was found.
+      const restored = Boolean(info?.entitlements?.active?.premium)
+      setRestoreMessage(restored
+        ? 'Your subscription has been restored.'
+        : 'No previous subscription found for this Apple ID.')
     } catch (err) {
-      setActionError(err?.message || 'Could not restore purchases.')
+      const message = describePurchaseError(err)
+      if (message) setActionError(message)
     } finally {
       setRestoring(false)
     }
   }
 
   return (
-    <div className="screen">
-      <HomeLink />
+    <div className="screen paywall">
+      {/* Spec section 8. A plain, immediate close at the top — Apple rejects
+          paywalls that are hard to escape, and a delayed or hidden dismiss
+          damages trust even when it survives review. */}
+      <button
+        type="button"
+        className="paywall-close"
+        aria-label="Close"
+        onClick={() => navigate(-1)}
+      >
+        <X size={20} />
+      </button>
 
       <Card>
-        <SectionTitle>
-          {feature ? `${feature} with QoL Companion Premium` : 'QoL Companion Premium'}
-        </SectionTitle>
-        <p className="home-subtitle">
-          One subscription, everything unlocked — up to five pet profiles, body
-          condition and weight, photos and videos, and monitoring for specific
-          diagnosed conditions.
-        </p>
+        <h1 className="paywall-headline">{headline}</h1>
+        <p className="paywall-subhead">{PAYWALL_SUBHEAD}</p>
+
+        <ul className="paywall-features">
+          {PAYWALL_FEATURE_LIST.map((line) => (
+            <li key={line}>
+              <Check size={16} strokeWidth={2.5} aria-hidden="true" />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
       </Card>
+
+      {hasPremium && (
+        <Card>
+          <p role="status">You're subscribed to QoL Companion Premium. Thank you.</p>
+        </Card>
+      )}
 
       {!Capacitor.isNativePlatform() && (
         <Card>
-          <p>Purchases are only available in the QoL Companion app on your phone.</p>
+          <p>Subscriptions are only available in the QoL Companion app on your phone.</p>
         </Card>
       )}
 
       {Capacitor.isNativePlatform() && loading && (
-        <Card>
-          <p>Loading…</p>
-        </Card>
+        <Card><p>Loading…</p></Card>
       )}
 
       {Capacitor.isNativePlatform() && !loading && configureError && (
@@ -129,45 +231,86 @@ export default function Paywall() {
         </Card>
       )}
 
-      {Capacitor.isNativePlatform() && !loading && !configureError && packages.length === 0 && (
-        <Card>
-          <p>Nothing to see yet — Premium is coming soon.</p>
-        </Card>
+      {Capacitor.isNativePlatform() && !loading && !configureError && ordered.length === 0 && (
+        <Card><p>Nothing to see yet — Premium is coming soon.</p></Card>
       )}
 
-      {packages.map((pkg) => (
-        <Card key={pkg.identifier} className="paywall-package">
-          <div className="paywall-package-info">
-            <p className="paywall-package-title">{pkg.product.title}</p>
-            <p className="paywall-package-description">{pkg.product.description}</p>
-          </div>
+      {/* Spec section 4. Both options visible at once, never a toggle that
+          hides one — a user has to be able to compare without discovering
+          that the other plan exists. */}
+      {ordered.length > 0 && (
+        <div className="paywall-plans" role="radiogroup" aria-label="Choose a plan">
+          {ordered.map((pkg) => {
+            const isAnnual = pkg.packageType === 'ANNUAL'
+            const isSelected = pkg.identifier === selectedId
+            return (
+              <button
+                key={pkg.identifier}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                className={`paywall-plan ${isSelected ? 'selected' : ''}`.trim()}
+                onClick={() => setSelectedId(pkg.identifier)}
+              >
+                <span className="paywall-plan-term">
+                  {isAnnual ? 'Annual' : 'Monthly'}
+                  {isAnnual && <span className="paywall-plan-badge">Best value</span>}
+                </span>
+                <span className="paywall-plan-price">
+                  {pkg.product.priceString} / {isAnnual ? 'year' : 'month'}
+                </span>
+                {isAnnual && perMonth && (
+                  <span className="paywall-plan-equivalent">
+                    {perMonth} per month, billed annually
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {ordered.length > 0 && (
+        <>
+          {/* Spec section 5. "Continue" — not "Subscribe now", not "Start
+              free trial" (there is no trial), not "Buy". */}
           <Btn
             type="button"
             className="btn-block"
-            disabled={purchasingId !== null}
-            onClick={() => handlePurchase(pkg)}
+            disabled={purchasing || !selected}
+            onClick={handlePurchase}
           >
-            {purchasingId === pkg.identifier ? 'Processing…' : `${pkg.product.priceString}`}
+            {purchasing ? 'Processing…' : 'Continue'}
           </Btn>
-        </Card>
-      ))}
+
+          {/* Spec section 6. VERBATIM — do not reword this for layout. If it
+              does not fit, the layout gives way, not the text. This is the
+              string Apple checks under Guideline 3.1.2. */}
+          <p className="paywall-disclosure">{APPLE_DISCLOSURE}</p>
+        </>
+      )}
 
       {actionError && <p className="form-error" role="alert">{actionError}</p>}
-      {actionMessage && <p role="status">{actionMessage}</p>}
+      {restoreMessage && <p className="paywall-restore-message" role="status">{restoreMessage}</p>}
 
-      {Capacitor.isNativePlatform() && (
+      {/* Spec section 7. Three items of equal weight. Restore Purchases has
+          to be a visible, working control on this screen — its absence is a
+          standard rejection, not a nicety. */}
+      <div className="paywall-footer-row">
         <button type="button" className="subtle-link" onClick={handleRestore} disabled={restoring}>
-          {restoring ? 'Restoring…' : 'Restore purchases'}
+          {restoring ? 'Restoring…' : 'Restore Purchases'}
         </button>
-      )}
+        <span aria-hidden="true">·</span>
+        <Link to="/terms" className="subtle-link">Terms of Use</Link>
+        <span aria-hidden="true">·</span>
+        <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
+      </div>
 
       {/* Shown before the link out, not after it — once the user has left for
           Apple's settings screen they are not coming back to read a caveat,
           and "will my records be deleted?" is the question that stops people
-          cancelling something they have already decided to cancel. Answering
-          it honestly here is worth more than the retention a vague warning
-          might buy. */}
-      {Capacitor.isNativePlatform() && (
+          cancelling something they have already decided to cancel. */}
+      {Capacitor.isNativePlatform() && hasPremium && (
         <Card>
           <p className="assessment-hint">
             Your other pets' records will be hidden but not deleted, and will return
@@ -182,8 +325,6 @@ export default function Paywall() {
           </button>
         </Card>
       )}
-
-      <Footer />
     </div>
   )
 }

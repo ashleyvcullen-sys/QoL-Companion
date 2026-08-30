@@ -45,7 +45,9 @@ export default function PetLimitModal({ onClose }) {
         className="btn-block"
         onClick={() => {
           onClose()
-          navigate('/paywall')
+          // 'pets' selects the spec's second-pet headline rather than
+          // dropping the user on the generic one.
+          navigate('/paywall', { state: { feature: 'pets' } })
         }}
       >
         See plans

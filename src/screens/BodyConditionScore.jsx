@@ -20,7 +20,7 @@ import { formatDateDDMMYYYY } from '../lib/formatDate'
 export default function BodyConditionScore() {
   const { selectedPet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
-  const premiumOr = usePremiumDenial('Track body condition and weight')
+  const premiumOr = usePremiumDenial('bcs')
   const pet = selectedPet
   const navigate = useNavigate()
   const { entries, loading, refresh } = useBcsHistory(pet?.id)

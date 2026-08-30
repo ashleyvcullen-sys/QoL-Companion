@@ -147,16 +147,16 @@ function App() {
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
         <Route path="/paywall" element={<Paywall />} />
-        <Route element={<RequirePremium feature="Track body condition and weight" />}>
+        <Route element={<RequirePremium feature="bcs" />}>
           <Route path="/body-condition" element={<BodyConditionScore />} />
         </Route>
-        <Route element={<RequirePremium feature="Track medications" />}>
+        <Route element={<RequirePremium feature="medications" />}>
           <Route path="/medications" element={<Medications />} />
         </Route>
-        <Route element={<RequirePremium feature="Save photos and videos" />}>
+        <Route element={<RequirePremium feature="media" />}>
           <Route path="/media" element={<PetMedia />} />
         </Route>
-        <Route element={<RequirePremium feature="Monitor a diagnosed condition" />}>
+        <Route element={<RequirePremium feature="conditions" />}>
           <Route path="/conditions" element={<Conditions />} />
         <Route path="/conditions/:conditionKey" element={<ConditionMonitoring />} />
         {/* Before the generic setup route. GI composes differently to cancer

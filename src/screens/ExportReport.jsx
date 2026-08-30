@@ -403,7 +403,7 @@ export default function ExportReport() {
     // free-tier data the owner is already entitled to read; it is the
     // generated report that is the paid artefact.
     if (!hasPremium) {
-      navigate('/paywall', { state: { feature: 'Export a vet report' } })
+      navigate('/paywall', { state: { feature: 'export' } })
       return
     }
 

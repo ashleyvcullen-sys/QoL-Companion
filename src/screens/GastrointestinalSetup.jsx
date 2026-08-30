@@ -29,7 +29,7 @@ import { addPetCondition, saveConditionConfig, usePetConditions } from '../lib/c
 export default function GastrointestinalSetup() {
   const { selectedPet: pet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
-  const premiumOr = usePremiumDenial('Monitor a diagnosed condition')
+  const premiumOr = usePremiumDenial('conditions')
   const navigate = useNavigate()
   const definition = conditionByKey(GI_KEY)
 

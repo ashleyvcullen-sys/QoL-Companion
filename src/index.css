@@ -3090,3 +3090,161 @@ code {
   flex-direction: column;
   gap: 16px;
 }
+
+/* --- Paywall -------------------------------------------------------------
+   Layout notes, because the constraint here is unusual: the Apple-required
+   disclosure is a fixed 228 characters that may not be shortened, truncated
+   or hidden behind a "more" control. Every rule below is written so the text
+   decides the height and the container gives way — never the reverse.
+
+   Nothing in this block sets a fixed height, max-height, overflow:hidden,
+   white-space:nowrap or text-overflow:ellipsis. That is deliberate and worth
+   preserving: each of those is a way for the disclosure to silently clip,
+   which is the failure Apple looks for. */
+
+.paywall {
+  position: relative;
+}
+
+/* In the flow, not absolutely positioned over the card. An overlaid close
+   button collides with the headline as soon as text grows, and the headline
+   is the one thing that must stay readable. */
+.paywall-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--gap-inline);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.paywall-headline {
+  margin: 0 0 6px;
+  font-family: var(--heading);
+  font-size: var(--type-heading);
+  line-height: 130%;
+}
+
+.paywall-subhead {
+  margin: 0 0 var(--gap-inline);
+  color: var(--text-muted);
+  font-size: var(--type-support);
+  line-height: 145%;
+}
+
+.paywall-features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-stack-tight);
+}
+
+.paywall-features li {
+  display: flex;
+  /* Top, not centre: on a line that wraps to two rows the tick should sit
+     beside the first line rather than floating in the middle of the block. */
+  align-items: flex-start;
+  gap: var(--gap-inline);
+  font-size: var(--type-item);
+  line-height: 145%;
+}
+
+.paywall-features svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--good, currentColor);
+}
+
+.paywall-plans {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-inline);
+  margin-bottom: var(--gap-inline);
+}
+
+.paywall-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--gap-inline);
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.paywall-plan.selected {
+  border-color: var(--accent, var(--text));
+}
+
+.paywall-plan-term {
+  display: flex;
+  align-items: baseline;
+  /* Wraps rather than squashing the badge against the term when either
+     string grows. */
+  flex-wrap: wrap;
+  gap: var(--gap-inline);
+  font-size: var(--type-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.paywall-plan-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  letter-spacing: 0.04em;
+}
+
+.paywall-plan-price {
+  font-family: var(--heading);
+  font-size: var(--type-heading);
+  line-height: 130%;
+}
+
+.paywall-plan-equivalent {
+  color: var(--text-muted);
+  font-size: var(--type-meta);
+  line-height: 140%;
+}
+
+/* The Apple disclosure. Small, but never smaller than --type-micro, and
+   allowed to run to as many lines as it needs. */
+.paywall-disclosure {
+  margin: var(--gap-inline) 0 0;
+  color: var(--text-muted);
+  font-size: var(--type-micro);
+  line-height: 150%;
+}
+
+.paywall-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Wraps to two lines on a narrow screen or at large text rather than
+     pushing Privacy Policy off the edge where it cannot be tapped. */
+  flex-wrap: wrap;
+  gap: var(--gap-inline);
+  margin: var(--gap-inline) 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+}
+
+.paywall-restore-message {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--type-support);
+}
