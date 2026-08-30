@@ -474,6 +474,13 @@ code {
   color: var(--text-muted);
   font-size: var(--type-support);
   text-decoration: none;
+  /* This control is an <a> below the pet limit and a <button> at it, so that
+     tapping it can open the upgrade prompt instead of navigating. A button
+     does not inherit the page font, and there is no global button reset —
+     without these two the control would silently change typeface and lose
+     its pointer at exactly the moment it starts explaining a paid feature. */
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .icon-grid {

@@ -9,6 +9,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import StartupErrorScreen from '../components/StartupErrorScreen'
+import PetLimitModal from '../components/PetLimitModal'
 
 const SPECIES_OPTIONS = [
   { value: 'dog', label: 'Dog' },
@@ -23,7 +24,7 @@ const SEX_OPTIONS = [
 
 export default function Onboarding() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
-  const { pets, loading: petsLoading, petsError, refresh, selectPet } = usePets()
+  const { pets, atPetLimit, loading: petsLoading, petsError, refresh, selectPet } = usePets()
   const navigate = useNavigate()
 
   const [name, setName] = useState('')
@@ -33,6 +34,9 @@ export default function Onboarding() {
   const [sex, setSex] = useState('unknown')
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  // Set when the database refuses the insert, so the rejection lands as an
+  // offer rather than a Postgres error.
+  const [showLimitPrompt, setShowLimitPrompt] = useState(false)
 
   if (authError) {
     return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
@@ -44,11 +48,22 @@ export default function Onboarding() {
   }
   if (petsLoading) return <p>Loading…</p>
 
-  // Multi-pet is currently ungated — the entitlement check that used to
-  // live here (pets.length > 0 && !hasMultiPetAccess(customerInfo)) is
-  // deliberately removed for now, to be reinstated once the `multi_pet`
-  // RevenueCat entitlement and its product actually exist. Until then it
-  // would always evaluate false and make adding a second pet impossible.
+  // At the limit, the form is not shown at all. PetSwitcher already offers
+  // the prompt rather than this route, so arriving here means a direct URL,
+  // a stale tab, or a subscription that lapsed between opening the form and
+  // submitting it. Filling in a form whose submit is guaranteed to be
+  // refused is worse than being told up front.
+  if (atPetLimit) {
+    return (
+      <div className="screen">
+        <PetLimitModal onClose={() => navigate('/')} />
+      </div>
+    )
+  }
+
+  // `pets` rather than visiblePets: a returning user whose second pet is
+  // hidden has still seen the welcome flow, and replaying it for them would
+  // be a regression on top of a downgrade.
   const isAddingAnother = pets.length > 0
 
   const weightOptions = WEIGHT_RANGES[species]
@@ -94,6 +109,15 @@ export default function Onboarding() {
           "Couldn't add this pet — the database still has the one-pet-per-account restriction in place. " +
           'If you have just added multi-pet support, run the pending database migration and try again.',
         )
+      } else if (error.code === '42501') {
+        // The RLS backstop refused the insert — which means the client's
+        // count and the database's disagreed, most likely because the
+        // subscription changed in another session while this form was open.
+        // The raw message is "new row violates row-level security policy for
+        // table \"pets\"", which tells the owner nothing and reads like a
+        // fault. Show the offer instead, exactly as the pre-insert check
+        // would have.
+        setShowLimitPrompt(true)
       } else {
         setErrorMessage(error.message)
       }
@@ -216,6 +240,12 @@ export default function Onboarding() {
           {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
         </form>
       </Card>
+
+      {/* The database refused the insert after the fact. Dismissing returns
+          to Home rather than to the form: the form cannot succeed in this
+          state, so leaving them on it would invite a second attempt at
+          something already established to fail. */}
+      {showLimitPrompt && <PetLimitModal onClose={() => navigate('/')} />}
     </div>
   )
 }

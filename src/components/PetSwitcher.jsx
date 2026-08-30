@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
+import PetLimitModal from './PetLimitModal'
 
 // Horizontal row of the account's pets, plus the control for adding one.
 //
@@ -16,7 +18,8 @@ export default function PetSwitcher() {
   // visiblePets, not pets: a pet hidden by a lapsed subscription must not
   // appear as a switchable option. The database will not return its data
   // either, so selecting it would land on an empty screen.
-  const { visiblePets, selectedPetId, selectPet } = usePets()
+  const { visiblePets, selectedPetId, selectPet, atPetLimit } = usePets()
+  const [showLimit, setShowLimit] = useState(false)
 
   return (
     <div className="pet-switcher" role="group" aria-label="Select pet">
@@ -32,11 +35,21 @@ export default function PetSwitcher() {
         </button>
       ))}
 
-      {/* Plus-tier feature, currently ungated for testing. Gate on
-          hasMultiPetAccess(customerInfo) when the products are live. */}
-      <Link to="/onboarding" className="pet-switcher-add">
-        <Plus size={14} /> Add a pet
-      </Link>
+      {/* Still shown at the limit, and still says "Add a pet". Hiding it
+          would leave someone wondering where the control went, and greying
+          it out answers nothing — the point is that there IS a way to do
+          this, so the control stays and explains itself when tapped. */}
+      {atPetLimit ? (
+        <button type="button" className="pet-switcher-add" onClick={() => setShowLimit(true)}>
+          <Plus size={14} /> Add a pet
+        </button>
+      ) : (
+        <Link to="/onboarding" className="pet-switcher-add">
+          <Plus size={14} /> Add a pet
+        </Link>
+      )}
+
+      {showLimit && <PetLimitModal onClose={() => setShowLimit(false)} />}
     </div>
   )
 }

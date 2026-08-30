@@ -27,6 +27,21 @@ export function PetsProvider({ children }) {
   // over from the no-user pass no longer counts as a finished result.
   const [fetchedForUserId, setFetchedForUserId] = useState(null)
 
+  // How many pets the account really has, including any the limit is
+  // hiding. This CANNOT be derived from `pets`.
+  //
+  // Once the RLS policy is applied, `select * from pets` returns the visible
+  // ones and nothing else — so pets.length is capped at the limit by
+  // definition, hiddenPetCount computed from it would always be zero, and
+  // the "N pets are hidden" banner would never appear for anyone. The count
+  // has to come from public.pet_count_for(), which is SECURITY DEFINER and
+  // so sees past the policy that hides them.
+  //
+  // Null until it resolves, and null forever if the migration has not been
+  // applied yet (the function does not exist, the call errors, and the app
+  // carries on with client-side filtering only).
+  const [totalPetCount, setTotalPetCount] = useState(null)
+
   const [selectedPetId, setSelectedPetId] = useState(null)
   // Tracked separately from `loading` but folded into it below: rendering a
   // pet-specific screen before the persisted selection has been read would
@@ -60,6 +75,14 @@ export function PetsProvider({ children }) {
 
       if (error) throw error
       setPets(data ?? [])
+
+      // Separate call, deliberately not fatal. If the migration has not been
+      // applied the function does not exist and this errors — which is fine,
+      // because in that state RLS is not hiding anything either, so the
+      // client-side filter is the only gate and pets.length is the truth.
+      const { data: count, error: countError } = await supabase
+        .rpc('pet_count_for', { uid: user.id })
+      setTotalPetCount(countError ? null : (count ?? null))
     } catch (err) {
       logStartupIssue('pets-fetch-failed', err)
       console.error('Failed to load pets:', err.message)
@@ -133,7 +156,17 @@ export function PetsProvider({ children }) {
     return pets.filter((pet) => keep.has(pet.id))
   }, [pets, petLimit])
 
-  const hiddenPetCount = pets.length - visiblePets.length
+  // Prefer the server's count, fall back to what we can see. The two agree
+  // in every state except the one that matters — after the migration, where
+  // only the server's count knows about the hidden pets.
+  const knownPetCount = totalPetCount ?? pets.length
+  const hiddenPetCount = Math.max(knownPetCount - visiblePets.length, 0)
+
+  // Whether adding another pet would be refused. Uses the true count for the
+  // same reason: a free account with three pets can only see one, and asking
+  // "is 1 >= 1" would be right by accident here and wrong the moment a tier
+  // allows more than it has.
+  const atPetLimit = knownPetCount >= petLimit
 
   // Selection resolves against the VISIBLE list. A stored id can go stale —
   // the pet was deleted here or on another device — and can now also point
@@ -174,6 +207,9 @@ export function PetsProvider({ children }) {
     visiblePets,
     hiddenPetCount,
     petLimit,
+    atPetLimit,
+    // The true total, hidden pets included. `pets.length` is not this.
+    totalPetCount: knownPetCount,
     // Kept true until the persisted selection is known too, so consumers
     // never render against a provisional pet — and until this user's pets
     // have actually been fetched, so an empty list from the no-user pass is
