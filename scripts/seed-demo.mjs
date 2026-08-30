@@ -4,10 +4,15 @@
 //   node scripts/seed-demo.mjs           seed
 //   node scripts/seed-demo.mjs --clear   remove everything this seeded
 //
-// Needs the SERVICE ROLE key, because it writes rows for another user's pets
-// and RLS would (correctly) refuse the anon key:
+// Needs a SECRET key, because it writes rows for another user's pets and RLS
+// would (correctly) refuse the publishable one:
 //
-//   SUPABASE_SERVICE_ROLE_KEY=... node scripts/seed-demo.mjs
+//   SUPABASE_SECRET_KEY=... node scripts/seed-demo.mjs
+//
+// SUPABASE_SERVICE_ROLE_KEY is still accepted as a fallback. Supabase's new
+// sb_secret_ keys replace the legacy service_role JWT, and both work in this
+// position — the client sends whichever it is given as an opaque string, in
+// the apikey and Authorization headers, and never parses it as a JWT.
 //
 // SUPABASE_URL is read from the environment, falling back to
 // VITE_SUPABASE_URL in .env so the usual case needs no extra argument.
@@ -50,20 +55,21 @@ function envFromDotEnv(key) {
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || envFromDotEnv('VITE_SUPABASE_URL')
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const SECRET_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!SUPABASE_URL) {
   console.error('No Supabase URL. Set SUPABASE_URL, or VITE_SUPABASE_URL in .env.')
   process.exit(1)
 }
-if (!SERVICE_ROLE_KEY) {
-  console.error('SUPABASE_SERVICE_ROLE_KEY is not set.')
-  console.error('Find it in Dashboard > Project Settings > API > service_role.')
+if (!SECRET_KEY) {
+  console.error('SUPABASE_SECRET_KEY is not set.')
+  console.error('Find it in Dashboard > Project Settings > API Keys (sb_secret_...).')
+  console.error('The legacy SUPABASE_SERVICE_ROLE_KEY is still accepted.')
   console.error('It bypasses RLS — do not put it in .env, pass it for this one command.')
   process.exit(1)
 }
 
-const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+const db = createClient(SUPABASE_URL, SECRET_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
