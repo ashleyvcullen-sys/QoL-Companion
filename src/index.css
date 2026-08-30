@@ -462,10 +462,39 @@ code {
   padding-left: 2px;
 }
 
+/* Stacked and centred at the foot of the screen, one link per row. Side by
+   side they were two 13px words 20px apart — a pair of targets you aim at
+   rather than tap, and the miss lands on the other one.
+
+   margin-top: auto pushes the pair to the bottom of the flex column when the
+   page is shorter than the viewport. Home normally overflows and this is
+   inert, but it makes "at the bottom" true rather than incidental. */
 .home-secondary-links {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Flush, deliberately. Each link is its own 44px target, so stacking them
+     without a gap means the tappable areas meet instead of leaving dead
+     strips between two things that look adjacent. */
+  gap: 0;
+  margin-top: auto;
+}
+
+/* 44x44pt is Apple's minimum touch target. .subtle-link is a bare 13px line
+   with no padding — around 18px tall — so it needs a box of its own here.
+   min-height, not height: the text still decides if it ever needs more.
+
+   Scoped to this container on purpose. .subtle-link is used on a dozen other
+   screens, several of them in tight rows, and growing it globally would
+   reflow all of them. */
+.home-secondary-links .subtle-link {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 20px;
+  width: auto;
+  min-height: 44px;
+  padding: 0 20px;
+  margin: 0;
 }
 
 .pet-switcher-add {
