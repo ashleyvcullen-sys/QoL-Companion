@@ -1,21 +1,38 @@
 import { useNavigate } from 'react-router-dom'
 import Modal from './Modal'
 import Btn from './Btn'
+import { useEntitlements } from '../lib/EntitlementsContext'
 
 // Shown instead of the add-a-pet form when the account is at its limit.
 //
-// An offer, not a refusal. The database will reject the insert anyway (see
-// the pets INSERT policy), but "new row violates row-level security policy"
-// is not a sentence to show a person, and neither is any polite rewording of
-// a denial. Someone who has just tried to add a second pet has told us what
-// they want; the useful reply is what it would take, not that they cannot.
+// Two different situations wear the same modal, and they need different
+// words. A free user has somewhere to go, so this is an offer. A Plus or Pro
+// subscriber at five pets does NOT — the two paid tiers share a pet limit on
+// purpose (Pro's differentiator is disease monitoring, not pet count), so
+// there is nothing above them to sell. Showing a subscriber an upgrade
+// prompt that leads to the plan they are already paying for is the kind of
+// thing that gets an app called deceptive, and rightly.
 //
-// No mention of what happens to existing pets, deliberately: nothing is
-// being taken away here, and raising the subject would invent a worry the
-// user does not have. The hidden-pets banner on Home covers the case where
-// something actually is hidden.
+// The free copy avoids mentioning what happens to existing pets: nothing is
+// being taken away here, and raising it would invent a worry the user does
+// not have. The hidden-pets banner on Home covers the case where something
+// actually is hidden.
 export default function PetLimitModal({ onClose }) {
   const navigate = useNavigate()
+  const { tier, petLimit } = useEntitlements()
+  const hasPaidPlan = tier !== 'free'
+
+  if (hasPaidPlan) {
+    return (
+      <Modal title="Pet limit reached" onClose={onClose}>
+        <p>
+          You can track up to {petLimit} pets on your current plan. To add another,
+          remove a pet you no longer need to track.
+        </p>
+        <Btn type="button" className="btn-block" onClick={onClose}>Got it</Btn>
+      </Modal>
+    )
+  }
 
   return (
     <Modal title="Add another pet" onClose={onClose}>

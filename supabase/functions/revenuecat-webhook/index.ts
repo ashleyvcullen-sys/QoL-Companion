@@ -25,15 +25,22 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 
-// PENDING ASH — the pet limits per tier. Free is fixed at 1 by the product
-// decision; these two are placeholders that must match what the App Store
-// listing and the paywall actually promise before anything goes on sale.
-// They are here rather than in the database so a change is a code review
-// rather than a hand-typed UPDATE against live subscriber rows.
+// The pet limit each tier grants at the moment of purchase.
+//
+// Plus and Pro deliberately share a limit. Pro's differentiator is disease
+// monitoring and medications, not how many animals you can track — someone
+// with five pets and no chronic illness should not be pushed to the higher
+// tier for a number. This is not an oversight; do not "correct" it.
+//
+// These are the values WRITTEN to a user's row, not the values read back.
+// pet_limit_for() reads the pet_limit column, so raising one person's limit
+// by hand (a breeder, a rescue, a support case) is a single UPDATE against
+// their row and survives every renewal — the webhook only rewrites the
+// column when an event for that user actually arrives.
 const TIER_PET_LIMITS: Record<string, number> = {
   free: 1,
-  plus: 3,
-  pro: 25,
+  plus: 5,
+  pro: 5,
 }
 
 const FREE = { tier: 'free', pet_limit: 1 }

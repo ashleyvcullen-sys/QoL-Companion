@@ -89,6 +89,30 @@ create policy user_entitlements_select_own on public.user_entitlements
 -- The guard against uid <> auth.uid() stops one user probing another's
 -- limit. It cannot be tightened to a hard error because the RLS policies
 -- call it with auth.uid(), where it must succeed.
+--
+-- RAISING ONE PERSON'S LIMIT BY HAND — a breeder, a rescue, a support case.
+-- The limit is read from the pet_limit COLUMN, not derived from the tier, so
+-- this is a single UPDATE and it survives renewals: the webhook only
+-- rewrites the column when an event for that user arrives.
+--
+-- But note the expiry clause below, because it is a trap here. A row with a
+-- null expires_at reads as FREE, not as "never expires" — so the obvious
+-- form of a manual grant silently does nothing:
+--
+--   -- WRONG: pet_limit is ignored, this user still sees 1 pet
+--   insert into public.user_entitlements (user_id, tier, pet_limit)
+--   values ('...', 'plus', 10);
+--
+--   -- RIGHT: an expiry that will not arrive
+--   insert into public.user_entitlements (user_id, tier, pet_limit, expires_at)
+--   values ('...', 'plus', 10, 'infinity')
+--   on conflict (user_id) do update
+--     set pet_limit = excluded.pet_limit,
+--         expires_at = excluded.expires_at,
+--         updated_at = now();
+--
+-- 'infinity' is a real timestamptz and compares correctly against now(), so
+-- it needs no special case in the clause below.
 create or replace function public.pet_limit_for(uid uuid)
 returns int
 language sql

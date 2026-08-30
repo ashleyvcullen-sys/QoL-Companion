@@ -72,6 +72,20 @@ export function hasMultiPetAccess(customerInfo) {
 
 export const FREE_PET_LIMIT = 1
 
+// What each tier grants on purchase. Mirrors TIER_PET_LIMITS in
+// supabase/functions/revenuecat-webhook/index.ts, which is what actually
+// writes the number — this copy exists for copy and for the paywall, never
+// as the source of the limit in force. That is always the user's own
+// pet_limit column, which may have been raised by hand above the tier value.
+//
+// Plus and Pro share a limit on purpose: Pro is disease monitoring and
+// medications, not more pets.
+export const TIER_PET_LIMITS = {
+  free: 1,
+  plus: 5,
+  pro: 5,
+}
+
 export function petLimitFromRow(row) {
   if (!row) return FREE_PET_LIMIT
   // An entitlement with no expiry, or one that has passed, is not an
