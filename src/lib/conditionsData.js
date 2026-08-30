@@ -222,11 +222,34 @@ export function useConditionEntries(petId, conditionKey) {
 // is an example of what is actually being asked for.
 //
 // PENDING ASH — the four examples. "e.g. heart disease" is hers.
+// `mark` decides which badge the day wears on the calendar, and `prefix` how
+// the event reads on the day's line.
+//
+// The calendar's marks mean things, not tables. A medication change logged
+// here is the same fact as one on the Medications screen, so it gets the same
+// pill — it drew a stethoscope until 29 Aug 2026 purely because it happened
+// to be stored in the events table, which is an implementation detail no
+// owner should have to know. Anything without a `mark` gets the stethoscope,
+// which is what the Events list is for.
 export const EVENT_TYPES = [
   { value: 'episode', label: 'Medical episode', colour: '#A33A2E', placeholder: 'e.g. a seizure, a vomiting episode' },
   { value: 'diagnosis', label: 'Diagnosis', colour: '#5C6F8A', placeholder: 'e.g. heart disease' },
-  { value: 'medication_started', label: 'Medication started', colour: '#3D8259', placeholder: 'e.g. Furosemide' },
-  { value: 'medication_stopped', label: 'Medication stopped', colour: '#C97A2E', placeholder: 'e.g. Furosemide' },
+  {
+    value: 'medication_started',
+    label: 'Medication started',
+    colour: '#3D8259',
+    placeholder: 'e.g. Furosemide',
+    mark: 'medication',
+    prefix: 'Started',
+  },
+  {
+    value: 'medication_stopped',
+    label: 'Medication stopped',
+    colour: '#C97A2E',
+    placeholder: 'e.g. Furosemide',
+    mark: 'medication',
+    prefix: 'Stopped',
+  },
   { value: 'other', label: 'Something else', colour: '#8A5C6F', placeholder: 'e.g. a change in routine' },
 ]
 

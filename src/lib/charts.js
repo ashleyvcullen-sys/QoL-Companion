@@ -200,14 +200,25 @@ export function milestoneDayLabels(parameters = [], entries = []) {
 // a mark inside the day's cell on the calendar. Several events on one day —
 // a vet visit and the medication it started — accumulate rather than
 // overwrite, because both belong to that day.
-export function eventDayLabels(events = []) {
+export function eventDayLabels(events = [], { mark = null } = {}) {
   const byDate = new Map()
 
   for (const event of events) {
     if (!event?.date) continue
     const type = eventTypeByValue(event.type)
-    const label = event.title || type?.label || 'Event'
+    // A medication change wears the pill, whatever table it happens to be
+    // stored in — see EVENT_TYPES in lib/conditionsData.js. Callers ask for
+    // one kind at a time, so the two land on different corners of the day.
+    if ((type?.mark ?? null) !== mark) continue
+
+    // "Started Furosemide", not "Furosemide": the type carries the verb, and
+    // without it the pill's line names a drug without saying what happened
+    // to it.
+    const name = event.title || type?.label || 'Event'
+    const label = type?.prefix ? `${type.prefix} ${name}` : name
+
     const existing = byDate.get(event.date)
+    if (existing?.split(' \u2014 ').includes(label)) continue
     byDate.set(event.date, existing ? `${existing} \u2014 ${label}` : label)
   }
 
@@ -486,9 +497,24 @@ export function chartsForCondition({
   }))
 
   const medicationDays = medicationDayLabels(medications)
+  // A medication change logged in the EVENTS list belongs on the pill too.
+  //
+  // It drew a stethoscope until 29 Aug 2026, which put the same fact under
+  // two different symbols depending on which screen the owner recorded it
+  // from — and left the pill absent from a day whose whole point was that a
+  // drug started. Merged into the medication map rather than kept beside it,
+  // because both share one corner and the second mark would simply cover the
+  // first.
+  for (const [date, label] of eventDayLabels(events, { mark: 'medication' })) {
+    const existing = medicationDays.get(date)
+    if (existing === label || existing?.split(', ').includes(label)) continue
+    medicationDays.set(date, existing ? `${existing}, ${label}` : label)
+  }
   // A condition entry carries its own notes field, separate from the
   // assessment's. Both belong on this condition's calendar.
   const noteDays = noteDayLabels(entries)
+  // Everything that is NOT a medication change — an episode, a diagnosis,
+  // something else. Those keep the stethoscope.
   const eventDays = eventDayLabels(events)
   // Diet trial started, re-challenge food introduced — see milestoneDayLabels.
   const milestoneDays = milestoneDayLabels(resolved.parameters, entries)
