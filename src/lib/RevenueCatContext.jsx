@@ -26,16 +26,39 @@ const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_API_KEY
 const REVENUECAT_DEBUG_LOGGING = import.meta.env.VITE_REVENUECAT_DEBUG === 'true'
 
 export function RevenueCatProvider({ children }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [customerInfo, setCustomerInfo] = useState(null)
   const [offerings, setOfferings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [configureError, setConfigureError] = useState('')
   const [offeringsError, setOfferingsError] = useState('')
 
-  const configuredRef = useRef(false)
-  const identifiedUserId = useRef(null)
+  // Which Supabase user the SDK is actually identified as. State, not a ref,
+  // because the UI has to be able to refuse a purchase until this matches the
+  // signed-in user — see identityReady below.
+  const [identifiedUserId, setIdentifiedUserId] = useState(null)
+
+  // The same value as a ref, because the effect below has to make decisions
+  // from it without listing it as a dependency (which would re-run the effect
+  // every time it changed). Kept in step by identifyAs().
+  const identifiedRef = useRef(null)
+
+  // The in-flight configure() promise, not a boolean.
+  //
+  // This was `configuredRef.current = true` set AFTER the await, so a second
+  // effect run starting while the first was still awaiting configure() saw
+  // false and configured again — two concurrent configures against an SDK
+  // that documents the call as once per app lifetime. Holding the promise
+  // means the second run awaits the first rather than repeating it.
+  const configurePromiseRef = useRef(null)
   const listenerIdRef = useRef(null)
+
+  // Sets the ref and the state together, so the effect's decisions and the
+  // UI's gating can never disagree about who the SDK is.
+  const identifyAs = useCallback((id) => {
+    identifiedRef.current = id
+    setIdentifiedUserId(id)
+  }, [])
 
   // Two independent calls, settled independently.
   //
@@ -102,22 +125,51 @@ export function RevenueCatProvider({ children }) {
       return
     }
 
+    // Do not configure until the session is known.
+    //
+    // This is the anonymous-purchase bug. configure() with no appUserID mints
+    // a $RCAnonymousID, and the provider used to run on mount — where `user`
+    // is null because AuthContext starts at session === undefined. The SDK
+    // was therefore anonymous, loading was cleared, and the paywall became
+    // purchasable, all before getSession() came back. That window is as long
+    // as the session check takes, which AuthContext allows up to ten seconds
+    // for. A purchase made inside it attaches to the anonymous identity, and
+    // the webhook has no Supabase user to write an entitlement for.
+    //
+    // Staying in `loading` here is what keeps the paywall non-interactive.
+    if (authLoading) {
+      setLoading(true)
+      return
+    }
+
     let cancelled = false
 
     async function run() {
       setLoading(true)
       setConfigureError('')
       try {
-        // configure() should only run once per app lifetime — switching
-        // between signed-in users afterwards goes through logIn()/logOut()
-        // instead, matching RevenueCat's recommended pattern.
-        if (!configuredRef.current) {
-          await Purchases.setLogLevel({
-            level: REVENUECAT_DEBUG_LOGGING ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO,
-          })
-          await Purchases.configure({ apiKey: REVENUECAT_API_KEY })
-          configuredRef.current = true
+        // configure() only once per app lifetime, and — now that the session
+        // has resolved before we get here — with the appUserID already known.
+        // Configuring WITH the identity means a signed-in user never holds an
+        // anonymous id at all, rather than holding one briefly and being
+        // aliased out of it afterwards. That matters: per RevenueCat's
+        // identifying-customers docs, an anonymous identity is only merged
+        // into the target id if that id does not already exist. For a
+        // returning account it does, and the anonymous purchase is orphaned.
+        if (!configurePromiseRef.current) {
+          configurePromiseRef.current = (async () => {
+            await Purchases.setLogLevel({
+              level: REVENUECAT_DEBUG_LOGGING ? LOG_LEVEL.DEBUG : LOG_LEVEL.INFO,
+            })
+            await Purchases.configure({
+              apiKey: REVENUECAT_API_KEY,
+              ...(user?.id ? { appUserID: user.id } : {}),
+            })
+            return user?.id ?? null
+          })()
         }
+        const configuredAs = await configurePromiseRef.current
+        if (configuredAs) identifyAs(configuredAs)
 
         if (!listenerIdRef.current) {
           listenerIdRef.current = await Purchases.addCustomerInfoUpdateListener((info) => {
@@ -125,17 +177,22 @@ export function RevenueCatProvider({ children }) {
           })
         }
 
+        // Compared against the CURRENT identity rather than against whatever
+        // configure() was called with. Those differ once an account has been
+        // switched: configuredAs is fixed for the app's lifetime, so using it
+        // here left the SDK still logged in as the previous user after a sign
+        // out that followed a sign in.
         if (user?.id) {
-          if (identifiedUserId.current !== user.id) {
+          if (identifiedRef.current !== user.id) {
             await Purchases.logIn({ appUserID: user.id })
-            identifiedUserId.current = user.id
           }
-        } else if (identifiedUserId.current !== null) {
+          if (!cancelled) identifyAs(user.id)
+        } else if (identifiedRef.current !== null) {
           // Signed out — drop back to an anonymous RevenueCat identity so a
           // different account signing in on the same device next doesn't
           // inherit the previous user's entitlements.
           await Purchases.logOut()
-          identifiedUserId.current = null
+          if (!cancelled) identifyAs(null)
         }
 
         await refresh()
@@ -152,21 +209,47 @@ export function RevenueCatProvider({ children }) {
     return () => {
       cancelled = true
     }
-  }, [user?.id, refresh])
+  }, [user?.id, authLoading, refresh, identifyAs])
+
+  // Is the SDK identified as the signed-in user right now?
+  //
+  // Nothing that moves money may happen while this is false. An anonymous
+  // purchase is not a cosmetic problem: the webhook maps app_user_id to a
+  // Supabase user, so a purchase made under a $RCAnonymousID writes no
+  // entitlement row and the customer pays and receives nothing.
+  const identityReady = Boolean(user?.id) && identifiedUserId === user.id
+
+  // The guard is here as well as in the UI on purpose. The screen disables
+  // its buttons, and these refuse outright — a disabled button is a courtesy,
+  // and this is the thing that makes the bad state actually unreachable.
+  function assertIdentity(action) {
+    if (!identityReady) {
+      throw new Error(
+        `Cannot ${action} before RevenueCat is identified as the signed-in user. ` +
+        'This guard exists because purchasing anonymously silently loses the purchase.',
+      )
+    }
+  }
 
   async function purchasePackage(pkg) {
+    assertIdentity('purchase')
     const { customerInfo: info } = await Purchases.purchasePackage({ aPackage: pkg })
     setCustomerInfo(info)
     return info
   }
 
   async function restorePurchases() {
+    // Restore is gated too. Restoring onto an anonymous identity attaches the
+    // entitlement to an id no Supabase user maps to, which is the same
+    // failure by a different route.
+    assertIdentity('restore purchases')
     const { customerInfo: info } = await Purchases.restorePurchases()
     setCustomerInfo(info)
     return info
   }
 
   const value = {
+    identityReady,
     customerInfo,
     offerings,
     loading,

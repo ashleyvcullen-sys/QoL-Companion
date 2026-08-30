@@ -76,7 +76,7 @@ function describePurchaseError(err) {
 }
 
 export default function Paywall() {
-  const { offerings, loading, configureError, purchasePackage, restorePurchases } = useRevenueCat()
+  const { offerings, loading, configureError, identityReady, purchasePackage, restorePurchases } = useRevenueCat()
   const { refresh: refreshEntitlements, hasPremium } = useEntitlements()
   const { refresh: refreshPets } = usePets()
   const navigate = useNavigate()
@@ -111,7 +111,7 @@ export default function Paywall() {
   const selected = ordered.find((p) => p.identifier === selectedId) ?? null
 
   async function handlePurchase() {
-    if (!selected || purchasing) return
+    if (!selected || purchasing || !identityReady) return
     setPurchasing(true)
     setActionError('')
     try {
@@ -266,7 +266,7 @@ export default function Paywall() {
           <Btn
             type="button"
             className="btn-block"
-            disabled={purchasing || !selected}
+            disabled={purchasing || !selected || !identityReady}
             onClick={handlePurchase}
           >
             {purchasing ? 'Processing…' : 'Continue'}
@@ -286,7 +286,7 @@ export default function Paywall() {
           to be a visible, working control on this screen — its absence is a
           standard rejection, not a nicety. */}
       <div className="paywall-footer-row">
-        <button type="button" className="subtle-link" onClick={handleRestore} disabled={restoring}>
+        <button type="button" className="subtle-link" onClick={handleRestore} disabled={restoring || !identityReady}>
           {restoring ? 'Restoring…' : 'Restore Purchases'}
         </button>
         <span aria-hidden="true">·</span>
