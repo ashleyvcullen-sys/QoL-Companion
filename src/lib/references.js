@@ -95,6 +95,15 @@ export const REFERENCES = [
     full: 'Body condition scoring incorporates the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).',
   },
   {
+    // The BCS illustrations are NOT WSAVA's artwork — see BCS_IMAGE_CREDIT in
+    // lib/bcsScale.js. It used to be credited on the Body Condition screen
+    // itself; with the page-bottom credits gone (29 Aug 2026, Ash's call)
+    // this is the only place it is now said, so it has to be said here.
+    key: 'wsava-bcs-images',
+    short: 'Illustrations incorporate ideas from the WSAVA Body Condition Score chart.',
+    full: 'The body condition illustrations incorporate ideas from the WSAVA Body Condition Score chart. They are an adaptation and not the official WSAVA artwork.',
+  },
+  {
     key: 'aaha-aafp',
     where: 'app',
     short: 'Incorporates ideas from published AAHA and AAFP life-stage guidelines.',

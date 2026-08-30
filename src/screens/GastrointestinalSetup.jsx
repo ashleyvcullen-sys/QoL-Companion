@@ -49,6 +49,7 @@ export default function GastrointestinalSetup() {
   const modules = giModulesForSpecies(pet?.species)
   const questionCount = parametersForGi(config, pet?.species).length
   const cancerSelected = active.includes('gi_cancer')
+  const foodAllergySelected = active.includes('food_sensitivity')
 
   async function handleSave() {
     if (busy) return
@@ -92,9 +93,8 @@ export default function GastrointestinalSetup() {
           <SectionTitle>What To Monitor</SectionTitle>
         </div>
         <p className="assessment-hint">
-          There are many different symptoms of Gastrointestinal (GIT) disease depending on
-          the underlying cause. Tell us what applies to {pet.name} and this section will ask
-          about those things only.
+          Gut problems look different depending on the cause. Tell us what applies to
+          {pet.name} and this section will ask about those things only.
         </p>
         <p className="assessment-hint">
           You can pick more than one, and change this at any time.
@@ -153,6 +153,31 @@ export default function GastrointestinalSetup() {
             onClick={() => navigate('/conditions/cancer')}
           >
             Go to Cancer monitoring
+          </Btn>
+        </Card>
+      )}
+
+      {/* A food trial is monitored properly by Allergies and Skin Disease —
+          which diet, when it started, how long it has run, whether it was
+          broken and with what, and the whole re-challenge protocol, with the
+          milestones drawn on its calendar. This section asked a two-question
+          version of the same thing until 29 Aug 2026, which split one trial's
+          record across two places. Same reasoning as gut cancer above. */}
+      {foodAllergySelected && (
+        <Card>
+          <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
+          <p>
+            {/* PENDING ASH — wording. */}
+            Food allergies are monitored in Allergies and Skin Disease, which follows the whole
+            diet trial. This section will not ask about it.
+          </p>
+          <Btn
+            type="button"
+            variant="outline"
+            className="btn-block"
+            onClick={() => navigate('/conditions/allergies')}
+          >
+            Go to Allergies and Skin Disease
           </Btn>
         </Card>
       )}

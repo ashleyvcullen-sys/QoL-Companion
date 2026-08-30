@@ -35,7 +35,6 @@ import {
   vcogGradeFromBeapAppetite,
 } from '../lib/conditions'
 import { CONDITION_LIST } from '../lib/conditions'
-import { assessmentReferences } from '../lib/references'
 import {
   saveConditionEntry,
   todayIsoDate,
@@ -53,14 +52,10 @@ import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
 import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 // Local rather than shared: three screens format a date this way and each
 // has its own copy. Worth unifying one day; not worth a new module today.
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 const INITIAL_ENTRY = {
   scores: { stool: 'unsure', hygiene: 'unsure', vision: 'unsure', hearing: 'unsure', sleep: 'unsure' },
@@ -129,10 +124,24 @@ function findResumeIndex(hydratedEntry) {
 }
 
 // Reconstructs the assessment-flow `entry` shape from already-submitted
-// Supabase rows, for the "Edit Existing" path. catEyesGrimace can't be
-// recovered — only the summed total was ever persisted — so it's left
-// blank; FelineGrimacePage won't clobber the hydrated beap.eyes value with
-// that until the user actually starts re-answering it (see there).
+// Supabase rows, for the "Edit Existing" path.
+//
+// catEyesGrimace used to be unrecoverable: only the summed total was ever
+// persisted, so an owner reopening yesterday's assessment found all five
+// Feline Grimace Scale questions blank even though they had answered them.
+// Ash reported it 29 Aug 2026.
+//
+// The five sub-answers are now saved alongside the total, under
+// `beap.eyesGrimace` — see handleSave. Deliberately inside the existing beap
+// jsonb rather than in a new column, so this needed no migration and works on
+// the database as it already is. Safe because nothing reads beap
+// generically: computeBeapWorst, the scoring functions and the summary all
+// index it by name from BEAP_CATEGORIES, so an extra key is invisible to
+// them.
+//
+// Rows written before this change have no such key, and fall back to blank —
+// which is the old behaviour, and FelineGrimacePage still declines to
+// overwrite the stored total until the owner actually re-answers (see there).
 function entryFromServerRows(generalRow, painRow) {
   return {
     scores: generalRow?.scores ?? INITIAL_ENTRY.scores,
@@ -143,7 +152,13 @@ function entryFromServerRows(generalRow, painRow) {
     waterIntake: generalRow?.waterIntake ?? INITIAL_ENTRY.waterIntake,
     notes: generalRow?.notes ?? painRow?.notes ?? '',
     beap: painRow?.beap ?? INITIAL_ENTRY.beap,
-    catEyesGrimace: INITIAL_ENTRY.catEyesGrimace,
+    // Every action unit the stored answer names, over a blank set — so a
+    // partially answered scale hydrates the answers it has and leaves the
+    // rest blank, rather than being thrown away whole.
+    catEyesGrimace: {
+      ...INITIAL_ENTRY.catEyesGrimace,
+      ...(painRow?.beap?.eyesGrimace ?? {}),
+    },
   }
 }
 
@@ -182,9 +197,17 @@ export default function QualityOfLifeAssessment() {
   // Two maps: BEAAAAPP categories, and the everyday-function scores. Same
   // idea either way — a condition asked this question today, so this screen
   // shows the answer rather than asking again.
-  const { beap: beapFromConditions, scores: scoresFromConditions } = useMemo(() => {
+  const {
+    beap: beapFromConditions,
+    scores: scoresFromConditions,
+    fields: fieldsFromConditions,
+  } = useMemo(() => {
     const found = {}
     const foundScores = {}
+    // Whole-object answers that a condition and this screen SHARE a column
+    // for — vomiting is the one today. See `assessmentField` in
+    // lib/conditions.js.
+    const foundFields = {}
     for (const condition of CONDITION_LIST) {
       const todaysEntry = (conditionEntriesByCondition[condition.key] ?? [])
         .find((conditionEntry) => conditionEntry.date === todayDate)
@@ -192,6 +215,25 @@ export default function QualityOfLifeAssessment() {
 
       const petCondition = petConditions.find((row) => row.conditionKey === condition.key) ?? null
       for (const parameter of parametersFor(condition, petCondition?.config ?? {}, pet.species)) {
+        // A shared COLUMN, not a score. The condition form writes these
+        // straight back to today's assessment row when it saves — but only
+        // if that row already exists, and it does not exist for an owner who
+        // fills in a disease form before the daily assessment. That owner
+        // was then asked about vomiting twice on the same day, which is the
+        // exact thing `assessmentField` exists to stop. Reading it in this
+        // direction too closes the gap whichever screen they start on.
+        if (parameter.assessmentField) {
+          const answer = todaysEntry.values?.[parameter.key]
+          if (answer == null || answer === '') continue
+          foundFields[parameter.assessmentField] = {
+            value: answer,
+            conditionKey: condition.key,
+            conditionLabel: condition.label,
+            parameterKey: parameter.key,
+          }
+          continue
+        }
+
         if (parameter.scoreKey) {
           const severity = Number(todaysEntry.values?.[parameter.key])
           if (!Number.isFinite(severity)) continue
@@ -224,7 +266,7 @@ export default function QualityOfLifeAssessment() {
         }
       }
     }
-    return { beap: found, scores: foundScores }
+    return { beap: found, scores: foundScores, fields: foundFields }
   }, [conditionEntriesByCondition, petConditions, todayDate, pet.species])
 
   // Set once the assessment is saved. Holds what was just recorded so the
@@ -331,6 +373,31 @@ export default function QualityOfLifeAssessment() {
     })
   }, [beapFromConditions])
 
+  // The shared-column answers, seeded the same way and on the same terms:
+  // only where this screen has nothing yet, so anything the owner has set
+  // here — or resumed from a draft — always wins.
+  //
+  // "Nothing yet" for vomiting is hasVomited === null: the untouched default.
+  // Compared against the blank INITIAL_ENTRY value rather than by a
+  // per-field rule, so a second shared field added later needs no change
+  // here.
+  useEffect(() => {
+    const keys = Object.keys(fieldsFromConditions)
+    if (keys.length === 0) return
+    setEntry((previous) => {
+      let changed = false
+      const next = { ...previous }
+      for (const key of keys) {
+        const blank = JSON.stringify(INITIAL_ENTRY[key])
+        if (!(key in INITIAL_ENTRY)) continue
+        if (JSON.stringify(previous[key]) !== blank) continue
+        next[key] = fieldsFromConditions[key].value
+        changed = true
+      }
+      return changed ? next : previous
+    })
+  }, [fieldsFromConditions])
+
   // Debounced so rapid typing (e.g. the notes field) doesn't fire a write
   // per keystroke — still eventually-consistent within well under a second.
   useEffect(() => {
@@ -396,7 +463,7 @@ export default function QualityOfLifeAssessment() {
 
     const beapValues = Object.values(entry.beap)
     if (beapValues.some((v) => v === null)) {
-      setErrorMessage('Please answer all 8 pain categories before saving.')
+      setErrorMessage('Answer all 8 pain categories before saving.')
       return
     }
 
@@ -426,12 +493,25 @@ export default function QualityOfLifeAssessment() {
       return
     }
 
+    // The five Feline Grimace Scale answers ride along inside the beap blob,
+    // under a key none of the scoring reads. Without them only the summed
+    // total survived, and reopening the assessment showed five blank
+    // questions — see entryFromServerRows.
+    //
+    // Written only when at least one is answered, so a dog's row and an
+    // unanswered cat's row stay exactly as they were.
+    const grimaceAnswers = entry.catEyesGrimace ?? {}
+    const anyGrimaceAnswered = Object.values(grimaceAnswers).some((value) => value != null)
+    const beapToSave = anyGrimaceAnswered
+      ? { ...entry.beap, eyesGrimace: grimaceAnswers }
+      : entry.beap
+
     const { error: painError } = await supabase
       .from('pain_log_entries')
       .upsert({
         pet_id: pet.id,
         entry_date: entryDate,
-        beap: entry.beap,
+        beap: beapToSave,
         beap_worst: beapWorst,
         notes: entry.notes,
       }, { onConflict: 'pet_id,entry_date' })
@@ -511,22 +591,15 @@ export default function QualityOfLifeAssessment() {
     setSaving(false)
   }
 
-  // Species-filtered: a dog owner is never shown the Feline Grimace Scale, so
-  // crediting it to them would be noise dressed up as rigour.
-  const references = assessmentReferences(pet.species)
-
-  // Below the Back/Next buttons on the intro page only. Credits belong at
-  // the bottom of the screen, under the controls — not between the
-  // instructions and the button the reader is trying to press.
-  const pageFooters = [
-    references.length > 0 ? (
-      <div className="assessment-references" key="references">
-        {references.map((reference) => (
-          <p key={reference.key} className="beap-citation">{reference.short}</p>
-        ))}
-      </div>
-    ) : null,
-  ]
+  // The instrument credits used to sit under the Back/Next buttons on the
+  // intro page. Credits now live in one place — Legal & Privacy, and the
+  // Terms — rather than at the foot of every screen that uses one (Ash's
+  // call, 29 Aug 2026). They are all in lib/references.js and appear there
+  // in full, so nothing has stopped being credited.
+  //
+  // The array stays: the wizard reads a footer per page, and a page that
+  // gains one later should not need this rebuilt.
+  const pageFooters = [null]
 
   const pages = [
     <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
@@ -551,6 +624,11 @@ export default function QualityOfLifeAssessment() {
       onChange={(v) => updateField('vomiting', v)}
       icon={PuddleIcon}
       species={pet.species}
+      prefilledNote={
+        fieldsFromConditions.vomiting
+          ? prefilledFrom(`${fieldsFromConditions.vomiting.conditionLabel} assessment`)
+          : null
+      }
     />,
     <UrinationPage
       key="urination"
@@ -727,8 +805,8 @@ export default function QualityOfLifeAssessment() {
       {showExitConfirm && (
         <Modal title="Exit assessment?" onClose={() => setShowExitConfirm(false)}>
           <p>
-            Are you sure? Your answers so far are saved as a draft you can resume next
-            time, but this attempt won't be submitted unless you finish and save.
+            Your answers are saved as a draft. Nothing is recorded until you finish and
+            save.
           </p>
           <div className="modal-actions">
             <Btn type="button" variant="outline" onClick={() => setShowExitConfirm(false)}>
@@ -744,8 +822,7 @@ export default function QualityOfLifeAssessment() {
       {showExistingTodayChoice && (
         <Modal title="Already completed today" onClose={handleStartNewToday}>
           <p>
-            You've already completed today's assessment. Would you like to start a new one
-            (this will overwrite today's entry) or edit your existing entry?
+            Today's assessment is already saved. Edit it, or start again and overwrite it?
           </p>
           <div className="modal-actions">
             <Btn type="button" variant="outline" onClick={handleStartNewToday}>

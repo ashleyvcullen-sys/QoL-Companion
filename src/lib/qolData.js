@@ -165,6 +165,60 @@ export async function updateGeneralField({ petId, date, field, value }) {
   return mapGeneralQolRow({ ...data, [column]: value })
 }
 
+// Clears the note written on one day's assessment, leaving every score and
+// answer exactly as it is.
+//
+// Both rows, because the assessment writes the same text to both when it
+// saves — the everyday-function row and the pain row each carry a copy, and
+// clearing one would leave the other to reappear in the report and on the
+// calendar as though nothing had happened.
+//
+// An update, never a delete: the owner asked to remove what they wrote, not
+// to throw away the day's assessment. On a trend line those are very
+// different — one takes a pencil mark off a day, the other takes the day out
+// of the record.
+export async function clearAssessmentNote({ petId, date }) {
+  // An EMPTY STRING, not null.
+  //
+  // general_qol_entries.notes is `not null`, so writing null is rejected
+  // outright — "null value in column \"notes\" ... violates not-null
+  // constraint", which is what this did when it shipped. An empty string
+  // clears it within the column's own rules and needs no migration, and every
+  // reader in the app already treats a blank note as no note: the history
+  // list, the export and the calendar's pencil mark all test `.trim()`.
+  //
+  // .select() on each update, deliberately.
+  //
+  // Without it, an update that matches NO ROWS — a row-level security policy
+  // that permits reading but not writing, a date that does not line up —
+  // comes back with no error at all, and the caller cheerfully reports
+  // success while the note is still there. Asking for the updated rows back
+  // is the only way to tell "done" from "silently did nothing".
+  let updated = 0
+
+  for (const table of ['general_qol_entries', 'pain_log_entries']) {
+    const { data, error } = await supabase
+      .from(table)
+      .update({ notes: '' })
+      .eq('pet_id', petId)
+      .eq('entry_date', date)
+      .select('id')
+
+    if (error) throw error
+    updated += (data ?? []).length
+  }
+
+  // Both tables can legitimately be empty of this date — a pain row without a
+  // general row, say — but NEITHER having a row means nothing was cleared,
+  // and the owner needs to be told that rather than watching the note come
+  // back on the next refresh.
+  if (updated === 0) {
+    throw new Error('That note could not be found to delete. Please try again.')
+  }
+
+  return updated
+}
+
 export async function fetchGeneralQolEntries(petId) {
   const { data, error } = await supabase
     .from('general_qol_entries')

@@ -84,7 +84,7 @@ export const GI_CORE_PARAMETERS = [
   },
   {
     key: 'blood_or_mucus',
-    label: 'Blood Or Mucous In The Stool',
+    label: 'Blood Or Mucus In The Stool',
     type: 'choice',
     // PENDING ASH — options and severities both. Fresh blood and digested
     // blood are separated because they mean different things and different
@@ -92,9 +92,9 @@ export const GI_CORE_PARAMETERS = [
     // cannot name them.
     options: [
       { value: 'none', label: 'Neither' },
-      { value: 'mucus', label: 'Mucous or slime only', severity: SEVERITY.CONCERN },
+      { value: 'mucus', label: 'Mucus or slime only', severity: SEVERITY.CONCERN },
       { value: 'fresh', label: 'Fresh red blood', severity: SEVERITY.CONCERN },
-      { value: 'both', label: 'Both mucous and fresh blood', severity: SEVERITY.CONCERN },
+      { value: 'both', label: 'Both mucus and fresh blood', severity: SEVERITY.CONCERN },
       { value: 'black', label: 'Black or tarry', severity: SEVERITY.EMERGENCY },
     ],
     concernMessage: 'Worth telling your vet about, particularly if this is new or happening most days.', // PENDING ASH
@@ -310,58 +310,25 @@ export const GI_MODULES = {
     ],
   },
 
+  // Selected at setup, but has NO questions of its own — Ash's call, 29 Aug
+  // 2026, and the same call already made for gut cancer below.
+  //
+  // It used to ask two: whether {name} was on a hypoallergenic or single
+  // protein trial, and whether the diet had been adhered to today. The
+  // Allergies and Skin Disease section now asks both of those and a good deal
+  // more — which diet, when it started, how long it has run, whether the trial
+  // was broken and with what, and the whole re-challenge protocol — with the
+  // milestones drawn on its calendar. Keeping a two-question version here gave
+  // an owner a worse form and split one food trial across two sections, each
+  // with its own record of when it started.
+  //
+  // The module stays selectable. What an owner has is still worth recording,
+  // and selecting it is what surfaces the way across to Allergies.
   food_sensitivity: {
     key: 'food_sensitivity',
     label: 'Food sensitivity or allergy',
-    parameters: [
-      {
-        key: 'on_diet_trial',
-        label: 'Is {name} Currently On A Hypoallergenic Or Single Protein Diet Trial?',
-        type: 'yesno',
-        // No flag either way. Being on a trial is not a finding, and being off
-        // one is not a failing — it decides which questions follow, nothing
-        // more.
-        followUp: {
-          key: 'diet_trial_food',
-          when: 'yes',
-          type: 'text',
-          label: 'Which food?',
-        },
-      },
-      {
-        key: 'diet_adhered',
-        label: 'Adhered To The Diet Today',
-        type: 'yesno',
-        concernWhen: 'no',
-        // Only asked of a pet actually on a trial. Asked of one who is not,
-        // it produces a "no" that reads as a failure rather than as a
-        // question that never applied.
-        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
-        //
-        // Split by species: chews are a dog's way of breaking a diet trial and
-        // not a cat's, and listing them for a cat owner is a prompt to think
-        // about something that never happened.
-        why: {
-          dog: 'Treats, chews, table scraps and flavoured medication all count as lapses in the diet trial.',
-          cat: 'Treats, table scraps and flavoured medication all count as lapses in the diet trial.',
-        },
-        concernMessage: 'Worth mentioning to your vet, especially if {name} develops symptoms afterwards.',
-        // What was eaten matters more than that something was. A single dental
-        // chew and a stolen plate of leftovers are read very differently when
-        // the trial is assessed.
-        followUp: {
-          key: 'diet_break_food',
-          when: 'no',
-          type: 'text',
-          label: 'What did {name} have?',
-          placeholder: {
-            dog: 'Treats, chews, table scraps, flavoured medication…',
-            cat: 'Treats, table scraps, flavoured medication…',
-          },
-        },
-      },
-    ],
+    redirectTo: 'allergies',
+    parameters: [],
   },
 
   infection_parasites: {
@@ -384,7 +351,7 @@ export const GI_MODULES = {
           when: 'yes',
           type: 'photo',
           label: 'Show your vet',
-          hint: 'A photo is worth far more than a description here, and it will be gone by the appointment. Take one now and it is saved to {name}\u2019s photos, ready to show them.', // PENDING ASH
+          hint: 'A photo is worth far more than a description here, and it will be gone by the appointment. Take one now and it is saved to {name}\'s photos, ready to show them.', // PENDING ASH
         },
       },
     ],

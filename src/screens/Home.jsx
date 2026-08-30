@@ -46,7 +46,7 @@ const NAV_SECTIONS = [
       // in a hurry should not have to read past two other tiles to find it.
       { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
       { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
-      { to: '/end-of-life', label: 'End Of Life', Icon: HeartHandshake },
+      { to: '/end-of-life', label: 'End of Life', Icon: HeartHandshake },
       // Promoted from a quiet link at the foot of the page. Reminders are
       // what make a daily habit stick, so burying them under "About" was
       // working against the thing the app is for.
@@ -191,14 +191,13 @@ export default function Home() {
           alt="Dog and cat, nose to nose, forming a heart"
           className="logo-placeholder"
         />
-        <SectionTitle>{pet ? `${petName}'s Quality Of Life Companion` : 'Your Quality Of Life Companion'}</SectionTitle>
+        <SectionTitle>{pet ? `${petName}'s Quality of Life Companion` : 'Your Quality of Life Companion'}</SectionTitle>
         {/* One line, not two. The credit is folded into the subtext rather
             than stacked above it — who made it and what it is for are the
             same sentence, and two lines of supporting text under one heading
             read as a preamble nobody finishes. */}
         <p className="home-subtitle">
-          Designed by a veterinarian to support and help you navigate {petName}'s quality
-          of life and wellbeing every step of the way.
+          Designed by a vet to help you follow {petName}'s quality of life.
         </p>
         <PetSwitcher />
       </Card>

@@ -6,7 +6,7 @@ export default function WelcomeSlide2() {
   return (
     <div className="assessment-page welcome-slide">
       <Heart size={30} color="#C97B8C" className="welcome-slide-icon" />
-      <SectionTitle>What Is Quality Of Life?</SectionTitle>
+      <SectionTitle>What Is Quality of Life?</SectionTitle>
       <p>
         It's everything that makes up a good day: comfortable movement, a good appetite,
         restful sleep, curiosity, and the small joys. Every animal deserves a good quality

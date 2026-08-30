@@ -127,7 +127,7 @@ export const SIGN_MODULES = {
   lymph_nodes: {
     key: 'lymph_nodes',
     label: 'Lymph nodes',
-    summary: 'Size of the lymph nodes you can feel. Ask your veterinarian how to do this if unsure.',
+    summary: 'Size of the lymph nodes you can feel. Ask your vet how to do this if unsure.',
     // Shown where the nodes themselves are — the add card in setup, and above
     // the measurements on the daily form — but deliberately NOT in the module
     // summary under Things to Monitor. Someone choosing what to track does
@@ -416,7 +416,7 @@ export const LUMP_MEASURES = [
     // Descriptors signed off by Ash, 24 Aug 2026.
     options: [
       { value: 'intact', label: 'Skin over it looks normal', severity: SEVERITY.OK },
-      { value: 'hair_loss', label: 'Hair loss over it', severity: SEVERITY.CONCERN },
+      { value: 'hair_loss', label: 'Fur loss over it', severity: SEVERITY.CONCERN },
       { value: 'pigmented', label: 'Changed colour', severity: SEVERITY.CONCERN },
       { value: 'red', label: 'Red or swollen', severity: SEVERITY.CONCERN },
       { value: 'ulcerated', label: 'Broken open', severity: SEVERITY.CONCERN },
@@ -477,7 +477,7 @@ export const MEASURES_BY_INSTANCE_TYPE = {
 const RADIATION_SKIN_LEVELS = [
   'Skin at the treated site looks normal.',
   'Slightly pink or red, like mild sunburn. {name} is not bothered by it.',
-  'Clearly red, and the hair is thinning or coming away. May look dry or flaky.',
+  'Clearly red, and the fur is thinning or coming away. May look dry or flaky.',
   'Skin is moist, weeping or peeling in places. {name} may lick or scratch at it.',
   'Raw and open over a larger area, weeping or crusted. Clearly sore to touch.',
   'Open wound, bleeding, or a bad smell coming from the site. (emergency)',
@@ -586,7 +586,7 @@ export const TREATMENT_MODULES = {
         // is called, so nobody is asked to decide whether something counts as
         // "desquamation".
         //
-        // Amber from 4 — the first level where the hair is going and the
+        // Amber from 4 — the first level where the fur is going and the
         // reaction is more than colour.
         concernFrom: 4,
         levels: { dog: RADIATION_SKIN_LEVELS, cat: RADIATION_SKIN_LEVELS },

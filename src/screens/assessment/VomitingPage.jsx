@@ -17,7 +17,13 @@ const FREQUENCY_QUALIFIER_VALUES = VOMITING_FREQUENCY_QUALIFIER_OPTIONS.map((o) 
 // this IS the page and needs both; inside a condition form the question
 // already has a numbered label above it, and a second heading saying
 // "Vomiting" underneath the one that says "3. Vomiting" reads as a mistake.
-export default function VomitingPage({ value, onChange, icon, species, pet, embedded = false }) {
+export default function VomitingPage({
+  value, onChange, icon, species, pet, embedded = false,
+  // Shown when this answer arrived from a disease form filled in earlier the
+  // same day, so the owner knows why the question is already answered rather
+  // than wondering whether the app has guessed.
+  prefilledNote = null,
+}) {
   const { hasVomited, frequency, unit, character } = value
   const isFrequencyQualifier = FREQUENCY_QUALIFIER_VALUES.includes(frequency)
   const characterOptions = species === 'cat'
@@ -36,6 +42,7 @@ export default function VomitingPage({ value, onChange, icon, species, pet, embe
           <IconLabelHeader icon={icon} label="Vomiting" />
         </>
       )}
+      {prefilledNote && <p className="assessment-hint">{prefilledNote}</p>}
       <p><PetText template="Has {name} been vomiting?" pet={pet} /></p>
       <ChoiceButtons
         options={VOMITING_HAS_VOMITED_OPTIONS}

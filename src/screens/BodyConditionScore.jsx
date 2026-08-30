@@ -12,13 +12,9 @@ import ChoiceButtons from '../components/ChoiceButtons'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
-import { BCS_CITATION, BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey } from '../lib/bcsScale'
+import {bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 export default function BodyConditionScore() {
   const { selectedPet } = usePets()
@@ -104,8 +100,7 @@ export default function BodyConditionScore() {
           the description that fits best. 4–5 is ideal.
         </p>
         <p className="assessment-hint">
-          Each illustration shows the view from above on the left and the view from the side
-          on the right.
+          Each illustration is the view from above (left) and from the side (right).
         </p>
         {!loading && latestEntry && (
           <p className="assessment-hint">
@@ -161,7 +156,7 @@ export default function BodyConditionScore() {
         </div>
 
         <Btn type="button" className="btn-block" onClick={handleSave} disabled={selectedScore == null || saving || weightInvalid}>
-          {saving ? 'Saving…' : todaysEntry ? 'Update today’s score' : 'Save score'}
+          {saving ? 'Saving…' : todaysEntry ? 'Update today\'s score' : 'Save score'}
         </Btn>
         {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
       </Card>
@@ -201,10 +196,11 @@ export default function BodyConditionScore() {
         </Card>
       )}
 
-      <div className="bcs-sources">
-        <p>{BCS_CITATION}</p>
-        <p>{BCS_IMAGE_CREDIT}</p>
-      </div>
+      {/* The scale citation and the illustration credit used to sit here.
+          Credits now live in one place — Legal & Privacy, and the Terms —
+          rather than at the foot of every screen that uses an instrument
+          (Ash's call, 29 Aug 2026). Both are in lib/references.js, so
+          removing them from here did not remove them from the app. */}
 
       <Footer />
     </div>

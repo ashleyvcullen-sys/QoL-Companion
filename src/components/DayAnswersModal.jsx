@@ -11,10 +11,47 @@ import { SEVERITY_COLOURS } from '../lib/conditions'
 //
 // Rows arrive already described (see describeAssessmentDay and
 // describeConditionDay); nothing here knows what a BEAAAAPP score is.
-export default function DayAnswersModal({ title, dateLabel, rows, pet, emptyMessage, onClose }) {
+export default function DayAnswersModal({
+  title, dateLabel, rows, pet, emptyMessage, onClose,
+  // The note written on this day, and the way to remove it. Both optional:
+  // the assessment's version of this modal has neither, and a day with no
+  // note shows nothing.
+  //
+  // Added 29 Aug 2026 on Ash's instruction. A note saved on a past day could
+  // be read — it marks the calendar and shows in the day's line — but there
+  // was no way to take it back, because the form only ever edits today. A
+  // note written about the wrong pet, or one the owner would rather their vet
+  // did not read, was permanent.
+  note, onDeleteNote,
+  // Set by the caller when a delete fails, so the reason lands next to the
+  // button that failed rather than in a console nobody has open.
+  noteError,
+}) {
   return (
     <Modal title={title} onClose={onClose}>
       <p className="day-answers-date">{dateLabel}</p>
+
+      {note && (
+        <div className="day-answers-note">
+          <p className="day-answers-note-text">{note}</p>
+          {onDeleteNote && (
+            <>
+              <button type="button" className="subtle-link" onClick={onDeleteNote}>
+                Delete this note
+              </button>
+              {/* Said plainly, because "delete" beside a day's readings is
+                  alarming and the owner has no way of knowing which of the two
+                  things on this screen it means. It removes the words they
+                  wrote; every score and answer below stays. */}
+              <p className="day-answers-note-caveat">
+                This removes the note only. The answers and scores recorded on this day are
+                kept.
+              </p>
+            </>
+          )}
+          {noteError && <p className="form-error" role="alert">{noteError}</p>}
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <p>{emptyMessage ?? 'Nothing was recorded on this day.'}</p>

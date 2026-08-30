@@ -716,8 +716,7 @@ export default function Medications() {
 
             {form.scheduleMode === 'as_needed' && (
               <p className="assessment-hint">
-                You'll be able to log a dose whenever you give one, with no schedule and no
-                reminders.
+                Log a dose whenever you give one. No schedule, no reminders.
               </p>
             )}
 

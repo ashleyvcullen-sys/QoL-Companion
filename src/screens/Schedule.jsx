@@ -25,6 +25,7 @@ import HomeLink from '../components/HomeLink'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
 import Footer from '../components/Footer'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 const CADENCE_OPTIONS = [
   { value: 1, label: 'Daily' },
@@ -134,7 +135,9 @@ function ScheduleRow({
           </span>
         )}
       </div>
-      <p className="assessment-hint">Last logged: {lastDate || 'never'}</p>
+      <p className="assessment-hint">
+        Last logged: {lastDate ? formatDateDDMMYYYY(lastDate) : 'never'}
+      </p>
       <div className="field">
         <label>Repeat</label>
         <select value={cadenceDays} onChange={(e) => onCadenceChange(Number(e.target.value))}>
@@ -317,8 +320,8 @@ export default function Schedule() {
       <Card>
         <SectionTitle>Schedule</SectionTitle>
         <p>
-          Set how often the assessment should be repeated. A due/overdue badge shows
-          based on your last logged entry — a simple way to keep monitoring consistent.
+          Set how often to repeat each assessment. The badge shows when one is due, counting
+          from your last entry.
         </p>
       </Card>
 

@@ -7,7 +7,7 @@ const HELP_ITEMS = [
   { Icon: TrendingUp, label: 'Trends Over Time' },
   { Icon: HomeCareTipsIcon, label: 'Advice For Home Care' },
   { Icon: FileDown, label: 'Summaries For Your Vet' },
-  { Icon: HeartHandshake, label: 'Support And Preparation For End Of Life Decisions' },
+  { Icon: HeartHandshake, label: 'Support And Preparation For End of Life Decisions' },
 ]
 
 export default function WelcomeSlide4() {

@@ -79,7 +79,7 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
         {isCompletionStep ? (
           <>
             <p className="home-tour-title">You're all set!</p>
-            <p>You can always replay this tour later from the About screen.</p>
+            <p>You can replay this tour any time from the footer.</p>
             <Btn type="button" className="btn-block" onClick={onFinish}>Done</Btn>
           </>
         ) : (

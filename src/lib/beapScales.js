@@ -68,7 +68,7 @@ export const BEAP_SCALES = {
     { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", levels: [
       "Walks normally, manages stairs easily, no stiffness. Jumps into the car or onto furniture without hesitation.",
       "Occasional stiffness, otherwise normal. Slight hesitation before jumping.",
-      "Mild or intermittent limping and/or stiffness, especially after laying down. Reluctant to use stairs and jump into the car or onto furniture.",
+      "Mild or intermittent limping and/or stiffness, especially after lying down. Reluctant to use stairs and jump into the car or onto furniture.",
       "Constant limping and/or stiffness, avoids stairs and jumping altogether.",
       "Reluctant to bear weight and/or moves with marked stiffness. Won't attempt stairs or jumping. Occasionally licks or chews a painful area.",
       "Unable or unwilling to stand or walk or jump. Often licks or chews a painful area.",

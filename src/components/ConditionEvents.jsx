@@ -5,12 +5,8 @@ import Btn from './Btn'
 import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
 import { EVENT_TYPES, addConditionEvent, deleteConditionEvent, eventTypeByValue, todayIsoDate } from '../lib/conditionsData'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 const EMPTY = { type: 'episode', title: '', notes: '', date: todayIsoDate() }
 
@@ -79,8 +75,8 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
 
       {!loading && events.length === 0 && !adding && (
         <p>
-          Nothing recorded yet. Adding episodes, diagnoses and medication changes puts them on
-          the charts above, so you can see what was happening around a change.
+          Nothing recorded yet. Episodes, diagnoses and medication changes are marked on the
+          calendar above.
         </p>
       )}
 
@@ -119,12 +115,16 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
           </div>
 
           <div className="field">
-            <label htmlFor="event-title">{isMedication ? 'Medication name' : 'Short description'}</label>
+            <label htmlFor="event-title">
+              {isMedication ? 'Medication name' : form.type === 'diagnosis' ? 'Diagnosis' : 'Short description'}
+            </label>
+            {/* The placeholder is per event type — see EVENT_TYPES in
+                lib/conditionsData.js. */}
             <input
               id="event-title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder={isMedication ? 'e.g. Furosemide' : 'e.g. collapsed in the garden'}
+              placeholder={eventTypeByValue(form.type)?.placeholder ?? ''}
             />
           </div>
 

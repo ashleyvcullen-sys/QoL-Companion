@@ -67,8 +67,7 @@ export default function Login() {
               required
             />
             <p className="assessment-hint">
-              We'll use this to create your account (or sign you in, if you already have
-              one) — no password needed. We'll email you a secure link to tap instead.
+              No password needed — we'll email you a secure link to tap.
             </p>
           </div>
           <Btn type="submit" className="btn-block" disabled={status === 'sending'}>

@@ -50,8 +50,8 @@ export default function Emergencies() {
       </Card>
 
       <p className="assessment-hint">
-        This list can't cover everything — if something feels seriously wrong and isn't
-        listed here, trust that instinct and call your vet anyway.
+        This list can't cover everything. If something feels seriously wrong, call your vet
+        anyway.
       </p>
 
       <Footer />

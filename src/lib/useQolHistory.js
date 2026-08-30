@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { fetchGeneralQolEntries, fetchPainLogEntries } from './qolData'
 
 export function useQolHistory(petId) {
   const [generalEntries, setGeneralEntries] = useState([])
   const [painEntries, setPainEntries] = useState([])
   const [loading, setLoading] = useState(true)
+  // So a screen that changes one of these rows — clearing a note, say — can
+  // pull the history again rather than showing what it looked like before.
+  const [reloadToken, setReloadToken] = useState(0)
+  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
 
   useEffect(() => {
     if (!petId) {
@@ -35,7 +39,7 @@ export function useQolHistory(petId) {
       })
 
     return () => { cancelled = true }
-  }, [petId])
+  }, [petId, reloadToken])
 
-  return { generalEntries, painEntries, loading }
+  return { generalEntries, painEntries, loading, refresh }
 }

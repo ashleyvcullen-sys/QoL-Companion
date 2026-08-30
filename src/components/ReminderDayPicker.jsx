@@ -173,8 +173,7 @@ export default function ReminderDayPicker({
 
       {showsUnsafeDates && (
         <p className="assessment-hint">
-          The 29th to the 31st can't be chosen — those dates don't come round every month,
-          so a reminder set for one would quietly skip the months without it.
+          The 29th to 31st can't be chosen — a reminder would skip the months without them.
         </p>
       )}
     </div>

@@ -9,6 +9,7 @@ import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
 import { useLatestGeneralQol } from '../lib/useLatestGeneralQol'
 import { computeGeneralQolResult } from '../lib/scoring'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 // Splits on **bold** markers and renders the matched segments as <strong>,
 // so topic content can carry simple inline emphasis from a plain data file.
@@ -34,7 +35,7 @@ export default function EndOfLife() {
       <HomeLink />
 
       <Card>
-        <SectionTitle>End Of Life</SectionTitle>
+        <SectionTitle>End of Life</SectionTitle>
         <p>
           A gentle, practical reference for one of the hardest parts of caring for an
           animal — written to be read whenever it's useful, not just at the end.
@@ -47,8 +48,12 @@ export default function EndOfLife() {
         {!loading && !latestResult && <p>No assessments logged yet.</p>}
         {!loading && latestResult && (
           <div className="review-summary-row">
-            <span>{latestResult.total} / {latestResult.max} — {latestResult.band}</span>
-            <span className="assessment-hint">{latestEntry.date}</span>
+            {/* Percent, like Trends, the assessment's own finish screen and
+                the report. A raw total out of a maximum was the only place in
+                the app that scored it that way, and it read as a different
+                measurement. */}
+            <span>{latestResult.percent}% — {latestResult.band}</span>
+            <span className="assessment-hint">{formatDateDDMMYYYY(latestEntry.date)}</span>
           </div>
         )}
       </Card>

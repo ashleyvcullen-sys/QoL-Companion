@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 // One photo or video, full size.
 //
@@ -68,7 +69,7 @@ export default function MediaLightbox({ items, index, urls, petName, onClose, on
 
         {(item.caption || item.takenOn) && (
           <div className="lightbox-caption">
-            {item.takenOn && <span className="lightbox-date">{formatDate(item.takenOn)}</span>}
+            {item.takenOn && <span className="lightbox-date">{formatDateDDMMYYYY(item.takenOn)}</span>}
             {item.caption && <span>{item.caption}</span>}
           </div>
         )}
@@ -90,10 +91,4 @@ export default function MediaLightbox({ items, index, urls, petName, onClose, on
       )}
     </div>
   )
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return ''
-  const [year, month, day] = String(dateStr).split('-')
-  return `${day}/${month}/${year}`
 }

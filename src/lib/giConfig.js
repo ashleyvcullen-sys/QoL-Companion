@@ -61,6 +61,14 @@ export function hasGiCancerSelected(config) {
   return activeGiModuleKeys(config).includes('gi_cancer')
 }
 
+// Same idea for a food sensitivity or allergy, which the Allergies and Skin
+// Disease section monitors properly — diet trial, start date, adherence and
+// the re-challenge protocol, with the milestones on its calendar. This
+// section asks nothing about it, so the owner needs to be told where it went.
+export function hasGiFoodAllergySelected(config) {
+  return activeGiModuleKeys(config).includes('food_sensitivity')
+}
+
 export function parametersForGi(config, species) {
   const keys = activeGiModuleKeys(config)
   const out = [...GI_CORE_PARAMETERS]

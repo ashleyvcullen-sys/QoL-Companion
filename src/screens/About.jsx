@@ -23,7 +23,7 @@ const FEATURE_ITEMS = [
   { Icon: TrendingUp, label: 'Trends Over Time', to: '/trends' },
   { Icon: HomeCareTipsIcon, label: 'Advice For Home Care', to: '/home-care-tips' },
   { Icon: FileDown, label: 'Summaries For Your Vet', to: '/export-report' },
-  { Icon: HeartHandshake, label: 'Support And Preparation For End Of Life Decisions', to: '/end-of-life' },
+  { Icon: HeartHandshake, label: 'Support And Preparation For End of Life Decisions', to: '/end-of-life' },
 ]
 
 export default function About() {

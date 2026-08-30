@@ -251,7 +251,7 @@ export default function ConditionSetup() {
               <SectionTitle>Things to Monitor</SectionTitle>
               <p className="assessment-hint">
                 <PetText
-                  template="Suggested parameters to monitor may be automatically selected based on {name}'s diagnosis. If there are additional things you'd like to monitor, you can select them here. If you aren't sure what to monitor, please speak to your veterinarian."
+                  template="We have ticked what usually matters for {name}'s diagnosis. Add anything else you want to watch — or ask your vet if you are not sure."
                   pet={pet}
                 />
               </p>
@@ -287,7 +287,7 @@ export default function ConditionSetup() {
             <Card>
               <SectionTitle>Treatment</SectionTitle>
               <p className="assessment-hint">
-                Treatment brings its own things to watch for, so this adds a few questions.
+                Treatment adds a few questions of its own.
               </p>
               <div className="include-group">
                 <ChoiceButtons

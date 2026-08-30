@@ -157,6 +157,10 @@ export function followUpVisible(followUp, value) {
   if (followUp.whenAny != null) {
     return value !== '' && value !== UNSURE && followUp.whenAny.includes(value)
   }
+  // A multi-select parent answers with a list, so "when: 'other'" has to mean
+  // "other is among what they picked" rather than "other is the whole
+  // answer".
+  if (Array.isArray(value)) return value.includes(followUp.when)
   return value === followUp.when
 }
 
@@ -180,10 +184,33 @@ export function askedParameters(parameters = []) {
 // belong to three of those four. Writing that as "not environmental" would be
 // the same rule stated as a negative, and a negative precondition is much
 // harder to read on the parameter it governs.
+// A multi-select answer, as a list, whatever shape it is stored in.
+//
+// The allergy diagnosis was a single choice until 29 Aug 2026 and is now a
+// multi-select, so entries saved before that hold a bare string. Rather than
+// migrate the rows — the app's other data is not migrated either, and a
+// migration only moves the problem to whoever restores an old backup — every
+// reader normalises here.
+//
+// "both" was one of the old single answers and is exactly what a
+// multi-select expresses better, so it is translated rather than dropped:
+// an owner who answered it keeps the meaning of their answer.
+export function selectedValues(value) {
+  if (Array.isArray(value)) return value
+  if (value == null || value === '') return []
+  if (value === 'both') return ['food', 'environmental']
+  return [value]
+}
+
 export function dependencyMet(parameter, values) {
   const on = parameter?.dependsOn
   if (!on) return true
   const value = values?.[on.key]
+  // For a multi-select parent: met when the answer includes ANY of these.
+  if (Array.isArray(on.includesAny)) {
+    const chosen = selectedValues(value)
+    return on.includesAny.some((entry) => chosen.includes(entry))
+  }
   if (Array.isArray(on.equalsAny)) return on.equalsAny.includes(value)
   return value === on.equals
 }
@@ -620,7 +647,7 @@ export const CONDITIONS = {
         // `concernAbove` below, which is the only one the app actually acts
         // on. Change one, change all three.
         howToFooter:
-          '**If the RRR is consistently greater than 30 breaths per minute, contact your veterinarian.**',
+          '**If the RRR is consistently greater than 30 breaths per minute, contact your vet.**',
         // APPROVED — Ash Cullen (BVSc), 23 Aug 2026: 30 breaths/min for both
         // dogs and cats.
         //
@@ -1109,7 +1136,7 @@ export const CONDITIONS = {
             'Occasionally pauses, as if working out where to go next.',
             'Sometimes goes to the hinge side of a door, or stands in a room staring into space.',
             'Often looks lost in familiar places, or gets stuck behind or under furniture.',
-            'Frequently disoriented, and needs help finding the way out of a room. Gets stuck or disorientated often.',
+            'Frequently disorientated, and needs help finding the way out of a room.',
             'Appears lost most of the time, even in a single familiar room.',
           ],
         },
@@ -1336,7 +1363,7 @@ export const CONDITIONS = {
         // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
         levels: {
           cat: [
-            'Grooming, playing and investigating new things per usual. Regular routines are intact.',
+            'Grooming, playing and investigating new things as usual. Regular routines are intact.',
             'Slightly less interested in regular activities and routines.',
             'Notably less interested in regular activities and routines. Occasional aimless wandering.',
             'Wanders or paces without apparent purpose. No longer interested in regular activities.',
@@ -1507,7 +1534,7 @@ export const CONDITIONS = {
           cat: [
             'Walks evenly. No limp at any time.',
             'A slight limp now and then, usually after getting up or after being still for a while.',
-            'A limp that is easy to see after rest, but wears off as {they} move around.',
+            'A limp that is easy to see after rest, but wears off as {they} move{s} around.',
             'Limping most of the time. It does not fully wear off.',
             'Obvious limp at every step, and sometimes holds the leg up.',
             'Will not put the leg down at all, or cannot walk without help. (emergency)',
@@ -1781,15 +1808,23 @@ export const CONDITIONS = {
       {
         key: 'allergy_type',
         label: 'What Has {name} Been Diagnosed With?',
-        type: 'choice',
+        // Multi-select, on Ash's instruction 29 Aug 2026 — and "Both" is gone
+        // with it. A separate "Both" option only ever existed because the
+        // question could take one answer; with two selectable it says the
+        // same thing worse, and it does not extend (there is no "food and
+        // environmental and something else" option to add next).
+        //
+        // Legacy rows hold a bare string, including 'both'. See
+        // selectedValues, which every reader goes through.
+        type: 'multichoice',
         // A standing fact, not a daily question. Asked once, carried into
         // every later entry, and changeable from the card at the top of the
         // form.
         carryForward: true,
         askOnce: true,
-        // PENDING ASH — wording.
+        // PENDING ASH — wording. Updated for multi-select.
         why:
-          'This decides which questions you are asked. If you are not sure yet, choose "Not known yet" — a food trial is usually how that gets answered, and you can change this at any time.',
+          'Pick as many as apply. This decides which questions you are asked, and you can change it at any time — if you are not sure yet, choose "Not known yet".',
         // Informational: it describes what is being monitored rather than
         // reporting a sign, so it must not colour the day or count towards
         // the day having been assessed.
@@ -1801,7 +1836,6 @@ export const CONDITIONS = {
         options: [
           { value: 'food', label: 'Food allergy' },
           { value: 'environmental', label: 'Environmental allergy' },
-          { value: 'both', label: 'Both' },
           { value: 'unknown', label: 'Not known yet' },
           // Added 29 Aug 2026 on Ash's instruction, and it follows the
           // opening paragraph she rewrote the same day: not all skin disease
@@ -1823,7 +1857,7 @@ export const CONDITIONS = {
           when: 'other',
           // APPROVED — Ash Cullen (BVSc), 29 Aug 2026 ("allow user to enter
           // condition if known"), phrased as a question.
-          label: 'What has {they} been diagnosed with?',
+          label: 'What is the diagnosis?',
           type: 'text',
           placeholder: 'e.g. flea allergy dermatitis, mange',
         },
@@ -1885,7 +1919,7 @@ export const CONDITIONS = {
         levels: {
           dog: [
             'Not scratching, licking or chewing at all.',
-            'A little more than usual, but only now and then, and never for long.',
+            'Scratching or licking a little more than usual, now and then.',
             'Scratching or licking several times a day. Stops if distracted.',
             'Scratching, licking or chewing often through the day. Interrupts what {they} {are} doing.',
             'Almost constant when awake, and hard to interrupt. Waking at night to scratch.',
@@ -1894,13 +1928,17 @@ export const CONDITIONS = {
           // Licking as well as scratching throughout, deliberately. A cat's
           // itch usually shows first as over-grooming — and an owner watching
           // only for scratching will score a badly itchy cat as a 0.
+          // "Hair loss" in the top two rungs changed to "fur loss", 29 Aug
+          // 2026 on Ash's instruction — her own dictated wording, revised by
+          // her. It also settles an inconsistency inside this one list, where
+          // rung 4 already said "Fur thinning".
           cat: [
-            'Not scratching, and grooming no more than {they} need to.',
+            'Not scratching, and grooming no more than {they} need{s} to.',
             'Grooming or scratching a little more than usual, now and then.',
             'Grooming or scratching several times a day. Stops if distracted.',
             'Long bouts of grooming or scratching through the day. Fur thinning where {they} {have} been licking.',
-            'Almost constantly over-grooming or scratching while awake. Hair loss or thinning may be noted.',
-            'Constantly over-grooming or scratching, causing hair loss and damage to the skin. (emergency)',
+            'Almost constantly over-grooming or scratching while awake. Fur loss or thinning may be noted.',
+            'Constantly over-grooming or scratching, causing fur loss and damage to the skin. (emergency)',
           ],
         },
         emergencyMessage: SEEK_VET_ASAP,
@@ -1924,16 +1962,16 @@ export const CONDITIONS = {
         concernFrom: 4, // PENDING ASH
         // PENDING ASH — wording.
         why:
-          'Look at the belly, armpits, groin and the inside of the back legs — the thin-haired places where redness shows first.',
+          'Look at the belly, armpits, groin and the inside of the back legs — the thinly furred places where redness shows first.',
         // PENDING ASH — all six levels drafted by me.
         levels: {
           dog: [
             'Skin and coat look normal.',
-            'Slightly pink in one or two of the thin-haired areas.',
+            'Slightly pink in one or two of the thinly furred areas.',
             'Clearly red in places, or the coat is thinning where {they} {have} been licking.',
             'Red and sore in several places. Bald patches, scabs or spots.',
-            'Widespread redness, hair loss, scabbing or a hot spot.',
-            'Raw, weeping or bleeding skin, or an open sore spreading by the hour. (emergency)',
+            'Widespread redness, fur loss, scabbing or a hot spot.',
+            'Raw, weeping or bleeding skin, or an open sore spreading or worsening rapidly. (emergency)',
           ],
         },
         emergencyMessage: SEEK_VET_ASAP,
@@ -2082,7 +2120,10 @@ export const CONDITIONS = {
         carryForward: true,
         type: 'yesno',
         // Not asked of an environmentally allergic pet — see allergy_type.
-        dependsOn: { key: 'allergy_type', equalsAny: ['food', 'both', 'unknown'] },
+        // includesAny, not equalsAny: the answer is a list now. "Both" no
+        // longer exists as an option, and a legacy 'both' normalises to
+        // ['food', 'environmental'], so those owners still reach the trial.
+        dependsOn: { key: 'allergy_type', includesAny: ['food', 'unknown'] },
         // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with
         // sentence capitals and "This means" added at the front so it reads
         // as an answer to the question above rather than a fragment.
@@ -2103,7 +2144,22 @@ export const CONDITIONS = {
         key: 'diet_trial_food',
         label: 'Which Diet Is {name} On?',
         type: 'text',
-        milestone: { label: 'Elimination diet', withAnswer: true },
+        // A FALLBACK mark only — see milestoneDayLabels.
+        //
+        // This used to mark the calendar in its own right, which put a second
+        // flag there for the same event: "Elimination diet started" on the
+        // start date, and "Elimination diet: Brand X hydrolysed" on whichever
+        // day the owner typed the name in. The start-date milestone below now
+        // pulls this answer in (withAnswerFrom), so the normal case is one
+        // mark, on the day the trial began, naming the diet.
+        //
+        // fallbackFor covers the owner who names the diet and skips the date:
+        // this then marks the day they told us, so the trial still appears on
+        // the calendar. The moment a start date exists anywhere in the record
+        // this mark stands down and the accurate one takes over.
+        milestone: {
+          label: 'Elimination diet started', withAnswer: true, fallbackFor: 'diet_start_date',
+        },
         // Declared against appetite because the overlap check reads "Diet"
         // and asks. It is right to ask and the answer is no: the daily
         // assessment's appetite question is about how much {name} is eating,
@@ -2129,8 +2185,10 @@ export const CONDITIONS = {
         carryForward: true,
         askOnce: true,
         // Marked on the summary calendar, on the day the answer NAMES rather
-        // than the day it was typed in — see milestoneDayLabels.
-        milestone: { on: 'date', label: 'Elimination diet started' },
+        // than the day it was typed in — see milestoneDayLabels. Names the
+        // diet by pulling in the answer above, so this is the single mark for
+        // the trial starting.
+        milestone: { on: 'date', label: 'Elimination diet started', withAnswerFrom: 'diet_trial_food' },
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
         // Turns the answer into "started 6 weeks and 2 days ago", which is
         // the number the whole trial is judged on.
@@ -2214,9 +2272,19 @@ export const CONDITIONS = {
         concernMessage:
           'Worth writing down. One slip does not usually ruin a trial, but your vet needs to know about it when they judge the result.',
         // Marked on the calendar, every time — not just the first. Two breaks
-        // in a trial is a different result to one, and the mark names what
-        // {name} had by pulling in the follow-up's answer.
-        milestone: { when: 'yes', label: 'Diet broken', detailFrom: 'diet_slip_detail' },
+        // in a trial is a different result to one.
+        //
+        // markOnly: the flag still appears on the day, and the day's line says
+        // nothing extra about it. The finding above already reads "The diet
+        // trial was broken — Bailey had a dental chew"; without this the line
+        // then added "— Diet broken: a dental chew" and said it twice. Ash's
+        // call, 29 Aug 2026: drop the second, keep the mark.
+        //
+        // detailFrom is kept so that turning markOnly off restores the full
+        // text rather than a bare "Diet broken".
+        milestone: {
+          when: 'yes', label: 'Diet broken', detailFrom: 'diet_slip_detail', markOnly: true,
+        },
         followUp: {
           key: 'diet_slip_detail',
           when: 'yes',
@@ -2265,10 +2333,18 @@ export const CONDITIONS = {
         key: 'rechallenge_food',
         label: 'Which Food Are You Using To Re-Challenge?',
         type: 'text',
-        // Marked on the calendar WITH the food named, on the day the answer
-        // changes — so a record with four re-challenges shows four marks,
-        // each saying which food it was.
-        milestone: { label: 'Re-challenge', withAnswer: true },
+        // A FALLBACK mark only — same reasoning as the diet name above. This
+        // and "when did you introduce it?" were marking the same re-challenge
+        // twice, usually on the same day, as "Re-challenge: chicken —
+        // Re-challenge food introduced". The introduction date below now
+        // carries the food's name, and this marks the day the owner told us
+        // only while no introduction date has been given at all.
+        //
+        // NOTE: judged across the whole record, so an owner who dated their
+        // first re-challenge and not their second gets no mark for the
+        // second. The alternative — judging per entry — double-marks every
+        // properly answered re-challenge, which is the commoner case.
+        milestone: { label: 'Re-challenge', withAnswer: true, fallbackFor: 'rechallenge_start_date' },
         dependsOn: { key: 'rechallenge', equals: 'yes' },
         // Declared against appetite because the overlap check reads the word
         // "food" and asks. It is right to ask and the answer is no: the daily
@@ -2287,7 +2363,10 @@ export const CONDITIONS = {
         key: 'rechallenge_start_date',
         label: 'When Did You Introduce It?',
         type: 'date',
-        milestone: { on: 'date', label: 'Re-challenge food introduced' },
+        // One mark per re-challenge, on the day the food actually went in
+        // rather than the day it was typed, naming the food. A record with
+        // four re-challenges still shows four marks.
+        milestone: { on: 'date', label: 'Re-challenge', withAnswerFrom: 'rechallenge_food' },
         dependsOn: { key: 'rechallenge', equals: 'yes' },
         showElapsed: true,
         // PENDING ASH — wording, and the two-week figure.
@@ -2352,8 +2431,12 @@ export const CONDITIONS = {
     // Weight is deliberately not mentioned. It matters in kidney disease and
     // it matters in most of the others too, which is exactly why it has its
     // own Body Condition tile rather than a pointer from inside one disease.
+    //
+    // "side effects" corrected to "symptoms" here, on the appetite parameter
+    // and on nausea, 29 Aug 2026 on Ash's instruction — a side effect belongs
+    // to a treatment, and these are signs of the disease itself.
     summary:
-      'Loss of appetite, changes in drinking and urination, nausea and vomiting are all common side effects of kidney disease. '
+      'Loss of appetite, changes in drinking and urination, nausea and vomiting are all common symptoms of kidney disease. '
       + 'It is important to monitor these symptoms closely at home.',
     // Its own paragraph deliberately. This is the point that home monitoring
     // does not replace a vet, and running it on from the sentence above
@@ -2394,7 +2477,7 @@ export const CONDITIONS = {
         emergencyMessage: SEEK_VET_ASAP,
         // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
         why:
-          'Appetite loss or reduction is one of the most common side effects of kidney disease. '
+          'Appetite loss or reduction is one of the most common symptoms of kidney disease. '
           + 'It is a valuable indicator of how well {name} is feeling each day.',
       },
 
@@ -2574,7 +2657,7 @@ export const CONDITIONS = {
         concernFrom: 4, // PENDING ASH
         // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
         why:
-          'Nausea is a common side effect of kidney disease. It is worth mentioning it to your vet as it can often be relieved with certain medications.',
+          'Nausea is a common symptom of kidney disease. It is worth mentioning it to your vet as it can often be relieved with certain medications.',
         levels: {
           dog: [
             'No signs of nausea.',
@@ -3077,6 +3160,18 @@ export function describeParameterAnswer(parameter, value, species) {
   if (parameter.type === 'choice') {
     const option = (parameter.options ?? []).find((entry) => entry.value === value)
     return option?.label ?? String(value)
+  }
+
+  // A multi-select reads back as the labels the owner picked, in the order
+  // the question lists them rather than the order they were tapped — so the
+  // same set of answers always reads the same way.
+  if (parameter.type === 'multichoice') {
+    const chosen = selectedValues(value)
+    if (chosen.length === 0) return null
+    const labels = (parameter.options ?? [])
+      .filter((entry) => chosen.includes(entry.value))
+      .map((entry) => entry.label)
+    return labels.length > 0 ? labels.join(', ') : chosen.join(', ')
   }
 
   if (parameter.type === 'vcog') {

@@ -21,6 +21,7 @@ import {
   evaluateParameter,
   levelsFor,
   vcogColourForIndex,
+  selectedValues,
 } from '../lib/conditions'
 import { fillPetText } from '../lib/petText'
 import { todayIsoDate } from '../lib/conditionsData'
@@ -332,14 +333,70 @@ export default function ConditionParameter({
         />
       )}
 
+      {/* allowOther is handled here as well as on follow-ups. It was only
+          ever wired into the follow-up branch below, so a TOP-LEVEL choice
+          that declared it — seizure_type, with otherLabel "Describe it
+          yourself" — silently dropped the option: the owner whose pet had a
+          seizure the list did not describe had nowhere to say so. */}
       {parameter.type === 'choice' && (
-        <ChoiceButtons
-          options={parameter.noUnsure
-            ? petTextOptions(parameter.options, pet)
-            : [...petTextOptions(parameter.options, pet), UNSURE_OPTION]}
-          value={value}
-          onChange={(next) => set(parameter.key, next)}
-        />
+        <>
+          <ChoiceButtons
+            options={[
+              ...petTextOptions(parameter.options, pet),
+              ...(parameter.allowOther
+                ? [{ value: 'other', label: plain(parameter.otherLabel ?? 'Other') }]
+                : []),
+              ...(parameter.noUnsure ? [] : [UNSURE_OPTION]),
+            ]}
+            value={value}
+            onChange={(next) => set(parameter.key, next)}
+          />
+          {/* Stored under its own key rather than overwriting the choice, so
+              "they picked Other" and "here is what they wrote" stay separate
+              facts in the record — the same rule the follow-up branch uses. */}
+          {parameter.allowOther && value === 'other' && (
+            <textarea
+              rows={2}
+              value={values[`${parameter.key}_other`] ?? ''}
+              placeholder={plain(parameter.otherPlaceholder ?? 'Describe it in your own words')}
+              onChange={(e) => set(`${parameter.key}_other`, e.target.value)}
+            />
+          )}
+        </>
+      )}
+
+      {/* A choice that takes more than one answer. Chips rather than the
+          single-select buttons above, because the shape has to say "pick as
+          many as apply" before the owner reads a word of the hint — and
+          because two selected buttons in a row that otherwise behaves as
+          one-of-many reads as a bug.
+
+          selectedValues normalises the stored answer: this question was
+          single-select until 29 Aug 2026, so older entries hold a bare
+          string. */}
+      {parameter.type === 'multichoice' && (
+        <div className="symptom-chips">
+          {petTextOptions(parameter.options, pet).map((option) => {
+            const chosen = selectedValues(value)
+            const isOn = chosen.includes(option.value)
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={`chip ${isOn ? 'selected' : ''}`.trim()}
+                aria-pressed={isOn}
+                onClick={() => set(
+                  parameter.key,
+                  isOn
+                    ? chosen.filter((entry) => entry !== option.value)
+                    : [...chosen, option.value],
+                )}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
       )}
 
       {parameter.type === 'yesno' && (
@@ -454,7 +511,7 @@ export default function ConditionParameter({
                 <textarea
                   rows={2}
                   value={values[`${followUp.key}_other`] ?? ''}
-                  placeholder="Describe the cough in your own words"
+                  placeholder={plain(followUp.otherPlaceholder ?? 'Describe it in your own words')}
                   onChange={(e) => set(`${followUp.key}_other`, e.target.value)}
                 />
               )}

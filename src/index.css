@@ -11,12 +11,36 @@
   /* A stronger border and an off-white fill, for controls that need to read
      as pressable against the page. Both were loose hexes in ScoreSlider. */
   --border-strong: #EAC6CE;
-  --surface: #FFFBFC;
+  /* The ground under a card, an input, a pill. Was #FFFBFC while eighteen
+     rules typed #fff directly and three used the token, so two whites were in
+     play — .pet-switcher-option and the score slider sat on a different white
+     to every other control. One value now, and it is the one the file was
+     overwhelmingly already using. */
+  --surface: #fff;
   --accent-tint: #FBEFF1;
 
   --severity-good: #3D8259;
   --severity-moderate: #C97A2E;
   --severity-severe: #A33A2E;
+
+  /* Translucent washes and lines, as tokens rather than as re-typed rgba().
+     There were seven strengths of the accent wash in this file — 6%, 8%, 10%,
+     12%, 14%, 20% — which is six ways of drawing one tinted panel. Two now:
+     a panel and the stronger badge/edge. Kept translucent rather than flattened
+     to a hex because these sit on both the page ground and white cards, and an
+     opaque value can only be right on one of them. */
+  --accent-wash: rgba(201, 123, 140, 0.08);
+  --accent-wash-strong: rgba(201, 123, 140, 0.14);
+  --severe-wash: rgba(163, 58, 46, 0.1);
+  --severe-line: rgba(163, 58, 46, 0.25);
+
+  /* The keyboard focus ring. */
+  --focus-ring: 0 0 0 3px rgba(201, 123, 140, 0.18);
+
+  /* The scrim behind a modal, and the two card shadows. */
+  --scrim: rgba(61, 43, 48, 0.72);
+  --shadow-card: 0 2px 10px rgba(61, 43, 48, 0.06);
+  --shadow-lift: 0 4px 14px rgba(61, 43, 48, 0.1);
 
   --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: 'Fraunces', Georgia, serif;
@@ -199,11 +223,11 @@ code {
 }
 
 .card {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 28px 24px;
-  box-shadow: 0 2px 10px rgba(61, 43, 48, 0.06);
+  box-shadow: var(--shadow-card);
   box-sizing: border-box;
 }
 
@@ -231,7 +255,7 @@ code {
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gap-inline);
   text-align: left;
 }
 
@@ -241,14 +265,19 @@ code {
   color: var(--text-h);
 }
 
+/* Every text field in the app, wherever it lives. The condition forms had
+   their own byte-identical copy of this block that differed only by adding
+   width: 100% — two definitions of one control, free to drift. */
 .field input,
 .field select,
-.field textarea {
+.field textarea,
+.condition-parameter textarea,
+.condition-followup textarea {
   font: inherit;
   padding: 11px 14px;
   border-radius: var(--radius-control);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text-h);
   box-sizing: border-box;
   resize: vertical;
@@ -259,7 +288,7 @@ code {
 .field textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(201, 123, 140, 0.18);
+  box-shadow: var(--focus-ring);
 }
 
 .field-group {
@@ -277,7 +306,7 @@ code {
   font-weight: 600;
   color: var(--text-h);
   padding: 0;
-  margin-bottom: 2px;
+  margin-bottom: var(--gap-stack-tight);
 }
 
 .radio-row {
@@ -294,7 +323,7 @@ code {
   padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   font-size: var(--type-support);
   cursor: pointer;
@@ -324,7 +353,7 @@ code {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--gap-inline);
   padding: 13px 22px;
   border-radius: var(--radius-pill);
   font-family: var(--sans);
@@ -348,12 +377,6 @@ code {
 .btn-outline {
   background: transparent;
   border-color: var(--accent);
-  color: var(--accent);
-}
-
-.btn-ghost {
-  background: transparent;
-  border-color: transparent;
   color: var(--accent);
 }
 
@@ -486,20 +509,11 @@ code {
 }
 
 .icon-tile:hover {
-  box-shadow: 0 4px 14px rgba(61, 43, 48, 0.1);
+  box-shadow: var(--shadow-lift);
 }
 
 .icon-tile:active {
   transform: scale(0.98);
-}
-
-.icon-tile-disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.icon-tile-disabled:hover {
-  box-shadow: none;
 }
 
 .icon-badge {
@@ -515,12 +529,6 @@ code {
 
 .icon-badge-disabled {
   background: var(--text-muted);
-}
-
-.icon-tile-sublabel {
-  font-size: var(--type-micro);
-  color: var(--text-muted);
-  line-height: 130%;
 }
 
 .icon-tile-label {
@@ -565,7 +573,7 @@ code {
 .condition-flag {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--gap-inline);
   font-size: var(--type-support);
   line-height: 145%;
   color: var(--severity-moderate);
@@ -577,10 +585,10 @@ code {
 .condition-emergency {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--gap-inline);
   padding: 12px 14px;
   border-radius: var(--radius-control);
-  background: rgba(163, 58, 46, 0.1);
+  background: var(--severe-wash);
   border: 1px solid var(--severity-severe);
   color: var(--severity-severe);
   font-size: var(--type-support);
@@ -633,13 +641,13 @@ code {
   letter-spacing: 0.5px;
   padding: 16px 74px 16px 18px;
   border: 2px solid var(--accent);
-  background: rgba(201, 123, 140, 0.06);
+  background: var(--accent-wash);
   border-radius: var(--radius-panel);
 }
 
 .condition-parameter .input-with-unit input[type="number"]:disabled {
   border-color: var(--border);
-  background: #fff;
+  background: var(--surface);
   font-size: 16px;
   font-weight: 400;
 }
@@ -659,14 +667,6 @@ code {
 
 .condition-parameter textarea,
 .condition-followup textarea {
-  font: inherit;
-  padding: 11px 14px;
-  border-radius: var(--radius-control);
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--text-h);
-  box-sizing: border-box;
-  resize: vertical;
   width: 100%;
 }
 
@@ -785,7 +785,7 @@ code {
 .condition-tile-status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--gap-inline);
   font-size: var(--type-meta);
   color: var(--text-muted);
   flex-shrink: 0;
@@ -880,7 +880,7 @@ code {
   margin-top: 14px;
   padding: 12px 14px;
   border-radius: var(--radius-control);
-  background: rgba(201, 123, 140, 0.1);
+  background: var(--accent-wash);
   color: var(--text-h);
   font-size: var(--type-support);
   line-height: 150%;
@@ -904,7 +904,7 @@ code {
   width: 22px;
   height: 22px;
   border-radius: var(--radius-tiny);
-  background: rgba(201, 123, 140, 0.12);
+  background: var(--accent-tint);
   color: var(--accent);
   flex-shrink: 0;
 }
@@ -953,7 +953,7 @@ code {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-inline);
   background: none;
   border: none;
   cursor: pointer;
@@ -966,7 +966,7 @@ code {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(201, 123, 140, 0.14);
+  background: var(--accent-wash-strong);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -982,7 +982,7 @@ code {
 }
 
 .concept-definition {
-  background: rgba(201, 123, 140, 0.08);
+  background: var(--accent-wash);
   border-radius: var(--radius-control);
   padding: 12px 14px;
   font-size: var(--type-support);
@@ -1000,7 +1000,7 @@ code {
   padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: var(--type-support);
@@ -1023,7 +1023,7 @@ code {
   padding: 8px 14px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: var(--type-meta);
@@ -1048,14 +1048,6 @@ code {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-}
-
-.unsure-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--type-meta);
-  color: var(--text-muted);
 }
 
 .field-hint {
@@ -1103,7 +1095,7 @@ code {
 }
 
 .welcome-slide {
-  gap: 18px;
+  gap: 16px;
   align-items: center;
   text-align: center;
 }
@@ -1115,7 +1107,7 @@ code {
 }
 
 .welcome-callout {
-  background: rgba(201, 123, 140, 0.08);
+  background: var(--accent-wash);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   padding: 16px;
@@ -1196,8 +1188,8 @@ code {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background: rgba(163, 58, 46, 0.08);
-  border: 1px solid rgba(163, 58, 46, 0.25);
+  background: var(--severe-wash);
+  border: 1px solid var(--severe-line);
   border-radius: var(--radius-panel);
   padding: 16px;
   color: var(--severity-severe);
@@ -1244,7 +1236,7 @@ code {
   padding: 14px 16px;
   border-radius: var(--radius-panel);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text-h);
   font: inherit;
   font-size: var(--type-support);
@@ -1254,7 +1246,7 @@ code {
 
 .severity-option.selected {
   border-color: var(--accent);
-  background: rgba(201, 123, 140, 0.1);
+  background: var(--accent-wash);
 }
 
 .severity-option.emergency {
@@ -1280,7 +1272,7 @@ code {
   border-radius: var(--radius-thumb);
   object-fit: contain;
   object-position: center;
-  background: #fff;
+  background: var(--surface);
   flex-shrink: 0;
 }
 
@@ -1301,7 +1293,7 @@ code {
   width: 100%;
   height: auto;
   border-radius: var(--radius-thumb);
-  background: #fff;
+  background: var(--surface);
 }
 
 /* Collapsed rows carry the illustration and its band label only, so they can
@@ -1320,19 +1312,6 @@ code {
 .card.bcs-intro {
   text-align: center;
 }
-
-/* Both source lines sit together at the foot of the screen and share one
-   size, colour and alignment. They used to be split — the scale citation at
-   12px italic under the title, the image credit under the picker — which put
-   three type sizes in the intro card and separated two related credits. */
-.bcs-sources {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 4px 8px 0;
-}
-
-
 
 /* Number input with a trailing unit. The unit is padding inside the field
    rather than a sibling beside it, so the box lines up with the other
@@ -1403,7 +1382,7 @@ code {
   padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: var(--type-support);
@@ -1416,30 +1395,6 @@ code {
   color: #fff;
 }
 
-.med-time-edit {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.med-time-edit input {
-  flex: 1;
-}
-
-.med-time-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-thumb);
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--text-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
 .med-list-row {
   display: flex;
   align-items: flex-start;
@@ -1450,7 +1405,7 @@ code {
 }
 
 .med-list-row.inactive {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
 .med-list-info {
@@ -1526,7 +1481,7 @@ code {
 .med-slot-row .assessment-hint {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--gap-inline);
 }
 
 /* --- Photos & videos --- */
@@ -1543,7 +1498,7 @@ code {
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   overflow: hidden;
-  background: #fff;
+  background: var(--surface);
 }
 
 /* Fixed-ratio box so a mixed gallery of portrait and landscape shots stays
@@ -1590,7 +1545,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: rgba(201, 123, 140, 0.08);
+  background: var(--accent-wash);
   border-radius: var(--radius-panel);
   padding: 16px;
 }
@@ -1610,13 +1565,13 @@ code {
   line-height: 1.5;
   margin: 0;
   padding-top: 10px;
-  border-top: 1px solid rgba(201, 123, 140, 0.2);
+  border-top: 1px solid var(--accent-wash-strong);
 }
 
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(61, 43, 48, 0.45);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1692,7 +1647,7 @@ code {
   padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   font: inherit;
   font-size: var(--type-support);
@@ -1709,7 +1664,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: rgba(201, 123, 140, 0.08);
+  background: var(--accent-wash);
   border-radius: var(--radius-panel);
   padding: 14px;
 }
@@ -1870,6 +1825,9 @@ code {
 
 .calendar-cell {
   position: relative;
+  /* The three day badges sit slightly outside the cell so they read as
+     badges. Nothing may clip them. */
+  overflow: visible;
   /* A button now, so the day's detail can be read on a phone, where the
      title tooltip never appears. These four lines undo the browser's button
      styling; everything below is the same as when it was a div. */
@@ -1895,111 +1853,139 @@ code {
   outline-offset: 1px;
 }
 
+/* The day's date, above the lines describing it. */
+.calendar-detail-date {
+  margin: 0 0 6px;
+  /* The panel's heading, so it keeps the centring the panel itself gave up
+     when its lines became a marked list. */
+  text-align: center;
+}
+
+/* Each line sits behind its own mark, aligned so the marks form a column and
+   the reader can scan by symbol rather than by reading every line. */
+.calendar-detail-text {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-inline);
+  margin: 0;
+}
+
+.calendar-detail-text + .calendar-detail-text {
+  margin-top: 4px;
+}
+
+/* Space between the last line and the "See this day's answers" link, which a
+   second .calendar-detail-text rule further down the file used to provide
+   before it was removed — it also reset the margin above, collapsing the
+   day's lines into each other. */
+.calendar-detail-text:last-of-type {
+  margin-bottom: 6px;
+}
+
+.calendar-detail-icon {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--text-muted);
+}
+
+/* The four day badges: a note, a medication change, a row in the Events list,
+   a change to what is being tracked. One corner each, so a day that carries
+   all four shows all four rather than one covering another — and that day is
+   exactly the one worth opening.
+
+   They were four near-identical blocks scattered through this file, which is
+   how three of them ended up with comments describing a different badge to
+   the one they styled. One base rule now, four modifiers.
+
+   White glyph on a coloured disc, with a ring in the page colour so the badge
+   reads against a coloured cell as well as a grey one.
+
+   INSIDE the cell, not overlapping its corner. They overhung by 2px until a
+   rendered screenshot showed what that costs: with a 4px gap between cells, a
+   badge hanging off the top-left of the 21st sits closer to the 20th than to
+   the day it belongs to, and the reader has to work out which square is
+   claiming it. Tucked inside, ownership is never in question. */
+.calendar-cell-note,
+.calendar-cell-marker,
+.calendar-cell-event,
+.calendar-cell-milestone {
+  position: absolute;
+  display: flex;
+  color: #fff;
+  box-shadow: 0 0 0 1.5px var(--bg);
+  border-radius: 50%;
+  padding: 2px;
+  line-height: 0;
+}
+
+/* Top-left: a note was written. */
+.calendar-cell-note {
+  top: 1px;
+  left: 1px;
+  background: var(--text-muted);
+}
+
+/* Top-right: a medication started or stopped. */
+.calendar-cell-marker {
+  top: 1px;
+  right: 1px;
+  background: var(--text-h);
+}
+
+/* Bottom-right: a row in the Events list — an episode, a diagnosis, a
+   treatment change. */
+.calendar-cell-event {
+  bottom: 1px;
+  right: 1px;
+  background: var(--accent);
+}
+
+/* Bottom-left: a change to what is being tracked, such as a diet trial
+   starting or a re-challenge food going in. */
+.calendar-cell-milestone {
+  bottom: 1px;
+  left: 1px;
+  background: var(--severity-moderate);
+}
+
+/* Left-aligned, now that this is a list of marked lines rather than one
+   centred sentence. Centring left the findings line — the only one without an
+   icon — floating in the middle while the four marked lines sat hard left,
+   which read as two different things rather than one day's record. The date
+   above them keeps its centring as the panel's heading. */
 .calendar-detail {
   margin: 8px 0 0;
   font-size: var(--type-meta);
   color: var(--text);
-  text-align: center;
+  text-align: left;
 }
 
-.calendar-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 8px 0 0;
-  font-size: var(--type-meta);
-  color: var(--text-muted);
+
+/* One rule, not two identical ones. The calendar's legend and the key under a
+   line chart are the same object in two places, and they were defined twice —
+   which is how .chart-key's gap came to be dead code, overridden wherever it
+   is actually used by .chart-severity-key further down. */
+.calendar-legend > svg,
+.chart-key > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
 }
 
-/* The key under a line chart, matching the calendar's. */
+.calendar-legend,
 .chart-key {
   display: flex;
-  align-items: center;
+  /* Top-aligned, not centred. These lines wrap to two or three on a phone,
+     and a vertically centred icon then sits halfway down the paragraph
+     looking detached from the sentence it belongs to. */
+  align-items: flex-start;
   justify-content: center;
-  gap: 6px;
+  gap: var(--gap-inline);
   margin: 8px 0 0;
   font-size: var(--type-meta);
   color: var(--text-muted);
 }
 
-/* The medication mark. Sits over the top-right corner of the day, and is
-   outlined so it stays visible on a green day, an amber one and an
-   unrecorded grey one alike. */
-/* The pill sits over the top-right corner of the day. White with a dark
-   stroke so it reads on a green day, an amber one and an unrecorded grey one
-   alike — a single colour would disappear against one of them. */
-.calendar-cell-marker {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  display: flex;
-  color: var(--text-h);
-  background: #fff;
-  border-radius: 50%;
-  padding: 1px;
-  line-height: 0;
-}
-
-.chart-title {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 28px;
-}
-
-/* Taken out of flow deliberately. Left in the flex row it would shove the
-   heading sideways, so a "centred" title would sit visibly off-centre by the
-   width of the icon — and by a different amount on cards that have no icon. */
-.chart-title .chart-title-icon {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* The heading is the collapse control, so it takes the remaining width and
-   the whole row is a tap target rather than just the chevron. */
-
-.chart-chevron {
-  flex-shrink: 0;
-  color: var(--text-muted);
-  transition: transform 150ms ease;
-}
-
-.chart-chevron.open {
-  transform: rotate(180deg);
-}
-
-.chart-title .section-title {
-  margin: 0;
-}
-
-.chart-title-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Source credits, wherever they appear — BEAAAAPP, the Feline Grimace Scale,
-   the WSAVA body condition chart. Was 12px italic here and 13px roman at the
-   foot of Body Condition, so the same kind of statement looked like two
-   different things depending on the screen. One style now. */
-.beap-citation,
-.bcs-sources p {
-  font-size: var(--type-meta);
-  line-height: 150%;
-  color: var(--text-muted);
-  font-style: normal;
-  text-align: center;
-  margin: 0;
-}
-
+/* The running Feline Grimace Scale total, under its five questions. */
 .grimace-total {
   display: flex;
   flex-direction: column;
@@ -2007,7 +1993,7 @@ code {
   gap: var(--gap-stack-tight);
   padding: 16px;
   border-radius: var(--radius-panel);
-  background: rgba(201, 123, 140, 0.06);
+  background: var(--accent-wash);
   border: 1px solid var(--border);
   text-align: center;
 }
@@ -2051,7 +2037,7 @@ code {
   object-fit: cover;
   object-position: top center;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 
@@ -2059,7 +2045,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2120,7 +2106,7 @@ code {
   display: flex;
   flex-direction: column;
   gap: var(--gap-stack-tight);
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2143,14 +2129,14 @@ code {
   top: 0;
   left: -10000px;
   width: 350px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .pdf-chart-block {
   width: 350px;
   padding: 16px;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--surface);
 }
 
 .history-list {
@@ -2159,8 +2145,18 @@ code {
   gap: 14px;
 }
 
+/* A button now, so a note is the way into the assessment it was written
+   beside. These four lines undo the browser's button styling; everything
+   after is as it was when this was a div. */
 .history-item {
-  padding-bottom: 14px;
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0 0 14px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -2182,6 +2178,16 @@ code {
   margin: 0;
 }
 
+/* The affordance. Quiet, because the note is what the reader came for — but
+   present, because nothing else on the row says it can be opened. */
+.history-open {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: var(--type-label);
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .home-tour-backdrop {
   position: fixed;
   inset: 0;
@@ -2191,13 +2197,13 @@ code {
 .home-tour-backdrop-dim {
   position: fixed;
   inset: 0;
-  background: rgba(61, 43, 48, 0.72);
+  background: var(--scrim);
 }
 
 .home-tour-spotlight {
   position: fixed;
   border-radius: var(--radius-card);
-  box-shadow: 0 0 0 9999px rgba(61, 43, 48, 0.72);
+  box-shadow: 0 0 0 9999px var(--scrim);
   pointer-events: none;
   transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
 }
@@ -2211,7 +2217,7 @@ code {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gap-inline);
 }
 
 .home-tour-title {
@@ -2315,7 +2321,7 @@ code {
 .home-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--gap-inline);
   font-size: var(--type-meta);
   font-weight: 500;
   color: var(--text-muted);
@@ -2337,7 +2343,7 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--gap-inline);
   width: 100%;
   background: none;
   border: none;
@@ -2359,7 +2365,7 @@ code {
   font: inherit;
   font-size: var(--type-label);
   color: var(--text-muted);
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: pointer;
   margin: -12px 0 8px;
   padding: 0;
@@ -2386,25 +2392,36 @@ code {
   gap: 8px;
 }
 
+/* Repeated .field's declarations but dropped the ground and the text colour,
+   so this was the one input in the app with no explicit colours — it
+   inherited whatever the modal happened to give it. */
 .chip-other-modal input {
   font: inherit;
+  font-size: var(--type-support);
   padding: 11px 14px;
   border-radius: var(--radius-control);
   border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   box-sizing: border-box;
 }
 
 .chip-other-modal-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--gap-inline);
 }
 
+/* A chip-shaped control that never got the two declarations that make one:
+   these rendered at the inherited root 18px in the default body colour, while
+   every other pill in the app is --type-support in --text. */
 .chip-other-modal-actions button {
   font: inherit;
+  font-size: var(--type-support);
   padding: 9px 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -2604,55 +2621,20 @@ code {
    or every dose is already accounted for. Both read the same way — there is
    nothing to be gained here — so they look the same. */
 .reminder-cell:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 /* The note mark. Opposite corner to the medication pill, so a day carrying
    both shows both — and the same white disc behind it, so it reads on a
    green day, an amber one and an unrecorded grey one alike. */
-.calendar-cell-note {
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  display: flex;
-  color: var(--text-h);
-  background: #fff;
-  border-radius: 50%;
-  padding: 1px;
-  line-height: 0;
-}
-
-/* The reference block at the foot of the assessment intro. Set apart from the
-   copy above it by a rule and a gap rather than by size alone — these are
-   credits, read once, and they should not compete with the instructions. */
-.assessment-references {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* A medical event on a calendar day — bottom-right, so the pill (top-right)
-   and the note pencil (top-left) all fit on one day without overlapping. */
-.calendar-cell-event {
-  position: absolute;
-  bottom: 1px;
-  right: 1px;
-  display: flex;
-  color: var(--text-h);
-  background: #fff;
-  border-radius: 50%;
-  padding: 1px;
-  line-height: 0;
-}
-
 /* The colour key under a calendar. Wraps on a narrow phone rather than
    squeezing three items onto one line. */
 .chart-severity-key {
   flex-wrap: wrap;
+  /* Deliberately looser than the base key it extends: three swatch-and-label
+     pairs on one wrapping line need more air between them than a single
+     legend line does. */
   gap: 12px;
 }
 
@@ -2678,12 +2660,6 @@ code {
 /* "Tap Next or swipe to begin" — an instruction, not another paragraph. */
 .assessment-begin-hint {
   text-align: center;
-}
-
-/* The day detail under a calendar, now that it carries a way in as well as a
-   summary line. */
-.calendar-detail-text {
-  margin: 0 0 6px;
 }
 
 /* One day's answers, question by question. A definition list rather than a
@@ -2727,7 +2703,7 @@ code {
 .day-answer-label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-inline);
   font-size: var(--type-meta);
   color: var(--text-muted);
   font-weight: 600;
@@ -2744,12 +2720,45 @@ code {
   display: block;
   font-size: var(--type-meta);
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: var(--gap-stack-tight);
+}
+
+/* The note written on a day, shown at the top of that day's answers with the
+   way to remove it. Set on a tinted panel so it reads as something the owner
+   wrote rather than as another answer the app recorded. */
+.day-answers-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-inline);
+  align-items: flex-start;
+  /* .subtle-link carries a 24px bottom margin for use at the foot of a
+     screen. Inside this panel it would strand the caveat below it. */
+  margin: 0 0 16px;
+  padding: 12px;
+  border-radius: var(--radius-panel);
+  background: var(--accent-tint);
+}
+
+.day-answers-note-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Sits under the delete link, quieter than it. */
+.day-answers-note-caveat {
+  margin: 0;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+}
+
+.day-answers-note .subtle-link {
+  margin: 0;
+  width: auto;
 }
 
 .day-answer-flag {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -2969,15 +2978,6 @@ code {
 /* Source credits at the foot of a screen, set apart from the content above
    by a rule — the same treatment the assessment's credits get, so a credit
    looks like a credit wherever it appears. */
-.page-references {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 /* A date field with a way back to empty beside it. */
 .med-date-row {
   display: flex;
@@ -3006,8 +3006,8 @@ code {
 .condition-medication-row {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding-left: 12px;
+  gap: var(--gap-stack-tight);
+  padding-left: 14px;
   border-left: 2px solid var(--border);
 }
 
@@ -3023,5 +3023,5 @@ code {
 .condition-embedded-page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }

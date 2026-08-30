@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FileDown, Trash2 } from 'lucide-react'
+import { FileDown, SlidersHorizontal, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -32,11 +32,12 @@ import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../l
 import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
-import { GI_KEY, isGiConfigured } from '../lib/giConfig'
+import { GI_KEY, hasGiFoodAllergySelected, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   addPetCondition,
   saveConditionConfig,
@@ -48,11 +49,6 @@ import {
   usePetConditions,
 } from '../lib/conditionsData'
 
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 export default function ConditionMonitoring() {
   const { selectedPet } = usePets()
@@ -107,6 +103,7 @@ export default function ConditionMonitoring() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [noteError, setNoteError] = useState('')
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
   // Whether the standing answers — diagnosis, diet, start date — are open
@@ -249,21 +246,6 @@ export default function ConditionMonitoring() {
   // ("is she STILL on a diet trial?"). It runs last so the dependency chain
   // is resolved against the real answers rather than the trimmed list.
   const parameters = formParameters(visibleParameters(askedList, values), carried, { editStanding })
-
-  // Credited at the foot of the page: the condition's own source, plus any
-  // belonging to the questions on screen right now.
-  // A citation may be a plain string, or keyed by species where only one
-  // species' wording follows the instrument — the same shape alert messages
-  // use.
-  const citationFor = (citation) => (
-    citation == null || typeof citation === 'string'
-      ? citation
-      : citation[pet?.species] ?? null
-  )
-  const pageCitations = [...new Set(
-    [definition?.citation, ...parameters.map((parameter) => citationFor(parameter.citation))]
-      .filter(Boolean),
-  )]
 
   // Days since the last treatment, derived from the event the owner already
   // logs rather than asked. "Lethargic on day 8" is a different question to
@@ -469,6 +451,38 @@ export default function ConditionMonitoring() {
   const resolvedForDay = definition
     ? { ...definition, parameters: parametersFor(definition, config, pet?.species) }
     : null
+
+  // Clears the note on the day currently open, leaving that day's answers
+  // exactly as they are.
+  //
+  // An upsert of the same values with a null note rather than a delete of the
+  // row: the owner asked to remove what they wrote, not to throw away the
+  // day's readings — and on the calendar those two are very different, one
+  // taking a pencil mark off a day and the other taking the day off the
+  // record entirely.
+  async function handleDeleteNote() {
+    if (!openDay || !openEntry) return
+    setNoteError('')
+    try {
+      await saveConditionEntry({
+        petId: pet.id,
+        conditionKey: definition.key,
+        entryDate: openDay,
+        values: openEntry.values,
+        notes: '',
+      })
+      // Cleared here too, so today's form does not write the note straight
+      // back the next time it is saved.
+      if (openDay === todayIsoDate()) setNotes('')
+      refreshEntries()
+      setOpenDay(null)
+    } catch (error) {
+      // In the modal, beside the button that failed — the form's error banner
+      // is behind it and the owner would never see it.
+      setNoteError(error.message || 'Could not delete that note.')
+    }
+  }
+
 
   const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
   // The measured numbers that draw a line — at most one per condition today
@@ -708,7 +722,7 @@ export default function ConditionMonitoring() {
             </div>
 
             <Btn type="button" className="btn-block" onClick={handleSave} disabled={busy}>
-              {busy ? 'Saving…' : todaysEntry ? 'Update today’s entry' : 'Save entry'}
+              {busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
             </Btn>
             {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
             {!entriesLoading && latestEntry && (
@@ -724,12 +738,45 @@ export default function ConditionMonitoring() {
               </p>
             )}
 
+            {/* A button rather than a text link, on Ash's instruction 29 Aug
+                2026. It sat under the save button as a small underlined line
+                and read as a footnote — but for a composed condition it is
+                the only way back to the question list, and an owner whose pet
+                has developed a new sign has no other route to add it. */}
             {definition.composed && (
-              <Link to={`/conditions/${definition.key}/setup`} className="subtle-link">
-                Change what you're monitoring
-              </Link>
+              <Btn
+                type="button"
+                variant="outline"
+                className="btn-block"
+                onClick={() => navigate(`/conditions/${definition.key}/setup`)}
+              >
+                <SlidersHorizontal size={16} /> Change what you're monitoring
+              </Btn>
             )}
           </Card>
+          )}
+
+          {/* Shown here as well as on the setup screen. An owner who chose
+              "food sensitivity or allergy" weeks ago never sees that screen
+              again, and this section now asks them nothing about it — so
+              without this the trial simply looks forgotten. */}
+          {definition.key === GI_KEY && hasGiFoodAllergySelected(config) && (
+            <Card>
+              <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
+              <p>
+                {/* PENDING ASH — wording. */}
+                {pet.name}'s food trial is monitored in Allergies and Skin Disease — the diet,
+                the start date, any slips, and re-challenging one food at a time.
+              </p>
+              <Btn
+                type="button"
+                variant="outline"
+                className="btn-block"
+                onClick={() => navigate('/conditions/allergies')}
+              >
+                Go to Allergies and Skin Disease
+              </Btn>
+            </Card>
           )}
 
           {calendarChart && (
@@ -874,23 +921,11 @@ export default function ConditionMonitoring() {
         </Modal>
       )}
 
-      {/* Credits at the foot of the page, not under the intro. They are read
-          once, if at all, and sitting between the description and the first
-          question they pushed the thing the owner came to do further down
-          every single visit.
-          
-          The condition's own citation, plus any carried by the questions
-          actually on screen — a composed condition only credits the
-          instruments the owner's selections brought in, rather than every
-          instrument the section could ever use. Deduplicated, because two
-          questions may draw on the same source. */}
-      {pageCitations.length > 0 && (
-        <div className="page-references">
-          {pageCitations.map((citation) => (
-            <p key={citation} className="beap-citation">{citation}</p>
-          ))}
-        </div>
-      )}
+      {/* The condition's citation and those of its questions used to sit
+          here. Credits now live in one place — Legal & Privacy, and the Terms
+          — rather than at the foot of every screen that uses an instrument
+          (Ash's call, 29 Aug 2026). Every one of them is in lib/references.js
+          and appears there in full. */}
 
       {openDay && (
         <DayAnswersModal
@@ -901,7 +936,10 @@ export default function ConditionMonitoring() {
             : []}
           pet={pet}
           emptyMessage="Nothing was recorded for this condition on this day."
-          onClose={() => setOpenDay(null)}
+          note={openEntry?.notes ?? null}
+          onDeleteNote={openEntry?.notes ? handleDeleteNote : null}
+          noteError={noteError}
+          onClose={() => { setOpenDay(null); setNoteError('') }}
         />
       )}
 

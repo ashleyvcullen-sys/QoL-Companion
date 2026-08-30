@@ -33,6 +33,7 @@ import {
 } from '../lib/conditionsData'
 import { usePetMedia } from '../lib/mediaData'
 import { useMedications } from '../lib/medicationsData'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 // What the report contains when the owner never touches the picker: the
 // overall score and all five wellbeing pillars, which is exactly what it
@@ -145,7 +146,7 @@ async function buildReportPdf({
     cursorY += imgHeight + 16
   }
 
-  addTitle(`${pet.name}'s Quality Of Life Report`)
+  addTitle(`${pet.name}'s Quality of Life Report`)
 
   addSectionHeader('Pet')
   addLine(`Name: ${pet.name}`)
@@ -169,7 +170,7 @@ async function buildReportPdf({
     // written the day something changed is what a vet wants to read, and it
     // stops being the latest as soon as anything else is logged.
     notes.forEach((note) => {
-      addLine(`${note.date} - ${note.source}`)
+      addLine(`${formatDateDDMMYYYY(note.date)} — ${note.source}`)
       addLine(note.text)
       addSpacer(6)
     })
@@ -181,7 +182,7 @@ async function buildReportPdf({
     addLine('No assessments logged yet.')
   } else {
     recent.forEach((day) => {
-      addLine(`${day.date}: ${day.generalPercent != null ? `${day.generalPercent}%` : '—'}`)
+      addLine(`${formatDateDDMMYYYY(day.date)}: ${day.generalPercent != null ? `${day.generalPercent}%` : '—'}`)
     })
   }
   addSpacer(20)
@@ -419,7 +420,7 @@ export default function ExportReport() {
       })
 
       await Share.share({
-        title: `${pet.name}'s Quality Of Life Report`,
+        title: `${pet.name}'s Quality of Life Report`,
         files: [uri],
         dialogTitle: 'Share report',
       })
@@ -548,7 +549,7 @@ export default function ExportReport() {
             ) : (
               notes.map((note, i) => (
                 <div key={`${note.date}-${note.source}-${i}`} className="report-note">
-                  <span className="assessment-hint">{note.date} — {note.source}</span>
+                  <span className="assessment-hint">{formatDateDDMMYYYY(note.date)} — {note.source}</span>
                   <p>{note.text}</p>
                 </div>
               ))
@@ -574,7 +575,7 @@ export default function ExportReport() {
             ) : (
               recent.map((day) => (
                 <div key={day.date} className="report-field-row">
-                  <span>{day.date}</span>
+                  <span>{formatDateDDMMYYYY(day.date)}</span>
                   <strong>{day.generalPercent != null ? `${day.generalPercent}%` : '—'}</strong>
                 </div>
               ))

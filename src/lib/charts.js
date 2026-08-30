@@ -86,18 +86,56 @@ function markersFor(points, events) {
 // first appears or changes. `on: 'date'` marks the DAY THE ANSWER NAMES — a
 // trial start date is about the day the trial started, not the day it was
 // typed in — and anything else marks the day the entry was saved.
+// Returns Map<date, { label }>, where `label` may be NULL.
+//
+// A null label is a mark with nothing to say: the day still gets its flag on
+// the calendar, and the day's line says nothing about it. That is for a
+// milestone whose parameter also produces a finding (see findingFor in
+// lib/conditions.js) — without it, a broken diet trial was announced twice in
+// one line, once as "The diet trial was broken — Bailey had a dental chew"
+// and again as "Diet broken: a dental chew". Ash asked for the second to go
+// and for the mark to stay, which is exactly this split.
 export function milestoneDayLabels(parameters = [], entries = []) {
   const byDate = new Map()
-  const add = (date, text) => {
-    if (!date || !text) return
-    const existing = byDate.get(date)
+  const add = (date, text, { markOnly = false } = {}) => {
+    if (!date) return
+    if (markOnly) {
+      // A mark, with no text. Never overwrites a label already on the day —
+      // one silent milestone must not silence a talkative one.
+      if (!byDate.has(date)) byDate.set(date, { label: null })
+      return
+    }
+    if (!text) return
+    const existing = byDate.get(date)?.label ?? null
     if (existing?.includes(text)) return
-    byDate.set(date, existing ? `${existing} — ${text}` : text)
+    byDate.set(date, { label: existing ? `${existing} — ${text}` : text })
   }
 
   for (const parameter of parameters) {
     const milestone = parameter.milestone
     if (!milestone) continue
+
+    // A FALLBACK milestone: only marks the calendar while the parameter it
+    // names goes unanswered.
+    //
+    // The trial's start date is what should carry the mark, because it lands
+    // on the day the trial actually began rather than the day the owner
+    // typed it in — and it pulls the diet's name in with withAnswerFrom, so
+    // one mark says both things. But an owner who names the diet and skips
+    // the date would then get no mark at all, and a diet trial nobody can see
+    // on the calendar is worse than one marked on roughly the right day.
+    //
+    // Judged across the WHOLE record rather than per entry, deliberately. Per
+    // entry, filling the date in later would leave the fallback mark standing
+    // beside the real one and put the same trial on the calendar twice —
+    // which is the thing this whole pass has been removing.
+    if (milestone.fallbackFor
+      && entries.some((entry) => {
+        const value = entry?.values?.[milestone.fallbackFor]
+        return value != null && value !== ''
+      })) {
+      continue
+    }
 
     // `when` marks EVERY day carrying a particular answer, rather than the
     // days the answer changed. A diet trial broken on Tuesday and again on
@@ -111,7 +149,11 @@ export function milestoneDayLabels(parameters = [], entries = []) {
       for (const entry of entries) {
         if (entry?.values?.[parameter.key] !== milestone.when) continue
         const detail = milestone.detailFrom ? entry.values?.[milestone.detailFrom] : null
-        add(entry.date, detail ? `${milestone.label}: ${detail}` : milestone.label)
+        add(
+          entry.date,
+          detail ? `${milestone.label}: ${detail}` : milestone.label,
+          { markOnly: milestone.markOnly === true },
+        )
       }
       continue
     }
@@ -125,8 +167,27 @@ export function milestoneDayLabels(parameters = [], entries = []) {
 
       // The answer goes in the label where the answer is the interesting part
       // ("Re-challenge: chicken").
-      const detail = milestone.withAnswer ? `${milestone.label}: ${value}` : milestone.label
-      add(milestone.on === 'date' ? String(value) : entry.date, detail)
+      //
+      // withAnswerFrom names ANOTHER parameter to take that answer from. The
+      // date a diet trial started and the diet it uses are two questions, and
+      // marking them separately put two flags on the calendar for one event —
+      // "Elimination diet started" on the start date and "Elimination diet:
+      // Brand X hydrolysed" on whichever day the owner happened to type it.
+      // One mark, on the day it actually happened, naming the food.
+      //
+      // Falls back to the bare label if that other answer is missing, so a
+      // trial with no diet named still gets marked on its start date.
+      const namedAnswer = milestone.withAnswerFrom
+        ? entry.values?.[milestone.withAnswerFrom]
+        : null
+      const detail = milestone.withAnswer
+        ? `${milestone.label}: ${value}`
+        : (namedAnswer ? `${milestone.label}: ${namedAnswer}` : milestone.label)
+      add(
+        milestone.on === 'date' ? String(value) : entry.date,
+        detail,
+        { markOnly: milestone.markOnly === true },
+      )
     }
   }
 
@@ -265,12 +326,15 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
       // was scored — but the mark is the whole reason the owner is looking at
       // this calendar.
       if (!result && !marker && !note) return null
+      const percent = result ? `${result.percent}%` : null
       return {
         colour: result ? result.color : null,
-        title: [result ? `${result.percent}%` : null, marker, note]
-          .filter(Boolean).join(' — '),
+        title: [percent, marker, note].filter(Boolean).join(' — '),
         marker,
         note,
+        // Same shape the condition calendars return, so MonthCalendar has one
+        // way of drawing a day's detail rather than two.
+        parts: { severity: percent, marker, note },
       }
     },
     // Above the calendar, not below it. It is the point of the chart rather
@@ -463,6 +527,8 @@ export function chartsForCondition({
         const note = noteDays.get(dateKey) ?? null
         const event = eventDays.get(dateKey) ?? null
         const milestone = milestoneDays.get(dateKey) ?? null
+        // May be null on a mark-only milestone — see milestoneDayLabels.
+        const milestoneLabel = milestone?.label ?? null
         if (!day?.severity && !marker && !note && !event && !milestone) {
           // Nothing logged. On an exception log that means the good outcome,
           // within the window the app can actually vouch for.
@@ -502,21 +568,56 @@ export function chartsForCondition({
         const namedText = asFindings
           ? named.map((entry) => (/[.!?]$/.test(entry.text) ? entry.text : `${entry.text}.`)).join(' ')
           : named.map((entry) => entry.text).join(', ')
+        // "Worth watching:" dropped where the findings speak for themselves —
+        // Ash's instruction, 29 Aug 2026. On the allergy log the line read
+        // "Worth watching: The diet trial was broken — Bailey had a dental
+        // chew.", where the first two words say nothing the sentence after
+        // them has not already said, and the cell is already amber.
+        //
+        // Dropped on an EMERGENCY day too, on her follow-up instruction —
+        // "just state the abnormalities". The colour still carries the
+        // severity, the key still names it, and the emergency message itself
+        // is shown on the form where the answer is given rather than here.
         const severityWord = day?.severity
           ? (keyLabels?.[day.severity] ?? SEVERITY_LABELS[day.severity])
           : null
+        const dropSeverityWord = asFindings
         const severityTitle = severityWord
-          ? `${severityWord}${named.length ? `: ${namedText}` : ''}`
+          ? (dropSeverityWord && named.length
+            ? namedText
+            : `${severityWord}${named.length ? `: ${namedText}` : ''}`)
           : null
         return {
           colour: day?.severity ? SEVERITY_COLOURS[day.severity] : null,
-          title: [severityTitle, marker, note, event, milestone].filter(Boolean).join(' — '),
+          title: [severityTitle, marker, note, event, milestoneLabel].filter(Boolean).join(' — '),
           marker,
           note,
-          // Drawn with the same mark as a medical event: starting a diet trial
-          // IS an event in the case, and a fourth kind of dot would be a new
-          // thing for the owner to learn for no new meaning.
-          event: event ?? milestone,
+          // Four separate marks, not one.
+          //
+          // Until 29 Aug 2026 a diet-trial milestone was drawn with the same
+          // dot as a medical event, on the reasoning that a fourth kind of
+          // mark was a new thing for the owner to learn. Ash's report shows
+          // that was the wrong trade: with one mark and one merged line, a day
+          // carrying an amber finding, a new medication and a vet visit said
+          // all three things behind a single flag, and the owner could not
+          // tell which of them the flag was for — or that the event they had
+          // just logged had reached the calendar at all.
+          //
+          // A stethoscope is the Events list. A flag is a change to the plan
+          // the app tracks itself, such as a diet trial starting. Truthiness
+          // is all the calendar reads for a mark, so a mark-only milestone
+          // still draws its flag with no text behind it.
+          event,
+          milestone: milestone ? (milestoneLabel ?? true) : null,
+          // One line per thing that happened, each with its own mark, rather
+          // than five clauses joined by dashes.
+          parts: {
+            severity: severityTitle,
+            marker,
+            note,
+            event,
+            milestone: milestoneLabel,
+          },
         }
       },
       severityKey: true,

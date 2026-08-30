@@ -20,22 +20,20 @@ import { buildDailySeries } from '../lib/qolData'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { useMedications } from '../lib/medicationsData'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { clearAssessmentNote } from '../lib/qolData'
 
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 export default function Trends() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
-  const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
+  const { generalEntries, painEntries, loading, refresh } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
+  const [noteError, setNoteError] = useState('')
 
   // The two halves of one day's assessment, for the day whose answers are
   // open. Looked up rather than carried on the calendar descriptor, so the
@@ -46,6 +44,24 @@ export default function Trends() {
   const openPainEntry = openDay
     ? painEntries.find((entry) => entry.date === openDay) ?? null
     : null
+
+  // Clears the note on the day currently open. The day's scores and answers
+  // are untouched — see clearAssessmentNote.
+  //
+  // A failure is shown IN the modal rather than logged. This swallowed its
+  // errors to the console when it shipped, so a delete that did not take
+  // looked exactly like a button that did nothing.
+  async function handleDeleteNote() {
+    if (!openDay || !pet?.id) return
+    setNoteError('')
+    try {
+      await clearAssessmentNote({ petId: pet.id, date: openDay })
+      refresh()
+      setOpenDay(null)
+    } catch (error) {
+      setNoteError(error.message || 'Could not delete that note.')
+    }
+  }
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
@@ -143,11 +159,24 @@ export default function Trends() {
           <p>No notes logged yet.</p>
         ) : (
           <div className="history-list">
+            {/* A button, not a div. A note is written about a particular day,
+                and the questions it was written beside are the context that
+                makes it mean anything — "off her food again" reads very
+                differently next to an appetite score of 2 than next to a 7.
+                The answers were already one tap from the calendar above; this
+                is the same way in, from the place an owner is actually
+                reading. */}
             {notesHistory.map((entry) => (
-              <div key={entry.date} className="history-item">
+              <button
+                key={entry.date}
+                type="button"
+                className="history-item"
+                onClick={() => setOpenDay(entry.date)}
+              >
                 <p className="history-date">{formatDateDDMMYYYY(entry.date)}</p>
                 <p className="history-notes">{entry.notes}</p>
-              </div>
+                <span className="history-open">See this day's assessment</span>
+              </button>
             ))}
           </div>
         )}
@@ -164,14 +193,19 @@ export default function Trends() {
           rows={describeAssessmentDay(openGeneralEntry, openPainEntry, pet.species)}
           pet={pet}
           emptyMessage="No assessment was saved on this day."
-          onClose={() => setOpenDay(null)}
+          note={openGeneralEntry?.notes ?? openPainEntry?.notes ?? null}
+          onDeleteNote={
+            (openGeneralEntry?.notes ?? openPainEntry?.notes) ? handleDeleteNote : null
+          }
+          noteError={noteError}
+          onClose={() => { setOpenDay(null); setNoteError('') }}
         />
       )}
 
       {showScoringExplainer && (
         <Modal title="How does QoL Companion calculate quality of life?" onClose={() => setShowScoringExplainer(false)}>
           <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
-          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) draw on your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework — broken out individually rather than averaged, so you can see which specific aspects of wellbeing are changing. For cats, the Comfort score also draws on the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) draw on your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework — shown separately rather than averaged, so you can see what is changing. For cats, the Comfort score also draws on the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more) and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
           <p>Because an average can hide a single serious problem, one severe finding in the pain assessment will hold the overall rating down on its own — so a pet with one urgent issue won't be shown as doing well just because everything else looks fine.</p>
           <p>Together, these give you a fuller picture than either could alone. The scoring rules themselves are fixed and transparent — built using adaptations of these clinical frameworks alongside veterinary clinical expertise, not judged case-by-case or influenced by AI.</p>

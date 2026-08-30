@@ -8,7 +8,7 @@ export default function WelcomeSlide1({ petName }) {
         alt="Dog and cat, nose to nose, forming a heart"
         className="welcome-illustration"
       />
-      <SectionTitle>Welcome To Quality Of Life Companion</SectionTitle>
+      <SectionTitle>Welcome To Quality of Life Companion</SectionTitle>
       <p className="welcome-footnote">
         Developed by a veterinarian to help pet owners, vets and pets every step of the way.
       </p>

@@ -214,12 +214,20 @@ export function useConditionEntries(petId, conditionKey) {
 
 // --- Events ---------------------------------------------------------------
 
+// The placeholder belongs to the TYPE, not to the field.
+//
+// One placeholder served all five, so choosing "Diagnosis" and being shown
+// "e.g. collapsed in the garden" invited the owner to write the wrong kind of
+// thing in the one box a vet reads first. An example is only useful when it
+// is an example of what is actually being asked for.
+//
+// PENDING ASH — the four examples. "e.g. heart disease" is hers.
 export const EVENT_TYPES = [
-  { value: 'episode', label: 'Medical episode', colour: '#A33A2E' },
-  { value: 'diagnosis', label: 'Diagnosis', colour: '#5C6F8A' },
-  { value: 'medication_started', label: 'Medication started', colour: '#3D8259' },
-  { value: 'medication_stopped', label: 'Medication stopped', colour: '#C97A2E' },
-  { value: 'other', label: 'Something else', colour: '#8A5C6F' },
+  { value: 'episode', label: 'Medical episode', colour: '#A33A2E', placeholder: 'e.g. a seizure, a vomiting episode' },
+  { value: 'diagnosis', label: 'Diagnosis', colour: '#5C6F8A', placeholder: 'e.g. heart disease' },
+  { value: 'medication_started', label: 'Medication started', colour: '#3D8259', placeholder: 'e.g. Furosemide' },
+  { value: 'medication_stopped', label: 'Medication stopped', colour: '#C97A2E', placeholder: 'e.g. Furosemide' },
+  { value: 'other', label: 'Something else', colour: '#8A5C6F', placeholder: 'e.g. a change in routine' },
 ]
 
 export function eventTypeByValue(value) {

@@ -8,6 +8,7 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import MediaLightbox from '../components/MediaLightbox'
 import { usePets } from '../lib/PetsContext'
+import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   MAX_VIDEO_SECONDS,
   deleteMedia,
@@ -21,11 +22,6 @@ function todayIsoDate() {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)
 }
 
-function formatDateDDMMYYYY(dateStr) {
-  if (!dateStr) return dateStr
-  const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year}`
-}
 
 export default function PetMedia() {
   const { selectedPet } = usePets()
@@ -115,9 +111,8 @@ export default function PetMedia() {
           posture — or a short clip of how they're walking or breathing.
         </p>
         <p className="assessment-hint">
-          Some things are easier for a vet to assess visually rather than based on a
-          description. Video is especially useful for gait, breathing effort, tremors or
-          seizures.
+          A vet can often see more than you can describe — video especially, for gait,
+          breathing effort, tremors or seizures.
         </p>
       </Card>
 
