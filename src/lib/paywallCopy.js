@@ -40,12 +40,18 @@ export function paywallHeadline(featureKey) {
 // Spec section 2. Constant, whatever the entry point — the headline above it
 // changes with the entry point, this does not.
 //
-// A lead-in to the list rather than a claim about the app: it ends in a
-// colon and its whole job is to say what the six lines below it are. Which
-// also means it must stay directly above PAYWALL_FEATURE_LIST — separate the
-// two and this sentence is left pointing at nothing.
+// Two sentences doing two jobs. The first is the credential — the reason to
+// trust the thing being sold, and the only place the paywall says a vet
+// built it. The second is a lead-in that ends in a colon, so this string has
+// to stay directly above PAYWALL_FEATURE_LIST: separate the two and it is
+// left pointing at nothing.
+//
+// Note what the first sentence does NOT say. "Designed by a veterinarian" is
+// a fact about the app's authorship; anything about spotting or knowing what
+// is wrong with a pet would be a clinical claim, which the app's disclaimer
+// language exists to avoid.
 export const PAYWALL_SUBHEAD =
-  'Designed by a veterinarian. Premium unlocks:'
+  'Designed by a veterinarian. Premium unlocks all of the following features:'
 
 // The condition line, carried as a subline under the disease-monitoring
 // feature and shown on every entry point. Names real conditions because
