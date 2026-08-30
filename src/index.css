@@ -3140,21 +3140,18 @@ code {
   margin: 0 0 12px;
 }
 
-/* The named conditions, between the headline and the subhead. --type-item is
-   the step between them: below the 20px headline, above the 14px subhead and
-   well above the disclosure, and the token's own role — the name of a row in
-   a list — is what this line is, run together as a sentence.
-   Centred and --text, rather than the subhead's --text-muted, because it
-   carries the concrete answer to "is my pet's disease in here?" and should
-   not read as a footnote to the line below it. */
-.paywall-condition-list {
-  /* The headline's own 12px sits above it, so the stack keeps one rhythm. */
-  margin: 0 0 12px;
-  font-size: var(--type-item);
-  font-weight: 500;
+/* The named conditions, as a subline under the feature they belong to.
+   Block, so it takes its own line under the bullet text rather than running
+   on from it. --type-meta and --text-muted put it a clear step below the
+   --type-item bullet above — subordinate to the feature, not competing with
+   it — and --gap-stack-tight is the token for exactly this: a line sitting
+   directly under the one that names it. */
+.paywall-feature-detail {
+  display: block;
+  margin-top: var(--gap-stack-tight);
+  font-size: var(--type-meta);
   line-height: 145%;
-  color: var(--text);
-  text-align: center;
+  color: var(--text-muted);
 }
 
 /* 12px, matching .icon-grid and the app's card prose rhythm. At the 2px of

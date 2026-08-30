@@ -40,17 +40,18 @@ export function paywallHeadline(featureKey) {
 // Spec section 2. Constant, whatever the entry point — the headline above it
 // changes with the entry point, this does not.
 //
-// "Monitor quality of life" and not "know when something's wrong": the
-// second edges toward a clinical claim, which the app's own disclaimer
-// language exists to avoid.
+// A lead-in to the list rather than a claim about the app: it ends in a
+// colon and its whole job is to say what the six lines below it are. Which
+// also means it must stay directly above PAYWALL_FEATURE_LIST — separate the
+// two and this sentence is left pointing at nothing.
 export const PAYWALL_SUBHEAD =
-  'Designed by a veterinarian to help you monitor quality of life from home.'
+  'Designed by a veterinarian. Premium unlocks:'
 
-// The condition line, shown under the headline on the disease-monitoring
-// entry point only. Names real conditions because "disease-specific
-// monitoring" tells an owner nothing about whether their pet's disease is
-// one of them — arthritis and kidney disease are the two most people arrive
-// with, so they lead.
+// The condition line, carried as a subline under the disease-monitoring
+// feature and shown on every entry point. Names real conditions because
+// "disease-specific monitoring tools" tells an owner nothing about whether
+// their pet's disease is one of them — arthritis and kidney disease are the
+// two most people arrive with, so they lead.
 //
 // Built from the registry rather than written out, so it cannot quietly go
 // stale. Only the KEYS are listed here: the names themselves come from
@@ -105,13 +106,22 @@ export function conditionListLine() {
 }
 
 // Spec section 3. Six lines, and it stays six.
+//
+// Objects rather than bare strings so a line can carry a subline. The
+// alternative was for the screen to attach the condition list to whichever
+// bullet happens to be first, which silently attaches it to the wrong
+// feature the moment anyone reorders the list.
+//
+// `detail` is resolved once, here, rather than on every render: the registry
+// is static from module load, so nothing about the answer can change while
+// the app is running.
 export const PAYWALL_FEATURE_LIST = [
-  'Add medications and set reminders for dosing',
-  'Upload photos and videos to track changes and share with your vet',
-  'Disease-specific monitoring tools',
-  'Body condition and weight tracking',
-  'Downloadable summary reports to share with your vet team',
-  'Add up to 5 pets',
+  { text: 'Disease-specific monitoring tools', detail: conditionListLine() },
+  { text: 'Add medications and set reminders for dosing' },
+  { text: 'Upload photos and videos to track changes and share with your vet' },
+  { text: 'Body condition and weight tracking' },
+  { text: 'Downloadable summary reports to share with your vet team' },
+  { text: 'Add up to 5 pets' },
 ]
 
 // Spec section 6. VERBATIM — this is the Apple-required disclosure and the
