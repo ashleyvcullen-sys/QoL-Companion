@@ -60,8 +60,29 @@ create table if not exists public.user_entitlements (
   -- A limit below 1 would hide every pet the account has, including the one
   -- a free user is entitled to. Nothing should ever write that, so make the
   -- database the place it cannot be written.
-  constraint user_entitlements_pet_limit_min check (pet_limit >= 1)
+  constraint user_entitlements_pet_limit_min check (pet_limit >= 1),
+
+  -- One paid tier. The app briefly had two, Plus and Pro; that structure is
+  -- gone and this constraint is what stops a stale webhook deploy, an old
+  -- RevenueCat entitlement id, or a hand-typed UPDATE quietly reintroducing
+  -- a third value that nothing in the app knows how to read.
+  constraint user_entitlements_tier_valid check (tier in ('free', 'premium'))
 );
+
+-- Existing installs: widen or replace the constraint if the table predates
+-- it. Postgres has no "alter check constraint", so it is dropped and
+-- recreated — recreating validates every existing row, which is what we
+-- want. Any row still carrying 'plus' or 'pro' is moved to 'premium' first,
+-- since both collapsed into it and neither should survive the rename.
+update public.user_entitlements
+   set tier = 'premium'
+ where tier in ('plus', 'pro');
+
+alter table public.user_entitlements
+  drop constraint if exists user_entitlements_tier_valid;
+
+alter table public.user_entitlements
+  add constraint user_entitlements_tier_valid check (tier in ('free', 'premium'));
 
 alter table public.user_entitlements enable row level security;
 
@@ -101,11 +122,11 @@ create policy user_entitlements_select_own on public.user_entitlements
 --
 --   -- WRONG: pet_limit is ignored, this user still sees 1 pet
 --   insert into public.user_entitlements (user_id, tier, pet_limit)
---   values ('...', 'plus', 10);
+--   values ('...', 'premium', 10);
 --
 --   -- RIGHT: an expiry that will not arrive
 --   insert into public.user_entitlements (user_id, tier, pet_limit, expires_at)
---   values ('...', 'plus', 10, 'infinity')
+--   values ('...', 'premium', 10, 'infinity')
 --   on conflict (user_id) do update
 --     set pet_limit = excluded.pet_limit,
 --         expires_at = excluded.expires_at,

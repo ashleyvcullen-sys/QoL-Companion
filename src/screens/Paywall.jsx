@@ -93,10 +93,11 @@ export default function Paywall() {
       <HomeLink />
 
       <Card>
-        <SectionTitle>Premium Plans</SectionTitle>
+        <SectionTitle>QoL Companion Premium</SectionTitle>
         <p className="home-subtitle">
-          Support ongoing development and unlock features like tracking more than one
-          pet and monitoring specific diagnosed conditions.
+          One subscription, everything unlocked — up to five pet profiles, body
+          condition and weight, photos and videos, and monitoring for specific
+          diagnosed conditions.
         </p>
       </Card>
 
@@ -108,21 +109,21 @@ export default function Paywall() {
 
       {Capacitor.isNativePlatform() && loading && (
         <Card>
-          <p>Loading plans…</p>
+          <p>Loading…</p>
         </Card>
       )}
 
       {Capacitor.isNativePlatform() && !loading && configureError && (
         <Card>
           <p className="form-error" role="alert">
-            Plans aren't available right now. Please try again later.
+            Premium isn't available right now. Please try again later.
           </p>
         </Card>
       )}
 
       {Capacitor.isNativePlatform() && !loading && !configureError && packages.length === 0 && (
         <Card>
-          <p>Nothing to see yet — premium plans are coming soon.</p>
+          <p>Nothing to see yet — Premium is coming soon.</p>
         </Card>
       )}
 

@@ -27,10 +27,9 @@ const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 
 // The pet limit each tier grants at the moment of purchase.
 //
-// Plus and Pro deliberately share a limit. Pro's differentiator is disease
-// monitoring and medications, not how many animals you can track — someone
-// with five pets and no chronic illness should not be pushed to the higher
-// tier for a number. This is not an oversight; do not "correct" it.
+// ONE PAID TIER. There is no ordering or precedence here and there must not
+// be — the app had Plus and Pro, that structure is gone, and a customer
+// either holds the premium entitlement or does not.
 //
 // These are the values WRITTEN to a user's row, not the values read back.
 // pet_limit_for() reads the pet_limit column, so raising one person's limit
@@ -39,23 +38,16 @@ const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? ''
 // column when an event for that user actually arrives.
 const TIER_PET_LIMITS: Record<string, number> = {
   free: 1,
-  plus: 5,
-  pro: 5,
+  premium: 5,
 }
 
 const FREE = { tier: 'free', pet_limit: 1 }
 
-// Which entitlement wins when a customer somehow holds both. Pro is a
-// superset of Plus (see src/lib/entitlements.js), so it must be checked
-// first or a Pro subscriber would be written down to the Plus limit.
-const TIER_PRECEDENCE = ['pro', 'plus']
+// Must match the entitlement identifier in the RevenueCat dashboard.
+const ENTITLEMENT_PREMIUM = 'premium'
 
 function tierFromEntitlements(entitlementIds: string[] | null | undefined) {
-  const held = new Set(entitlementIds ?? [])
-  for (const tier of TIER_PRECEDENCE) {
-    if (held.has(tier)) return tier
-  }
-  return null
+  return (entitlementIds ?? []).includes(ENTITLEMENT_PREMIUM) ? 'premium' : null
 }
 
 // Constant-time comparison. A plain `===` on a secret leaks its length and,
@@ -166,7 +158,7 @@ Deno.serve(async (req) => {
       // silently exists twice.
       const from: string[] = event.transferred_from ?? []
       const to: string[] = event.transferred_to ?? []
-      const tier = tierFromEntitlements(event.entitlement_ids) ?? 'plus'
+      const tier = tierFromEntitlements(event.entitlement_ids) ?? 'premium'
 
       for (const donor of from.filter((id) => UUID_RE.test(id))) {
         await admin.from('user_entitlements').upsert({

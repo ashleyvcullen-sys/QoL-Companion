@@ -28,14 +28,14 @@ const NAV_SECTIONS = [
     items: [
       { to: '/assessment', label: 'Overall Quality of Life Assessment', Icon: Heart },
       { to: '/trends', label: 'Trends', Icon: TrendingUp },
-      // Plus-tier feature, currently ungated for testing. Gate on
-      // hasBcsAccess(customerInfo) when the products are live.
+      // Premium feature, currently ungated for testing. Gate on
+      // hasPremiumAccess(customerInfo) when the product is live.
       { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
-      // PRO-tier feature (not Plus). Gate on hasMedicationsAccess().
+      // Premium feature. Gate on hasPremiumAccess().
       { to: '/medications', label: 'Medications', Icon: Pill },
-      // PRO-tier feature. Gate on hasDiseaseMonitoringAccess().
+      // Premium feature. Gate on hasPremiumAccess().
       { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope },
-      // Plus-tier feature. Gate on hasMediaAccess().
+      // Premium feature. Gate on hasPremiumAccess().
       { to: '/media', label: 'Photos & Videos', Icon: Camera },
     ],
   },

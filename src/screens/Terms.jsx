@@ -44,12 +44,16 @@ const SECTIONS = [
   {
     heading: '5. Subscriptions and Fees',
     content: [
-      'QoL Companion offers a free tier and paid subscription tiers. The free tier remains available and does not expire.',
-      'Paid tiers currently offered:',
+      'QoL Companion offers a free tier and a single paid subscription, Premium. The free tier remains available and does not expire.',
+      'Premium includes:',
       { list: [
-        'Plus — multiple pet profiles, body condition and weight tracking, photos and videos, and the ability to choose which individual measures to graph',
-        'Pro — everything in Plus, plus medication tracking with reminders, and monitoring of specific diagnosed conditions as those features become available',
+        'Up to five pet profiles',
+        'Body condition and weight tracking',
+        'Photos and videos',
+        'The ability to choose which individual measures to graph',
+        'Medication tracking with reminders, and monitoring of specific diagnosed conditions, as those features become available',
       ] },
+      'If a Premium subscription ends, pet profiles beyond the free tier limit are hidden rather than deleted. Your records are retained and become visible again if you resubscribe.',
       'Billing:',
       { list: [
         'Subscriptions are auto-renewing. Payment is charged to your Apple ID or Google Play account at confirmation of purchase, and renews automatically at the same price and interval unless cancelled at least 24 hours before the end of the current period',
