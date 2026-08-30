@@ -11,6 +11,7 @@ import ChartView from '../components/ChartView'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
 import {bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
@@ -18,6 +19,8 @@ import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 export default function BodyConditionScore() {
   const { selectedPet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Track body condition and weight')
   const pet = selectedPet
   const navigate = useNavigate()
   const { entries, loading, refresh } = useBcsHistory(pet?.id)
@@ -83,7 +86,7 @@ export default function BodyConditionScore() {
       refresh()
       navigate('/')
     } catch (error) {
-      setErrorMessage(error.message || 'Something went wrong saving this score.')
+      setErrorMessage(premiumOr(error, 'Something went wrong saving this score.'))
       setSaving(false)
     }
   }

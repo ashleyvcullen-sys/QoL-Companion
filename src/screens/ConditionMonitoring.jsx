@@ -11,6 +11,7 @@ import ChartView from '../components/ChartView'
 import DayAnswersModal from '../components/DayAnswersModal'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import {
   SAME_AS_ASSESSMENT,
   askedParameters,
@@ -52,6 +53,8 @@ import {
 
 export default function ConditionMonitoring() {
   const { selectedPet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Monitor a diagnosed condition')
   const pet = selectedPet
   const { conditions, loading, refresh } = usePetConditions(pet?.id)
 
@@ -293,7 +296,7 @@ export default function ConditionMonitoring() {
       await saveConditionConfig(id, { ...(config ?? {}), onMedication: answer })
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not save that. Please try again.')
+      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
     } finally {
       setBusy(false)
     }
@@ -319,7 +322,7 @@ export default function ConditionMonitoring() {
       refresh()
       navigate('/conditions')
     } catch (error) {
-      setErrorMessage(error.message || 'Could not remove that condition.')
+      setErrorMessage(premiumOr(error, 'Could not remove that condition.'))
     } finally {
       setBusy(false)
     }
@@ -420,7 +423,7 @@ export default function ConditionMonitoring() {
       // of a failure.
       if (!syncFailed) setJustSaved(true)
     } catch (error) {
-      setErrorMessage(error.message || 'Could not save that entry.')
+      setErrorMessage(premiumOr(error, 'Could not save that entry.'))
     } finally {
       setBusy(false)
     }
@@ -479,7 +482,7 @@ export default function ConditionMonitoring() {
     } catch (error) {
       // In the modal, beside the button that failed — the form's error banner
       // is behind it and the owner would never see it.
-      setNoteError(error.message || 'Could not delete that note.')
+      setNoteError(premiumOr(error, 'Could not delete that note.'))
     }
   }
 

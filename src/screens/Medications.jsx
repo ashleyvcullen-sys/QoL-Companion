@@ -9,6 +9,7 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import ReminderDayPicker from '../components/ReminderDayPicker'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import { usePetConditions } from '../lib/conditionsData'
 import { resolveTrackedConditions } from '../lib/charts'
 import {
@@ -101,6 +102,8 @@ function describeSchedule(medication) {
 
 export default function Medications() {
   const { selectedPet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Track medications')
   const pet = selectedPet
   const { medications, doses, loading, refresh } = useMedications(pet?.id)
   // What {name} is actually being monitored for. Only these are offered — a
@@ -288,7 +291,7 @@ export default function Medications() {
       cancelEdit()
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not save that medication.')
+      setErrorMessage(premiumOr(error, 'Could not save that medication.'))
     } finally {
       setBusy(false)
     }
@@ -304,7 +307,7 @@ export default function Medications() {
       }
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not record that dose.')
+      setErrorMessage(premiumOr(error, 'Could not record that dose.'))
     }
   }
 
@@ -314,7 +317,7 @@ export default function Medications() {
       await logDose({ medicationId: medication.id, time: null, date: today })
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not record that dose.')
+      setErrorMessage(premiumOr(error, 'Could not record that dose.'))
     }
   }
 
@@ -332,7 +335,7 @@ export default function Medications() {
       await syncReminders(saved)
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not update that medication.')
+      setErrorMessage(premiumOr(error, 'Could not update that medication.'))
     }
   }
 
@@ -343,7 +346,7 @@ export default function Medications() {
       await deleteMedication(medication.id)
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not delete that medication.')
+      setErrorMessage(premiumOr(error, 'Could not delete that medication.'))
     }
   }
 

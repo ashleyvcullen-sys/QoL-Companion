@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
 import { Filesystem, Directory } from '@capacitor/filesystem'
@@ -14,6 +14,7 @@ import OverviewBars from '../components/OverviewBars'
 import ChartView from '../components/ChartView'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
+import { useEntitlements } from '../lib/EntitlementsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
@@ -271,6 +272,8 @@ async function loadMediaForPdf(items, urls) {
 
 export default function ExportReport() {
   const { selectedPet } = usePets()
+  const { hasPremium } = useEntitlements()
+  const navigate = useNavigate()
   const pet = selectedPet
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
 
@@ -387,6 +390,22 @@ export default function ExportReport() {
   const nothingSelected = selectedCharts.length === 0 && !includeMedia
 
   async function handleExport() {
+    // Gated here, at the action, rather than by hiding the button.
+    //
+    // Someone on this screen has already chosen what to include and is one
+    // tap from a report for a vet visit — they know exactly what they want
+    // and why. Hiding the control would leave them wondering where the
+    // feature went; answering at the moment of intent is both more honest
+    // and the strongest point at which to explain what Premium is for.
+    //
+    // The screen itself stays free, deliberately. Everything it previews is
+    // free-tier data the owner is already entitled to read; it is the
+    // generated report that is the paid artefact.
+    if (!hasPremium) {
+      navigate('/paywall', { state: { feature: 'Export a vet report' } })
+      return
+    }
+
     if (!Capacitor.isNativePlatform()) {
       window.print()
       return
@@ -447,11 +466,17 @@ export default function ExportReport() {
             ? 'A summary and charts you can share, save, or print (via AirPrint) to bring to a vet visit.'
             : 'A summary you can print or save as a PDF to bring to a vet visit.'}
         </p>
+        {/* Not disabled when locked. A greyed-out control that leads nowhere
+            explains nothing and is the pattern Apple rejects; this one is
+            live, and tapping it answers the question. The nothing-selected
+            disable still applies to subscribers, for whom it is a real
+            precondition rather than a paywall. */}
         <Btn
           type="button"
           className="no-print"
           onClick={handleExport}
-          disabled={exporting || nothingSelected}
+          disabled={exporting || (hasPremium && nothingSelected)}
+          aria-label={hasPremium ? undefined : 'Share Report, premium feature, locked'}
         >
           {exporting ? 'Generating…' : Capacitor.isNativePlatform() ? 'Share Report' : 'Print'}
         </Btn>

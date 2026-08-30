@@ -515,6 +515,42 @@ code {
   transition: transform 0.1s ease, box-shadow 0.15s ease;
 }
 
+/* A premium tile the account cannot use yet.
+   
+   Note what is NOT dimmed: the label. Putting opacity on the tile itself
+   would have been simpler, but opacity creates a stacking context and
+   composites every child at the parent's alpha — there is no way to dim the
+   card and exempt the text inside it. So the muting is applied to the
+   surface and the icon badge only, and the label keeps full contrast. A user
+   has to be able to read what the feature IS; a tile that says merely
+   "something is withheld" is a closed door with no sign on it.
+
+   The visual state is decoration. The fact of being locked reaches assistive
+   technology through the button's aria-label, because opacity reaches
+   VoiceOver not at all. */
+.icon-tile-locked {
+  background: var(--surface-muted, var(--surface));
+  border-style: dashed;
+}
+
+.icon-tile-locked .icon-badge {
+  opacity: 0.5;
+}
+
+.icon-tile-lock {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  color: var(--text-muted);
+}
+
 .icon-tile:hover {
   box-shadow: var(--shadow-lift);
 }

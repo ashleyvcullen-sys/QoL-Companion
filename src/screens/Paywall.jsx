@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -46,6 +47,11 @@ async function settleEntitlement(refreshEntitlements, refreshPets) {
 export default function Paywall() {
   const { offerings, loading, configureError, purchasePackage, restorePurchases } = useRevenueCat()
   const { refresh: refreshEntitlements } = useEntitlements()
+  // Set when the user arrived by tapping a locked tile, so the headline
+  // answers the thing they actually reached for. Absent when they came
+  // here on purpose, which gets the general heading instead.
+  const { state } = useLocation()
+  const feature = state?.feature ?? null
   const { refresh: refreshPets } = usePets()
   const [purchasingId, setPurchasingId] = useState(null)
   const [restoring, setRestoring] = useState(false)
@@ -93,7 +99,9 @@ export default function Paywall() {
       <HomeLink />
 
       <Card>
-        <SectionTitle>QoL Companion Premium</SectionTitle>
+        <SectionTitle>
+          {feature ? `${feature} with QoL Companion Premium` : 'QoL Companion Premium'}
+        </SectionTitle>
         <p className="home-subtitle">
           One subscription, everything unlocked — up to five pet profiles, body
           condition and weight, photos and videos, and monitoring for specific

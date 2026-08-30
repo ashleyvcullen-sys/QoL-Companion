@@ -1,32 +1,44 @@
-// Central gate for paid feature access. Reads live entitlement state from
-// RevenueCat (see RevenueCatContext.jsx) rather than a hard-coded value —
-// every place in the app that needs to know whether a feature is unlocked
-// should call through here rather than checking conditions directly, so a
-// single source of truth stays in one place.
+// Central gate for paid feature access. Every place in the app that needs to
+// know whether a feature is unlocked calls through here rather than checking
+// conditions directly, so the rule lives in one file and can be compared
+// against the SQL that enforces it.
 //
 // ONE PAID TIER. The app used to have two, Plus and Pro, with features split
 // between them; that structure is gone and there is now premium or not.
-// Everything below is therefore the same boolean, and there is deliberately
-// no tier comparison, ordering or precedence anywhere in this file — if a
-// second tier ever returns it should come back as an explicit design rather
-// than by someone reintroducing `>=` between plan names.
+// There is deliberately no tier comparison, ordering or precedence anywhere
+// in this file — if a second tier ever returns it should come back as an
+// explicit design rather than by someone reintroducing `>=` between plan
+// names.
 //
-// This identifier must exactly match the entitlement identifier configured
-// in the RevenueCat dashboard (Project > Entitlements). Until an entitlement
-// with this identifier actually exists there (and has a product attached
-// that's been purchased), `customerInfo.entitlements.active` will never
-// contain it — so this safely returns `false` by default.
+// ONE SOURCE OF TRUTH, and it is not RevenueCat.
 //
-// IMPORTANT: that safe default means shipping a gate BEFORE the entitlement
-// exists in RevenueCat locks everyone out, including you. Configure the
-// dashboard first, gate second.
+// hasPremiumAccess takes the public.user_entitlements row — the same row
+// public.has_premium() reads inside every RLS policy — rather than
+// RevenueCat's customerInfo. That is the whole point. Asking RevenueCat on
+// the client and asking user_entitlements on the server would be two answers
+// that disagree exactly when it matters:
+//
+//   - customerInfo is permanently null in a browser, because the purchases
+//     plugin has no working web implementation. Every web user would read as
+//     free while the database happily served them premium rows.
+//   - customerInfo is null for a moment on every native cold start, so a
+//     subscriber would see the locked UI for a frame on each launch.
+//   - a limit or grant raised by hand in user_entitlements — a rescue, a
+//     support case — exists nowhere in RevenueCat at all.
+//
+// RevenueCatContext is still what buys and restores. It is not what decides.
 const ENTITLEMENT_PREMIUM = 'premium'
 
-// `customerInfo` is the object from useRevenueCat() — pass it in from the
-// caller rather than reaching into the context here, so this stays a plain,
-// easily testable function instead of a hook.
-export function hasPremiumAccess(customerInfo) {
-  return Boolean(customerInfo?.entitlements?.active?.[ENTITLEMENT_PREMIUM])
+// Mirrors public.has_premium() in
+// supabase/migrations/20260830010000_premium_feature_gating.sql, clause for
+// clause. Note the part that surprises people and is shared with
+// petLimitFromRow below: a row with no expires_at is NOT premium. A manual
+// grant must carry an explicit 'infinity'.
+export function hasPremiumAccess(entitlementRow) {
+  if (!entitlementRow) return false
+  if (entitlementRow.tier !== ENTITLEMENT_PREMIUM) return false
+  if (!entitlementRow.expires_at) return false
+  return new Date(entitlementRow.expires_at) >= new Date()
 }
 
 // --- Pet limit ---------------------------------------------------------

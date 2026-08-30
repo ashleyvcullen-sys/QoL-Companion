@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Bell, Camera, Heart, HeartHandshake, LogOut, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Bell, Camera, Heart, HeartHandshake, Lock, LogOut, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
+import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
 import { cancelQolReminder } from '../lib/notifications'
@@ -26,17 +27,18 @@ const NAV_SECTIONS = [
   {
     title: 'Monitor',
     items: [
+      // Free, and staying free. The assessment, the score and the trends are
+      // what somebody uses while deciding whether their animal is suffering.
       { to: '/assessment', label: 'Overall Quality of Life Assessment', Icon: Heart },
       { to: '/trends', label: 'Trends', Icon: TrendingUp },
-      // Premium feature, currently ungated for testing. Gate on
-      // hasPremiumAccess(customerInfo) when the product is live.
-      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale },
-      // Premium feature. Gate on hasPremiumAccess().
-      { to: '/medications', label: 'Medications', Icon: Pill },
-      // Premium feature. Gate on hasPremiumAccess().
-      { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope },
-      // Premium feature. Gate on hasPremiumAccess().
-      { to: '/media', label: 'Photos & Videos', Icon: Camera },
+      // `premium` locks the tile and sends a tap to the paywall. `feature`
+      // is the phrase the paywall headline uses, so someone who tapped
+      // Medications is answered about medications rather than being handed a
+      // generic pitch.
+      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale, premium: true, feature: 'Track body condition and weight' },
+      { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'Track medications' },
+      { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope, premium: true, feature: 'Monitor a diagnosed condition' },
+      { to: '/media', label: 'Photos & Videos', Icon: Camera, premium: true, feature: 'Save photos and videos' },
     ],
   },
   {
@@ -59,6 +61,7 @@ const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items)
 
 export default function Home() {
   const { visiblePets, hiddenPetCount, refresh, selectedPet, selectPet } = usePets()
+  const { hasPremium } = useEntitlements()
   const pet = selectedPet
   const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
@@ -221,21 +224,57 @@ export default function Home() {
         <div key={section.title} className="nav-section">
           <span className="nav-section-title">{section.title}</span>
           <div className="icon-grid">
-            {section.items.map(({ to, label, Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                ref={(el) => { tileRefs.current[to] = el }}
-                className="icon-tile-link"
-              >
-                <Card className="icon-tile">
+            {section.items.map(({ to, label, Icon, premium, feature }) => {
+              const locked = premium && !hasPremium
+
+              // Locked tiles stay legible on purpose. Someone has to be able
+              // to see what the feature IS — not merely that something is
+              // withheld — or the lock is just a closed door with no sign on
+              // it. Icon and label keep full contrast; only the surface dims.
+              const tile = (
+                <Card className={`icon-tile ${locked ? 'icon-tile-locked' : ''}`.trim()}>
                   <span className="icon-badge">
                     <Icon size={22} strokeWidth={2} color="#fff" />
                   </span>
                   <span className="icon-tile-label">{label}</span>
+                  {locked && (
+                    // aria-hidden because the state is already carried by the
+                    // button's own label — a screen reader announcing "lock
+                    // image" after "premium feature, locked" is noise.
+                    <span className="icon-tile-lock" aria-hidden="true">
+                      <Lock size={12} strokeWidth={2.5} />
+                    </span>
+                  )}
                 </Card>
-              </Link>
-            ))}
+              )
+
+              // A real <button> rather than a dimmed Link. Reduced opacity is
+              // invisible to VoiceOver, so the lock has to be in the
+              // accessible name or the tile simply reads as "Medications" and
+              // the user is left wondering why tapping it changed the screen
+              // to a sales page.
+              return locked ? (
+                <button
+                  key={to}
+                  type="button"
+                  ref={(el) => { tileRefs.current[to] = el }}
+                  className="icon-tile-link"
+                  aria-label={`${label}, premium feature, locked`}
+                  onClick={() => navigate('/paywall', { state: { feature } })}
+                >
+                  {tile}
+                </button>
+              ) : (
+                <Link
+                  key={to}
+                  to={to}
+                  ref={(el) => { tileRefs.current[to] = el }}
+                  className="icon-tile-link"
+                >
+                  {tile}
+                </Link>
+              )
+            })}
           </div>
         </div>
       ))}

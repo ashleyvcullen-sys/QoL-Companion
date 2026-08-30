@@ -6,6 +6,7 @@ import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import { conditionByKey } from '../lib/conditions'
 import { giModulesForSpecies } from '../lib/giModules'
 import {
@@ -27,6 +28,8 @@ import { addPetCondition, saveConditionConfig, usePetConditions } from '../lib/c
 // have meant a diagnosis step that infers nothing.
 export default function GastrointestinalSetup() {
   const { selectedPet: pet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Monitor a diagnosed condition')
   const navigate = useNavigate()
   const definition = conditionByKey(GI_KEY)
 
@@ -62,7 +65,7 @@ export default function GastrointestinalSetup() {
       refresh()
       navigate(`/conditions/${GI_KEY}`)
     } catch (error) {
-      setErrorMessage(error.message || 'Could not save that. Please try again.')
+      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
     } finally {
       setBusy(false)
     }

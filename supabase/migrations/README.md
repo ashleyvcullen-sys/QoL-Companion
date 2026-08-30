@@ -66,6 +66,31 @@ this document exists to remove.
 | Migration | What it does | Why it is needed |
 |---|---|---|
 | `20260830000000_subscription_pet_gating.sql` | Adds `user_entitlements`, the `pet_limit_for` / `pet_count_for` / `visible_pet_ids` functions, and replaces every RLS policy on `pets` | Client-side gating is bypassable with the anon key and the user's own JWT. Until this is applied the pet limit is a suggestion. |
+| `20260830010000_premium_feature_gating.sql` | Adds `has_premium()` and puts it on the SELECT/INSERT/UPDATE policies for `medications`, `medication_doses`, `pet_media`, `pet_conditions`, `condition_entries`, `condition_events`, `bcs_entries`, and the `pet-media` storage objects | Same reason. Run it **after** the one above — it needs `user_entitlements` to exist. |
+
+**Run them in order.** `20260830010000` depends on the table created by
+`20260830000000` and will fail on its own.
+
+Verify the second one — the first query must return `false` for a free
+account, and `true` only for a subscriber whose `expires_at` is in the
+future:
+
+```sql
+select public.has_premium(auth.uid());
+
+select tablename, policyname, cmd
+  from pg_policies
+ where schemaname in ('public', 'storage')
+   and (qual like '%has_premium%' or with_check like '%has_premium%')
+ order by tablename, cmd;
+```
+
+That second query should list 23 policies across 8 tables — SELECT, INSERT
+and UPDATE on each of the seven tables, plus SELECT and INSERT on
+`storage.objects` for the `pet-media` bucket. No DELETE policy
+appears in it, and that is deliberate: an unsubscribed owner keeps the
+ability to remove their own data. Nothing in either migration deletes
+anything.
 
 **Read the header of that file before running it.** It drops and recreates
 all RLS policies on `public.pets`, which was created in the Dashboard, so

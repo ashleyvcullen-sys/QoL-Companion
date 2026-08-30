@@ -8,6 +8,7 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import MediaLightbox from '../components/MediaLightbox'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   MAX_VIDEO_SECONDS,
@@ -25,6 +26,8 @@ function todayIsoDate() {
 
 export default function PetMedia() {
   const { selectedPet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Save photos and videos')
   const pet = selectedPet
   const { items, urls, loading, refresh } = usePetMedia(pet?.id)
 
@@ -75,7 +78,7 @@ export default function PetMedia() {
       setCaption('')
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not upload that file.')
+      setErrorMessage(premiumOr(error, 'Could not upload that file.'))
     } finally {
       setBusy(false)
     }
@@ -87,7 +90,7 @@ export default function PetMedia() {
       await deleteMedia(item)
       refresh()
     } catch (error) {
-      setErrorMessage(error.message || 'Could not delete that file.')
+      setErrorMessage(premiumOr(error, 'Could not delete that file.'))
     }
   }
 

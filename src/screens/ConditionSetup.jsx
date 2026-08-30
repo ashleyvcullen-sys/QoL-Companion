@@ -9,6 +9,7 @@ import Footer from '../components/Footer'
 import ChoiceButtons from '../components/ChoiceButtons'
 import PetText from '../components/PetText'
 import { usePets } from '../lib/PetsContext'
+import { usePremiumDenial } from '../lib/premiumErrors'
 import { conditionByKey } from '../lib/conditions'
 import { DIAGNOSES, SIGN_MODULE_LIST, TREATMENT_MODULE_LIST, subtypesFor } from '../lib/cancerModules'
 import {
@@ -35,6 +36,8 @@ import { addPetCondition, saveConditionConfig, usePetConditions } from '../lib/c
 // once, and then occasionally when something changes.
 export default function ConditionSetup() {
   const { selectedPet: pet } = usePets()
+  // Turns an RLS refusal into the paywall rather than a Postgres string.
+  const premiumOr = usePremiumDenial('Monitor a diagnosed condition')
   const navigate = useNavigate()
   const { conditionKey } = useParams()
   const definition = conditionByKey(conditionKey ?? '')
@@ -84,7 +87,7 @@ export default function ConditionSetup() {
       refresh()
       navigate(`/conditions/${conditionKey}`)
     } catch (error) {
-      setErrorMessage(error.message || 'Could not save that. Please try again.')
+      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
     } finally {
       setBusy(false)
     }
@@ -107,7 +110,7 @@ export default function ConditionSetup() {
       } catch (error) {
         // Staying put with the draft intact beats navigating away and losing
         // it, so the error stops the trip rather than being swallowed.
-        setErrorMessage(error.message || 'Could not save that. Please try again.')
+        setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
         setBusy(false)
         return
       }

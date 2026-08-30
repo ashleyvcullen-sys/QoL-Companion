@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { useAuth } from './lib/AuthContext'
 import { usePets } from './lib/PetsContext'
+import { useEntitlements } from './lib/EntitlementsContext'
 import Login from './screens/Login'
 import Onboarding from './screens/Onboarding'
 import Welcome from './screens/Welcome'
@@ -55,6 +56,26 @@ function RequireOnboardedPet() {
   // adding a second pet never re-triggers the walkthrough — but if a pet
   // somehow does need it, it's the one actually being viewed that decides.
   if (!selectedPet.has_seen_welcome) return <Navigate to="/welcome" replace />
+
+  return <Outlet />
+}
+
+// Direct-URL guard for the premium routes.
+//
+// Locking the home-screen tiles stops the obvious route in, and the RLS
+// policies stop the data coming out, but neither stops someone typing
+// /medications, following a stale deep link, or restoring a tab. Without
+// this they would reach a screen that renders, queries, and shows an empty
+// state — which reads as "your medications are gone", not "this is a paid
+// feature". Redirects to the paywall carrying the same feature phrase the
+// tile would have sent.
+function RequirePremium({ feature }) {
+  const { hasPremium, loading } = useEntitlements()
+
+  // Never decide while the entitlement is still loading: a subscriber would
+  // be bounced to the paywall on every cold start.
+  if (loading) return <p>Loading…</p>
+  if (!hasPremium) return <Navigate to="/paywall" replace state={{ feature }} />
 
   return <Outlet />
 }
@@ -126,10 +147,17 @@ function App() {
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
         <Route path="/paywall" element={<Paywall />} />
-        <Route path="/body-condition" element={<BodyConditionScore />} />
-        <Route path="/medications" element={<Medications />} />
-        <Route path="/media" element={<PetMedia />} />
-        <Route path="/conditions" element={<Conditions />} />
+        <Route element={<RequirePremium feature="Track body condition and weight" />}>
+          <Route path="/body-condition" element={<BodyConditionScore />} />
+        </Route>
+        <Route element={<RequirePremium feature="Track medications" />}>
+          <Route path="/medications" element={<Medications />} />
+        </Route>
+        <Route element={<RequirePremium feature="Save photos and videos" />}>
+          <Route path="/media" element={<PetMedia />} />
+        </Route>
+        <Route element={<RequirePremium feature="Monitor a diagnosed condition" />}>
+          <Route path="/conditions" element={<Conditions />} />
         <Route path="/conditions/:conditionKey" element={<ConditionMonitoring />} />
         {/* Before the generic setup route. GI composes differently to cancer
             — no diagnosis layer, no per-instance measures — so it has its own
@@ -138,6 +166,7 @@ function App() {
         <Route path="/conditions/:conditionKey/setup" element={<ConditionSetup />} />
         {/* Unlinked. Reachable by URL only — see the note in the file. */}
         <Route path="/conditions/cancer/review" element={<CancerContentReview />} />
+        </Route>
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>

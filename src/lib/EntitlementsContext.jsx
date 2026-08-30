@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { useAuth } from './AuthContext'
-import { FREE_PET_LIMIT, petLimitFromRow } from './entitlements'
+import { FREE_PET_LIMIT, hasPremiumAccess, petLimitFromRow } from './entitlements'
 
 const EntitlementsContext = createContext(undefined)
 
@@ -67,6 +67,10 @@ export function EntitlementsProvider({ children }) {
 
   const value = {
     tier: row?.tier ?? 'free',
+    // The single client-side answer to "may this account use paid features".
+    // Derived from the same row public.has_premium() reads in every RLS
+    // policy, so the UI and the database cannot disagree.
+    hasPremium: hasPremiumAccess(row),
     petLimit: petLimitFromRow(row),
     expiresAt: row?.expires_at ?? null,
     loading,
