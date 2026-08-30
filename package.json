@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "check:overlap": "node --import ./scripts/register-audit-loader.mjs scripts/check-parameter-overlap.mjs",
-    "prebuild": "npm run check:overlap",
+    "check:entitlements": "node scripts/check-entitlement-parity.mjs",
+    "prebuild": "npm run check:overlap && npm run check:entitlements",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -34,6 +35,7 @@
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.2",
+    "@electric-sql/pglite": "^0.5.8",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
