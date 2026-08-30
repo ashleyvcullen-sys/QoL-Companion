@@ -75,30 +75,6 @@ function describePurchaseError(err) {
   return err?.message || 'Something went wrong with that purchase.'
 }
 
-// Per-month equivalent for the annual plan — spec section 4 calls this the
-// single most effective element in shifting mix toward annual.
-//
-// Computed from the product's own numeric price and currency rather than
-// written into the copy. A hardcoded "$7.50" would be wrong in every
-// storefront but one, and showing a price that does not match what StoreKit
-// is about to charge is both a rejection risk and a straightforward lie.
-// Falls back to null — the line is simply omitted — if the SDK gives us no
-// numeric price to divide.
-function perMonthEquivalent(annualPackage) {
-  const price = annualPackage?.product?.price
-  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null
-
-  const currency = annualPackage.product.currencyCode
-  const monthly = price / 12
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(monthly)
-  } catch {
-    // Unknown currency code — better to drop the line than print a number
-    // with no unit on it.
-    return null
-  }
-}
-
 export default function Paywall() {
   const { offerings, loading, configureError, purchasePackage, restorePurchases } = useRevenueCat()
   const { refresh: refreshEntitlements, hasPremium } = useEntitlements()
@@ -133,7 +109,6 @@ export default function Paywall() {
   }, [selectedId, ordered, annual])
 
   const selected = ordered.find((p) => p.identifier === selectedId) ?? null
-  const perMonth = perMonthEquivalent(annual)
 
   async function handlePurchase() {
     if (!selected || purchasing) return
@@ -271,11 +246,6 @@ export default function Paywall() {
                 <span className="paywall-plan-price">
                   {pkg.product.priceString} / {isAnnual ? 'year' : 'month'}
                 </span>
-                {isAnnual && perMonth && (
-                  <span className="paywall-plan-equivalent">
-                    {perMonth} per month, billed annually
-                  </span>
-                )}
               </button>
             )
           })}

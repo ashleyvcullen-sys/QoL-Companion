@@ -21,36 +21,37 @@ export const PAYWALL_FEATURES = {
 
 // Spec section 1. The headline answers the thing the user reached for.
 const HEADLINES = {
-  [PAYWALL_FEATURES.MEDICATIONS]: 'Track every medication in one place',
-  [PAYWALL_FEATURES.MEDIA]: "Keep a visual record of your pet's condition",
-  [PAYWALL_FEATURES.CONDITIONS]: "Monitoring built for your pet's condition",
-  [PAYWALL_FEATURES.BCS]: 'Track body condition over time',
-  [PAYWALL_FEATURES.EXPORT]: 'Give your vet the full picture',
-  [PAYWALL_FEATURES.PETS]: 'Track every pet in your household',
+  [PAYWALL_FEATURES.MEDICATIONS]: 'Track every medication in one place with Premium',
+  [PAYWALL_FEATURES.MEDIA]: "Keep a visual record of your pet's condition with Premium",
+  [PAYWALL_FEATURES.CONDITIONS]: "Get monitoring built for your pet's condition with Premium",
+  [PAYWALL_FEATURES.BCS]: 'Track body condition and weight over time with Premium',
+  [PAYWALL_FEATURES.EXPORT]: 'Give your vet team the full picture with Premium',
+  [PAYWALL_FEATURES.PETS]: 'Track every pet in your household with Premium',
 }
 
-const GENERIC_HEADLINE = 'Everything QoL Companion can do'
+const GENERIC_HEADLINE = 'Unlock everything QoL Companion can do with Premium'
 
 export function paywallHeadline(featureKey) {
   return HEADLINES[featureKey] ?? GENERIC_HEADLINE
 }
 
-// Spec section 2. Constant, whatever the entry point.
+// Spec section 2. Constant, whatever the entry point — the headline above it
+// changes with the entry point, this does not.
 //
-// "Helps you see what's really happening" and not "know when something's
-// wrong": the second edges toward a clinical claim, which the app's own
-// disclaimer language exists to avoid.
+// "Monitor quality of life" and not "know when something's wrong": the
+// second edges toward a clinical claim, which the app's own disclaimer
+// language exists to avoid.
 export const PAYWALL_SUBHEAD =
-  "Designed by a veterinarian to help you see what's really happening at home."
+  'Designed by a veterinarian to help you monitor quality of life from home.'
 
 // Spec section 3. Six lines, and it stays six.
 export const PAYWALL_FEATURE_LIST = [
-  'Track medications and doses',
-  'Photos and videos to record changes over time',
-  'Condition-specific monitoring instruments',
-  'Body condition scoring',
-  'A summary report to share with your vet',
-  'Up to 5 pets',
+  'Add medications and set reminders for dosing',
+  'Upload photos and videos to track changes and share with your vet',
+  'Disease-specific monitoring tools',
+  'Body condition and weight tracking',
+  'Downloadable summary reports to share with your vet team',
+  'Add up to 5 pets',
 ]
 
 // Spec section 6. VERBATIM — this is the Apple-required disclosure and the

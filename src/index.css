@@ -234,7 +234,12 @@ code {
 /* One definition for every card heading in the app: same family, weight,
    colour, size (inherited from h2) and alignment. Anything that wants to
    look like a heading uses this rather than styling its own. */
-.section-title {
+.section-title,
+/* The paywall's headline is a card heading like any other — it is an <h1>
+   only because it is the first heading on that screen. Sharing this
+   definition rather than restating it also overrides the global h1, whose
+   -1.68px tracking is drawn for 56px and was squeezing a 20px line. */
+.paywall-headline {
   font-family: var(--heading);
   font-size: var(--type-heading);
   font-weight: 600;
@@ -597,10 +602,12 @@ code {
 }
 
 /* Supporting text under a heading. .home-subtitle is the same thing under a
-   different name (kept for the screens already using it), so they share a
-   definition rather than drifting apart. */
+   different name (kept for the screens already using it), and the paywall's
+   subhead is the same thing again, so all three share a definition rather
+   than drifting apart. */
 .assessment-hint,
-.home-subtitle {
+.home-subtitle,
+.paywall-subhead {
   color: var(--text-muted);
   font-size: var(--type-support);
   line-height: 145%;
@@ -3108,14 +3115,16 @@ code {
 
 /* In the flow, not absolutely positioned over the card. An overlaid close
    button collides with the headline as soon as text grows, and the headline
-   is the one thing that must stay readable. */
+   is the one thing that must stay readable.
+
+   The 40px square is a tap target, not a text container — no copy lives in
+   it, so fixing its size cannot clip anything. */
 .paywall-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  margin-bottom: var(--gap-inline);
   border: none;
   border-radius: var(--radius-pill);
   background: none;
@@ -3124,27 +3133,24 @@ code {
   font: inherit;
 }
 
-.paywall-headline {
-  margin: 0 0 6px;
-  font-family: var(--heading);
-  font-size: var(--type-heading);
-  line-height: 130%;
-}
-
+/* .paywall-headline is defined with .section-title, and .paywall-subhead
+   with .assessment-hint. Only the gap under the subhead is stated here: it
+   is the same 12px the app puts between stacked paragraphs in a card. */
 .paywall-subhead {
-  margin: 0 0 var(--gap-inline);
-  color: var(--text-muted);
-  font-size: var(--type-support);
-  line-height: 145%;
+  margin: 0 0 12px;
 }
 
+/* 12px, matching .icon-grid and the app's card prose rhythm. At the 2px of
+   --gap-stack-tight the ticks ran together into a block, and that token
+   means a label sitting directly on top of the value it names, which is not
+   what a list of separate features is. */
 .paywall-features {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-stack-tight);
+  gap: 12px;
 }
 
 .paywall-features li {
@@ -3157,35 +3163,51 @@ code {
   line-height: 145%;
 }
 
+/* --severity-good, not --good. The latter is not a token in this file, so
+   this was falling back to currentColor and drawing body-coloured ticks. */
 .paywall-features svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--good, currentColor);
+  color: var(--severity-good);
 }
 
+/* 12px, the gap Home uses between the pressable cards in .icon-grid — which
+   is what these are. No bottom margin: .paywall is a .screen, whose own 16px
+   gap already separates it from the button below. */
 .paywall-plans {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-inline);
-  margin-bottom: var(--gap-inline);
+  gap: 12px;
 }
 
+/* Shaped like the cards it sits between, because it is one — Home's tiles
+   are literally .card plus a modifier, and a plan is the same thing: a
+   card-sized block you press. Hence --radius-card, the 1px --border and
+   --shadow-card rather than the 2px border and 12px radius this had, both of
+   which existed nowhere else in the app. */
 .paywall-plan {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* The term sits directly above the price it names, which is exactly what
+     this token is for. */
+  gap: var(--gap-stack-tight);
   width: 100%;
-  padding: var(--gap-inline);
+  padding: 16px;
   text-align: left;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   background: var(--surface);
+  box-shadow: var(--shadow-card);
   font: inherit;
   cursor: pointer;
 }
 
+/* Accent edge over an accent wash — the same pair the app uses to mark the
+   one control that matters on the condition-parameter input. The border
+   stays 1px so selecting a plan recolours it without reflowing the stack. */
 .paywall-plan.selected {
-  border-color: var(--accent, var(--text));
+  border-color: var(--accent);
+  background: var(--accent-wash);
 }
 
 .paywall-plan-term {
@@ -3196,37 +3218,48 @@ code {
   flex-wrap: wrap;
   gap: var(--gap-inline);
   font-size: var(--type-label);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
+/* Padding and radius as .schedule-badge, on --accent-wash-strong, which the
+   token block names as the badge wash. The 0.04em override is gone: the
+   parent already sets the tracking for this line, and two values for one
+   line of uppercase is how a scale stops being a scale. */
 .paywall-plan-badge {
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
-  background: var(--border);
-  letter-spacing: 0.04em;
+  background: var(--accent-wash-strong);
+  color: var(--accent);
 }
 
+/* 600 and --text-h, as every other heading-sized line in the app. As a
+   <span> this inherited the body's 400 weight, so the price was set lighter
+   than any real heading despite being the same size and family. */
 .paywall-plan-price {
   font-family: var(--heading);
   font-size: var(--type-heading);
+  font-weight: 600;
   line-height: 130%;
+  color: var(--text-h);
 }
 
-.paywall-plan-equivalent {
+
+/* The Apple disclosure, at --type-meta: the role the app gives to dates,
+   counts and other fine print, and the size the footer row beside it already
+   uses. It was --type-micro, which the token block reserves for badges and
+   chart labels — the smallest type in the app, spent on the longest passage
+   on the screen.
+   Margin 0 because .paywall is a .screen and its 16px gap already spaces
+   this from the button above. The text still sets its own height and may run
+   to as many lines as it needs. */
+.paywall-disclosure {
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--type-meta);
-  line-height: 140%;
-}
-
-/* The Apple disclosure. Small, but never smaller than --type-micro, and
-   allowed to run to as many lines as it needs. */
-.paywall-disclosure {
-  margin: var(--gap-inline) 0 0;
-  color: var(--text-muted);
-  font-size: var(--type-micro);
-  line-height: 150%;
+  line-height: 145%;
 }
 
 .paywall-footer-row {
@@ -3236,10 +3269,23 @@ code {
   /* Wraps to two lines on a narrow screen or at large text rather than
      pushing Privacy Policy off the edge where it cannot be tapped. */
   flex-wrap: wrap;
+  /* Each link sits beside a separator dot, which is what this token is for. */
   gap: var(--gap-inline);
-  margin: var(--gap-inline) 0;
+  margin: 0;
   font-size: var(--type-meta);
   color: var(--text-muted);
+}
+
+/* .subtle-link is display:block, width:100%, with margins for standing alone
+   in a column. As flex children those three make every link claim a full
+   line, so the row was stacking vertically with the dots stranded between.
+   The app already reset this for .app-footer; the same reset, minus its
+   white-space:nowrap — the row must stay free to wrap. */
+.paywall-footer-row .subtle-link {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  font-size: inherit;
 }
 
 .paywall-restore-message {
@@ -3247,4 +3293,5 @@ code {
   text-align: center;
   color: var(--text-muted);
   font-size: var(--type-support);
+  line-height: 145%;
 }
