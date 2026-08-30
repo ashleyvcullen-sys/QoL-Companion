@@ -8,9 +8,11 @@
     "build": "vite build",
     "check:overlap": "node --import ./scripts/register-audit-loader.mjs scripts/check-parameter-overlap.mjs",
     "check:entitlements": "node scripts/check-entitlement-parity.mjs",
-    "prebuild": "npm run check:overlap && npm run check:entitlements",
+    "prebuild": "npm run check:overlap && npm run check:entitlements && npm run check:insert-returning",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:insert-returning": "node scripts/check-insert-returning.mjs",
+    "check:onboarding": "node scripts/check-onboarding-path.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",

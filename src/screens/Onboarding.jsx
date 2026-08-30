@@ -143,9 +143,30 @@ export default function Onboarding() {
     setSubmitting(true)
     setErrorMessage('')
 
-    const { data: created, error } = await supabase
+    // The id is minted here rather than by the database, so this insert does
+    // not have to ask for the row back.
+    //
+    // THIS IS NOT A STYLE CHOICE. `.insert(...).select()` on `pets` cannot
+    // succeed under the current RLS, and no pet could be created through the
+    // app at all until this changed.
+    //
+    // INSERT ... RETURNING applies the SELECT policy to the new row.
+    // pets_select_visible requires `id in (select visible_pet_ids(...))`, and
+    // visible_pet_ids is declared `stable` — so it runs on the statement's own
+    // snapshot and cannot see the row that statement is inserting. The new pet
+    // is never in its own visible set, the RETURNING row fails the policy, and
+    // Postgres aborts and rolls back the whole insert with a 42501 that reads
+    // as "you are at your limit".
+    //
+    // Knowing the id up front also means the pet can be selected below without
+    // a second round trip. The row is read back normally on the next refresh(),
+    // where it is a separate statement and the policy is satisfied.
+    const newPetId = crypto.randomUUID()
+
+    const { error } = await supabase
       .from('pets')
       .insert({
+        id: newPetId,
         user_id: user.id,
         name,
         species,
@@ -158,8 +179,6 @@ export default function Onboarding() {
         // Home tour) just for adding a pet.
         ...(isAddingAnother ? { has_seen_welcome: true, has_seen_app_tour: true } : {}),
       })
-      .select()
-      .single()
 
     if (error) {
       // 23505 used to be swallowed here and treated as "already onboarded,
@@ -198,7 +217,7 @@ export default function Onboarding() {
     await refresh()
     // Switch to the pet that was just created, rather than leaving the user
     // on whichever pet they were viewing before.
-    if (created?.id) selectPet(created.id)
+    selectPet(newPetId)
     navigate('/')
   }
 
