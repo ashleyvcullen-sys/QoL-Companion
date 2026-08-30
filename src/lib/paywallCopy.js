@@ -1,3 +1,5 @@
+import { AVAILABLE_CONDITIONS, conditionByKey } from './conditions'
+
 // Paywall copy, from qol-paywall-spec.md.
 //
 // Kept in one file because several of these strings are load-bearing in a
@@ -43,6 +45,64 @@ export function paywallHeadline(featureKey) {
 // language exists to avoid.
 export const PAYWALL_SUBHEAD =
   'Designed by a veterinarian to help you monitor quality of life from home.'
+
+// The condition line, shown under the headline on the disease-monitoring
+// entry point only. Names real conditions because "disease-specific
+// monitoring" tells an owner nothing about whether their pet's disease is
+// one of them — arthritis and kidney disease are the two most people arrive
+// with, so they lead.
+//
+// Built from the registry rather than written out, so it cannot quietly go
+// stale. Only the KEYS are listed here: the names themselves come from
+// conditions.js, a comingSoon flag removes a condition from the sentence
+// automatically (AVAILABLE_CONDITIONS is already filtered on it), and a
+// newly added condition is covered by the "and more" tail without anyone
+// editing this file.
+const FEATURED_CONDITION_KEYS = ['arthritis', 'kidney', 'cardiac', 'cancer', 'cognitive']
+
+// How many conditions the sentence names before giving up and saying "more".
+// Five is a list; eight is an inventory, and an owner scanning for their own
+// pet's diagnosis stops reading either way.
+const NAMED_CONDITION_COUNT = 5
+
+function conditionProseName(condition) {
+  return condition.shortLabel ?? condition.label.toLowerCase()
+}
+
+// "Includes arthritis, kidney disease, heart disease, cancer, cognitive
+// decline and more."
+//
+// The tail is deliberately unconditional in the normal case but not a lie in
+// the edge case: if every available condition is named, there IS no "and
+// more" and the sentence says so.
+export function conditionListLine() {
+  const featured = FEATURED_CONDITION_KEYS
+    .map(conditionByKey)
+    // A key that no longer resolves, or one whose condition has been pulled
+    // behind comingSoon, drops out rather than naming something the user
+    // cannot then find.
+    .filter((c) => c && AVAILABLE_CONDITIONS.includes(c))
+
+  // Top up from whatever else is available, so pulling a featured condition
+  // shortens the sentence by a name rather than leaving it at four.
+  const rest = AVAILABLE_CONDITIONS.filter((c) => !featured.includes(c))
+  const named = [...featured, ...rest].slice(0, NAMED_CONDITION_COUNT)
+
+  if (named.length === 0) return null
+
+  const names = named.map(conditionProseName)
+  const remaining = AVAILABLE_CONDITIONS.length - named.length
+  const tail = remaining > 0 ? ' and more' : ''
+
+  // Oxford-comma-free serial list, matching the app's other prose. With a
+  // tail the last name runs straight into "and more", which is why the join
+  // is not simply names.join(', ').
+  const list = tail
+    ? names.join(', ')
+    : names.slice(0, -1).join(', ') + (names.length > 1 ? ' and ' : '') + names[names.length - 1]
+
+  return `Includes ${list}${tail}.`
+}
 
 // Spec section 3. Six lines, and it stays six.
 export const PAYWALL_FEATURE_LIST = [

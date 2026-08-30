@@ -595,10 +595,18 @@ export const WHY_LABEL = 'More info'
 export const MONITORING_DISCLAIMER =
   "This does not replace your vet's advice or clinical assessment, but will help make monitoring at home easier between visits."
 
+// `shortLabel` is the condition's name in running prose: lower case, and
+// trimmed to the part an owner would say out loud. `label` is a heading and
+// says everything ("Arthritis and Mobility Issues"); a sentence listing six
+// of those is unreadable, so the paywall's condition line uses these. Lower
+// case because it only ever appears mid-sentence. Anything without one falls
+// back to the lower-cased label, so a new condition still reads correctly
+// before anyone gets round to writing its short form.
 export const CONDITIONS = {
   cardiac: {
     key: 'cardiac',
     label: 'Heart Disease',
+    shortLabel: 'heart disease',
     Icon: HeartOrganIcon,
     // Shown on the condition list to say what monitoring involves before
     // someone commits to it.
@@ -760,6 +768,7 @@ export const CONDITIONS = {
   seizures: {
     key: 'seizures',
     label: 'Seizures',
+    shortLabel: 'seizures',
     Icon: SeizureOrganIcon,
     summary:
       'Includes seizures caused by primary epilepsy, brain lesions, metabolic disease and infection.',
@@ -1031,6 +1040,7 @@ export const CONDITIONS = {
   cancer: {
     key: 'cancer',
     label: 'Cancer',
+    shortLabel: 'cancer',
     Icon: CancerOrganIcon,
     composed: true,
     summary:
@@ -1053,6 +1063,7 @@ export const CONDITIONS = {
   gastrointestinal: {
     key: 'gastrointestinal',
     label: 'Gastrointestinal Disease',
+    shortLabel: 'gastrointestinal disease',
     Icon: GutOrganIcon,
     // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
     summary:
@@ -1095,6 +1106,7 @@ export const CONDITIONS = {
   cognitive: {
     key: 'cognitive',
     label: 'Cognitive Decline / Dementia',
+    shortLabel: 'cognitive decline',
     Icon: CognitiveOrganIcon,
     // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. The "sometimes called
     // canine/feline dementia" tail has gone: the title says Dementia now, so
@@ -1473,6 +1485,7 @@ export const CONDITIONS = {
   arthritis: {
     key: 'arthritis',
     label: 'Arthritis and Mobility Issues',
+    shortLabel: 'arthritis',
     Icon: BoneOrganIcon,
     summary:
       'Stiffness, lameness and willingness to move.',
@@ -1763,6 +1776,7 @@ export const CONDITIONS = {
   allergies: {
     key: 'allergies',
     label: 'Allergies and Skin Disease',
+    shortLabel: 'allergies',
     Icon: AllergyOrganIcon,
     // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her paragraphs, with
     // sentence capitals and full stops added. Split across summary and intro
@@ -2419,6 +2433,7 @@ export const CONDITIONS = {
   kidney: {
     key: 'kidney',
     label: 'Kidney Disease',
+    shortLabel: 'kidney disease',
     Icon: KidneyOrganIcon,
     // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
     //

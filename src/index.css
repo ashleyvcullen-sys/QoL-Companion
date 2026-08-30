@@ -613,17 +613,17 @@ code {
   line-height: 145%;
 }
 
-/* Pets hidden by a lapsed subscription. Muted and bordered rather than
-   coloured as a warning — nothing has gone wrong and nothing is at risk,
-   so styling it as an error would frighten someone about records that are
-   perfectly safe. */
-.pets-hidden-notice {
+/* Pets hidden by a lapsed subscription, as a quiet line at the foot of the
+   pet list. This was a bordered, padded panel, which gave a one-line
+   statement of fact the visual weight of an alert — a box drawn round text
+   is a claim that the text needs attention, and this text does not. Now it
+   is simply secondary type: --type-meta and --text-muted, the pair the app
+   uses for dates, counts and legends, which is exactly what this is. No
+   border, no ground, no icon, no colour. */
+.pets-hidden-line {
   margin-top: var(--gap-inline);
-  padding: var(--gap-inline);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
   color: var(--text-muted);
-  font-size: var(--type-support);
+  font-size: var(--type-meta);
   line-height: 145%;
 }
 
@@ -3138,6 +3138,23 @@ code {
    is the same 12px the app puts between stacked paragraphs in a card. */
 .paywall-subhead {
   margin: 0 0 12px;
+}
+
+/* The named conditions, between the headline and the subhead. --type-item is
+   the step between them: below the 20px headline, above the 14px subhead and
+   well above the disclosure, and the token's own role — the name of a row in
+   a list — is what this line is, run together as a sentence.
+   Centred and --text, rather than the subhead's --text-muted, because it
+   carries the concrete answer to "is my pet's disease in here?" and should
+   not read as a footnote to the line below it. */
+.paywall-condition-list {
+  /* The headline's own 12px sits above it, so the stack keeps one rhythm. */
+  margin: 0 0 12px;
+  font-size: var(--type-item);
+  font-weight: 500;
+  line-height: 145%;
+  color: var(--text);
+  text-align: center;
 }
 
 /* 12px, matching .icon-grid and the app's card prose rhythm. At the 2px of

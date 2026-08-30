@@ -208,14 +208,18 @@ export default function Home() {
         </p>
         <PetSwitcher />
 
-        {/* Only ever a statement of fact plus a reassurance. No upgrade
-            button: someone who has just lost access does not need to be
-            sold to in the same breath, and the records being safe is the
-            thing they actually want to know. */}
+        {/* A fact at the foot of the pet list, not an alert. No icon, no
+            colour, no dismiss: nothing has gone wrong and there is nothing
+            to act on, so anything that reads as a warning would be
+            frightening someone about records that are perfectly safe.
+            What happens to those records is answered where it can actually
+            be acted on — beside the cancel link on the paywall — rather
+            than by making this line longer.
+            No role="status" either: this is permanent, not an update, and a
+            live region would announce it on every render. */}
         {hiddenPetCount > 0 && (
-          <p className="pets-hidden-notice" role="status">
-            {hiddenPetCount} pet {hiddenPetCount === 1 ? 'profile is' : 'profiles are'} hidden
-            on the free plan. Your records are saved and will return if you resubscribe.
+          <p className="pets-hidden-line">
+            {hiddenPetCount} {hiddenPetCount === 1 ? 'pet' : 'pets'} hidden on the free plan
           </p>
         )}
       </Card>

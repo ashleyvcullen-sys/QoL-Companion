@@ -33,7 +33,7 @@ export function PetsProvider({ children }) {
   // Once the RLS policy is applied, `select * from pets` returns the visible
   // ones and nothing else — so pets.length is capped at the limit by
   // definition, hiddenPetCount computed from it would always be zero, and
-  // the "N pets are hidden" banner would never appear for anyone. The count
+  // the "N pets hidden" line would never appear for anyone. The count
   // has to come from public.pet_count_for(), which is SECURITY DEFINER and
   // so sees past the policy that hides them.
   //

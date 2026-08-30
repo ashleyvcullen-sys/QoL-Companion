@@ -10,8 +10,10 @@ import { useEntitlements } from '../lib/EntitlementsContext'
 import { usePets } from '../lib/PetsContext'
 import {
   APPLE_DISCLOSURE,
+  PAYWALL_FEATURES,
   PAYWALL_FEATURE_LIST,
   PAYWALL_SUBHEAD,
+  conditionListLine,
   paywallHeadline,
 } from '../lib/paywallCopy'
 
@@ -85,6 +87,13 @@ export default function Paywall() {
   // purpose, which gets the generic headline.
   const { state } = useLocation()
   const headline = paywallHeadline(state?.feature)
+
+  // Named conditions, on the disease-monitoring entry point only. Everywhere
+  // else the list would be answering a question the user did not ask —
+  // someone who tapped a locked Medications tile does not need to be told
+  // which diseases are covered.
+  const conditionLine =
+    state?.feature === PAYWALL_FEATURES.CONDITIONS ? conditionListLine() : null
 
   const [selectedId, setSelectedId] = useState(null)
   const [purchasing, setPurchasing] = useState(false)
@@ -170,6 +179,7 @@ export default function Paywall() {
 
       <Card>
         <h1 className="paywall-headline">{headline}</h1>
+        {conditionLine && <p className="paywall-condition-list">{conditionLine}</p>}
         <p className="paywall-subhead">{PAYWALL_SUBHEAD}</p>
 
         <ul className="paywall-features">
@@ -295,8 +305,8 @@ export default function Paywall() {
       {Capacitor.isNativePlatform() && hasPremium && (
         <Card>
           <p className="assessment-hint">
-            Your other pets' records will be hidden but not deleted, and will return
-            if you resubscribe.
+            If you cancel, your other pets' records will be hidden but not deleted.
+            They'll return if you resubscribe.
           </p>
           <button
             type="button"
