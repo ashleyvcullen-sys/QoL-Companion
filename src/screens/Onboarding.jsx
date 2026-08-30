@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
 import { usePets } from '../lib/PetsContext'
@@ -22,6 +22,43 @@ const SEX_OPTIONS = [
   { value: 'unknown', label: 'Not sure / unknown' },
 ]
 
+// The end of the line, shown when this account cannot create a pet and has
+// none — so there is no Home to send them to and no paywall to offer.
+//
+// A screen rather than a modal, on purpose. A modal implies a way back to
+// what is behind it, and what is behind it is a form that cannot be
+// submitted. Every control here leads somewhere that actually exists:
+// /support is outside RequireOnboardedPet, and signing out returns to a
+// login that can establish a fresh session — which is the most likely fix,
+// since the usual cause is a session whose identity no longer matches.
+function OnboardingBlocked({ onRetry }) {
+  return (
+    <div className="screen">
+      <Card>
+        <SectionTitle>We couldn't add your pet</SectionTitle>
+        <p>
+          Your account is signed in, but the database refused to create the pet.
+          This usually means the session has gone stale rather than anything
+          being wrong with your account or your data.
+        </p>
+        <p>Signing out and back in resolves it in almost every case.</p>
+        <Btn type="button" className="btn-block" onClick={onRetry}>Try again</Btn>
+        <button
+          type="button"
+          className="subtle-link"
+          onClick={async () => {
+            await supabase.auth.signOut()
+            window.location.assign('/login')
+          }}
+        >
+          Sign out and start again
+        </button>
+        <Link to="/support" className="subtle-link">Contact support</Link>
+      </Card>
+    </div>
+  )
+}
+
 export default function Onboarding() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
   const { pets, atPetLimit, loading: petsLoading, petsError, refresh, selectPet } = usePets()
@@ -37,6 +74,9 @@ export default function Onboarding() {
   // Set when the database refuses the insert, so the rejection lands as an
   // offer rather than a Postgres error.
   const [showLimitPrompt, setShowLimitPrompt] = useState(false)
+  // Set when the insert is refused for an account with no pets, where a
+  // dismissible prompt would have nowhere to dismiss to.
+  const [blocked, setBlocked] = useState(false)
 
   if (authError) {
     return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
@@ -48,18 +88,42 @@ export default function Onboarding() {
   }
   if (petsLoading) return <p>Loading…</p>
 
-  // At the limit, the form is not shown at all. PetSwitcher already offers
-  // the prompt rather than this route, so arriving here means a direct URL,
-  // a stale tab, or a subscription that lapsed between opening the form and
-  // submitting it. Filling in a form whose submit is guaranteed to be
-  // refused is worse than being told up front.
-  if (atPetLimit) {
-    return (
-      <div className="screen">
-        <PetLimitModal onClose={() => navigate('/')} />
-      </div>
-    )
-  }
+  // Whether this account has a pet the app can actually show.
+  //
+  // This is the single fact that decides whether anywhere else in the app is
+  // reachable. RequireOnboardedPet sends an account with no pets straight
+  // back to this screen, and EVERY route worth dismissing a prompt to — Home
+  // and /paywall included — sits behind it. So for an account with none,
+  // "dismiss and go somewhere" has no somewhere.
+  const hasPet = pets.length > 0
+
+  // At the limit WITH a pet: go Home rather than float a modal over an empty
+  // screen. Home is reachable precisely because there is a pet.
+  //
+  // This replaces a PetLimitModal whose onClose navigated to '/'. That was
+  // right for this case and catastrophic for the one below, because both of
+  // its buttons — "Not now" and "See plans" — lead into the guarded area.
+  if (atPetLimit && hasPet) return <Navigate to="/" replace />
+
+  // At the limit with NO pet. The limit rules should not be able to produce
+  // this (a limit of one always leaves one pet visible), so reaching it means
+  // something has genuinely gone wrong — most likely a session whose
+  // auth.uid() no longer matches the account the client thinks it is.
+  //
+  // Deliberately NOT a dismissible modal. There is nowhere for a dismissal to
+  // go, and offering one is what turned this screen into a trap: every exit
+  // it could offer bounces off RequireOnboardedPet and lands back here.
+  if (atPetLimit && !hasPet) return <OnboardingBlocked onRetry={refresh} />
+
+  // The same terminal state, reached the other way: the form looked
+  // submittable, the database refused it, and this account has no pet to go
+  // Home to. Checked here rather than beside the form so there is exactly one
+  // definition of what "blocked" looks like.
+  if (blocked) return <OnboardingBlocked onRetry={refresh} />
+
+  // A free account with no pets must ALWAYS get the form. Nothing above this
+  // line may stop it: this is the only route by which an account gets its
+  // first pet, and blocking it makes the app unusable rather than limited.
 
   // `pets` rather than visiblePets: a returning user whose second pet is
   // hidden has still seen the welcome flow, and replaying it for them would
@@ -110,14 +174,20 @@ export default function Onboarding() {
           'If you have just added multi-pet support, run the pending database migration and try again.',
         )
       } else if (error.code === '42501') {
-        // The RLS backstop refused the insert — which means the client's
-        // count and the database's disagreed, most likely because the
-        // subscription changed in another session while this form was open.
-        // The raw message is "new row violates row-level security policy for
-        // table \"pets\"", which tells the owner nothing and reads like a
-        // fault. Show the offer instead, exactly as the pre-insert check
-        // would have.
-        setShowLimitPrompt(true)
+        // The RLS backstop refused the insert — the client's count and the
+        // database's disagreed, most likely because the subscription changed
+        // in another session while this form was open. The raw message is
+        // "new row violates row-level security policy for table \"pets\"",
+        // which tells the owner nothing and reads like a fault.
+        //
+        // WHICH recovery depends entirely on whether this account has a pet,
+        // and getting that wrong is the bug this branch used to have. It
+        // always showed PetLimitModal, whose every exit leads into the
+        // guarded area — so for an account with no pets, "Not now" and "See
+        // plans" both bounced off RequireOnboardedPet and returned the user
+        // to this same form, refused again, forever.
+        if (hasPet) setShowLimitPrompt(true)
+        else setBlocked(true)
       } else {
         setErrorMessage(error.message)
       }
