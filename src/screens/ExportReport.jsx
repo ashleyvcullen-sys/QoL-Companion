@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Lock } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
 import { Filesystem, Directory } from '@capacitor/filesystem'
@@ -478,6 +479,13 @@ export default function ExportReport() {
           disabled={exporting || (hasPremium && nothingSelected)}
           aria-label={hasPremium ? undefined : 'Share Report, premium feature, locked'}
         >
+          {/* The same lock the home tiles wear, for the same reason: the
+              control has to say what it is before it is tapped, not only
+              after. aria-hidden because the button's own label already
+              carries the state. */}
+          {!hasPremium && !exporting && (
+            <Lock size={13} strokeWidth={2.5} className="btn-lock" aria-hidden="true" />
+          )}
           {exporting ? 'Generating…' : Capacitor.isNativePlatform() ? 'Share Report' : 'Print'}
         </Btn>
         {nothingSelected && (

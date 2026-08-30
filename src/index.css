@@ -537,6 +537,14 @@ code {
   opacity: 0.5;
 }
 
+/* Lock glyph sitting inside a button label rather than in a tile corner —
+   the export action is a button, not a tile, but it is the same state and
+   should read as the same thing. */
+.btn-lock {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
 .icon-tile-lock {
   position: absolute;
   top: 8px;
