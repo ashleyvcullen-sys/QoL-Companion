@@ -91,20 +91,108 @@ Deno.serve(async (req) => {
   const eventType: string = event.type ?? ''
   const appUserId: string | null = event.app_user_id ?? null
 
-  // RevenueCat's app_user_id is the Supabase auth user id, because
-  // RevenueCatContext.jsx calls Purchases.logIn({ appUserID: user.id }).
-  // Anything else is either an anonymous id from before that call or a
-  // different project pointed at this URL — either way there is no user to
-  // write, and 200 stops RevenueCat retrying something that will never work.
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const eventAt = event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date()
+  const expiresAt = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null
+
+  // --- Identity events -----------------------------------------------------
+  //
+  // These MUST be handled before the app_user_id guard below, and that
+  // ordering is the whole point of this block.
+  //
+  // An identity event is precisely the case where app_user_id is NOT a
+  // Supabase user id: it is the anonymous $RCAnonymousID being merged into a
+  // real one. The guard rejects non-uuid app_user_id with a 200, so with
+  // TRANSFER handled inside the switch below it it was unreachable for the
+  // one transition it exists to catch. The real ids live in
+  // transferred_from/transferred_to (TRANSFER) or aliases/original_app_user_id
+  // (SUBSCRIBER_ALIAS), not necessarily in app_user_id.
+  //
+  // BOTH events are handled because RevenueCat documents both for identity
+  // transitions and the payload for any given transition is not something
+  // this code should guess at. Dropping either with a 200 tells RevenueCat
+  // never to retry, and the money has already changed hands.
+  if (eventType === 'TRANSFER' || eventType === 'SUBSCRIBER_ALIAS') {
+    // Every id the event mentions, from the fields each event type uses.
+    // Collected leniently: an id appearing in the wrong field still names a
+    // real account, and the uuid filter is what keeps this safe.
+    const donors: string[] = (event.transferred_from ?? []).filter((id: string) => UUID_RE.test(id))
+    const receivers: string[] = [
+      ...(event.transferred_to ?? []),
+      ...(event.aliases ?? []),
+      event.app_user_id,
+      event.original_app_user_id,
+    ].filter((id: unknown): id is string => typeof id === 'string' && UUID_RE.test(id))
+
+    const uniqueReceivers = [...new Set(receivers)].filter((id) => !donors.includes(id))
+    const tier = tierFromEntitlements(event.entitlement_ids)
+
+    // A TRANSFER moves an entitlement, so the donor loses it. An alias merges
+    // two names for the same customer and has no donor to demote — which is
+    // why donors comes only from transferred_from.
+    for (const donor of donors) {
+      await admin.from('user_entitlements').upsert({
+        user_id: donor,
+        ...FREE,
+        expires_at: null,
+        updated_at: new Date().toISOString(),
+        last_event_id: eventId,
+        last_event_at: eventAt.toISOString(),
+      })
+    }
+
+    if (uniqueReceivers.length === 0) {
+      // Both sides anonymous, or an alias between two ids neither of which is
+      // a Supabase user. Nothing to write and nothing a retry would fix.
+      console.warn(`revenuecat-webhook: ${eventType} with no Supabase user on either side`)
+      return json({ ok: true, ignored: 'no supabase user in identity event' }, 200)
+    }
+
+    if (!tier) {
+      // The identity moved but the payload does not say what entitlement came
+      // with it. A retry cannot add fields, so this returns 200 rather than
+      // looping forever — but it is logged at error level because a customer
+      // may now be paying with no row, and that needs a human.
+      //
+      // PENDING ASH: if this ever fires, the fix is to read the subscriber
+      // from RevenueCat's REST API here rather than trusting the payload.
+      console.error(
+        `revenuecat-webhook: ${eventType} for ${uniqueReceivers.join(',')} carried no ` +
+        'recognised entitlement — entitlement NOT written, needs manual review',
+      )
+      return json({ ok: true, ignored: 'identity event without entitlement data', needs_review: true }, 200)
+    }
+
+    for (const receiver of uniqueReceivers) {
+      await admin.from('user_entitlements').upsert({
+        user_id: receiver,
+        tier,
+        pet_limit: TIER_PET_LIMITS[tier] ?? 1,
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString(),
+        last_event_id: eventId,
+        last_event_at: eventAt.toISOString(),
+      })
+    }
+
+    console.log(`revenuecat-webhook: ${eventType} ${donors.join(',') || '(anonymous)'} -> ${uniqueReceivers.join(',')}`)
+    return json({ ok: true, action: 'identity' }, 200)
+  }
+
+  // RevenueCat's app_user_id is the Supabase auth user id, because
+  // RevenueCatContext.jsx configures with appUserID and calls
+  // Purchases.logIn({ appUserID: user.id }). Anything else is either an
+  // anonymous id from before that call or a different project pointed at this
+  // URL — either way there is no user to write, and 200 stops RevenueCat
+  // retrying something that will never work.
+  //
+  // Identity events are exempt and were handled above, because for those an
+  // anonymous app_user_id is the normal case rather than a broken one.
   if (!appUserId || !UUID_RE.test(appUserId)) {
     console.warn(`revenuecat-webhook: ignoring ${eventType} for non-uuid app_user_id`)
     return json({ ok: true, ignored: 'app_user_id is not a supabase user id' }, 200)
   }
-
-  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-  const eventAt = event.event_timestamp_ms ? new Date(event.event_timestamp_ms) : new Date()
-  const expiresAt = event.expiration_at_ms ? new Date(event.expiration_at_ms).toISOString() : null
 
   // Decide what this event means. The distinction that matters most is
   // CANCELLATION, which is NOT a revocation: it means auto-renew was turned
@@ -151,43 +239,12 @@ Deno.serve(async (req) => {
       next = { tier: 'free', pet_limit: 1, expires_at: expiresAt }
       break
 
-    case 'TRANSFER': {
-      // The subscription moved to a different RevenueCat identity, which
-      // here means a different Supabase user. Both sides have to be written:
-      // grant the receiver, and drop the donor to free, or the entitlement
-      // silently exists twice.
-      const from: string[] = event.transferred_from ?? []
-      const to: string[] = event.transferred_to ?? []
-      const tier = tierFromEntitlements(event.entitlement_ids) ?? 'premium'
-
-      for (const donor of from.filter((id) => UUID_RE.test(id))) {
-        await admin.from('user_entitlements').upsert({
-          user_id: donor,
-          ...FREE,
-          expires_at: null,
-          updated_at: new Date().toISOString(),
-          last_event_id: eventId,
-          last_event_at: eventAt.toISOString(),
-        })
-      }
-      for (const receiver of to.filter((id) => UUID_RE.test(id))) {
-        await admin.from('user_entitlements').upsert({
-          user_id: receiver,
-          tier,
-          pet_limit: TIER_PET_LIMITS[tier] ?? 1,
-          expires_at: expiresAt,
-          updated_at: new Date().toISOString(),
-          last_event_id: eventId,
-          last_event_at: eventAt.toISOString(),
-        })
-      }
-      console.log(`revenuecat-webhook: TRANSFER ${from.join(',')} -> ${to.join(',')}`)
-      return json({ ok: true, action: 'transfer' }, 200)
-    }
-
     default:
-      // TEST, SUBSCRIBER_ALIAS, NON_RENEWING_PURCHASE and anything RevenueCat
-      // adds later. 200 so it is not retried forever.
+      // TEST, NON_RENEWING_PURCHASE and anything RevenueCat adds later. 200
+      // so it is not retried forever. TRANSFER and SUBSCRIBER_ALIAS are NOT
+      // here any more — they are identity events and are handled above the
+      // app_user_id guard, because for them a non-uuid app_user_id is the
+      // normal case.
       console.log(`revenuecat-webhook: ignoring event type ${eventType}`)
       return json({ ok: true, ignored: eventType }, 200)
   }
