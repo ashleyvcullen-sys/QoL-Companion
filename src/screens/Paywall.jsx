@@ -231,8 +231,20 @@ export default function Paywall() {
         </Card>
       )}
 
+      {/* The offering came back with no annual or monthly package in it.
+          This used to read "Premium is coming soon", which was true while the
+          products did not exist; now that the entitlement and the default
+          offering are configured, reaching this state means the offering
+          failed to load or is misconfigured — and telling a user who wants to
+          pay that the thing is not built yet would be wrong and would lose
+          the sale. */}
       {Capacitor.isNativePlatform() && !loading && !configureError && ordered.length === 0 && (
-        <Card><p>Nothing to see yet — Premium is coming soon.</p></Card>
+        <Card>
+          <p className="form-error" role="alert">
+            We couldn't load the subscription options. Please check your connection
+            and try again.
+          </p>
+        </Card>
       )}
 
       {/* Spec section 4. Both options visible at once, never a toggle that

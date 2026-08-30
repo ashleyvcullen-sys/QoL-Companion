@@ -88,7 +88,7 @@
               "locale" : "en_AU"
             }
           ],
-          "productID" : "com.qolcompanion.premium.monthly",
+          "productID" : "com.qolcompanion.app.premium.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Premium Monthly",
           "subscriptionGroupID" : "21598472",
@@ -113,7 +113,7 @@
               "locale" : "en_AU"
             }
           ],
-          "productID" : "com.qolcompanion.premium.annual",
+          "productID" : "com.qolcompanion.app.premium.annual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Premium Annual",
           "subscriptionGroupID" : "21598472",
