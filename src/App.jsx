@@ -147,7 +147,7 @@ function App() {
         <Route path="/schedule" element={<Schedule />} />
         <Route path="/export-report" element={<ExportReport />} />
         <Route path="/about" element={<About />} />
-        {/* Inside RequireOnboardedPet with the rest: Settings names the
+        {/* Inside RequireOnboardedPet with the rest: Account Management names the
             selected pet in "Remove {name}", so it has nothing coherent to
             show to an account that has not been through onboarding yet. */}
         <Route path="/settings" element={<Settings />} />

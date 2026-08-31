@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     heading: 'Data deletion',
     paragraphs: [
-      "You can remove a pet's data at any time from Settings, which deletes that pet's stored record.",
+      "You can remove a pet's data at any time from Account Management, which deletes that pet's stored record.",
       "You can also delete your entire account from within the app. This permanently removes all of your information, including anything hidden because a subscription has ended. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
     ],
   },
@@ -132,8 +132,13 @@ export default function Legal() {
       ))}
 
       <Link to="/about" className="subtle-link">Back to About</Link>
-      <Link to="/terms" className="subtle-link">Terms &amp; Conditions</Link>
-      <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
+
+      {/* Fine print, not actions — see .legal-link. Grouped so the two read
+          as one footnote rather than two more things to do. */}
+      <div className="legal-links">
+        <Link to="/terms" className="legal-link">Terms &amp; Conditions</Link>
+        <Link to="/privacy" className="legal-link">Privacy Policy</Link>
+      </div>
 
       <Footer />
     </div>

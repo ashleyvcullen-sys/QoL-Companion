@@ -642,7 +642,7 @@ code {
   line-height: 145%;
 }
 
-/* The current plan, on Settings. The one line on that card that states a
+/* The current plan, on Account Management. The one line on that card that states a
    fact about the account rather than explaining one, so it takes the item
    size and weight the app gives the name of a row — the hidden-pets line
    under it is .assessment-hint, and reads as subordinate to this. */
@@ -2394,14 +2394,15 @@ code {
   margin: 0 0 4px;
 }
 
-/* "Premium" on a tour step for a feature the account cannot use yet.
+/* "Premium" on anything an account cannot use yet — a tour step, a row in
+   the signup intro.
    The same two ingredients as .icon-tile-lock — the lock glyph on --border,
    in --text-muted — so it reads as the same fact the tiles state rather than
    a second idea. A pill with a word in it rather than a bare disc, because
    here there is no tile underneath to give the glyph its meaning.
    Quiet on purpose: the step keeps its full description, and this is a label,
    not a pitch. */
-.home-tour-premium {
+.premium-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2450,8 +2451,67 @@ code {
   margin: 8px 0 24px;
 }
 
+/* Legal fine print: Terms, Privacy, and the Privacy/Data/Legal page.
+   Quiet by SIZE, not by colour — and that distinction is measured, not a
+   preference. --text-muted, the obvious choice for something meant to
+   recede, is 3.72:1 on white and 3.55:1 on the page ground. Both fail WCAG
+   AA for normal-size text, and a privacy policy a reviewer has to squint at
+   is a worse outcome than one that is simply small. --text is 5.99:1 and
+   5.72:1, so the type can drop to the smallest size in the scale and still
+   be comfortably readable.
+   No block, no width, no button shape — an underlined phrase reads as a
+   reference rather than something to press.
+   min-height, not height: 44x44pt is Apple's minimum tap target, and small
+   text with a small hit area is the accessibility failure this exists to
+   avoid. The text still decides if it ever needs more room. */
+.legal-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--type-label);
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* The pair of them, centred and flush. Flush because each is already its own
+   44px target, so a gap would only add dead space between two things that
+   look adjacent. */
+.legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
+/* Reserves, in normal flow, the space the fixed bar occupies over it.
+   120px, not the 58px this was. The old number was a guess made when the bar
+   held fewer links and did not wrap; measured with real font metrics it is
+   103px with five links, 130px with six, and 151px once the legal link
+   carries its 44pt tap target — all at 320pt, where the bar wraps most. At
+   58px the bar was covering content, and .screen's 40px bottom padding was
+   quietly absorbing the difference until it no longer could.
+   Still a static estimate, and still wrong in principle: the honest fix
+   measures the bar at runtime. But it is now wrong in the safe direction, by
+   a margin big enough to survive another link or a larger text size. */
+/* Inline after a feature name rather than on its own line, so the row still
+   reads as one item. The tag carries a lock glyph in the tour; here the row
+   already has an icon of its own, so the word alone does the work. */
+.welcome-help-premium {
+  margin-left: var(--gap-inline);
+  vertical-align: 2px;
+}
+
 .app-footer-spacer {
-  height: calc(58px + env(safe-area-inset-bottom));
+  height: calc(120px + env(safe-area-inset-bottom));
   flex-shrink: 0;
 }
 

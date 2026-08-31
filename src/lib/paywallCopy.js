@@ -153,9 +153,9 @@ export const FREE_FEATURE_LIST = [
 
 // Shown immediately before any control that leads to cancelling.
 //
-// One definition because it now appears on both the paywall and Settings, and
-// a reassurance about someone's records that says two different things in two
-// places is worse than not saying it at all.
+// One definition because it now appears on both the paywall and Account
+// Management, and a reassurance about someone's records that says two
+// different things in two places is worse than not saying it at all.
 //
 // Placed BEFORE the control everywhere it is used, not after: once the user
 // has left for Apple's settings screen they are not coming back to read a

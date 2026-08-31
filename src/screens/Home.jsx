@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Bell, Camera, Heart, HeartHandshake, Lock, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Bell, Camera, CircleQuestionMark, Heart, HeartHandshake, Lock, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
 import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
@@ -51,6 +51,10 @@ const NAV_SECTIONS = [
       // what make a daily habit stick, so burying them under "About" was
       // working against the thing the app is for.
       { to: '/schedule', label: 'Reminders', Icon: Bell },
+      // A tile rather than a link under the grid. It was the last thing left
+      // in the secondary row, and one lonely underlined word beneath a grid
+      // of tiles reads as leftover rather than as a choice.
+      { to: '/about', label: 'About', Icon: CircleQuestionMark },
     ],
   },
 ]
@@ -192,14 +196,6 @@ export default function Home() {
           </div>
         </div>
       ))}
-
-      {/* Not features, so not tiles. Kept reachable but quiet.
-          Settings holds the plan, sign out and the two irreversible
-          deletes, which used to sit loose at the foot of this screen. */}
-      <div className="home-secondary-links">
-        <Link to="/about" className="subtle-link">About</Link>
-        <Link to="/settings" className="subtle-link">Settings</Link>
-      </div>
 
       {showTour && (
         <HomeTour steps={tourSteps} targetRefs={tileRefs} onFinish={completeTour} />

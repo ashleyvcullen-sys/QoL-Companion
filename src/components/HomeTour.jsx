@@ -95,7 +95,7 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
                 condition as those tiles: a subscriber already has these and
                 does not need telling. */}
             {step.premium && (
-              <p className="home-tour-premium">
+              <p className="premium-tag">
                 <Lock size={11} strokeWidth={2.5} aria-hidden="true" />
                 Premium
               </p>

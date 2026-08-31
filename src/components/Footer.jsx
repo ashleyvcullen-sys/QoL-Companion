@@ -30,6 +30,11 @@ export default function Footer({ className = '' }) {
       <div className={`app-footer-spacer ${className}`.trim()} aria-hidden="true" />
       <div className={`app-footer ${className}`.trim()}>
         <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
+        {/* The plan, sign out, and the two irreversible deletes. Here rather
+            than on Home because it is reachable from wherever the user
+            happens to be when they want it, which for "cancel my
+            subscription" is not necessarily the home screen. */}
+        <Link to="/settings" className="subtle-link">Account Management</Link>
         <button type="button" className="subtle-link" onClick={() => openExternal(INSTAGRAM_URL)}>
           Follow us on Instagram
         </button>
@@ -37,7 +42,10 @@ export default function Footer({ className = '' }) {
           Visit our website
         </button>
         <a href={`mailto:${SUPPORT_EMAIL}`} className="subtle-link">Email us</a>
-        <Link to="/legal" className="subtle-link">Privacy, Data &amp; Legal</Link>
+        {/* The one legal link in the bar. .legal-link gives it the 44pt tap
+            target the others do not have — see the note on .app-footer about
+            what that costs in bar height. */}
+        <Link to="/legal" className="subtle-link legal-link">Privacy, Data &amp; Legal</Link>
       </div>
     </>
   )

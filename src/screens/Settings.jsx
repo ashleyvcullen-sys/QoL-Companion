@@ -143,6 +143,18 @@ export default function Settings() {
     <div className="screen">
       <HomeLink />
 
+      {/* The screen had no title of its own — it opened straight onto "Your
+          Plan". That was survivable while the link said Settings and the
+          screen was obviously the settings; it is not, now that it is named
+          something a user has to recognise on arrival. Every other screen in
+          the app titles itself this way. */}
+      <Card>
+        <SectionTitle>Account Management</SectionTitle>
+        <p className="assessment-hint">
+          Your plan, and the controls for your account and your pets' records.
+        </p>
+      </Card>
+
       <Card>
         <SectionTitle>Your Plan</SectionTitle>
 
