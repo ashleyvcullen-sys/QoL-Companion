@@ -69,7 +69,16 @@ export default function Home() {
   const autoTourShownRef = useRef(false)
   const tileRefs = useRef({})
 
-  const tourSteps = NAV_ITEMS.map(({ to, label }) => ({ to, label, message: HOME_TOUR_MESSAGES[to] }))
+  // `premium` rides along from the same tile definitions that lock the grid,
+  // so the tour cannot disagree with the tiles about which features are paid
+  // — and adding a premium feature marks its tour step automatically.
+  // Gated on !hasPremium exactly as the tiles are: a subscriber has these.
+  const tourSteps = NAV_ITEMS.map(({ to, label, premium }) => ({
+    to,
+    label,
+    premium: Boolean(premium) && !hasPremium,
+    message: HOME_TOUR_MESSAGES[to],
+  }))
 
   useEffect(() => {
     if (pet && !pet.has_seen_app_tour && !autoTourShownRef.current) {

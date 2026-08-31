@@ -1,5 +1,5 @@
 export const HOME_TOUR_MESSAGES = {
-  '/assessment': "Start here — a quick check-in covering 5 key wellbeing areas and a vet-reviewed pain scale.",
+  '/assessment': 'The core of QoL Companion. Five key wellbeing areas adapted from validated quality of life scales, recorded in a few minutes. Do this regularly and the patterns will emerge.',
   '/trends': 'See how things are changing over time, with charts and a good/bad day calendar.',
   '/body-condition': 'Score your pet on the standard 9-point body condition scale, log their weight, and track both over time.',
   '/medications': 'Keep track of what your pet is on, get reminded when each dose is due, and tick doses off as you give them.',

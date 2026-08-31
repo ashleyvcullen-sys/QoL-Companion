@@ -2394,6 +2394,28 @@ code {
   margin: 0 0 4px;
 }
 
+/* "Premium" on a tour step for a feature the account cannot use yet.
+   The same two ingredients as .icon-tile-lock — the lock glyph on --border,
+   in --text-muted — so it reads as the same fact the tiles state rather than
+   a second idea. A pill with a word in it rather than a bare disc, because
+   here there is no tile underneath to give the glyph its meaning.
+   Quiet on purpose: the step keeps its full description, and this is a label,
+   not a pitch. */
+.home-tour-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+  color: var(--text-muted);
+  font-size: var(--type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .home-tour-actions {
   display: flex;
   align-items: center;

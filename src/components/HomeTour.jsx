@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from 'react'
+import { Lock } from 'lucide-react'
 import Card from './Card'
 import Btn from './Btn'
 
@@ -85,6 +86,20 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
         ) : (
           <>
             <p className="home-tour-progress">{stepIndex + 1} of {steps.length}</p>
+            {/* Named, not hidden. The step stays in the tour and keeps its
+                full description — someone deciding whether the app is worth
+                paying for has to see what it does. This only stops them
+                finishing the tour believing it is all included.
+                The same lock glyph the locked tiles wear, so it reads as the
+                same fact rather than a second idea. Shown on the same
+                condition as those tiles: a subscriber already has these and
+                does not need telling. */}
+            {step.premium && (
+              <p className="home-tour-premium">
+                <Lock size={11} strokeWidth={2.5} aria-hidden="true" />
+                Premium
+              </p>
+            )}
             <p>{step.message}</p>
             <div className="home-tour-actions">
               <button type="button" className="home-tour-skip" onClick={onFinish}>Skip tour</button>
