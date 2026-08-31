@@ -11,6 +11,7 @@ import { usePets } from '../lib/PetsContext'
 import { PRIVACY_POLICY_URL, TERMS_URL } from '../lib/legalUrls'
 import {
   APPLE_DISCLOSURE,
+  CANCELLATION_KEEPS_RECORDS,
   PAYWALL_FEATURE_LIST,
   PAYWALL_SUBHEAD,
   paywallHeadline,
@@ -315,10 +316,7 @@ export default function Paywall() {
           cancelling something they have already decided to cancel. */}
       {Capacitor.isNativePlatform() && hasPremium && (
         <Card>
-          <p className="assessment-hint">
-            If you cancel, your other pets' records will be hidden but not deleted.
-            They'll return if you resubscribe.
-          </p>
+          <p className="assessment-hint">{CANCELLATION_KEEPS_RECORDS}</p>
           <button
             type="button"
             className="subtle-link"

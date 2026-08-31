@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { Check, LogOut } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
@@ -11,6 +12,35 @@ import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
 import { cancelQolReminder } from '../lib/notifications'
+import {
+  CANCELLATION_KEEPS_RECORDS,
+  FREE_FEATURE_LIST,
+  PAYWALL_FEATURE_LIST,
+} from '../lib/paywallCopy'
+
+// Apple's subscription management, by the two routes that exist.
+//
+// itms-apps:// hands straight to the App Store app and its native
+// subscription sheet, which is where a cancellation actually happens.
+// Capacitor passes a scheme it does not recognise to the system rather than
+// trying to load it in the WebView, so assigning location is enough.
+//
+// The https form is the same destination for a browser, and is what the
+// paywall has always used. Kept for the web build, where itms-apps means
+// nothing.
+//
+// The RevenueCat SDK has no showManageSubscriptions in the version this app
+// pins (13.4.0) — checked before writing this rather than assumed.
+const MANAGE_SUBSCRIPTION_SCHEME = 'itms-apps://apps.apple.com/account/subscriptions'
+const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
+
+function openManageSubscription() {
+  if (Capacitor.isNativePlatform()) {
+    window.location.href = MANAGE_SUBSCRIPTION_SCHEME
+  } else {
+    window.open(MANAGE_SUBSCRIPTION_URL, '_blank', 'noopener,noreferrer')
+  }
+}
 
 // Account settings, and the one place the app says which plan you are on.
 //
@@ -138,6 +168,64 @@ export default function Settings() {
             {hiddenPetCount} {hiddenPetCount === 1 ? 'pet is' : 'pets are'} hidden on the
             free plan. Your records are saved and will return if you resubscribe.
           </p>
+        )}
+
+        {/* What you have, and what the other plan adds.
+            Both lists come from lib/paywallCopy.js — the same definitions the
+            paywall sells from — so the two screens cannot describe the same
+            subscription differently. That is the entire reason this is not
+            written out here. */}
+        {!entitlementsLoading && (
+          <div className="plan-compare">
+            <div className="plan-compare-column">
+              <h3 className="plan-compare-heading">
+                {hasPremium ? 'Free plan' : 'Your plan includes'}
+              </h3>
+              <ul className="plan-compare-list">
+                {FREE_FEATURE_LIST.map((line) => (
+                  <li key={line}>
+                    <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="plan-compare-column">
+              <h3 className="plan-compare-heading">
+                {hasPremium ? 'Premium adds' : 'Premium also adds'}
+              </h3>
+              {/* Only `text`. The paywall renders each line's `detail` (the
+                  named conditions under disease-specific monitoring); here it
+                  would be a paragraph inside a comparison, which is a list. */}
+              <ul className="plan-compare-list">
+                {PAYWALL_FEATURE_LIST.map(({ text }) => (
+                  <li key={text}>
+                    <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Subscribers get a way to cancel, free users get a way to start.
+            Labelled for what it does: there is nothing to "manage" on a plan
+            you are not paying for, and a Manage Subscription button that
+            opens a sales page is the kind of thing that reads as a trick. */}
+        {!entitlementsLoading && hasPremium && (
+          <>
+            <p className="assessment-hint">{CANCELLATION_KEEPS_RECORDS}</p>
+            <Btn
+              type="button"
+              variant="outline"
+              className="btn-block"
+              onClick={openManageSubscription}
+            >
+              Manage subscription
+            </Btn>
+          </>
         )}
 
         {!entitlementsLoading && !hasPremium && (

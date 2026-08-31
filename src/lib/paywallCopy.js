@@ -130,6 +130,41 @@ export const PAYWALL_FEATURE_LIST = [
   { text: 'Add up to 5 pets' },
 ]
 
+// What the free plan already gives you.
+//
+// The counterpart to PAYWALL_FEATURE_LIST, and it exists so the comparison on
+// Settings can be built from one definition per column rather than from a
+// screen's idea of what the other screen says. The paywall does not show this
+// list — it is selling the other one — but the two belong together, because
+// the moment a feature moves between tiers BOTH lists have to change and
+// having them in one file is what makes that obvious.
+//
+// Plain strings rather than the paywall list's objects: nothing here carries
+// a subline, and inventing a shape for symmetry alone would be worse than the
+// asymmetry.
+export const FREE_FEATURE_LIST = [
+  'Unlimited quality-of-life assessments for one pet',
+  'Full BEAAAAPP pain scoring',
+  'Overall wellbeing score',
+  'Trends and calendar',
+  'Home-care and emergency guidance',
+  'End-of-life support content',
+]
+
+// Shown immediately before any control that leads to cancelling.
+//
+// One definition because it now appears on both the paywall and Settings, and
+// a reassurance about someone's records that says two different things in two
+// places is worse than not saying it at all.
+//
+// Placed BEFORE the control everywhere it is used, not after: once the user
+// has left for Apple's settings screen they are not coming back to read a
+// caveat, and "will my records be deleted?" is the question that stops people
+// cancelling something they have already decided to cancel.
+export const CANCELLATION_KEEPS_RECORDS =
+  "If you cancel, your other pets' records will be hidden but not deleted. " +
+  "They'll return if you resubscribe."
+
 // Spec section 6. VERBATIM — this is the Apple-required disclosure and the
 // spec says explicitly not to reword it for layout. If it does not fit, the
 // layout changes, not this string. Missing or abbreviated disclosure is a

@@ -659,6 +659,63 @@ code {
   margin-top: var(--gap-inline);
 }
 
+/* Free against Premium.
+   Stacked, not two columns side by side. At 320-430pt a two-column layout
+   gives each list about 130px, which wraps "Add medications and set reminders
+   for dosing" to four lines and makes the comparison harder to read than the
+   thing it is comparing. */
+.plan-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* An <h3> so the two columns are real headings under the card's own, which
+   is what lets a screen reader move between them. Sized as a group divider
+   rather than a card title, because that is what it is. */
+.plan-compare-heading {
+  margin: 0 0 8px;
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Same construction as .paywall-features, deliberately: one tick, one line,
+   aligned to the first row of a wrapping item. A user comparing this against
+   the paywall is looking at the same list, and it should not be laid out
+   differently on the way. */
+.plan-compare-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-compare-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-inline);
+  font-size: var(--type-support);
+  line-height: 145%;
+}
+
+.plan-compare-list svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--severity-good);
+}
+
+/* Space above the plan actions, which follow the comparison. */
+.plan-compare + .assessment-hint,
+.plan-compare + .btn {
+  margin-top: 16px;
+}
+
 /* Sub-label inside the assessment pages — a field label, not a section
    heading, so it stays left-aligned and small. Moved out of inline styles:
    it hardcoded #3D2B30 and #C97B8C, which meant it was the one piece of the
