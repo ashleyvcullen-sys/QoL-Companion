@@ -83,6 +83,13 @@ export const URINATION_SYMPTOM_OPTIONS = [
   'Straining',
   'Blood',
   'Small volume',
+  // Added 1 Sep 2026 on Ash's instruction. There was a 'Small volume' and no
+  // counterpart, so polyuria — passing MORE urine — could not be recorded at
+  // all. It is the clinical partner of the increased water intake the
+  // drinking question already captures, and PU/PD together is one of the most
+  // useful things an owner can notice. Placed next to its opposite so the
+  // pair reads as a pair.
+  'Large volume',
   'Incontinence',
   'Vocalisation',
   'Frequent',

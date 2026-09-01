@@ -2981,19 +2981,44 @@ code {
 }
 
 .day-answer-label {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-inline);
-  font-size: var(--type-meta);
+  /* The QUESTION, now the secondary line. It was the bold heading above the
+     answer, which had the hierarchy backwards: someone tapping a day wants
+     what happened, not to re-read the form. Smallest size, muted, no weight —
+     context for the answer above it rather than a heading over it. */
+  font-size: var(--type-label);
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .day-answer-value {
+  /* The ANSWER, now the heading. --text-h and 600 so it carries the row, and
+     flex so the severity dot sits on the first line beside it rather than
+     above it when the answer wraps. */
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--gap-inline);
   margin: 0;
   font-size: var(--type-item);
-  color: var(--text);
+  font-weight: 600;
+  color: var(--text-h);
   line-height: 150%;
+}
+
+/* "Worth a look" / "Everything else". A group divider, in the same treatment
+   the app uses for one everywhere else — see .nav-section-title. */
+.day-answers-group {
+  margin: 16px 0 8px;
+  font-size: var(--type-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The first group has the date and any note above it already. */
+.day-answers-group:first-of-type {
+  margin-top: 12px;
 }
 
 .day-answer-detail {
@@ -3041,6 +3066,9 @@ code {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  /* Nudged down to sit on the text's baseline rather than its box, now that
+     it shares a line with a 15px answer instead of a 13px label. */
+  transform: translateY(-1px);
 }
 
 /* The gallery thumbnail is a button now. These four lines undo the browser's

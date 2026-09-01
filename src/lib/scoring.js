@@ -101,7 +101,7 @@ function beapBandFloorIndex(beap) {
 const VOMIT_DAILY_THRESHOLD = 2
 const VOMIT_WEEKLY_THRESHOLD = 5
 
-function scoreSlider(value) {
+export function scoreSlider(value) {
   return value === 'unsure' ? null : value
 }
 
@@ -119,7 +119,7 @@ function scoreSlider(value) {
 // *number* of symptoms no longer affects the score beyond the first. The
 // symptoms themselves are still stored in full on the entry, so they remain
 // visible in reports and history even though they don't move the number.
-function scoreStoolOrHygiene(value, symptoms, { symptomPenalty = 5 } = {}) {
+export function scoreStoolOrHygiene(value, symptoms, { symptomPenalty = 5 } = {}) {
   // 'none' is stool-only ("No faeces today") — like 'unsure', there's no
   // quality to score, so it's excluded from the average rather than
   // penalized or treated as a perfect score.
@@ -128,7 +128,7 @@ function scoreStoolOrHygiene(value, symptoms, { symptomPenalty = 5 } = {}) {
   return Math.max(0, value - penalty)
 }
 
-function scoreVomiting(vomiting) {
+export function scoreVomiting(vomiting) {
   if (vomiting.hasVomited === 'unsure') return null
   if (!vomiting.hasVomited) return 10
   const frequency = Number(vomiting.frequency)
@@ -139,7 +139,7 @@ function scoreVomiting(vomiting) {
   return exceedsThreshold ? 0 : 5
 }
 
-function scoreUrination(urination) {
+export function scoreUrination(urination) {
   if (urination.status === 'unsure') return null
   if (urination.status === 'normal') return 10
   return urination.symptoms.length > 0 ? 0 : 5

@@ -27,6 +27,35 @@ export default function DayAnswersModal({
   // button that failed rather than in a console nobody has open.
   noteError,
 }) {
+  // Split into the two groups.
+  //
+  // A follow-up travels with its parent: it is the detail OF that answer, and
+  // lifting "Not putting the leg down at all" into Worth a look while leaving
+  // "which leg?" behind in the list below orphans the detail from the thing
+  // it details. Follow-ups carry severity: null, so they can never lift on
+  // their own account.
+  //
+  // Collection order is preserved inside each group. That order is the order
+  // the questions were asked, and re-sorting the remainder would make the day
+  // harder to check against the form that produced it.
+  // Blocks, not rows: a parent and its follow-ups move as one unit. Sorting
+  // loose rows would put every parent above every follow-up and detach the
+  // detail from what it details.
+  const blocks = []
+  for (const row of rows) {
+    if (row.isFollowUp && blocks.length > 0) blocks[blocks.length - 1].push(row)
+    else blocks.push([row])
+  }
+
+  // Emergency before concern within the group. Array.prototype.sort is stable
+  // in every engine this runs on, so blocks of equal weight keep collection
+  // order.
+  const concerning = blocks
+    .filter((block) => isConcerning(block[0]))
+    .sort((a, b) => concernWeight(b[0]) - concernWeight(a[0]))
+    .flat()
+  const rest = blocks.filter((block) => !isConcerning(block[0])).flat()
+
   return (
     <Modal title={title} onClose={onClose}>
       <p className="day-answers-date">{dateLabel}</p>
@@ -56,37 +85,96 @@ export default function DayAnswersModal({
       {rows.length === 0 ? (
         <p>{emptyMessage ?? 'Nothing was recorded on this day.'}</p>
       ) : (
-        <dl className="day-answers">
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className={`day-answer-row ${row.isFollowUp ? 'follow-up' : ''}`.trim()}
-            >
-              <dt className="day-answer-label">
-                {/* Through PetText, not printed raw. Question labels and level
-                    wording carry {name}/{their} tokens — "Where Is {name}
-                    Sore?" is what is stored, and it is not what anyone should
-                    ever read. */}
-                <PetText template={row.label} pet={pet} />
-                {/* A dot rather than a word. The answer beside it already
-                    says what happened; this only says whether the app
-                    flagged it, and a second sentence per row would bury the
-                    answers themselves. */}
-                {severityDotFor(row)}
-              </dt>
-              <dd className="day-answer-value">
-                <PetText template={row.answer} pet={pet} />
-                {row.detail && (
-                  <span className="day-answer-detail">
-                    <PetText template={row.detail} pet={pet} />
-                  </span>
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <>
+          {/* Concerning answers first, and only when there are any — an empty
+              "Worth a look" on a good day is a heading that says nothing.
+              Emergency above concern within the group, because if both are
+              present the order is the order someone should read them in.
+              Assessment rows do not reach this yet. Only the eight BEAAAAPP
+              categories carry a flag; the function questions (vomiting,
+              drinking, urination and the rest) have no threshold defined, and
+              a single 0-10 cutoff across all of them would flag the wrong
+              ones — three vomits and mildly increased drinking are not
+              equivalently worrying at the same number. PENDING ASH: a
+              threshold per question. Until then those rows fall through to
+              the list below, exactly as they do today. */}
+          {concerning.length > 0 && (
+            <>
+              <p className="day-answers-group">Worth a look</p>
+              <dl className="day-answers">
+                {concerning.map((row) => (
+                  <DayAnswerRow key={row.key} row={row} pet={pet} />
+                ))}
+              </dl>
+            </>
+          )}
+
+          {rest.length > 0 && (
+            <>
+              {/* Only labelled when there is something above it to be "the
+                  rest" of. On a clean day this list is the whole content and
+                  needs no heading. */}
+              {concerning.length > 0 && (
+                <p className="day-answers-group">Everything else</p>
+              )}
+              <dl className="day-answers">
+                {rest.map((row) => (
+                  <DayAnswerRow key={row.key} row={row} pet={pet} />
+                ))}
+              </dl>
+            </>
+          )}
+        </>
       )}
     </Modal>
+  )
+}
+
+// The answer reads as the heading and the question as its context, which is
+// the inversion this whole change is about: someone tapping a day wants to
+// know what happened, not to re-read the form.
+//
+// Still a dt/dd pair — the question genuinely IS the term for the answer, and
+// a screen reader should keep that relationship. Only the visual order is
+// swapped, by ordering the dd above the dt in the flex column.
+// One notion of "flagged", from two different row shapes. Condition rows
+// carry a three-band `severity`; assessment rows carry a boolean `emergency`
+// and only on the eight BEAAAAPP categories. severityDotFor already
+// normalised these for the dot — this is the same rule, named, so the
+// grouping and the dot cannot disagree about what is flagged.
+function isConcerning(row) {
+  return Boolean(row.emergency) || (Boolean(row.severity) && row.severity !== 'ok')
+}
+
+function concernWeight(row) {
+  if (row.isFollowUp) return 0
+  if (row.emergency || row.severity === 'emergency') return 2
+  if (row.severity === 'concern') return 1
+  return 0
+}
+
+function DayAnswerRow({ row, pet }) {
+  return (
+    <div className={`day-answer-row ${row.isFollowUp ? 'follow-up' : ''}`.trim()}>
+      <dd className="day-answer-value">
+        {/* The dot sits with the ANSWER now. It describes what was recorded,
+            not the question that was asked, and the answer is what it should
+            be read against. */}
+        {severityDotFor(row)}
+        <PetText template={row.answer} pet={pet} />
+        {row.detail && (
+          <span className="day-answer-detail">
+            <PetText template={row.detail} pet={pet} />
+          </span>
+        )}
+      </dd>
+      <dt className="day-answer-label">
+        {/* Through PetText, not printed raw. Question labels and level
+            wording carry {name}/{their} tokens — "Where Is {name} Sore?" is
+            what is stored, and it is not what anyone should ever read. */}
+        <PetText template={row.label} pet={pet} />
+      </dt>
+    </div>
   )
 }
 
