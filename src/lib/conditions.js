@@ -1790,16 +1790,28 @@ export const CONDITIONS = {
       'Most skin disease is due to underlying allergies, caused by food, environment or a combination of both. '
       + 'Other kinds of skin disease may be caused by parasites, immune-mediated processes or dietary deficiencies.',
     intro: [
-      // "particularly in cats" rather than a species-keyed string: the intro
-      // paragraphs are rendered through PetText, which fills tokens but does
-      // not resolve a { dog, cat } object, so a species-split here would print
-      // as [object Object]. Naming the species in the sentence is both
-      // correct and useful — a dog owner reading it learns something too.
+      'Speak to your vet team about options for allergy diagnosis and management, and use the following questionnaire to track how {name} is responding to treatments.',
+    ],
+    // Behind a toggle rather than inline. This is reference material — read
+    // once, when someone is working out whether the module applies to their
+    // pet — and it sat permanently above the questions they came to answer,
+    // pushing them down the screen on every visit thereafter. Same reasoning
+    // as the `why` on a parameter, and the same component.
+    //
+    // The label names the content rather than saying "More info", because a
+    // toggle a user has to open to find out what is behind it is a toggle
+    // most people do not open.
+    //
+    // "particularly in cats" rather than a species-keyed string: this renders
+    // through PetText, which fills tokens but does not resolve a
+    // { dog, cat } object, so a species-split here would print as
+    // [object Object]. Naming the species in the sentence is both correct and
+    // useful — a dog owner reading it learns something too.
+    whyLabel: 'Signs of allergies',
+    why:
       'Signs of allergies include itching, over-grooming (particularly in cats), paw licking/chewing, ear infections '
       + 'and sometimes gastrointestinal issues. '
       + 'It is important to intervene early if any of these symptoms are noticed, to prevent inflammation and infection.',
-      'Speak to your vet team about options for allergy diagnosis and management, and use the following questionnaire to track how {name} is responding to treatments.',
-    ],
     // PENDING ASH — see the 'pvas' entry in lib/references.js.
     citation: referenceText('pvas'),
     // Shown above the "is {name} on any medication?" question, because in
@@ -1894,7 +1906,22 @@ export const CONDITIONS = {
         // matching, since it is the term that goes to the vet.
         label: 'Itching (Pruritus Score)',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
+        // The one scale plotted so far. Every itch answer has always been
+        // stored in condition_entries.values.itch — this only asks for it to
+        // be drawn, so the chart appears with the pet's full history rather
+        // than starting from today.
+        //
+        // The other four scales in this module (skin, ears, paws_face,
+        // itch_sleep) are deliberately NOT charted yet — Ash's call once this
+        // one has been seen.
+        chart: true,
+        // CONFIRMED — Ash Cullen (BVSc), 1 Sep 2026. Was PENDING; cleared
+        // once the chart made it visible. This is not only a severity rule
+        // any more: it is the dashed line an owner reads and may take to
+        // their vet, which is why it needed confirming before shipping.
+        // Inclusive — evaluateParameter uses `score >= concernFrom`, so a 4
+        // is itself a concern, and the chart caption says "at or above".
+        concernFrom: 4,
         // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Species-keyed: the cat
         // version carries Ash's point about over-grooming, which is the whole
         // reason a cat's itch gets missed.
@@ -3404,27 +3431,61 @@ export function summariseEntry(condition, values, species) {
 // 38 in August is a trend an owner cannot see any other way, and it is the
 // number a vet will want. Two questions in the whole app qualify, and if a
 // third ever does it will be a number too.
+// A `scale` answer is always one of BEAP_SCORES — 0, 2, 4, 6, 8, 10 — so its
+// axis is that range and nothing else. See SeverityOptionList, which is what
+// renders a scale and what decides the values it can emit.
+const SCALE_DOMAIN = [0, 10]
+
 export function numberChartFor(parameter, entries, species) {
-  if (!parameter.chart || parameter.type !== 'number') return null
+  // Two shapes, one chart. A 'number' is a free reading — a respiratory rate,
+  // millilitres of water — where the interesting range is whatever the pet
+  // actually does. A 'scale' is a fixed 0-10 answer where the range is the
+  // scale itself.
+  const isScale = parameter.type === 'scale'
+  if (!parameter.chart) return null
+  if (parameter.type !== 'number' && !isScale) return null
 
   const points = entries
     .map((entry) => ({ date: entry.date, value: Number(entry.values?.[parameter.key]) }))
     .filter((point) => Number.isFinite(point.value))
   if (points.length === 0) return null
 
-  const values = points.map((point) => point.value)
-  // A little headroom either side so the highest reading is not drawn on the
-  // frame of the chart.
-  const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
-  const threshold = thresholdFor(parameter.concernAbove, species)
+  // concernAbove for a number, concernFrom for a scale — and the two do NOT
+  // mean the same thing. concernAbove is exclusive (`numeric > above`);
+  // concernFrom is inclusive (`score >= concernFrom`), both in
+  // evaluateParameter. The caption below has to say which, or a pruritus of
+  // exactly 4 reads as fine on the chart while the app flags it as a concern.
+  const isInclusive = parameter.concernAbove == null && parameter.concernFrom != null
+  const threshold = thresholdFor(parameter.concernAbove ?? parameter.concernFrom, species)
+
+  const unit = parameter.unit ? ` ${parameter.unit}` : undefined
+  const thresholdText = threshold != null
+    ? `${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}`
+    : null
+
+  let domain
+  if (isScale) {
+    // The scale's own range, NOT the observed one. Auto-scaling here would
+    // draw a steady run of 6-7 filling the full height of the chart, which
+    // reads as a catastrophe rather than as "consistently uncomfortable" —
+    // and would rescale the moment a good day arrived, so two screenshots a
+    // week apart would not be comparable.
+    domain = SCALE_DOMAIN
+  } else {
+    // A little headroom either side so the highest reading is not drawn on
+    // the frame of the chart.
+    const values = points.map((point) => point.value)
+    const pad = Math.max(1, Math.round((Math.max(...values) - Math.min(...values)) * 0.1))
+    domain = [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad]
+  }
 
   return {
     points,
-    domain: [Math.max(0, Math.min(...values) - pad), Math.max(...values) + pad],
-    unit: parameter.unit ? ` ${parameter.unit}` : undefined,
+    domain,
+    unit,
     threshold,
-    caption: threshold != null
-      ? `The dashed line is ${threshold}${parameter.unit ? ` ${parameter.unit}` : ''}. Readings above it are worth mentioning to your vet, especially if they stay there.`
+    caption: thresholdText != null
+      ? `The dashed line is ${thresholdText}. Readings ${isInclusive ? 'at or above' : 'above'} it are worth mentioning to your vet, especially if they stay there.`
       : null,
   }
 }

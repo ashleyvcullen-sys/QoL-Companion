@@ -3135,8 +3135,12 @@ code {
   align-items: center;
   gap: var(--gap-inline);
   /* Vertical padding for the tap target, none horizontally so the label
-     lines up with the question above it rather than sitting indented. */
+     lines up with the question above it rather than sitting indented.
+     min-height because the padding alone gave about 36px on a 14px line —
+     under Apple's 44pt minimum. This is a shared component, so every "More
+     info" toggle in the app gains the target, not just the new one. */
   padding: 8px 0;
+  min-height: 44px;
   border: 0;
   background: none;
   font: inherit;

@@ -26,6 +26,7 @@ import {
   sleepScoreFromSeverity,
   sleepSeverityFromScore,
   vcogGradeFromBeapAppetite,
+  WHY_LABEL,
 } from '../lib/conditions'
 import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -36,8 +37,10 @@ import { elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, hasGiFoodAllergySelected, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
+import ExpandableNote from '../components/ExpandableNote'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
+import { fillPetText } from '../lib/petText'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   addPetCondition,
@@ -542,6 +545,20 @@ export default function ConditionMonitoring() {
                 </p>
               ))}
 
+            {/* Reference material, behind a toggle. Same component and same
+                field name a PARAMETER uses for its own `why` — one level up,
+                for background about the condition rather than about a single
+                question. Nothing new was introduced for this.
+                Expands in place rather than opening a sheet, so the text is
+                never truncated to fit: it is as long as it is, and the card
+                grows. */}
+            {definition.why && (
+              <ExpandableNote label={fillPetText(definition.whyLabel ?? WHY_LABEL, pet)}>
+                <p className="assessment-hint">
+                  <PetText template={definition.why} pet={pet} />
+                </p>
+              </ExpandableNote>
+            )}
           </Card>
 
           {asksAboutMedication && (
