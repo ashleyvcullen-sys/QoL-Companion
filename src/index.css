@@ -6,7 +6,21 @@
   --accent: #C97B8C;
   --text-h: #3D2B30;
   --text: #7A5B63;
-  --text-muted: #9C7C86;
+  /* Darkened from #9C7C86, which failed WCAG AA on every ground in the app:
+     3.72:1 on a card, 3.55:1 on the page, 3.32:1 on the accent tint and
+     2.94:1 on a badge. This is 5.53 / 5.28 / 4.93, so ordinary muted text
+     passes wherever it lands. Same hue, walked darker, so it still reads as
+     the same colour system rather than a different palette. */
+  --text-muted: #806069;
+
+  /* The old value, kept for the two places the muted colour is genuinely
+     DECORATION rather than text: a disabled icon disc and the calendar's
+     note marker. Both carry a white glyph or nothing at all, so they need
+     3:1 (WCAG non-text contrast) and have 3.72:1 — darkening them would
+     have restyled two unrelated components as a side effect of a text fix.
+     The selected score-slider step looked like a third of these and is not:
+     it has a 12px white label on it, so it follows --text-muted. */
+  --muted-fill: #9C7C86;
   --border: #F5DFE4;
   /* A stronger border and an off-white fill, for controls that need to read
      as pressable against the page. Both were loose hexes in ScoreSlider. */
@@ -590,7 +604,10 @@ code {
   height: 20px;
   border-radius: var(--radius-pill);
   background: var(--border);
-  color: var(--text-muted);
+  /* --text, not --text-muted. A badge sits on --border, the darkest ground
+     muted text lands on anywhere in the app, where even the corrected
+     --text-muted is 4.36:1. This is 5.0:1. */
+  color: var(--text);
 }
 
 .icon-tile:hover {
@@ -613,7 +630,7 @@ code {
 }
 
 .icon-badge-disabled {
-  background: var(--text-muted);
+  background: var(--muted-fill);
 }
 
 .icon-tile-label {
@@ -2083,7 +2100,7 @@ code {
 .calendar-cell-note {
   top: 1px;
   left: 1px;
-  background: var(--text-muted);
+  background: var(--muted-fill);
 }
 
 /* Top-right: a medication started or stopped. */
@@ -2410,7 +2427,8 @@ code {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: var(--border);
-  color: var(--text-muted);
+  /* Same ground, same reason, as .icon-tile-lock. */
+  color: var(--text);
   font-size: var(--type-micro);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -2452,13 +2470,10 @@ code {
 }
 
 /* Legal fine print: Terms, Privacy, and the Privacy/Data/Legal page.
-   Quiet by SIZE, not by colour — and that distinction is measured, not a
-   preference. --text-muted, the obvious choice for something meant to
-   recede, is 3.72:1 on white and 3.55:1 on the page ground. Both fail WCAG
-   AA for normal-size text, and a privacy policy a reviewer has to squint at
-   is a worse outcome than one that is simply small. --text is 5.99:1 and
-   5.72:1, so the type can drop to the smallest size in the scale and still
-   be comfortably readable.
+   Quiet by SIZE, not by colour. --text-muted is the right token for
+   something meant to recede and now carries enough contrast to be used for
+   it — it was 3.55:1 on the page ground when this rule was written, which is
+   why it briefly hardcoded --text instead.
    No block, no width, no button shape — an underlined phrase reads as a
    reference rather than something to press.
    min-height, not height: 44x44pt is Apple's minimum tap target, and small
@@ -2476,7 +2491,7 @@ code {
   border: none;
   font: inherit;
   font-size: var(--type-label);
-  color: var(--text);
+  color: var(--text-muted);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -2795,6 +2810,11 @@ code {
   color: var(--text-muted);
 }
 
+/* --text-muted, NOT --muted-fill, unlike the other two former fill uses.
+   This one carries text: a 12px label in white, which on the old colour was
+   3.72:1 and failed AA. On the corrected token it is 5.53:1. The selected
+   step therefore does darken slightly — that is the visible change, and it
+   is the point. */
 .score-slider-option.is-selected {
   border-color: var(--text-muted);
   background: var(--text-muted);
