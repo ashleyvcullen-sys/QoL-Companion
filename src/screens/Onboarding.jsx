@@ -293,7 +293,7 @@ export default function Onboarding() {
             <div className="tip-callout">
               <span className="tip-callout-icon">💡</span>
               <p>
-                <strong>Did you know?</strong> At {ageLabel}, {name || 'your pet'} is approximately <strong>{humanYears} in human years</strong> — based on AAHA/AAFP life stage guidelines.
+                <strong>Did you know?</strong> At {ageLabel}, {name || 'your pet'} is approximately <strong>{humanYears} in human years</strong> — incorporating ideas from AAHA and AAFP life-stage guidelines.
               </p>
             </div>
           )}

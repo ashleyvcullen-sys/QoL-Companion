@@ -2525,6 +2525,23 @@ code {
   vertical-align: 2px;
 }
 
+/* Where an assessment says what it adapts. Quiet: --type-micro, muted, and
+   the last thing in its card — an attribution is a fact the reader can check,
+   not something they need in order to answer the questions above it.
+   Legible rather than hidden, though. --text-muted is 5.28:1 on the page
+   ground since the token was corrected, so the smallest size in the scale is
+   still comfortably readable. */
+.source-note {
+  margin-top: 12px;
+  font-size: var(--type-micro);
+  line-height: 145%;
+  color: var(--text-muted);
+}
+
+.source-note + .source-note {
+  margin-top: 4px;
+}
+
 .app-footer-spacer {
   height: calc(120px + env(safe-area-inset-bottom));
   flex-shrink: 0;

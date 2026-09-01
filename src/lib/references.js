@@ -6,10 +6,27 @@
 // fall behind — and the one that must never fall behind is the legal one,
 // because that is the copy that has to be complete.
 //
-// So this is the source. The assessment shows its own subset at the start,
-// the condition pages show theirs at the top, and the attribution section of
-// Terms and Privacy renders ALL of them without anyone having to remember to
-// add the new one.
+// So this is the source. Every surface renders FROM it:
+//   - the assessment intro shows its own species-filtered subset
+//     (assessmentReferences)
+//   - a condition page shows its one line (definition.citation, built with
+//     referenceText)
+//   - the body condition screen shows the scale and the illustrations credit
+//   - Legal & Privacy and the Terms render ALL of them (allReferencesText),
+//     which is the copy that has to be complete
+//
+// Between 29 Aug and 1 Sep 2026 the in-context lines were removed and only
+// the legal page rendered these, which left assessmentReferences() with no
+// caller and this comment describing behaviour the app did not have. Both
+// are true again.
+//
+// WORDING IS LOAD-BEARING. Every string below says "incorporates ideas from"
+// or "incorporates assessment structures from". None says "the LOAD
+// questionnaire", "scored using VCOG-CTCAE" or "based on" — the app ADAPTS
+// these instruments and does not reproduce them. Claiming otherwise would
+// borrow a validation the adaptation has not earned and assert an IP
+// position the app is not entitled to. "Validated" and "peer-reviewed" may
+// describe the SOURCE; they may never describe our version of it.
 //
 // `where` says which screens a reference belongs to:
 //   'assessment'  the Overall Quality of Life Assessment
@@ -95,10 +112,11 @@ export const REFERENCES = [
     full: 'Body condition scoring incorporates the WSAVA/Purina 9-point scale (World Small Animal Veterinary Association, in partnership with Purina).',
   },
   {
-    // The BCS illustrations are NOT WSAVA's artwork — see BCS_IMAGE_CREDIT in
-    // lib/bcsScale.js. It used to be credited on the Body Condition screen
-    // itself; with the page-bottom credits gone (29 Aug 2026, Ash's call)
-    // this is the only place it is now said, so it has to be said here.
+    // The BCS illustrations are NOT WSAVA's artwork. The Body Condition
+    // screen says so directly under the drawings, from BCS_IMAGE_CREDIT in
+    // lib/bcsScale.js — the only screen a reader ever sees them on. This is
+    // the same fact in the complete list, which is why the wording here is
+    // fuller: "an adaptation and not the official WSAVA artwork".
     key: 'wsava-bcs-images',
     short: 'Illustrations incorporate ideas from the WSAVA Body Condition Score chart.',
     full: 'The body condition illustrations incorporate ideas from the WSAVA Body Condition Score chart. They are an adaptation and not the official WSAVA artwork.',

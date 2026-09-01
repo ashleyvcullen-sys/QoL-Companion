@@ -591,18 +591,17 @@ export default function QualityOfLifeAssessment() {
     setSaving(false)
   }
 
-  // The instrument credits used to sit under the Back/Next buttons on the
-  // intro page. Credits now live in one place — Legal & Privacy, and the
-  // Terms — rather than at the foot of every screen that uses one (Ash's
-  // call, 29 Aug 2026). They are all in lib/references.js and appear there
-  // in full, so nothing has stopped being credited.
+  // The instrument credits sit on the intro page itself (see IntroPage),
+  // not under the Back/Next buttons where they used to be. Legal & Privacy
+  // still carries all of them in full; this is the short form, shown where
+  // the instrument is actually used.
   //
   // The array stays: the wizard reads a footer per page, and a page that
   // gains one later should not need this rebuilt.
   const pageFooters = [null]
 
   const pages = [
-    <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
+    <IntroPage key="intro" petName={pet.name} species={pet.species} isFirstAssessment={isFirstAssessment} />,
     <SliderWithChipsPage
       key="stool"
       title="Stool quality"

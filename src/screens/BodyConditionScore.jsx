@@ -13,7 +13,8 @@ import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
-import {bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
+import {BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
+import { referenceText } from '../lib/references'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
 
 
@@ -125,6 +126,16 @@ export default function BodyConditionScore() {
           imageLayout="wide"
           descriptionOnSelect
         />
+
+        {/* Both credits, directly under the thing they credit.
+            The scale line comes from lib/references.js so it cannot drift
+            from the legal page. The illustrations line is separate and has to
+            be said HERE in particular: these are an adaptation, not WSAVA's
+            artwork, and the only place a reader sees the drawings is this
+            screen. BCS_IMAGE_CREDIT has existed for that since the drawings
+            did, and had no caller. */}
+        <p className="source-note">{referenceText('wsava-bcs')}</p>
+        <p className="source-note">{BCS_IMAGE_CREDIT}</p>
 
         <div className="field">
           <label htmlFor="bcs-weight">Body weight (optional)</label>

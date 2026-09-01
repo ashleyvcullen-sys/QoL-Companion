@@ -541,6 +541,7 @@ export default function ConditionMonitoring() {
                   <PetText template={paragraph} pet={pet} />
                 </p>
               ))}
+
           </Card>
 
           {asksAboutMedication && (
@@ -924,11 +925,19 @@ export default function ConditionMonitoring() {
         </Modal>
       )}
 
-      {/* The condition's citation and those of its questions used to sit
-          here. Credits now live in one place — Legal & Privacy, and the Terms
-          — rather than at the foot of every screen that uses an instrument
-          (Ash's call, 29 Aug 2026). Every one of them is in lib/references.js
-          and appears there in full. */}
+      {/* The source, where the assessment is used — not only on the legal
+          page, where someone using the arthritis module would have to go
+          hunting for it.
+          definition.citation is the `short` string straight from
+          lib/references.js, so this line and the legal attribution are two
+          views of one record. It is also why nothing here can claim the app
+          IS an instrument: that file says "incorporates ideas from" and
+          "incorporates assessment structures from", never "the LOAD
+          questionnaire".
+          Only the five modules that adapt something carry one. Seizures,
+          gastrointestinal and kidney have no citation because they draw on
+          no published instrument — PENDING ASH on the last two. */}
+      {definition.citation && <p className="source-note">{definition.citation}</p>}
 
       {openDay && (
         <DayAnswersModal
