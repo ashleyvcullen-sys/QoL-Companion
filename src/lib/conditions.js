@@ -788,21 +788,12 @@ export const CONDITIONS = {
     calendarUnloggedTitle: 'Seizure-free',
     calendarCaption:
       'You do not need to fill this in every day. Any day you have not recorded a seizure on is shown as seizure-free, and so is any day you recorded "no". Only the days with a seizure need an entry.',
-    // Two paragraphs, safety first.
-    //
-    // The ordering is deliberate: someone opening this page in the middle of
-    // a seizure is not reading it top to bottom, and the sentence that keeps
-    // them from being bitten has to be the one their eye lands on. The
-    // explanation of what the section is for can wait — it is still there for
-    // the calm reading.
-    //
-    // Bold rather than a red panel. The red standing alert on the first
-    // question already carries the 5-minute and cluster thresholds, and two
-    // red panels one above the other read as two emergencies rather than one
-    // warning and one emergency.
+    // The "Keep yourself safe" paragraph that opened this section was removed
+    // on Ash's instruction (1 Sep 2026). It warned the owner they could be
+    // bitten during a seizure. The standing red alert on the first question
+    // still carries the clinical thresholds — five minutes, and more than one
+    // in 24 hours — which is the part that decides whether to call a vet.
     intro: [
-      // PENDING ASH — wording.
-      '**Keep yourself safe.** {name} will not be fully aware of what {they} {are} doing before, during or after a seizure. Keep your face and hands away from {their} head — {they} may bite without meaning to.',
       // PENDING ASH — wording.
       'You do not need to fill this in every day — only on a day {name} has a seizure. Every other day is counted as seizure-free, so the gaps between seizures show up on the calendar without you doing anything.',
       // PENDING ASH — wording.

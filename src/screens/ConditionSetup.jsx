@@ -165,11 +165,18 @@ export default function ConditionSetup() {
             condition for my pet?", which was already answered on the previous
             screen. By the time someone is here they have chosen cancer; what
             they need now is what this screen is asking them to do. */}
-        {(definition.setupIntro ?? definition.intro) && (
-          <p className="assessment-hint">
-            <PetText template={definition.setupIntro ?? definition.intro} pet={pet} />
+        {/* Normalised to an array before rendering. `intro` is an array on
+            four conditions and a string on none of the composed ones today,
+            so this line only ever sees a string in practice — but PetText
+            calls String.replace on whatever it is given, and an array reaches
+            it as a TypeError rather than as bad output. The crash is armed
+            for whichever condition sets composed: true next, and disarming it
+            costs a map. */}
+        {[definition.setupIntro ?? definition.intro].flat().filter(Boolean).map((paragraph, index) => (
+          <p key={index} className="assessment-hint">
+            <PetText template={paragraph} pet={pet} />
           </p>
-        )}
+        ))}
       </Card>
 
       {loading && <Card><p>Loading…</p></Card>}
