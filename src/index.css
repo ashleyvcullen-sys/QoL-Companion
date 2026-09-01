@@ -680,23 +680,85 @@ code {
    Stacked, not two columns side by side. At 320-430pt a two-column layout
    gives each list about 130px, which wraps "Add medications and set reminders
    for dosing" to four lines and makes the comparison harder to read than the
-   thing it is comparing. */
+   thing it is comparing.
+   The gap is wider than the app's usual 16 because these are two THINGS being
+   compared, not two paragraphs of one thing — and with a border on each, 16px
+   read as a hairline between two halves of a single list. */
 .plan-compare {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   margin-top: 16px;
 }
 
-/* An <h3> so the two columns are real headings under the card's own, which
-   is what lets a screen reader move between them. Sized as a group divider
-   rather than a card title, because that is what it is. */
-.plan-compare-heading {
+/* Each tier in its own box. Previously .plan-compare-column had no rule at
+   all, so the only thing separating free from premium was a 16px gap and two
+   quiet uppercase labels — which is why the two read as one continuous list.
+   A panel, not a card: this sits INSIDE a card already, and nesting the card
+   treatment would give it a second shadow. */
+.plan-tier {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 16px;
+  background: var(--surface);
+}
+
+/* The paid tier, in the pair the app already uses to mark the emphasised one
+   — accent edge over accent wash, as on the selected paywall plan and the
+   condition-parameter number input. No gradient, no badge, nothing that would
+   look like marketing beside the clinical content. */
+.plan-tier-premium {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* The tier you are on. A heavier edge on whichever box it is, so the answer to
+   "which am I on" is visible before any text is read. */
+.plan-tier.is-current {
+  border-width: 2px;
+  padding: 15px;
+}
+
+/* A real tier name, not a group divider. It was --type-label uppercase muted,
+   which reads as a caption over a list rather than as the name of a thing —
+   part of why the two tiers ran together. Now the item size and the heading
+   colour, so each box announces what it is. */
+.plan-tier-name {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--gap-inline);
   margin: 0 0 8px;
-  font-size: var(--type-label);
+  font-size: var(--type-item);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  color: var(--text-h);
+}
+
+/* "Your plan". The same pill treatment as the paywall's "Best value" badge —
+   --accent-wash-strong is the token block's named badge wash — so it reads as
+   a marker rather than as a second heading. */
+.plan-tier-current {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash-strong);
+  color: var(--accent);
+  font-size: var(--type-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* "Everything in Free, plus:" — a lead-in to the list under it. */
+.plan-tier-note {
+  margin: 0 0 8px;
+  font-size: var(--type-support);
+  color: var(--text-muted);
+}
+
+/* A lock where a tick would be, for features the account does not have. Muted
+   rather than green: a coloured tick beside something you cannot use is a
+   small lie. */
+.plan-locked-icon {
   color: var(--text-muted);
 }
 

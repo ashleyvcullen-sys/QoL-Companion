@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, LogOut } from 'lucide-react'
+import { Check, Lock, LogOut } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -189,9 +189,10 @@ export default function Settings() {
             written out here. */}
         {!entitlementsLoading && (
           <div className="plan-compare">
-            <div className="plan-compare-column">
-              <h3 className="plan-compare-heading">
-                {hasPremium ? 'Free plan' : 'Your plan includes'}
+            <section className={`plan-tier ${!hasPremium ? 'is-current' : ''}`.trim()}>
+              <h3 className="plan-tier-name">
+                Free
+                {!hasPremium && <span className="plan-tier-current">Your plan</span>}
               </h3>
               <ul className="plan-compare-list">
                 {FREE_FEATURE_LIST.map((line) => (
@@ -201,24 +202,37 @@ export default function Settings() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
 
-            <div className="plan-compare-column">
-              <h3 className="plan-compare-heading">
-                {hasPremium ? 'Premium adds' : 'Premium also adds'}
+            <section className={`plan-tier plan-tier-premium ${hasPremium ? 'is-current' : ''}`.trim()}>
+              <h3 className="plan-tier-name">
+                QoL Companion Premium
+                {hasPremium && <span className="plan-tier-current">Your plan</span>}
               </h3>
+              {/* Says outright that Premium is additive. The old headings
+                  carried that in the word "adds"; naming the tiers plainly is
+                  clearer, but it would otherwise read as though Premium were
+                  only these six things. */}
+              <p className="plan-tier-note">Everything in Free, plus:</p>
               {/* Only `text`. The paywall renders each line's `detail` (the
                   named conditions under disease-specific monitoring); here it
                   would be a paragraph inside a comparison, which is a list. */}
               <ul className="plan-compare-list">
                 {PAYWALL_FEATURE_LIST.map(({ text }) => (
                   <li key={text}>
-                    <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                    {/* A tick for what you have, a lock for what you do not.
+                        The same lock the Home tiles and the tour use, so it
+                        reads as the same fact rather than a third idea — and
+                        it stops six green ticks implying the reader already
+                        has all of this. */}
+                    {hasPremium
+                      ? <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                      : <Lock size={14} strokeWidth={2.5} aria-hidden="true" className="plan-locked-icon" />}
                     <span>{text}</span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           </div>
         )}
 
