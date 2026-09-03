@@ -149,13 +149,31 @@ function toBeapStep(n) {
 // from 0 (well) to 1 (poor), which then drives every answer for that day, so
 // the calendar, the charts and the BEAAAAPP categories all tell one story
 // rather than three unrelated ones.
+// The arc sits INSIDE the last fortnight, moved there 3 Sep 2026.
+//
+// It used to run 24 to 8 days ago, which was fine when a three-month calendar
+// was the only thing reading it — but the home card's 14-day strip then
+// caught nothing except the tail, so Maggie's summary was amber and green
+// with no worst case in it at all. Shifted seven days later, the strip shows
+// the whole story left to right: a few settled days, the flare, the response
+// to treatment, then recovery.
+//
+// The flare is pitched at 0.74 rather than a flat 0.8 so limping lands on 8
+// some days and 6 on others — a run of identical red days looks generated, and
+// 8 is the rung Ash made an emergency.
+//
+// It STRADDLES the fortnight boundary on purpose. Sat wholly inside the last
+// 14 days, the count read "9 flagged, up from 4" — true, but printed in red
+// beside a strip that visibly improves left to right, which is a mixed
+// message on the one screen meant to sell the feature. Straddling, the worst
+// of it falls in the previous fortnight and the trend reads down.
 function dogBadness(daysAgo) {
   // daysAgo 44 (oldest) ... 0 (today)
   let base
-  if (daysAgo > 24) base = 0.12          // settled, before the flare
-  else if (daysAgo > 22) base = 0.35     // going off
-  else if (daysAgo >= 15) base = 0.76    // the flare itself
-  else if (daysAgo >= 8) base = 0.42     // responding to treatment
+  if (daysAgo > 20) base = 0.12          // settled, before the flare
+  else if (daysAgo > 18) base = 0.35     // going off
+  else if (daysAgo >= 12) base = 0.74    // the flare itself
+  else if (daysAgo >= 7) base = 0.42     // responding to treatment
   else base = 0.18                       // recovered, not quite as before
   return clamp(base + (deterministicRandom(`dog${daysAgo}`) - 0.5) * 0.18, 0, 1)
 }
@@ -182,12 +200,13 @@ function beapFor(badness, seed, weight = 1, spread = 1) {
 // Notes on a handful of days only. An owner who writes something every single
 // day is not a real owner, and a History card of 45 identical-looking entries
 // is worse for a screenshot than one of five meaningful ones.
+// Moved with the curve above, so a note still lands on the day it describes.
 const DOG_NOTES = {
-  23: 'Slow getting up this morning and didn’t want the stairs. Booked a vet visit.',
-  21: 'Vet today — started meloxicam. Said to keep walks short and flat for a fortnight.',
-  18: 'Still stiff but eating well. Managed a gentle ten minutes around the block.',
-  12: 'Noticeably easier getting off her bed. Keeping the walks short for now.',
-  4: 'Trotted the whole way to the park and back. Best she’s looked in weeks.',
+  20: 'Slow getting up this morning and didn’t want the stairs. Booked a vet visit.',
+  18: 'Vet today — started meloxicam. Said to keep walks short and flat for a fortnight.',
+  15: 'Still stiff but eating well. Managed a gentle ten minutes around the block.',
+  9: 'Noticeably easier getting off her bed. Keeping the walks short for now.',
+  2: 'Trotted the whole way to the park and back. Best she’s looked in weeks.',
 }
 
 const CAT_NOTES = {
@@ -390,7 +409,7 @@ async function seed(userId) {
     badnessFor: dogBadness,
     notes: DOG_NOTES,
     emphasis: 1.1,
-    schedule: { qol: 1, qolDay: null, conditions: { arthritis: 7 } },
+    schedule: { qol: 1, qolDay: null, conditions: { arthritis: 1 } },
   })
 
   // Body condition and weight. Sparse, as an owner actually records them —
@@ -465,17 +484,27 @@ async function seed(userId) {
   await db.from('pet_conditions').insert({
     pet_id: dog.id,
     condition_key: 'arthritis',
-    diagnosed_on: isoDate(dayOffset(21)),
+    diagnosed_on: isoDate(dayOffset(18)),
     notes: 'Diagnosed after the flare. Both hips, worse on the left.',
     active: true,
-    created_at: stampOn(dayOffset(21), 17, 50),
+    created_at: stampOn(dayOffset(18), 17, 50),
   })
 
-  // Weekly, as the schedule above says — not daily. A condition log that
-  // happens to have an entry for every single day contradicts the cadence
-  // the same screen displays.
+  // Daily, matching the daily cadence set on the pet above — the two have to
+  // agree, because the home card shows the cadence and the calendar shows the
+  // entries on the same screen.
+  //
+  // It was weekly until 3 Sep 2026, which was right when a calendar was the
+  // only thing reading this. The home card's fortnight strip is not: weekly
+  // entries left it with three filled ticks and eleven holes, which is an
+  // accurate picture of a weekly log and a poor picture of the app.
+  //
+  // A few days are skipped on purpose. An unbroken run of 22 daily entries is
+  // not what an owner's log looks like, and the strip is built to show missed
+  // days as holes rather than hide them.
   const conditionRows = []
-  for (let daysAgo = 21; daysAgo >= 0; daysAgo -= 7) {
+  for (let daysAgo = 18; daysAgo >= 0; daysAgo -= 1) {
+    if (deterministicRandom(`skip${daysAgo}`) < 0.14) continue
     const badness = dogBadness(daysAgo)
     conditionRows.push({
       pet_id: dog.id,
@@ -489,7 +518,13 @@ async function seed(userId) {
         jump_height: badness > 0.55 ? 'stopped' : badness > 0.3 ? 'hesitates' : 'as_before',
         cold_or_damp: badness > 0.5 ? 'yes' : 'no',
       },
-      notes: daysAgo === 21 ? 'First entry, the day she was diagnosed.' : null,
+      notes: daysAgo === 18
+        ? 'First entry, the day she was diagnosed.'
+        : daysAgo === 13
+          ? 'Worst it has been. Would not use the back step at all today.'
+          : daysAgo === 5
+            ? 'Much brighter this week — went the full block without stopping.'
+            : null,
       created_at: stampOn(dayOffset(daysAgo), 18, 30),
     })
   }

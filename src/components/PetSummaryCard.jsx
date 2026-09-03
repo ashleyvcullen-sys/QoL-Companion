@@ -110,8 +110,21 @@ function conditionHistory({ definition, config, entries, species, today }) {
   const strip = recent.map((date) => ({ date, severity: byDate.get(date)?.severity ?? null }))
   const logged = strip.filter((day) => day.severity != null).length
   const flagged = recent.filter(isFlagged).length
+
   const earlierFlagged = earlier.filter(isFlagged).length
-  const hadEarlier = earlier.some((date) => byDate.get(date)?.severity != null)
+  const earlierLogged = earlier.filter((date) => byDate.get(date)?.severity != null).length
+
+  // Only compare fortnights that are actually comparable.
+  //
+  // "8 flagged, up from 4" was being printed for a pet diagnosed 18 days ago:
+  // the previous fortnight held five logged days because monitoring had not
+  // started for the other nine, so a full fortnight was being measured against
+  // a part of one. Every newly diagnosed pet would read as deteriorating for
+  // its first month, in red, under a strip that visibly improves.
+  //
+  // Half the recent window's logged days is the bar. Below that there is no
+  // honest comparison to draw and the count stands on its own.
+  const hadEarlier = earlierLogged > 0 && earlierLogged * 2 >= logged
 
   // The most recent thing worth naming, newest first. flagged[0] is already
   // the worst finding of its day — summariseEntry sorts it that way.

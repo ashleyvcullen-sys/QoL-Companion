@@ -41,7 +41,11 @@ export const APP_FEATURE_LIST = [
   // Was missing entirely — Ash spotted it. It is a paid feature on Home, in
   // PAYWALL_FEATURE_LIST and in the Terms, and the only list that never
   // mentioned it was the one an owner reads first.
-  { Icon: Scale, label: 'Body Condition and Weight Tracking', to: '/body-condition', premium: true },
+  // "Tracking" dropped 3 Sep 2026 so the row fits one line beside its Premium
+  // badge — at 375px the label had 209px of room and needed 259px. It also
+  // matches the rest of the list, which is noun phrases: "Trends Over Time",
+  // "Photos and Videos", not "Trends Over Time Tracking".
+  { Icon: Scale, label: 'Body Condition and Weight', to: '/body-condition', premium: true },
   { Icon: Camera, label: 'Photos and Videos', to: '/media', premium: true },
   { Icon: FileDown, label: 'Summaries For Your Vet', to: '/export-report', premium: true },
 

@@ -1781,11 +1781,19 @@ code {
 }
 
 /* Optically level with the first line of the label rather than with the top
-   of its box: the badge is 44px and the line is about 20px. */
+   of its box: the badge is 44px and the line is about 20px.
+   //
+   flex: 1 and an explicit text-align, both on Ash's instruction 3 Sep 2026.
+   The slide is `text-align: center`, which the label inherited — so a row
+   that wrapped centred its own lines and started 30-60px right of the rows
+   that did not, and no two wrapped rows started in the same place. Without
+   flex: 1 the label also shrank to a "pretty" width well short of the space
+   available, which made rows wrap that had no need to. */
 .welcome-help-row > span:last-child {
+  flex: 1;
   min-width: 0;
   padding-top: 11px;
-  text-wrap: pretty;
+  text-align: left;
 }
 
 .welcome-alert-badge {
@@ -2989,8 +2997,15 @@ code {
 /* Inline after a feature name rather than on its own line, so the row still
    reads as one item. The tag carries a lock glyph in the tour; here the row
    already has an icon of its own, so the word alone does the work. */
+/* Compact enough to ride on the same line as the label it marks, and
+   nowrap so it can never be the thing that breaks. The generic .premium-tag
+   is sized for the tour card, where it sits alone above a paragraph. */
 .welcome-help-premium {
-  margin-left: var(--gap-inline);
+  margin: 0 0 0 6px;
+  padding: 1px 6px;
+  font-size: var(--type-nano);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
   vertical-align: 2px;
 }
 
