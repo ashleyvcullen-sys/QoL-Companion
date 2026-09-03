@@ -278,10 +278,19 @@ code {
   text-align: left;
 }
 
-.field label {
+.field label,
+.field .field-label {
   font-size: var(--type-support);
   font-weight: 600;
   color: var(--text-h);
+}
+
+/* The dose rows carry their own quieter label style; the heading above them
+   must not inherit it back down the tree. */
+.field .med-dose-time label {
+  font-size: var(--type-label);
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 /* Every text field in the app, wherever it lives. The condition forms had
@@ -605,10 +614,23 @@ code {
    section, and at 16px a dark glyph beside dark text reads as part of the
    word rather than as a label for it. Flex so the organ icons — which are
    masked spans rather than SVGs — sit on the same line as a lucide one. */
+/* The same pink disc the home tiles and the About list wear, scaled to sit
+   beside a heading rather than above a label — Ash's instruction 3 Sep 2026.
+   //
+   White glyph on accent, which both icon families follow for free: lucide
+   icons stroke with currentColor, and the organ icons are PNG alpha masks
+   painted with backgroundColor: currentColor (see components/icons/
+   OrganIcon.jsx), so neither needs a second colour passed in. */
 .pet-summary-section-icon {
   display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  color: var(--accent);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
 }
 
 /* The five pillars, collapsed. The whole row is the toggle, so the dots and
@@ -694,6 +716,87 @@ code {
 .pet-summary-duenote.late {
   color: var(--severity-severe);
 }
+
+/* --- A condition's fortnight, on the home card --------------------------
+   //
+   One tick per day, oldest left, coloured exactly as the calendar colours
+   the same day. A hollow tick is a day with nothing logged: nothing recorded
+   is not the same as nothing wrong, and a strip that painted those green
+   would tell an owner their pet was fine on days nobody looked. */
+.dx-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dx-strip {
+  display: flex;
+  gap: 3px;
+}
+
+/* A hole, not a grey block: --muted-fill is a solid mauve and reads as a
+   fourth severity rather than as absence. */
+.dx-day {
+  width: 8px;
+  height: 20px;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--border);
+}
+
+.dx-day.ok { background: var(--severity-good); box-shadow: none; }
+.dx-day.concern { background: var(--severity-moderate); box-shadow: none; }
+.dx-day.emergency { background: var(--severity-severe); box-shadow: none; }
+
+/* Which end is now. Without it the strip is fourteen ticks with no direction,
+   and a pet getting better looks identical to one getting worse. */
+.dx-day.today {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--text-h);
+}
+
+.dx-scale {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 176px;
+  margin: -4px 0 0;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+}
+
+.dx-trend {
+  margin: 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.dx-trend b { color: var(--text-h); font-weight: 600; }
+.dx-trend .down { color: var(--severity-good); font-weight: 600; }
+.dx-trend .up { color: var(--severity-severe); font-weight: 600; }
+
+.dx-finding {
+  margin: 0;
+  font-size: var(--type-support);
+  color: var(--text-h);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.dx-finding .when { color: var(--text-muted); }
+
+.dx-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--severity-moderate);
+  margin-right: 6px;
+  vertical-align: 1px;
+}
+
+.dx-dot.emergency { background: var(--severity-severe); }
 
 /* The brand mark, at the top of the card. Sized to what the pet's photo
    occupied before it, so the block above the title keeps its proportions. */
@@ -1173,6 +1276,12 @@ code {
   gap: var(--gap-inline);
   align-self: flex-start;
   font-size: var(--type-support);
+}
+
+/* Under a centred intro on a condition page, where flex-start would leave it
+   the only thing on the card off the centre line. */
+.how-to-button.centred {
+  align-self: center;
 }
 
 /* The heading row on a condition page: icon beside the title rather than
@@ -1769,9 +1878,14 @@ code {
   border-color: var(--border);
 }
 
+/* Inline with the text it marks rather than a flex item at the end of the
+   row. vertical-align lifts it onto the first line's baseline; the margin
+   keeps it off the band label. */
 .severity-option-emergency-icon {
   flex-shrink: 0;
   color: var(--severity-severe);
+  vertical-align: -3px;
+  margin-right: 6px;
 }
 
 .severity-option-content {
@@ -2989,23 +3103,32 @@ code {
   padding: 0;
 }
 
-/* One row per extra dose time, under the first. Indented so the group reads
-   as belonging to "Remind me at" above it rather than as five sibling
-   fields. */
-.med-dose-time {
+/* The dose times, as one indented group under "Remind me at".
+   //
+   The rule runs down the whole group rather than each row carrying its own
+   segment: per-row borders left a broken line with a gap at every margin.
+   Every row is identical, dose 1 included, so the inputs form a column. */
+.med-dose-times {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
+  flex-direction: column;
+  gap: 8px;
   padding-left: 12px;
   border-left: 2px solid var(--border);
 }
 
+.med-dose-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* A fixed basis, not min-width on an auto-sized box: "Dose 1" and "Dose 10"
+   are different widths, and anything that lets the label size itself puts
+   the tenth input in a different place from the first. */
 .med-dose-time label {
-  flex: 0 0 auto;
+  flex: 0 0 56px;
   font-size: var(--type-label);
   color: var(--text-muted);
-  min-width: 52px;
 }
 
 .med-dose-time input {

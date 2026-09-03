@@ -105,20 +105,16 @@ export const GI_CORE_PARAMETERS = [
     label: 'Straining To Pass Stool',
     type: 'scale',
     concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
+    // The standing alert has gone, on Ash's instruction 3 Sep 2026. It sat
+    // above this question permanently, whatever the answer, warning that
+    // straining to urinate is mistaken for constipation.
     //
-    // Shown whatever the answer, and it has to be: the risk here is that the
-    // question is READ wrongly, not answered wrongly. An owner watching a cat
-    // strain in the tray reasonably concludes constipation, answers this
-    // question honestly, and none of the six levels would tell them what they
-    // are actually looking at.
-    // Split by species: the urinary obstruction line is true for both, but
-    // "an emergency in cats" is the sentence that gets a blocked tom seen
-    // tonight, and it does not belong in a dog owner's alert.
-    standingAlert: {
-      dog: 'Straining to urinate can often be mistaken for constipation or straining to pass stool. If any straining is noted, please contact your vet immediately to rule out a urinary obstruction, which is an emergency.',
-      cat: 'Straining to urinate can often be mistaken for constipation or straining to pass stool. If any straining is noted, please contact your vet immediately to rule out a urinary obstruction, which is an emergency in cats.',
-    },
+    // What still carries that warning, so it is clear what remains:
+    //   - emergencyMessage below, on the two straining rungs that are
+    //     emergencies, and it names urinary blockage for both species;
+    //   - the urination question in the Overall Quality of Life Assessment,
+    //     which raises its own blocked-cat alert (screens/assessment/
+    //     UrinationPage.jsx).
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
     levels: {
       dog: [

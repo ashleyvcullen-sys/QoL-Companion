@@ -371,6 +371,17 @@ export function visibleParameters(parameters = [], values = {}) {
 // section rather than inventing a second way to say it.
 export const SEEK_VET_ASAP = 'Seek veterinary attention as soon as possible.'
 
+// The one alert both seizure escalations raise — over five minutes, and more
+// than one in 24 hours. Ash's instruction 3 Sep 2026, reversing the split she
+// asked for earlier the same day: both are emergencies, and both say the same
+// thing.
+//
+// Assembled from wording she has already approved: "is an emergency" is from
+// the standing alert, and the second sentence is SEEK_VET_ASAP verbatim.
+export const SEIZURE_EMERGENCY_ALERT =
+  'A seizure lasting more than 5 minutes, or more than one seizure in 24 hours (a cluster), '
+  + `is an emergency. ${SEEK_VET_ASAP}`
+
 export const SHARED_PARAMETERS = {
   gum_colour: {
     key: 'mucous_membranes',
@@ -540,7 +551,7 @@ export const SHARED_PARAMETERS = {
     assessmentField: 'vomiting',
     covers: 'vomiting',
     relationship: RELATIONSHIP.SUPERSEDES,
-    // PENDING ASH — wording. Overridden per condition where there is
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Overridden per condition where there is
     // something more specific to say.
     emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.',
   },
@@ -814,17 +825,11 @@ export const CONDITIONS = {
         // second today. Someone watching a seizure right now needs the five
         // minute rule in front of them, not three questions further down.
         //
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Both thresholds confirmed:
-        // five minutes, and more than one seizure in 24 hours.
-        //
-        // Split into two sentences on her instruction the same day. One
-        // sentence graded both at the same urgency, which stopped being true
-        // when a cluster became amber and over-five-minutes stayed red — the
-        // alert at the top of the form was telling the owner one thing and
-        // the answer they gave was flagging another.
-        standingAlert:
-          'A seizure lasting more than 5 minutes is an emergency — contact your vet or the nearest emergency service straight away. '
-          + 'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Both thresholds
+        // confirmed: five minutes, and more than one seizure in 24 hours.
+        // Both graded the same, and both raising this same alert, on her
+        // final instruction of the day.
+        standingAlert: SEIZURE_EMERGENCY_ALERT,
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Answer no on days nothing happens and there is nothing else to fill in. A record of the quiet days is what makes the pattern visible.',
@@ -870,25 +875,20 @@ export const CONDITIONS = {
         // that only a genuine escalation adds anything: a cluster, over five
         // minutes, or not recovered a day later.
         //
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Two or more in a day is the
-        // conventional cluster definition. Two flags amber and asks for
-        // veterinary attention as soon as possible; three or more is an
-        // emergency. Her call, 3 Sep 2026 — a cluster is urgent at two, and
-        // grading both the same left nothing for the worse case to escalate to.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Two or more in a
+        // day is the conventional cluster definition, and every rung of it is
+        // an emergency. Her final call of the day, reversing the amber grade
+        // she asked for earlier: a cluster is a cluster at two.
+        //
+        // No concernMessage any more — nothing on this parameter reaches the
+        // concern branch, so one would be dead wording that reads as though
+        // some answer here were merely worth watching.
         options: [
           { value: 'one', label: 'One', severity: SEVERITY.OK },
-          { value: 'two', label: 'Two', severity: SEVERITY.CONCERN },
+          { value: 'two', label: 'Two', severity: SEVERITY.EMERGENCY },
           { value: 'three_plus', label: 'Three or more', severity: SEVERITY.EMERGENCY },
         ],
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-        emergencyMessage:
-          'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
-        // Two seizures now flags amber rather than red (item 16), and a choice
-        // parameter reads `concernMessage` on that branch — without one the
-        // owner would get the colour and no words. Same sentence: a cluster is
-        // a cluster at two.
-        concernMessage:
-          'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
+        emergencyMessage: SEIZURE_EMERGENCY_ALERT,
       },
 
       {
@@ -912,9 +912,7 @@ export const CONDITIONS = {
           { value: 'over_5', label: 'More than 5 minutes', severity: SEVERITY.EMERGENCY },
           { value: 'still_going', label: 'Still going now', severity: SEVERITY.EMERGENCY },
         ],
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-        emergencyMessage:
-          'A seizure lasting more than 5 minutes needs emergency treatment. Contact your vet or the nearest emergency service now.',
+        emergencyMessage: SEIZURE_EMERGENCY_ALERT,
       },
 
       {
@@ -1085,9 +1083,11 @@ export const CONDITIONS = {
     composed: true,
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The whole section. Every owner-facing string in
     // giModules.js is drafted by me, including all the thresholds.
-    intro: [
-      'Tell us what applies to {name} and this section will ask about those things only.',
-    ],
+    // The intro sentence has gone with the setup card's — same words, same
+    // instruction, 3 Sep 2026. An empty array rather than a removed key:
+    // resolveDefinition and the setup screen both read `intro` and an array
+    // is what they expect.
+    intro: [],
     parameters: [],
   },
 
@@ -1140,7 +1140,7 @@ export const CONDITIONS = {
       {
         key: 'disorientation',
         species: 'dog',
-        label: 'Orientation',
+        label: 'Disorientation',
         type: 'scale',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her cut: the examples
         // that followed are already the six levels below, and repeating them
@@ -1162,7 +1162,7 @@ export const CONDITIONS = {
       {
         key: 'disorientation',
         species: 'cat',
-        label: 'Orientation',
+        label: 'Disorientation',
         type: 'scale',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Same cut as the dog
         // version, for the same reason.
@@ -1547,7 +1547,7 @@ export const CONDITIONS = {
             'A slight limp now and then, usually after getting up or after a long walk.',
             'A limp that is easy to see after rest or exercise, but wears off as {they} {do} more.',
             'Limping most of the time. It does not fully wear off.',
-            'Obvious limp at every step, and sometimes carries the leg for a few strides.',
+            'Obvious limp at every step, and sometimes carries the leg for a few strides. (emergency)',
             'Will not put the leg down at all, or cannot walk without help. (emergency)',
           ],
           cat: [
@@ -1555,7 +1555,7 @@ export const CONDITIONS = {
             'A slight limp now and then, usually after getting up or after being still for a while.',
             'A limp that is easy to see after rest, but wears off as {they} move{s} around.',
             'Limping most of the time. It does not fully wear off.',
-            'Obvious limp at every step, and sometimes holds the leg up.',
+            'Obvious limp at every step, and sometimes holds the leg up. (emergency)',
             'Will not put the leg down at all, or cannot walk without help. (emergency)',
           ],
         },
@@ -1638,6 +1638,12 @@ export const CONDITIONS = {
         species: 'dog',
         label: 'Walks',
         type: 'scale',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — her instruction to
+        // flag the bottom rung. This scale carried no emergency message at
+        // all, because until now no rung on it was an emergency; the marker
+        // draws the triangle and this is what tells the owner what to do
+        // about it. Same sentence as Limping directly above.
+        emergencyMessage: SEEK_VET_ASAP,
         // Stamina on a walk, against a distance this dog does every day —
         // a comparison the daily activity grade has no way to make.
         covers: 'activity',
@@ -1652,7 +1658,7 @@ export const CONDITIONS = {
             'Slows down or lags before the end of the usual walk. Will sometimes pull up sore after.',
             'Slow and needs the walk cut shorter than usual. Will limp or pull up sore after.',
             'Can only manage a short, slow walk. Goes out mostly to sniff rather than exercise.',
-            'Unwilling to walk or not interested in walks at all.',
+            'Unwilling to walk or not interested in walks at all. (emergency)',
           ],
         },
       },
@@ -2146,9 +2152,18 @@ export const CONDITIONS = {
             'Wakes to scratch or lick a few times through the night, but eventually settles.',
             'Awake and scratching or licking through most of the night. Struggles to settle.',
             'Awake and scratching or licking all night. Cannot settle.',
-            'Awake and scratching or licking all night. Cannot settle, and is distressed — whining, panting or crying.',
+            'Awake and scratching or licking all night. Cannot settle, and is distressed — whining, panting or crying. (emergency)',
           ],
         },
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — her instruction to
+        // flag this rung. The marker is what draws the hazard triangle; the
+        // message is what tells the owner to act on it, and a level marked
+        // emergency without one draws the colour with no words under it.
+        //
+        // SEEK_VET_ASAP rather than a sentence written for this scale: it is
+        // the wording she approved today, and the itch scale directly above
+        // this one already uses it for the same escalation.
+        emergencyMessage: SEEK_VET_ASAP,
       },
 
       // --- The diet trial block -------------------------------------------
@@ -2672,12 +2687,19 @@ export const CONDITIONS = {
           // "Passing No Urine At All" question that used to sit at the bottom
           // of this section has gone: it was asking again, less well, what
           // this rung already asks.
+          //
+          // THE CAT LIST FLAGS ONE RUNG EARLIER THAN THE DOG'S, on Ash's
+          // instruction 3 Sep 2026: severe and very severe are both
+          // emergencies for a cat, very severe only for a dog. A cat going in
+          // and out of the tray constantly and producing little is how a
+          // urinary obstruction presents, and waiting for the bottom rung
+          // means waiting for a cat that has stopped passing urine at all.
           cat: [
             'No changes in urination noted lately.',
             'Urinating slightly more often than usual.',
             'Urinating more often than usual and larger amounts.',
             'Urinating frequently, often large amounts at a time and sometimes outside of the litter tray.',
-            'Urinating constantly, often outside of the litter tray. May be incontinent.',
+            'Urinating constantly, often outside of the litter tray. May be incontinent. (emergency)',
             'Constant dribbling of urine/incontinence OR urinating less / complete lack of urination (end-stage kidney failure). (emergency)',
           ],
         },
@@ -2712,7 +2734,7 @@ export const CONDITIONS = {
             'Occasional lip licking or swallowing, but eating normally.',
             'Lip licking, drooling or turning away from food at times.',
             'Frequently drooling or lip licking. Approaches food then walks away from it.',
-            'Clearly nauseous for much of the day. Refusing food.',
+            'Clearly nauseous for much of the day. Refusing food. (emergency)',
             'Constantly nauseous, drooling heavily, or retching without bringing anything up. (emergency)',
           ],
           cat: [
@@ -2720,7 +2742,7 @@ export const CONDITIONS = {
             'Occasional lip licking or swallowing, but eating normally.',
             'Lip licking, drooling, or sitting hunched over the bowl without eating.',
             'Frequently drooling or lip licking. Approaches food then walks away from it.',
-            'Clearly nauseous for much of the day. Refusing food.',
+            'Clearly nauseous for much of the day. Refusing food. (emergency)',
             'Constantly nauseous, drooling heavily, or retching without bringing anything up. (emergency)',
           ],
         },
@@ -2777,7 +2799,7 @@ export const CONDITIONS = {
             'Breath is a little stronger than usual.',
             'Noticeably unpleasant breath.',
             'Strong breath, and the gums or tongue look red or sore.',
-            'Visible sores or ulcers in the mouth.',
+            'Visible sores or ulcers in the mouth. (emergency)',
             'Refusing to let you look, drooling, or bleeding from the mouth. (emergency)',
           ],
         },
@@ -2969,6 +2991,16 @@ export function levelsFor(parameter, species) {
 // Kept as the old name for existing callers.
 export const beapLevelsFor = levelsFor
 
+// The score at or above which a BEAAAAPP-backed parameter is an emergency,
+// straight from the scale definition. null for a parameter that is not
+// BEAAAAPP-backed, and for the categories with no emergency band at all
+// (eyes, and palpation on the dog scale).
+export function beapEmergencyFromFor(parameter, species) {
+  if (parameter?.type !== 'beap' || !parameter.beapKey) return null
+  const scale = BEAP_SCALES[species] ?? BEAP_SCALES.dog
+  return scale.find((entry) => entry.key === parameter.beapKey)?.emergencyFrom ?? null
+}
+
 // Any owner-facing string may be a plain string, or keyed by species where
 // part of what it says is only true for one of them.
 //
@@ -3111,6 +3143,15 @@ export function evaluateParameter(parameter, value, species) {
       return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
 
+    // A BEAAAAPP-backed parameter keeps its emergency band in beapScales.js
+    // rather than in the level text. Same source lib/assessmentSummary.js and
+    // the scoring read, so the form, the calendar and the export cannot
+    // disagree about which rungs are emergencies.
+    const beapEmergencyFrom = beapEmergencyFromFor(parameter, species)
+    if (beapEmergencyFrom != null && score >= beapEmergencyFrom) {
+      return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
+    }
+
     // Opt-in per parameter, because how much of a scale counts as concerning
     // is a clinical judgement rather than something to assume. See BEAP_BANDS
     // in scoring.js: 4 is Moderate, 6 Moderate to severe.
@@ -3150,7 +3191,10 @@ function parametersOf(condition) {
 // A parameter's name for a list, including which lump or lymph node it was
 // about — "Size" on its own is not an answer to "what was flagged?" when a
 // pet is being measured in three places.
-function labelOf(parameter) {
+//
+// Exported for the home card, which names the parameter and its band
+// ("Itching: Moderate–severe") rather than quoting the level sentence.
+export function labelOf(parameter) {
   return parameter.instanceLabel
     ? `${parameter.label} — ${parameter.instanceLabel}`
     : parameter.label

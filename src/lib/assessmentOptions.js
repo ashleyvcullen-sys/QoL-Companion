@@ -75,6 +75,21 @@ export const HYGIENE_SYMPTOM_OPTIONS = [
   'Other',
 ]
 
+// Blood in the vomit, raised where the owner ticks it.
+//
+// Added 3 Sep 2026 on Ash's instruction — "apply to all fields". The same
+// tick inside a condition form already flagged red and said this; the
+// Overall Quality of Life Assessment, which is the form most owners fill in
+// most often, said nothing at all. Same sentence, same shape as
+// STOOL_EMERGENCY above, so the two read as one rule rather than two.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording, verbatim.
+export const VOMITING_EMERGENCY = {
+  chips: ['Blood'],
+  title: 'This could be an emergency',
+  warning: 'Blood in the vomit needs veterinary attention as soon as possible.',
+}
+
 export const VOMITING_CHARACTER_OPTIONS = ['Bile', 'Foamy', 'Undigested food', 'Blood', 'Other']
 // Cats only — inserted before 'Other' by VomitingPage so 'Other' stays last.
 export const VOMITING_CHARACTER_OPTIONS_CAT_EXTRA = ['Hairball']

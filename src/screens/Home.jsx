@@ -5,6 +5,7 @@ import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
+import { fillPetText } from '../lib/petText'
 import Card from '../components/Card'
 import HomeTour from '../components/HomeTour'
 import Footer from '../components/Footer'
@@ -31,28 +32,32 @@ const NAV_SECTIONS = [
       // is the phrase the paywall headline uses, so someone who tapped
       // Medications is answered about medications rather than being handed a
       // generic pitch.
-      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale, premium: true, feature: 'bcs' },
-      { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'medications' },
       { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope, premium: true, feature: 'conditions' },
+      { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'medications' },
+      { to: '/body-condition', label: 'Body Condition / Weight', Icon: Scale, premium: true, feature: 'bcs' },
       { to: '/media', label: 'Photos & Videos', Icon: Camera, premium: true, feature: 'media' },
     ],
   },
   {
     title: 'Support',
     items: [
-      // Emergencies first, deliberately. Someone reaching for this section
-      // in a hurry should not have to read past two other tiles to find it.
+      // Ash's order, 3 Sep 2026.
+      //
+      // Emergencies first, deliberately: someone reaching for this section in
+      // a hurry should not have to read past anything to find it. End of Life
+      // last, for the same reason it is last in the feature list — it is the
+      // one tile nobody wants to need.
       { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
-      { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
-      { to: '/end-of-life', label: 'End of Life', Icon: HeartHandshake },
-      // Promoted from a quiet link at the foot of the page. Reminders are
-      // what make a daily habit stick, so burying them under "About" was
-      // working against the thing the app is for.
-      { to: '/schedule', label: 'Reminders', Icon: Bell },
       // A tile rather than a link under the grid. It was the last thing left
       // in the secondary row, and one lonely underlined word beneath a grid
       // of tiles reads as leftover rather than as a choice.
       { to: '/about', label: 'About', Icon: CircleQuestionMark },
+      // Promoted from a quiet link at the foot of the page. Reminders are
+      // what make a daily habit stick, so burying them under "About" was
+      // working against the thing the app is for.
+      { to: '/schedule', label: 'Reminders', Icon: Bell },
+      { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
+      { to: '/end-of-life', label: 'End of Life', Icon: HeartHandshake },
     ],
   },
 ]
@@ -78,7 +83,9 @@ export default function Home() {
     to,
     label,
     premium: Boolean(premium) && !hasPremium,
-    message: HOME_TOUR_MESSAGES[to],
+    // Filled here rather than in HomeTour: Home is where the pet is, and the
+    // tour component stays a renderer that takes finished strings.
+    message: fillPetText(HOME_TOUR_MESSAGES[to], pet),
   }))
 
   useEffect(() => {

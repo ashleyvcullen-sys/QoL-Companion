@@ -20,9 +20,14 @@ export default function IntroPage({ petName, species, isFirstAssessment }) {
           what's actually changed rather than guessing.
         </p>
       ) : (
+        /* PENDING ASH — the join. "Try to answer as honestly and accurately
+           as possible" is yours; I have kept the "Not sure" clause after it
+           rather than replacing the sentence, because an owner told to be
+           accurate and given no way out is an owner who guesses. Say if you
+           wanted it gone. */
         <p>
-          This assessment walks through how {petName} has been lately. Answer what you can — but
-          "Not sure" is always a fine answer too.
+          This assessment walks through how {petName} has been lately. Try to answer as
+          honestly and accurately as possible — but "Not sure" is always a fine answer too.
         </p>
       )}
 

@@ -2,7 +2,11 @@ export const HOME_TOUR_MESSAGES = {
   '/assessment': 'The core of QoL Companion. Five key wellbeing areas adapted from validated quality of life scales, recorded in a few minutes. Do this regularly and the patterns will emerge.',
   '/trends': 'See how things are changing over time, with charts and a good/bad day calendar.',
   '/body-condition': 'Score your pet on the standard 9-point body condition scale, log their weight, and track both over time.',
-  '/medications': 'Keep track of what your pet is on, get reminded when each dose is due, and tick doses off as you give them.',
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording.
+  //
+  // The only message here carrying a {name} token — Home fills it before
+  // handing the steps over, so HomeTour stays a dumb renderer.
+  '/medications': 'Log medications, set dose reminders and track how {name} is responding to them.',
   '/media': 'Keep photos and short videos of how your pet is doing — useful for showing a vet what words struggle to describe.',
   '/conditions': 'Track the specific things that matter for a condition your pet has been diagnosed with.',
   '/home-care-tips': "Practical tips to help your pet's comfort, appetite, sleep, and more, right at home.",

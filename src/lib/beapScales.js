@@ -58,9 +58,26 @@ export const SLEEP_SCALE = {
 // be scrubbed out of every string before it could be shown to anyone. The
 // markers are gone; these fields are the only source.
 //
-// EMERGENCY IS UNCHANGED. breathing and appetite at 8 and 10, attitude and
-// posture at 10 — the same twelve category/score combinations that fired
-// before, verified against a snapshot taken before the change.
+// EMERGENCY IS EVERY CATEGORY AT 8 AND 10, on Ash's instruction 3 Sep 2026:
+// every severe rung that was not already an emergency became one, and the
+// alert under it tells the owner to contact their vet as soon as possible.
+//
+// Until then only breathing and appetite fired at 8, with attitude and
+// posture at 10 and eyes, ambulation, activity and palpation never firing at
+// all. Her call was that a severe rung on any of the eight describes an
+// animal who needs to be seen, and that a scale where "severe" means an
+// emergency on two categories and nothing on four teaches an owner to read
+// the words rather than trust the marks.
+//
+// Two consequences worth knowing, both flagged to her:
+//   - EYES IS THE EXCEPTION, on her instruction the same day: no concern band
+//     and no emergency band, exactly as before. It was briefly given one by
+//     the change above and taken straight back out — its 6 and 8 wording is
+//     nearly identical, and for cats the score is the summed Feline Grimace
+//     Scale rather than a six-step picker, so it does not behave like the
+//     other seven and should not be graded like them;
+//   - attitude's concernFrom is 8, which is now also its emergency threshold,
+//     so attitude no longer has an amber band at all.
 //
 // CONCERN IS NEW, and set per category rather than as one cutoff, because the
 // six levels do not mean equivalent things across the eight. At 6 a dog has
@@ -97,7 +114,7 @@ export const BEAP_SCALES = {
       "Dull eyes, may look narrowed or distressed.",
       "Dull eyes that may be closed completely or may look panicked.",
     ] },
-    { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Walks normally, manages stairs easily, no stiffness. Jumps into the car or onto furniture without hesitation.",
       "Occasional stiffness, otherwise normal. Slight hesitation before jumping.",
       "Mild or intermittent limping and/or stiffness, especially after lying down. Reluctant to use stairs and jump into the car or onto furniture.",
@@ -105,7 +122,7 @@ export const BEAP_SCALES = {
       "Reluctant to bear weight and/or moves with marked stiffness. Won't attempt stairs or jumping. Occasionally licks or chews a painful area.",
       "Unable or unwilling to stand or walk or jump. Often licks or chews a painful area.",
     ] },
-    { key: "activity", letter: "A", label: "Activity", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "activity", letter: "A", label: "Activity", concernFrom: 6, emergencyFrom: 8, levels: [
       "Plays and engages in all normal activities.",
       "Slightly less playful than usual.",
       "Reduced interest in play or activity.",
@@ -121,7 +138,7 @@ export const BEAP_SCALES = {
       "Little interest in food, even treats.",
       "Refusing food.",
     ] },
-    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 10, levels: [
+    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 8, levels: [
       "Happy, interested, seeks attention.",
       "Generally happy, occasionally withdrawn.",
       "Somewhat subdued or less interested.",
@@ -129,7 +146,7 @@ export const BEAP_SCALES = {
       "Avoids interaction, anxious or irritable. Hides often.",
       "Unresponsive or clearly distressed. Constantly hiding or withdrawn.",
     ] },
-    { key: "posture", letter: "P", label: "Posture", concernFrom: 6, emergencyFrom: 10, levels: [
+    { key: "posture", letter: "P", label: "Posture", concernFrom: 6, emergencyFrom: 8, levels: [
       "Relaxed at rest and during play; tail moving normally.",
       "Mostly relaxed; tail a little lower.",
       "Slightly tense or restless; tail lower. Seems reluctant to lay down or relax.",
@@ -137,7 +154,7 @@ export const BEAP_SCALES = {
       "Hunched, tucked tail, odd position. Can't seem to get comfortable.",
       "Rigid and trembling/shaking, can't seem to get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",
@@ -163,7 +180,7 @@ export const BEAP_SCALES = {
       "Ears tightly flattened, eyes tightly closed, clear grimace face.",
       "Vacant stare or unresponsive, ears pinned flat, pupils fixed.",
     ] },
-    { key: "ambulation", letter: "A", label: "Ambulation (jumping, walking & stairs)", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "ambulation", letter: "A", label: "Ambulation (jumping, walking & stairs)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Jumps and walks normally, manages stairs easily.",
       "Occasional hesitation before jumping or using stairs.",
       "Mild reluctance to jump or use stairs.",
@@ -171,7 +188,7 @@ export const BEAP_SCALES = {
       "Won't jump or use stairs, noticeable limping.",
       "Unable or unwilling to walk or jump.",
     ] },
-    { key: "activity", letter: "A", label: "Activity", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "activity", letter: "A", label: "Activity", concernFrom: 6, emergencyFrom: 8, levels: [
       "Normal play, exploring, and grooming.",
       "Slightly less playful than usual.",
       "Reduced play, grooms a little less.",
@@ -187,7 +204,7 @@ export const BEAP_SCALES = {
       "Little interest in food, even treats.",
       "Refusing food.",
     ] },
-    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 10, levels: [
+    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 8, levels: [
       "Sociable, curious, seeks attention.",
       "Generally sociable, occasionally withdrawn.",
       "Somewhat subdued or less interested.",
@@ -195,7 +212,7 @@ export const BEAP_SCALES = {
       "Avoids interaction, anxious or irritable.",
       "Unresponsive or clearly distressed.",
     ] },
-    { key: "posture", letter: "P", label: "Posture", concernFrom: 6, emergencyFrom: 10, levels: [
+    { key: "posture", letter: "P", label: "Posture", concernFrom: 6, emergencyFrom: 8, levels: [
       "Relaxed at rest; tail moving normally.",
       "Mostly relaxed; tail a little lower or twitchier.",
       "Sits hunched or tense ('loaf') more than usual; tail flicking more.",
@@ -203,7 +220,7 @@ export const BEAP_SCALES = {
       "Tightly hunched, tucked in, won't move from position.",
       "Rigid, trembling, can't get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: null, levels: [
+    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",

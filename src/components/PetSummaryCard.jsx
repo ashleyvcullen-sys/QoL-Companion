@@ -4,11 +4,14 @@ import { AlertTriangle, Check, ChevronDown, Heart, Stethoscope } from 'lucide-re
 import Btn from './Btn'
 import Card from './Card'
 import PetSwitcher from './PetSwitcher'
+import PetText from './PetText'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
-import { CONDITION_LIST } from '../lib/conditions'
-import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { CONDITION_LIST, SEVERITY, labelOf, summariseEntry } from '../lib/conditions'
+import { resolveDefinition } from '../lib/cancerConfig'
+import { configsByCondition } from '../lib/charts'
+import { BEAP_BANDS, computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 import OverviewBars from './OverviewBars'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
@@ -35,6 +38,129 @@ import { formatDateDDMMYYYY } from '../lib/formatDate'
 // definition, so it is wrapped to look like one for monitoringStatus.
 function assessmentCadence(pet) {
   return { key: 'qol', cadence: { days: pet?.schedule?.qol ?? pet?.schedule?.general ?? 7 } }
+}
+
+
+// --- The fortnight strip ----------------------------------------------------
+//
+// What a condition's summary is INSTEAD of a percentage.
+//
+// There is no composite score for a disease and there should not be one: the
+// parameter set differs per condition, per species and per pet — allergies
+// grows three questions the day a diet trial starts, cancer resolves its own
+// from the config — so any number would change meaning mid-treatment and
+// would not be comparable to the number beside it. It would also be the one
+// figure an owner reads out to their vet.
+//
+// So: one tick per day for a fortnight, coloured exactly as the calendar
+// colours the same day, and read from the same summariseEntry the calendar
+// reads. A hollow tick is a day with nothing logged, which is a state of its
+// own rather than a green one — nothing recorded is not the same as nothing
+// wrong.
+const WINDOW_DAYS = 14
+
+// The last n ISO dates, oldest first, ending on `todayIso`. UTC arithmetic on
+// purpose: new Date('2026-09-03') is midnight UTC, and stepping days in local
+// time drifts across a DST boundary.
+function lastDates(todayIso, n) {
+  const [year, month, day] = String(todayIso).split('-').map(Number)
+  if (!year || !month || !day) return []
+  const end = Date.UTC(year, month - 1, day)
+  const out = []
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const at = new Date(end - i * 86400000)
+    out.push([
+      at.getUTCFullYear(),
+      String(at.getUTCMonth() + 1).padStart(2, '0'),
+      String(at.getUTCDate()).padStart(2, '0'),
+    ].join('-'))
+  }
+  return out
+}
+
+function conditionHistory({ definition, config, entries, species, today }) {
+  // Resolved, because a cancer parameter set is built per pet and summarising
+  // against the static definition would grade questions this owner was never
+  // asked.
+  let resolved = definition
+  try {
+    resolved = resolveDefinition(definition, config, species)
+  } catch (error) {
+    console.error('Could not resolve that condition:', error.message)
+  }
+
+  const byDate = new Map()
+  for (const entry of entries) {
+    try {
+      byDate.set(entry.date, summariseEntry(resolved, entry.values, species))
+    } catch (error) {
+      // One unreadable day must not take the home screen down with it.
+      console.error('Could not summarise that day:', error.message)
+    }
+  }
+
+  const span = lastDates(today, WINDOW_DAYS * 2)
+  const earlier = span.slice(0, WINDOW_DAYS)
+  const recent = span.slice(WINDOW_DAYS)
+  const isFlagged = (date) => {
+    const severity = byDate.get(date)?.severity
+    return severity === SEVERITY.CONCERN || severity === SEVERITY.EMERGENCY
+  }
+
+  const strip = recent.map((date) => ({ date, severity: byDate.get(date)?.severity ?? null }))
+  const logged = strip.filter((day) => day.severity != null).length
+  const flagged = recent.filter(isFlagged).length
+  const earlierFlagged = earlier.filter(isFlagged).length
+  const hadEarlier = earlier.some((date) => byDate.get(date)?.severity != null)
+
+  // The most recent thing worth naming, newest first. flagged[0] is already
+  // the worst finding of its day — summariseEntry sorts it that way.
+  //
+  // Named as "Itching: Moderate–severe" rather than by quoting the level
+  // sentence, on Ash's instruction 3 Sep 2026. The sentence is right on a
+  // calendar day-line, where it is the whole content; here it ran to three
+  // lines under a fourteen-tick strip that had already said how bad the day
+  // was. The band says the same thing in one word, and it is the same word
+  // the assessment prints beside the level the owner picked.
+  let finding = null
+  for (let i = recent.length - 1; i >= 0 && !finding; i -= 1) {
+    const first = byDate.get(recent[i])?.flagged?.[0]
+    if (!first) continue
+    const parameter = (resolved.parameters ?? []).find((entry) => entry.key === first.key)
+    const score = Number(entries.find((entry) => entry.date === recent[i])?.values?.[first.key])
+    // A band only where there is a 0-10 answer behind it. A yes/no or a
+    // choice has no rung to name, and inventing one would be worse than the
+    // bare parameter name beside a coloured dot.
+    const band = Number.isFinite(score) && (parameter?.type === 'scale' || parameter?.type === 'beap')
+      ? BEAP_BANDS[Math.min(BEAP_BANDS.length - 1, Math.max(0, Math.ceil(score / 2)))]?.shortLabel ?? null
+      : null
+    finding = {
+      ...first,
+      name: shortName(parameter ? labelOf(parameter) : first.label),
+      band,
+      daysAgo: recent.length - 1 - i,
+    }
+  }
+
+  return { strip, logged, flagged, earlierFlagged, hadEarlier, finding }
+}
+
+// The parameter's name, trimmed for a one-line summary. "Itching (Pruritus
+// Score)" is the right label on the form, where the owner is being told which
+// instrument they are answering; on the card it is a parenthetical between
+// the name and the band. Ash's instruction 3 Sep 2026 — "just say itching".
+//
+// Trailing parenthetical only, and only here. The stored label is untouched,
+// so the form, the calendar and the export all still name the instrument.
+function shortName(label) {
+  return typeof label === 'string' ? label.replace(/\s*\([^()]*\)\s*$/, '') : label
+}
+
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
+function agoLabel(days) {
+  if (days === 0) return 'today'
+  if (days === 1) return 'yesterday'
+  return `${days} days ago`
 }
 
 export default function PetSummaryCard() {
@@ -108,6 +234,11 @@ export default function PetSummaryCard() {
   // One entry per tracked condition, each carrying its own definition and its
   // own due state — they get a section each now, so a single pooled list of
   // "what is due" no longer answers the question this half asks.
+  // Per-pet cancer configuration, keyed by condition — the same map the
+  // charts build from, so the summary and the calendar resolve the same
+  // parameter set.
+  const configs = useMemo(() => configsByCondition(conditions), [conditions])
+
   const trackedConditions = useMemo(() => {
     if (!pet) return []
     return CONDITION_LIST
@@ -123,9 +254,16 @@ export default function PetSummaryCard() {
         return {
           definition,
           due: status.state === MONITORING_STATE.DUE ? status : null,
+          history: conditionHistory({
+            definition,
+            config: configs[definition.key],
+            entries,
+            species: pet.species,
+            today,
+          }),
         }
       })
-  }, [pet, conditions, byCondition, today])
+  }, [pet, conditions, byCondition, configs, today])
 
   if (!pet) return null
 
@@ -183,7 +321,7 @@ export default function PetSummaryCard() {
               <span className="pet-summary-section-icon" aria-hidden="true">
                 <Heart size={16} />
               </span>
-              Overall QoL Monitoring
+              Overall QoL
             </h3>
           </div>
         </div>
@@ -237,17 +375,28 @@ export default function PetSummaryCard() {
              in particular — and keeping up is the behaviour this card exists
              to ask for, so it is worth saying out loud when they have. */
           <p className="pet-summary-clear">
-            <Check size={14} /> Up to date
+            <Check size={14} /> Monitoring up to date
           </p>
         )}
 
-        <Btn type="button" className="btn-block" onClick={() => navigate('/assessment')}>
-          {!latestGeneral
-            ? 'Start the first assessment'
-            : qolDue
-              ? 'Go to QoL Assessment'
-              : 'Start today\'s assessment'}
-        </Btn>
+        {/* Only when there is something to do, on Ash's instruction 3 Sep
+            2026 — the same rule the condition sections below follow. A button
+            under a section that already says "Up to date" invites a tap that
+            leads to a form with nothing to fill in, and on a card with two or
+            three conditions it was a column of buttons where only some of
+            them meant anything.
+
+            The exception is a pet with NO assessment yet. There is nothing to
+            be up to date with, and no other way into the assessment from this
+            card, so the first-run case always keeps its button.
+
+            APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — wording carried
+            over unchanged from the version she approved earlier today. */}
+        {(qolDue || !latestGeneral) && (
+          <Btn type="button" className="btn-block" onClick={() => navigate('/assessment')}>
+            {!latestGeneral ? 'Start the first assessment' : 'Go to QoL Assessment'}
+          </Btn>
+        )}
       </section>
 
       {/* --- One section per condition ------------------------------------
@@ -261,7 +410,7 @@ export default function PetSummaryCard() {
           while the other is not. Pooled, that read as "2 assessments are
           due" with a single button to a list — which told the owner neither
           which one nor took them there. */}
-      {trackedConditions.map(({ definition, due: conditionDue }) => {
+      {trackedConditions.map(({ definition, due: conditionDue, history }) => {
         const Icon = definition.Icon ?? Stethoscope
         return (
           <section className="pet-summary-section" key={definition.key}>
@@ -271,7 +420,7 @@ export default function PetSummaryCard() {
                   <span className="pet-summary-section-icon" aria-hidden="true">
                     <Icon size={16} />
                   </span>
-                  {definition.label} Monitoring
+                  {definition.label}
                 </h3>
               </div>
             </div>
@@ -291,7 +440,7 @@ export default function PetSummaryCard() {
               </p>
             ) : (
               <p className="pet-summary-clear">
-                <Check size={14} /> Up to date
+                <Check size={14} /> Monitoring up to date
               </p>
             )}
 
@@ -308,6 +457,60 @@ export default function PetSummaryCard() {
                 no way to start it is a dead end.
 
                 APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — her wording. */}
+            {/* How the fortnight went, on Ash's instruction 3 Sep 2026 —
+                option A of three she was shown. Between the status line and
+                the button: the strip is what "how is it going" means, the
+                button is what to do about it. */}
+            {history && (
+              <div className="dx-summary">
+                <div
+                  className="dx-strip"
+                  role="img"
+                  aria-label={history.logged === 0
+                    ? 'Nothing logged in the last 14 days'
+                    : `Last 14 days: ${history.flagged} day${history.flagged === 1 ? '' : 's'} flagged, ${WINDOW_DAYS - history.logged} not logged`}
+                >
+                  {history.strip.map((day, index) => (
+                    <span
+                      key={day.date}
+                      className={`dx-day ${day.severity ?? ''} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
+                    />
+                  ))}
+                </div>
+                <p className="dx-scale" aria-hidden="true">
+                  <span>14 days ago</span><span>today</span>
+                </p>
+
+                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording, all three lines. */}
+                <p className="dx-trend">
+                  {history.logged === 0
+                    ? 'Nothing logged in the last 14 days'
+                    : (
+                      <>
+                        Last 14 days — <b>{history.flagged === 0 ? 'nothing flagged' : `${history.flagged} flagged`}</b>
+                        {history.hadEarlier && history.flagged !== history.earlierFlagged && (
+                          <>
+                            {', '}
+                            <span className={history.flagged < history.earlierFlagged ? 'down' : 'up'}>
+                              {history.flagged < history.earlierFlagged ? 'down' : 'up'} from {history.earlierFlagged}
+                            </span>
+                          </>
+                        )}
+                      </>
+                    )}
+                </p>
+
+                {history.finding && (
+                  <p className="dx-finding">
+                    <span className={`dx-dot ${history.finding.severity === SEVERITY.EMERGENCY ? 'emergency' : ''}`.trim()} />
+                    <PetText template={history.finding.name} pet={pet} />
+                    {history.finding.band && <>: {history.finding.band}</>}
+                    <span className="when"> · {agoLabel(history.finding.daysAgo)}</span>
+                  </p>
+                )}
+              </div>
+            )}
+
             {conditionDue && (
               <Btn
                 type="button"
@@ -331,7 +534,7 @@ export default function PetSummaryCard() {
                 <span className="pet-summary-section-icon" aria-hidden="true">
                   <Stethoscope size={16} />
                 </span>
-                Disease-Specific Monitoring
+                Conditions
               </h3>
             </div>
           </div>

@@ -95,12 +95,13 @@ export default function GastrointestinalSetup() {
           )}
           <SectionTitle>What To Monitor</SectionTitle>
         </div>
+        {/* The "tell us what applies to {name}" sentence has gone, on Ash's
+            instruction 3 Sep 2026. The card below asks the question directly
+            and the chips answer it; this was an explanation of a control that
+            explains itself. */}
         <p className="assessment-hint">
-          Gut problems look different depending on the cause. Tell us what applies to
-          {pet.name} and this section will ask about those things only.
-        </p>
-        <p className="assessment-hint">
-          You can pick more than one, and change this at any time.
+          Gut problems look different depending on the cause. You can pick more than one,
+          and change this at any time.
         </p>
       </Card>
 

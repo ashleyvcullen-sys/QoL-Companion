@@ -9,14 +9,25 @@ import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
 import { URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_OPTIONS } from '../../lib/assessmentOptions'
 
-const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all']
+// What raises the blockage alert. Ash's instruction 3 Sep 2026 added
+// vocalising, which is often the first thing an owner notices — a cat calling
+// out in the tray — and is easily read as constipation or distress rather
+// than as an obstruction.
+const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all', 'Vocalisation']
 
-export default function UrinationPage({ value, onChange, icon, species, sex, pet }) {
+export default function UrinationPage({ value, onChange, icon, species, pet }) {
   const { status, symptoms } = value
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
 
-  const isMaleCat = species === 'cat' && sex === 'male'
-  const isEmergency = isMaleCat && status === 'abnormal' &&
+  // Every cat, not only males, on Ash's instruction 3 Sep 2026. Male cats
+  // block far more often, which is why the alert started there — but a female
+  // cat straining and passing nothing is still an obstruction until a vet says
+  // otherwise, and the owner of one was getting no warning at all.
+  //
+  // `sex` is no longer destructured. The caller still passes it; nothing here
+  // reads it any more.
+  const isCat = species === 'cat'
+  const isEmergency = isCat && status === 'abnormal' &&
     symptoms.some((s) => BLOCKAGE_RISK_SYMPTOMS.includes(s))
 
   useEffect(() => {
@@ -50,10 +61,13 @@ export default function UrinationPage({ value, onChange, icon, species, sex, pet
         <Modal title="This could be an emergency" onClose={() => setShowEmergencyModal(false)}>
           <div className="warning-banner">
             <AlertTriangle size={20} />
+            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording,
+                quoted back verbatim in her approval. */}
             <p>
-              Straining to urinate, or being unable to pass any urine, can be a sign of a
-              urinary blockage, especially for male cats — a genuine emergency that can
-              become life-threatening within 24–48 hours if untreated.
+              Straining to urinate, crying out while trying, or being unable to pass any
+              urine can be a sign of a urinary blockage — most often in male cats, but
+              possible in any cat. It is a genuine emergency that can become
+              life-threatening within 24–48 hours if untreated.
             </p>
           </div>
           <p>

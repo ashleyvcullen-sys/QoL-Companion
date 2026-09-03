@@ -25,7 +25,8 @@ export const PAYWALL_FEATURES = {
 const HEADLINES = {
   [PAYWALL_FEATURES.MEDICATIONS]: 'Track every medication in one place with Premium',
   [PAYWALL_FEATURES.MEDIA]: "Keep a visual record of your pet's condition with Premium",
-  [PAYWALL_FEATURES.CONDITIONS]: "Get monitoring built for your pet's condition with Premium",
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording.
+  [PAYWALL_FEATURES.CONDITIONS]: 'Advanced monitoring for your pet with QoL Premium',
   [PAYWALL_FEATURES.BCS]: 'Track body condition and weight over time with Premium',
   [PAYWALL_FEATURES.EXPORT]: 'Give your vet team the full picture with Premium',
   [PAYWALL_FEATURES.PETS]: 'Track every pet in your household with Premium',
@@ -123,7 +124,11 @@ export function conditionListLine() {
 // the app is running.
 export const PAYWALL_FEATURE_LIST = [
   { text: 'Disease-specific monitoring tools', detail: conditionListLine() },
-  { text: 'Add medications and set reminders for dosing' },
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording, with
+  // "your pet" for the name: the paywall is reachable with no pet selected
+  // (and before one exists at all), so a {name} token here would render as
+  // an empty gap on the screen that has to sell the feature.
+  { text: 'Log medications, set dose reminders and track how your pet is responding to them' },
   { text: 'Upload photos and videos to track changes and share with your vet' },
   { text: 'Body condition and weight tracking' },
   { text: 'Downloadable summary reports to share with your vet team' },

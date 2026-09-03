@@ -131,6 +131,9 @@ export default function Medications() {
   const doseTimeCount = form.frequencyPeriod === 'day'
     ? Math.min(Number(form.frequencyCount) || 1, MAX_MEDICATION_SLOTS)
     : 1
+  // One row per dose only when there is more than one. A single daily dose
+  // does not need to be told it is "Dose 1".
+  const showDoseRows = form.frequencyPeriod === 'day' && doseTimeCount > 1
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [notifStatus, setNotifStatus] = useState(null)
@@ -681,16 +684,6 @@ export default function Medications() {
                     weekday, or the same date, as the day the course started. */}
                 {form.remindersEnabled && (
                 <div className="field">
-                  <label htmlFor="med-reminder-time">
-                    {doseTimeCount > 1 ? 'Remind me at (dose 1)' : 'Remind me at'}
-                  </label>
-                  <input
-                    id="med-reminder-time"
-                    type="time"
-                    value={form.reminderTime}
-                    onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
-                  />
-
                   {/* A time per dose, for a medication given several times a
                       day — Ash's request, 3 Sep 2026.
                       //
@@ -701,24 +694,58 @@ export default function Medications() {
                       Only for a DAILY frequency. Twice a week is two
                       reminders on two different days, which the day picker
                       below already answers; two times on one of those days is
-                      not what "twice a week" means. */}
-                  {form.frequencyPeriod === 'day' && Array.from(
-                    { length: Math.max(0, doseTimeCount - 1) },
-                    (_, i) => (
-                      <div className="med-dose-time" key={`dose-${i + 2}`}>
-                        <label htmlFor={`med-dose-time-${i}`}>Dose {i + 2}</label>
-                        <input
-                          id={`med-dose-time-${i}`}
-                          type="time"
-                          value={(form.times ?? [])[i] ?? ''}
-                          onChange={(e) => {
-                            const next = [...(form.times ?? [])]
-                            next[i] = e.target.value
-                            setForm({ ...form, times: next })
-                          }}
-                        />
+                      not what "twice a week" means.
+                      //
+                      EVERY dose wears the same row, dose 1 included, on her
+                      instruction 3 Sep 2026. Dose 1 used to be a .field —
+                      label stacked above a full-width input — while doses 2
+                      and up were label-beside-input rows indented under it.
+                      Three times on one screen, none of them starting at the
+                      same place. One heading and N identical rows means the
+                      times read as a column you can scan. */}
+                  {showDoseRows ? (
+                    <>
+                      <span className="field-label" id="med-reminder-time-label">Remind me at</span>
+                      <div className="med-dose-times" role="group" aria-labelledby="med-reminder-time-label">
+                        <div className="med-dose-time">
+                          <label htmlFor="med-reminder-time">Dose 1</label>
+                          <input
+                            id="med-reminder-time"
+                            type="time"
+                            value={form.reminderTime}
+                            onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
+                          />
+                        </div>
+                        {Array.from(
+                          { length: doseTimeCount - 1 },
+                          (_, i) => (
+                            <div className="med-dose-time" key={`dose-${i + 2}`}>
+                              <label htmlFor={`med-dose-time-${i}`}>Dose {i + 2}</label>
+                              <input
+                                id={`med-dose-time-${i}`}
+                                type="time"
+                                value={(form.times ?? [])[i] ?? ''}
+                                onChange={(e) => {
+                                  const next = [...(form.times ?? [])]
+                                  next[i] = e.target.value
+                                  setForm({ ...form, times: next })
+                                }}
+                              />
+                            </div>
+                          ),
+                        )}
                       </div>
-                    ),
+                    </>
+                  ) : (
+                    <>
+                      <label htmlFor="med-reminder-time">Remind me at</label>
+                      <input
+                        id="med-reminder-time"
+                        type="time"
+                        value={form.reminderTime}
+                        onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
+                      />
+                    </>
                   )}
 
                   <p className="assessment-hint">{describeReminderPlan(form)}</p>

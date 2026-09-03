@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Camera, Info } from 'lucide-react'
-import Btn from './Btn'
+import { AlertTriangle, Camera } from 'lucide-react'
 import ChoiceButtons from './ChoiceButtons'
-import Modal from './Modal'
 import ExpandableNote from './ExpandableNote'
+import HowTo from './HowTo'
 import PetText from './PetText'
 import VomitingPage from '../screens/assessment/VomitingPage'
 import SeverityOptionList from './SeverityOptionList'
@@ -19,6 +17,7 @@ import {
   VCOG_GRADE_LABELS,
   VCOG_SCORES,
   evaluateParameter,
+  beapEmergencyFromFor,
   levelsFor,
   vcogColourForIndex,
   selectedValues,
@@ -38,35 +37,6 @@ const EMPTY_VOMITING = { hasVomited: null, frequency: '', unit: 'times/day', cha
 // matter enormously the first few times and are noise thereafter, and an
 // expander pushes every question below it down the screen when opened — which
 // is exactly when the owner is trying to read it and count at the same time.
-function HowTo({ title, steps, footer, pet }) {
-  const [open, setOpen] = useState(false)
-  // Templated, like the steps below it. This rendered raw until 29 Aug 2026,
-  // so the kidney guide's title printed "Measuring What {name} Drinks" with
-  // the braces showing. It went unnoticed because the only other howToTitle
-  // in the app has no token in it.
-  const heading = fillPetText(title ?? 'How to Measure This', pet)
-
-  return (
-    <>
-      <Btn type="button" variant="outline" className="how-to-button" onClick={() => setOpen(true)}>
-        <Info size={15} /> {heading}
-      </Btn>
-      {open && (
-        <Modal title={heading} onClose={() => setOpen(false)}>
-          <ol className="how-to-steps">
-            {steps.map((step, i) => (
-              <li key={i}><PetText template={step} pet={pet} /></li>
-            ))}
-          </ol>
-          {footer && (
-            <p className="how-to-footer"><PetText template={footer} pet={pet} /></p>
-          )}
-          <Btn type="button" className="btn-block" onClick={() => setOpen(false)}>Got it</Btn>
-        </Modal>
-      )}
-    </>
-  )
-}
 
 // The alert shown when an answer flags.
 //
@@ -441,6 +411,12 @@ export default function ConditionParameter({
             // with its own wording has no matching imagery.
             species={parameter.type === 'beap' && !parameter.hideImages ? species : undefined}
             categoryKey={parameter.type === 'beap' && !parameter.hideImages ? parameter.beapKey : undefined}
+            // A `scale` carries its own "(emergency)" marker in the level
+            // text, which SeverityOptionList finds for itself. A `beap` keeps
+            // that band in beapScales.js instead, so it has to be handed over
+            // — otherwise the hazard triangle is missing from exactly the
+            // rungs evaluateParameter is calling an emergency.
+            emergencyFrom={beapEmergencyFromFor(parameter, species)}
           />
           {/* "Does not apply" alongside "Not sure", where the parameter
               offers it. A cat with no litter tray is not an owner who is

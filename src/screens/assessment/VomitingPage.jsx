@@ -1,14 +1,20 @@
+import { useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
 import IconLabelHeader from '../../components/IconLabelHeader'
 import ChoiceButtons from '../../components/ChoiceButtons'
 import SymptomChips from '../../components/SymptomChips'
 import PetText from '../../components/PetText'
+import Modal from '../../components/Modal'
+import Btn from '../../components/Btn'
+import { fillPetText } from '../../lib/petText'
 import {
   VOMITING_HAS_VOMITED_OPTIONS,
   VOMITING_UNIT_OPTIONS,
   VOMITING_CHARACTER_OPTIONS,
   VOMITING_CHARACTER_OPTIONS_CAT_EXTRA,
   VOMITING_FREQUENCY_QUALIFIER_OPTIONS,
+  VOMITING_EMERGENCY,
 } from '../../lib/assessmentOptions'
 
 const FREQUENCY_QUALIFIER_VALUES = VOMITING_FREQUENCY_QUALIFIER_OPTIONS.map((o) => o.value)
@@ -26,6 +32,25 @@ export default function VomitingPage({
 }) {
   const { hasVomited, frequency, unit, character } = value
   const isFrequencyQualifier = FREQUENCY_QUALIFIER_VALUES.includes(frequency)
+
+  // Blood in the vomit, raised the moment it is ticked.
+  //
+  // Only on the assessment, never embedded. Inside a condition form the same
+  // answer already flags red with this sentence under it (see Verdict in
+  // ConditionParameter) — a modal on top of that would say the same thing
+  // twice about one tick.
+  //
+  // Fires on the TRANSITION into the emergency state rather than on every
+  // render, so dismissing it does not immediately re-open it while the chip
+  // stays ticked. Same behaviour as the stool and urinary alerts, which are
+  // the only other places in the assessment that interrupt an owner.
+  const [showEmergency, setShowEmergency] = useState(false)
+  const isEmergency = !embedded
+    && (character ?? []).some((chip) => VOMITING_EMERGENCY.chips.includes(chip))
+
+  useEffect(() => {
+    if (isEmergency) setShowEmergency(true)
+  }, [isEmergency])
   const characterOptions = species === 'cat'
     ? [...VOMITING_CHARACTER_OPTIONS.slice(0, -1), ...VOMITING_CHARACTER_OPTIONS_CAT_EXTRA, 'Other']
     : VOMITING_CHARACTER_OPTIONS
@@ -82,6 +107,18 @@ export default function VomitingPage({
             onChange={(v) => update({ character: v })}
           />
         </>
+      )}
+
+      {showEmergency && (
+        <Modal title={VOMITING_EMERGENCY.title} onClose={() => setShowEmergency(false)}>
+          <div className="warning-banner">
+            <AlertTriangle size={20} />
+            <p>{fillPetText(VOMITING_EMERGENCY.warning, pet)}</p>
+          </div>
+          <Btn type="button" variant="danger" className="btn-block" onClick={() => setShowEmergency(false)}>
+            I understand
+          </Btn>
+        </Modal>
       )}
     </div>
   )

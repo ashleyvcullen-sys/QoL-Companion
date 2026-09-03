@@ -37,10 +37,9 @@ import { elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, hasGiFoodAllergySelected, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
-import ExpandableNote from '../components/ExpandableNote'
+import HowTo from '../components/HowTo'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
-import { fillPetText } from '../lib/petText'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   addPetCondition,
@@ -552,12 +551,20 @@ export default function ConditionMonitoring() {
                 Expands in place rather than opening a sheet, so the text is
                 never truncated to fit: it is as long as it is, and the card
                 grows. */}
+            {/* The same control the measuring guides use, centred under the
+                intro — Ash's instruction 3 Sep 2026: "make it the same format
+                as how to count RRR". It was an inline expander, left-aligned
+                and accent-coloured, which made it the only thing on a centred
+                card sitting off the centre line and the only piece of
+                background material in the app that opened in place rather
+                than in a sheet. */}
             {definition.why && (
-              <ExpandableNote label={fillPetText(definition.whyLabel ?? WHY_LABEL, pet)}>
-                <p className="assessment-hint">
-                  <PetText template={definition.why} pet={pet} />
-                </p>
-              </ExpandableNote>
+              <HowTo
+                title={definition.whyLabel ?? WHY_LABEL}
+                body={definition.why}
+                pet={pet}
+                centred
+              />
             )}
           </Card>
 
