@@ -508,7 +508,7 @@ export const SHARED_PARAMETERS = {
     // Severe and very severe are emergencies: the stool itself is not the
     // problem, what leaves with it is.
     emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me, following the shape of a
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Follows the shape of a
     // published faecal scoring chart without reproducing one. Written to what
     // an owner sees when they pick it up.
     levels: {
@@ -1059,11 +1059,17 @@ export const CONDITIONS = {
     // Credited once, at the top of the assessment, the same way the app
     // credits BEAAAAPP and the WSAVA body condition chart — rather than
     // explaining the provenance again inside every graded question.
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the version to cite and the exact wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     citation: referenceText('vcog-ctcae'),
     parameters: [],
   },
 
+  // NO CITATION, AND THAT IS CHECKED RATHER THAN MISSING.
+  //
+  // Confirmed by Dr Ash Cullen (BSc, DVM), 3 Sep 2026: the stool scoring here
+  // is NOT derived from the Purina, Bristol or Waltham faecal charts, or any
+  // other published scale. It is an original structure, as is the rest of the
+  // module. Asked and answered; it does not need asking again.
   gastrointestinal: {
     key: 'gastrointestinal',
     label: 'Gastrointestinal Disease',
@@ -1119,7 +1125,7 @@ export const CONDITIONS = {
     // the sentence was introducing a word already on the screen above it.
     summary:
       'Changes in memory, orientation, sleep patterns and interaction that can come with ageing.',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the instrument and the exact wording. Nothing from
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Nothing from
     // DISHAA is reproduced here; the domains are followed and the owner
     // wording is drafted.
     citation: referenceText('dishaa'),
@@ -1421,7 +1427,7 @@ export const CONDITIONS = {
         // this is the list most likely to have them conclude "it's just
         // anxiety" about a sign that is pain, illness or a drug side effect.
         //
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         howToFooter:
           '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
@@ -1469,7 +1475,7 @@ export const CONDITIONS = {
         // this is the list most likely to have them conclude "it's just
         // anxiety" about a sign that is pain, illness or a drug side effect.
         //
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         howToFooter:
           '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
@@ -1498,7 +1504,7 @@ export const CONDITIONS = {
     // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
     intro:
       'Symptoms of arthritis are usually gradual.',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm both instruments and the exact wording. Neither
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
     citation: referenceText('load-fmpi'),
@@ -1538,7 +1544,7 @@ export const CONDITIONS = {
         // The most severe rung carries the "(emergency)" marker; this is the
         // line that appears under it.
         emergencyMessage: SEEK_VET_ASAP,
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Written to what an
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Written to what an
         // owner can see from across a room: whether there is a limp, when it
         // shows, and whether it settles.
         levels: {
@@ -1668,7 +1674,7 @@ export const CONDITIONS = {
       // chart whatever the species. Species filtering guarantees a pet is only
       // ever shown one of the two.
       //
-      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options drafted by me, not reviewed. No `why` on this
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. No `why` on this
       // one: the options say it themselves.
       {
         key: 'jump_height',
@@ -1713,7 +1719,7 @@ export const CONDITIONS = {
           { value: 'lower_only', label: 'Only jumps to lower places now', severity: SEVERITY.CONCERN },
           { value: 'stopped', label: 'Has stopped jumping up', severity: SEVERITY.CONCERN },
         ],
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted. This one WAS the literal string 'PENDING ASH',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. This one WAS the literal string 'PENDING ASH',
         // which an owner picking anything below "gets to all the usual places"
         // would have read as their alert.
         concernMessage:
@@ -1883,7 +1889,7 @@ export const CONDITIONS = {
           // is not what they mean and which put them onto a food trial path.
           { value: 'other', label: 'Other' },
         ],
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. One decision to confirm. "Other" does NOT open the
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. "Other" does NOT open the
         // diet-trial questions (see on_diet_trial's dependsOn below, which
         // lists food, both and unknown). The reasoning: a pet diagnosed with
         // something other than an allergy has no food trial to run, so the
@@ -2016,7 +2022,7 @@ export const CONDITIONS = {
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Look at the belly, armpits, groin and the inside of the back legs — the thinly furred places where redness shows first.',
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Skin and coat look normal.',
@@ -2068,7 +2074,7 @@ export const CONDITIONS = {
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Ears are the most common thing to flare alongside allergic skin, and an ear infection left alone gets harder to treat. Head shaking and scratching the ears are worth acting on early.',
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Ears look and smell normal.',
@@ -2100,7 +2106,7 @@ export const CONDITIONS = {
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Licking or chewing the paws and rubbing the face are very common signs of allergies and itch.',
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Not licking the feet or rubbing the face at all.',
@@ -2478,6 +2484,13 @@ export const CONDITIONS = {
     ],
   },
 
+  // NO CITATION, AND THAT IS CHECKED RATHER THAN MISSING.
+  //
+  // Confirmed by Dr Ash Cullen (BSc, DVM), 3 Sep 2026: this module does NOT
+  // draw on IRIS staging or any other published instrument. The parameters
+  // are an original structure built for owner observation at home — IRIS
+  // stages on creatinine, SDMA and proteinuria, which are bloodwork an owner
+  // does not have. Asked and answered; it does not need asking again.
   kidney: {
     key: 'kidney',
     label: 'Kidney Disease',

@@ -64,28 +64,45 @@ export const REFERENCES = [
   {
     key: 'dishaa',
     where: 'condition',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the instrument and the exact wording. Nothing
-    // from DISHAA is reproduced; the domains are followed and the owner
-    // wording is drafted.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    //
+    // Checked against what is built: all six DISHAA domains are present, one
+    // parameter each, species-split where the behaviour differs — house-
+    // soiling is "Toileting" for a dog and "Litter Tray Habits" for a cat.
+    // Nothing from DISHAA is reproduced; the domains are followed and the
+    // owner wording is drafted, which is what "assessment structures" says.
     short: 'Incorporates assessment structures from the DISHAA cognitive assessment domains.',
     full: 'Cognitive decline monitoring incorporates assessment structures from the DISHAA domains (Disorientation, Interactions, Sleep-wake cycle, House-soiling, Activity, Anxiety).',
   },
   {
     key: 'acvim-cardiac',
     where: 'condition',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me, both lines. Heart disease was the one
-    // monitoring section with no citation at all. The parameters it collects
-    // (resting respiratory rate, exercise tolerance, syncope, abdominal
-    // distension) are the ones these two sources describe, but the instrument
-    // and the exact wording are yours to confirm — and I have not reproduced
-    // anything from either.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026, including the 30
+    // breaths/min threshold, which she confirms is correct for cats as well
+    // as dogs.
+    //
+    // The module also asks gum colour, which neither source describes. That
+    // is deliberate and was raised: a citation says what a module DRAWS ON,
+    // not that every parameter came from it. Gum colour is a shared
+    // perfusion sign used by several modules.
+    //
+    // Nothing from either source is reproduced.
     short: 'Incorporates ideas from ACVIM consensus guidelines on myxomatous mitral valve disease and from published guidance on home monitoring of sleeping and resting respiratory rate.',
     full: 'Heart disease monitoring incorporates ideas from the American College of Veterinary Internal Medicine (ACVIM) consensus guidelines for the diagnosis and treatment of myxomatous mitral valve disease in dogs (Keene BW, Atkins CE, Bonagura JD, et al. J Vet Intern Med. 2019;33(3):1127-1140), and from published guidance on owner monitoring of sleeping and resting respiratory rate.',
   },
   {
     key: 'pvas',
     where: 'condition',
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm both instruments and the exact wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    //
+    // SCOPED TO THE ITCH SCORE, on her instruction the same day. The allergies
+    // module carries eighteen parameters and only one of them — "Itching
+    // (Pruritus Score)" — follows these scales. Skin And Coat, Ears, Paws And
+    // Face and Sleep Disturbed By Itching share the 0-10 shape but are not
+    // axes of either published instrument, which is a single severity line;
+    // the diet trial, re-challenge and stool questions are original. Both
+    // strings below now say "itching (pruritus) score" so the credit cannot
+    // be read as covering the whole form.
     //
     // TWO scales, not one. The canine PVAS does not apply to cats, and the
     // feline instrument was published thirteen years later precisely because
@@ -102,8 +119,8 @@ export const REFERENCES = [
     //
     // Nothing from either is reproduced: the 0-10 owner-rated structure is
     // followed and the wording at each level is drafted.
-    short: 'Incorporates assessment structures from published owner-assessed pruritus severity scales for dogs and cats.',
-    full: 'Itch scoring incorporates assessment structures from published owner-assessed pruritus severity scales — the Pruritus Visual Analog Scale (PVAS) in dogs (Rybnicek J, Lau-Gillard PJ, Harvey R, Hill PB, Veterinary Dermatology, 2009) and VAScat in cats (Colombo S, Sartori R, Schievano C, Borio S, Veterinary Dermatology, 2022).',
+    short: 'The itching (pruritus) score incorporates assessment structures from published owner-assessed pruritus severity scales for dogs and cats.',
+    full: 'The itching (pruritus) score incorporates assessment structures from published owner-assessed pruritus severity scales — the Pruritus Visual Analog Scale (PVAS) in dogs (Rybnicek J, Lau-Gillard PJ, Harvey R, Hill PB, Veterinary Dermatology, 2009) and VAScat in cats (Colombo S, Sartori R, Schievano C, Borio S, Veterinary Dermatology, 2022).',
   },
   {
     key: 'wsava-bcs',

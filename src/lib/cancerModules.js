@@ -544,12 +544,12 @@ export const TREATMENT_MODULES = {
         // rather than a slightly lower score.
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me, and the most urgent of the outstanding
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Was the most urgent of the outstanding
         // ones. Until now this field held a note to myself, which meant an
         // owner answering "yes" was shown "PENDING ASH — this is the
         // neutropenic sepsis question" as their alert.
         //
-        // Three deliberate choices in the wording, all yours to overrule:
+        // Three deliberate choices in the wording, all approved:
         //
         //   1. "Today, not tomorrow" rather than a severity word. Neutropenic
         //      sepsis is not something an owner can grade, and asking them to

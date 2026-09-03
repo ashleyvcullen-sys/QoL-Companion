@@ -8,9 +8,8 @@ import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
 // all of them of everyone produces a form most of which is irrelevant every
 // day. So the owner says what applies at setup and gets those questions.
 //
-// EVERY owner-facing string below is drafted by me and marked APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. .
-// They are written to be replaced sentence by sentence, the way arthritis and
-// cognitive decline were.
+// EVERY owner-facing string below is APPROVED — Dr Ash Cullen (BSc, DVM),
+// 3 Sep 2026.
 
 // -------------------------------------------------------------- core
 //
@@ -115,7 +114,7 @@ export const GI_CORE_PARAMETERS = [
     //   - the urination question in the Overall Quality of Life Assessment,
     //     which raises its own blocked-cat alert (screens/assessment/
     //     UrinationPage.jsx).
-    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     levels: {
       dog: [
         'Passes stool easily, with no straining.',
@@ -280,7 +279,7 @@ export const GI_MODULES = {
         label: 'Urgency And Accidents',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Urgency is one of the
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Urgency is one of the
         // things owners notice first and vets ask about, and it is not the
         // same as consistency: a formed stool that cannot be held is still a
         // large-bowel sign.
@@ -538,7 +537,7 @@ export const GI_MODULES = {
         label: 'Gulping, Lip-Licking Or Burping',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Reflux is easy to miss
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Reflux is easy to miss
         // because the signs look like ordinary behaviour; these are written to
         // be recognisable rather than named.
         //
