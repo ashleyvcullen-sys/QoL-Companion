@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
@@ -22,13 +23,46 @@ async function openExternal(url) {
 // spacer below exists purely to reserve that same amount of space in normal
 // document flow, wherever <Footer /> is placed — otherwise the fixed bar
 // would sit on top of (hide) whatever in-flow content happens to end up
-// underneath it. Its height is a static estimate matching the bar's own
-// padding/line-wrap, not measured at runtime.
+// underneath it.
+//
+// The spacer is MEASURED, not estimated. It was a flat 120px, which is the
+// height the bar happens to be when its six links wrap into three rows at
+// one particular width — and they wrap into two rows on a wide phone and
+// four on a narrow one. Every device whose bar was not 120px tall therefore
+// had either a gap under the last card or a bar sitting on top of it, which
+// is what "the buttons at the bottom are misaligned on an iPhone 11" is.
+//
+// A ResizeObserver rather than a media query per device: the bar's height
+// depends on how six variable-width links happen to wrap, which no list of
+// breakpoints can predict — and it changes again with the system font size,
+// which an owner can set to anything.
 export default function Footer({ className = '' }) {
+  const barRef = useRef(null)
+  const [height, setHeight] = useState(null)
+
+  useEffect(() => {
+    const bar = barRef.current
+    if (!bar) return undefined
+
+    const measure = () => setHeight(bar.getBoundingClientRect().height)
+    measure()
+
+    // Not available on very old WebViews. There, `height` stays null and the
+    // stylesheet's fallback applies — the old behaviour, rather than none.
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(measure)
+    observer.observe(bar)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
-      <div className={`app-footer-spacer ${className}`.trim()} aria-hidden="true" />
-      <div className={`app-footer ${className}`.trim()}>
+      <div
+        className={`app-footer-spacer ${className}`.trim()}
+        style={height != null ? { height } : undefined}
+        aria-hidden="true"
+      />
+      <div ref={barRef} className={`app-footer ${className}`.trim()}>
         <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
         {/* The plan, sign out, and the two irreversible deletes. Here rather
             than on Home because it is reachable from wherever the user

@@ -114,7 +114,13 @@ export async function createMedication({
       pet_id: petId,
       name,
       dose: dose || null,
-      times: scheduleMode === 'times' ? times : [],
+      // `times` also carries the per-dose reminder times of a medication
+      // given several times a DAY — see scheduleMedicationReminders. Same
+      // meaning either way ("the clock times this drug is given"), so no new
+      // column and no migration.
+      times: scheduleMode === 'times' || (scheduleMode === 'frequency' && frequencyPeriod === 'day')
+        ? (times ?? [])
+        : [],
       schedule_mode: scheduleMode,
       frequency_count: scheduleMode === 'frequency' ? frequencyCount : null,
       frequency_period: scheduleMode === 'frequency' ? frequencyPeriod : null,
@@ -157,7 +163,10 @@ export async function updateMedication(medicationId, {
   // row describe two different schedules at once.
   if (scheduleMode !== undefined) {
     patch.schedule_mode = scheduleMode
-    patch.times = scheduleMode === 'times' ? (times ?? []) : []
+    patch.times = scheduleMode === 'times'
+      || (scheduleMode === 'frequency' && frequencyPeriod === 'day')
+      ? (times ?? [])
+      : []
     patch.frequency_count = scheduleMode === 'frequency' ? frequencyCount : null
     patch.frequency_period = scheduleMode === 'frequency' ? frequencyPeriod : null
     // Part of the same set: a reminder time left on a medication switched to

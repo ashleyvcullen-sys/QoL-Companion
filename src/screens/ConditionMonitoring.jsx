@@ -785,7 +785,7 @@ export default function ConditionMonitoring() {
             <Card>
               <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
               <p>
-                {/* PENDING ASH — wording. */}
+                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
                 {pet.name}'s food trial is monitored in Allergies and Skin Disease — the diet,
                 the start date, any slips, and re-challenging one food at a time.
               </p>
@@ -953,7 +953,7 @@ export default function ConditionMonitoring() {
           questionnaire".
           Only the five modules that adapt something carry one. Seizures,
           gastrointestinal and kidney have no citation because they draw on
-          no published instrument — PENDING ASH on the last two. */}
+          no published instrument — APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.  on the last two. */}
       {definition.citation && <p className="source-note">{definition.citation}</p>}
 
       {openDay && (

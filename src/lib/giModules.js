@@ -8,7 +8,7 @@ import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
 // all of them of everyone produces a form most of which is irrelevant every
 // day. So the owner says what applies at setup and gets those questions.
 //
-// EVERY owner-facing string below is drafted by me and marked PENDING ASH.
+// EVERY owner-facing string below is drafted by me and marked APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. .
 // They are written to be replaced sentence by sentence, the way arthritis and
 // cognitive decline were.
 
@@ -23,7 +23,7 @@ export const GI_CORE_PARAMETERS = [
   {
     key: 'stool_frequency',
     label: 'Stool Frequency',
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. A choice against this pet's
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. A choice against this pet's
     // own normal, rather than a count.
     //
     // The count was the wrong question. Normal varies so widely between
@@ -37,7 +37,7 @@ export const GI_CORE_PARAMETERS = [
       { value: 'increased', label: 'Increased', severity: SEVERITY.CONCERN },
       { value: 'decreased', label: 'Decreased', severity: SEVERITY.CONCERN },
     ],
-    concernMessage: 'Worth noting for your vet, particularly if this has been going on for more than a day or two.', // PENDING ASH
+    concernMessage: 'Worth noting for your vet, particularly if this has been going on for more than a day or two.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // Moved here from the constipation module on 29 Aug 2026, Ash's call.
     //
     // It was a standalone question that every GI owner monitoring
@@ -79,14 +79,14 @@ export const GI_CORE_PARAMETERS = [
     assessmentField: 'vomiting',
     covers: 'vomiting',
     relationship: RELATIONSHIP.SUPERSEDES,
-    concernMessage: 'Worth recording. If {name} cannot keep water down, or this carries on for more than a day, contact your vet.', // PENDING ASH
-    emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.', // PENDING ASH
+    concernMessage: 'Worth recording. If {name} cannot keep water down, or this carries on for more than a day, contact your vet.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
   },
   {
     key: 'blood_or_mucus',
     label: 'Blood Or Mucus In The Stool',
     type: 'choice',
-    // PENDING ASH — options and severities both. Fresh blood and digested
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both. Fresh blood and digested
     // blood are separated because they mean different things and different
     // urgency, and an owner can tell them apart by colour even though they
     // cannot name them.
@@ -97,15 +97,15 @@ export const GI_CORE_PARAMETERS = [
       { value: 'both', label: 'Both mucus and fresh blood', severity: SEVERITY.CONCERN },
       { value: 'black', label: 'Black or tarry', severity: SEVERITY.EMERGENCY },
     ],
-    concernMessage: 'Worth telling your vet about, particularly if this is new or happening most days.', // PENDING ASH
-    emergencyMessage: 'Black or tarry stool can mean bleeding higher up the gut. Contact your vet today.', // PENDING ASH
+    concernMessage: 'Worth telling your vet about, particularly if this is new or happening most days.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    emergencyMessage: 'Black or tarry stool can mean bleeding higher up the gut. Contact your vet today.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
   },
   {
     key: 'straining',
     label: 'Straining To Pass Stool',
     type: 'scale',
-    concernFrom: 4, // PENDING ASH
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
+    concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
     //
     // Shown whatever the answer, and it has to be: the risk here is that the
     // question is READ wrongly, not answered wrongly. An owner watching a cat
@@ -119,7 +119,7 @@ export const GI_CORE_PARAMETERS = [
       dog: 'Straining to urinate can often be mistaken for constipation or straining to pass stool. If any straining is noted, please contact your vet immediately to rule out a urinary obstruction, which is an emergency.',
       cat: 'Straining to urinate can often be mistaken for constipation or straining to pass stool. If any straining is noted, please contact your vet immediately to rule out a urinary obstruction, which is an emergency in cats.',
     },
-    // PENDING ASH — all six levels drafted by me.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
     levels: {
       dog: [
         'Passes stool easily, with no straining.',
@@ -145,7 +145,7 @@ export const GI_CORE_PARAMETERS = [
     // Split by species on Ash's instruction. The urinary blockage line is only
     // true for cats, and in a dog owner's emergency alert it is noise in the
     // one message that most needs to be read and acted on.
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. The blockage line is now on
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. The blockage line is now on
     // BOTH species' alerts, not just the cat's: the standing alert above warns
     // an owner before they answer, and this is what they see once they have.
     // A dog can block too, and the owner who has just selected a straining
@@ -159,7 +159,7 @@ export const GI_CORE_PARAMETERS = [
     key: 'abdominal_pain',
     species: 'dog',
     label: 'Abdominal Pain',
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her four options, verbatim,
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her four options, verbatim,
     // and dogs only on her instruction.
     //
     // A choice rather than a six-level scale: four rungs is what she wrote,
@@ -167,7 +167,7 @@ export const GI_CORE_PARAMETERS = [
     // inventing two she did not. "Not sure" is added by the form itself, so
     // it is not listed here.
     type: 'choice',
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
     //
     // "If {name} tolerates it" leads, deliberately: an owner should not be
     // pressing on a painful abdomen to answer a question, and a pet who will
@@ -179,14 +179,14 @@ export const GI_CORE_PARAMETERS = [
       { value: 'hunched', label: 'Appears hunched over and uncomfortable. Tummy is tense.', severity: SEVERITY.CONCERN },
       { value: 'praying', label: 'Hunched over, or frequent "downward dog" stretching. Tummy is tense and sore when palpated.', severity: SEVERITY.EMERGENCY },
     ],
-    concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // PENDING ASH
-    // PENDING ASH — the severity on the last option is MY call, not yours.
+    concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The severity on the last option is MY call, not yours.
     // I made it an emergency rather than a concern: a hunched dog stretching
     // repeatedly with a tense, painful abdomen is the pancreatitis and
     // torsion presentation, and those are same-day. It is one word to change
     // to CONCERN if you would rather it were amber — note that emergency also
     // floors the whole day's summary to red.
-    emergencyMessage: 'A hunched, stretching dog with a tense, painful tummy needs to be seen today. Contact your vet or the nearest emergency clinic.', // PENDING ASH
+    emergencyMessage: 'A hunched, stretching dog with a tense, painful tummy needs to be seen today. Contact your vet or the nearest emergency clinic.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
   },
 ]
 
@@ -201,7 +201,7 @@ export const GI_CORE_PARAMETERS = [
 // several. parametersForGi deduplicates by key, so an owner who has selected
 // both reflux and pancreatitis is asked it once.
 //
-// APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
 //
 // Temperature was dropped from the question: an owner cannot take one, and
 // asking for a sign they have no way of checking makes the whole question
@@ -216,7 +216,7 @@ const ASPIRATION_SIGNS = {
   emergencyMessage: 'Seek veterinary attention as soon as possible.',
 }
 
-// APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, verbatim.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, verbatim.
 //
 // Shared between species rather than pasted twice: two identical arrays are
 // two things to edit, and the second is the one that gets forgotten.
@@ -236,7 +236,7 @@ const DOG_SCOOTING_LEVELS = [
   ...SCOOTING_LEVELS_TAIL,
 ]
 
-// APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording for the cat's normal
+// APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording for the cat's normal
 // state, with "the bottom" naming the place outright rather than "the area"
 // implying it — an owner should not have to work out which area is meant.
 // Moved to the second sentence so the word is not said twice in a row.
@@ -245,7 +245,7 @@ const CAT_SCOOTING_LEVELS = [
   ...SCOOTING_LEVELS_TAIL,
 ]
 
-// PENDING ASH — the wording is mine; the severity markers are Ash's, 29 Aug
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The wording is mine; the severity markers are Ash's, 29 Aug
 // 2026. Written for the first fortnight after gut surgery, which is the only
 // time this question is asked.
 //
@@ -283,8 +283,8 @@ export const GI_MODULES = {
         key: 'urgency',
         label: 'Urgency And Accidents',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        // PENDING ASH — all six levels drafted by me. Urgency is one of the
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Urgency is one of the
         // things owners notice first and vets ask about, and it is not the
         // same as consistency: a formed stool that cannot be held is still a
         // large-bowel sign.
@@ -340,8 +340,8 @@ export const GI_MODULES = {
         label: 'Anything Visible In The Stool?',
         type: 'yesno',
         concernWhen: 'yes',
-        why: 'Worms, segments like grains of rice, or anything else you can see.', // PENDING ASH
-        concernMessage: 'Worth telling your vet — it may change which treatment is used, or when the next dose is due.', // PENDING ASH
+        why: 'Worms, segments like grains of rice, or anything else you can see.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        concernMessage: 'Worth telling your vet — it may change which treatment is used, or when the next dose is due.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // Better shown than described. What an owner calls "little white bits"
         // a vet can often identify on sight, and the photo is far more use at
         // the appointment than the memory of it — by then the evidence has
@@ -351,7 +351,7 @@ export const GI_MODULES = {
           when: 'yes',
           type: 'photo',
           label: 'Show your vet',
-          hint: 'A photo is worth far more than a description here, and it will be gone by the appointment. Take one now and it is saved to {name}\'s photos, ready to show them.', // PENDING ASH
+          hint: 'A photo is worth far more than a description here, and it will be gone by the appointment. Take one now and it is saved to {name}\'s photos, ready to show them.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         },
       },
     ],
@@ -365,8 +365,8 @@ export const GI_MODULES = {
         key: 'scooting',
         label: 'Scooting Or Licking At The Bottom',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, shared
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording, shared
         // between dogs and cats: nothing in it is species-specific, and the
         // two drafted versions that differed have gone.
         //
@@ -375,7 +375,7 @@ export const GI_MODULES = {
         // app machinery rather than wording, and without it an abscessed anal
         // gland stops raising a red alert.
         levels: { dog: DOG_SCOOTING_LEVELS, cat: CAT_SCOOTING_LEVELS },
-        emergencyMessage: 'A swelling or open sore beside the bottom can be an abscessed anal gland, which is painful and needs treating today.', // PENDING ASH
+        emergencyMessage: 'A swelling or open sore beside the bottom can be an abscessed anal gland, which is painful and needs treating today.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },
@@ -388,8 +388,8 @@ export const GI_MODULES = {
         key: 'wound',
         label: 'External Appearance Of Surgical Site',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        // PENDING ASH — the six levels are still mine. What has changed on
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The six levels are still mine. What has changed on
         // Ash's instruction is where the red line sits: everything from
         // moderate-to-severe upwards is now an emergency rather than only a
         // wound that has already opened.
@@ -399,7 +399,7 @@ export const GI_MODULES = {
         // hours away from a dehisced one, and an owner who is told "worth
         // watching" will watch it.
         levels: { dog: SURGICAL_SITE_LEVELS, cat: SURGICAL_SITE_LEVELS },
-        emergencyMessage: 'Seek veterinary attention as soon as possible. Stop {name} licking the site in the meantime.', // PENDING ASH
+        emergencyMessage: 'Seek veterinary attention as soon as possible. Stop {name} licking the site in the meantime.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // A photograph is worth more than any of these six sentences at the
         // appointment, and more still on the phone beforehand — a vet can
         // often tell from one whether this needs to be seen now or tomorrow.
@@ -408,22 +408,22 @@ export const GI_MODULES = {
           whenAtLeast: 4,
           type: 'photo',
           label: 'Show your vet',
-          hint: 'Take a photo of the site now. A vet can often tell from a photo how urgent this is, and it gives you something to compare against tomorrow.', // PENDING ASH
+          hint: 'Take a photo of the site now. A vet can often tell from a photo how urgent this is, and it gives you something to compare against tomorrow.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         },
       },
       {
         key: 'back_to_normal',
         label: 'Eating And Toileting Since Surgery',
         type: 'choice',
-        // PENDING ASH — options and severities both.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both.
         options: [
           { value: 'both', label: 'Eating and passing stool normally' },
           { value: 'eating_only', label: 'Eating, but has not passed stool yet', severity: SEVERITY.CONCERN },
           { value: 'stool_only', label: 'Passing stool, but not eating', severity: SEVERITY.CONCERN },
           { value: 'neither', label: 'Neither eating nor passing stool', severity: SEVERITY.EMERGENCY },
         ],
-        concernMessage: 'Worth ringing your vet to check whether this is expected at this stage of recovery.', // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording.
+        concernMessage: 'Worth ringing your vet to check whether this is expected at this stage of recovery.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
         //
         // Two thresholds in one sentence, deliberately: ring today, be seen
         // today if it has already run past a day. The app cannot know how long
@@ -457,10 +457,10 @@ export const GI_MODULES = {
   megaoesophagus: {
     key: 'megaoesophagus',
     label: 'Megaoesophagus',
-    // PENDING ASH — the whole note. The point being made: the danger in
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The whole note. The point being made: the danger in
     // megaoesophagus is not the regurgitation itself, it is what gets breathed
     // in, and owners are rarely told to watch for that.
-    intro: 'The thing to watch for is not just how often {name} brings food back, but whether any of it has gone into the lungs. A cough, noisy breathing or a temperature in the day or two after an episode is the sign that matters most.', // PENDING ASH
+    intro: 'The thing to watch for is not just how often {name} brings food back, but whether any of it has gone into the lungs. A cough, noisy breathing or a temperature in the day or two after an episode is the sign that matters most.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'regurgitation',
@@ -470,7 +470,7 @@ export const GI_MODULES = {
         // heaving, no warning, and it comes back undigested. Asked as its own
         // question rather than folded into the assessment's vomiting one,
         // which asks about something else.
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. "After every meal" added,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. "After every meal" added,
         // and both it and "after most meals" raised to emergencies on her
         // instruction: regurgitation that has become that consistent can mean
         // an obstruction rather than the megaoesophagus itself, and that is a
@@ -482,7 +482,7 @@ export const GI_MODULES = {
           { value: 'most_meals', label: 'After most meals', severity: SEVERITY.EMERGENCY },
           { value: 'every_meal', label: 'After every meal', severity: SEVERITY.EMERGENCY },
         ],
-        concernMessage: 'Worth recording for your vet. Feeding position, food consistency and meal size can often be adjusted to reduce this.', // PENDING ASH
+        concernMessage: 'Worth recording for your vet. Feeding position, food consistency and meal size can often be adjusted to reduce this.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         emergencyMessage: 'Contact your vet as soon as possible.',
       },
           // Regurgitation IS this condition, and aspiration is what kills these patients — the module intro says so.
@@ -504,8 +504,8 @@ export const GI_MODULES = {
         label: 'Stretching Or Praying Position',
         type: 'yesno',
         concernWhen: 'yes',
-        why: 'Front legs down and bottom up, held for longer than a stretch. It is a way of easing tummy pain, and is worth telling your vet about.', // PENDING ASH
-        concernMessage: 'This position is often a sign of tummy pain. Ring your vet today, particularly if {name} is also off {their} food.', // PENDING ASH
+        why: 'Front legs down and bottom up, held for longer than a stretch. It is a way of easing tummy pain, and is worth telling your vet about.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        concernMessage: 'This position is often a sign of tummy pain. Ring your vet today, particularly if {name} is also off {their} food.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
           // Vomiting is cardinal here, and a vomiting patient can aspirate.
       ASPIRATION_SIGNS,
@@ -520,7 +520,7 @@ export const GI_MODULES = {
         key: 'stool_volume',
         label: 'Amount Of Stool',
         type: 'choice',
-        // PENDING ASH — options and severities. Volume rather than
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities. Volume rather than
         // consistency: the classic EPI sign is a lot of pale, greasy stool
         // from a pet who is eating well, and consistency alone misses it.
         options: [
@@ -528,7 +528,7 @@ export const GI_MODULES = {
           { value: 'more', label: 'More than usual', severity: SEVERITY.CONCERN },
           { value: 'much_more', label: 'Much more than usual, and pale or greasy', severity: SEVERITY.CONCERN },
         ],
-        concernMessage: 'Worth telling your vet — the enzyme dose may need adjusting.', // PENDING ASH
+        concernMessage: 'Worth telling your vet — the enzyme dose may need adjusting.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },
@@ -541,13 +541,13 @@ export const GI_MODULES = {
         key: 'reflux_signs',
         label: 'Gulping, Lip-Licking Or Burping',
         type: 'scale',
-        concernFrom: 4, // PENDING ASH
-        // PENDING ASH — all six levels drafted by me. Reflux is easy to miss
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Reflux is easy to miss
         // because the signs look like ordinary behaviour; these are written to
         // be recognisable rather than named.
         //
         // The (emergency) marker on the last level is Ash's, 29 Aug 2026.
-        emergencyMessage: 'A pet who is uncomfortable much of the day, eating less or refusing food needs to be seen today. Contact your vet or the nearest emergency clinic.', // PENDING ASH
+        emergencyMessage: 'A pet who is uncomfortable much of the day, eating less or refusing food needs to be seen today. Contact your vet or the nearest emergency clinic.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'None of these today.',

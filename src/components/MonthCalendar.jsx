@@ -224,7 +224,7 @@ export default function MonthCalendar({ dayFor, onOpenDay }) {
       {hasEvents && (
         <p className="calendar-legend">
           <Stethoscope size={13} />
-          {/* PENDING ASH — wording. Names the Events list rather than calling
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Names the Events list rather than calling
               it "a medical event", which read as a category of its own when
               it is simply the row the owner added below. */}
           Something from the Events list below — an episode, a diagnosis, a
@@ -235,7 +235,7 @@ export default function MonthCalendar({ dayFor, onOpenDay }) {
       {hasMilestones && (
         <p className="calendar-legend">
           <Flag size={13} />
-          {/* PENDING ASH — wording. Deliberately does not list what counts:
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Deliberately does not list what counts:
               the set differs by condition — a diet trial mark exists only in
               allergies — and a list that is wrong for the condition being
               looked at is worse than no list. */}

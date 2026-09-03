@@ -35,7 +35,7 @@ export function severityColorFromPercent(percent) {
 // percent-to-colour helper used for the 5 Overview pillar bars, which are a
 // different measure on a different scale, and shouldn't be recoloured by a
 // change to the overall-QoL banding.
-// PENDING ASH — reworded, not yet reviewed.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Reworded, not yet reviewed.
 //
 // Two revisions on from "Minimal / Some / Moderate / Severe impact". The
 // problem with "impact" was that it graded an abstraction rather than the

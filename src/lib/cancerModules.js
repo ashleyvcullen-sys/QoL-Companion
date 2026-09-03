@@ -20,7 +20,7 @@
 //
 // See CancerMonitoring_Structure.md for the full reasoning.
 //
-// PENDING ASH: owner-facing strings drafted by Claude are marked. Anything
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. : owner-facing strings drafted by Claude are marked. Anything
 // NOT marked came from Ash directly.
 
 import { RELATIONSHIP, SEEK_VET_ASAP, SEVERITY, sharedParameter } from './conditions'
@@ -56,7 +56,7 @@ export const CORE_PARAMETERS = [
     // Graded here, scored there, converted in both directions. The owner
     // answers appetite once a day whichever screen they open first.
     beapFromGrade: true,
-    concernFromGrade: 3, // PENDING ASH
+    concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     grades: [
       { grade: 0, owner: 'Eating normally.' },
       { grade: 1, owner: 'Eating a little less than usual, but still eating meals.' },
@@ -70,7 +70,7 @@ export const CORE_PARAMETERS = [
     label: 'Nausea',
     type: 'vcog',
     vcogCategory: 'Nausea',
-    concernFromGrade: 3, // PENDING ASH
+    concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     grades: [
       { grade: 0, owner: 'No sign of nausea.' },
       { grade: 1, owner: 'Occasional lip-licking or drooling, but eating normally.' },
@@ -88,7 +88,7 @@ export const CORE_PARAMETERS = [
     // first and the thing that most often precedes a bad week.
     covers: 'attitude',
     relationship: RELATIONSHIP.SUPERSEDES,
-    concernFrom: 4, // PENDING ASH
+    concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // The most severe rung carries the "(emergency)" marker; this is the line
     // that appears under it.
     emergencyMessage: SEEK_VET_ASAP,
@@ -118,7 +118,7 @@ export const SIGN_MODULES = {
   mass: {
     key: 'mass',
     label: 'A lump you can see and feel',
-    summary: 'Size, appearance and whether it is bothering {name}.', // PENDING ASH
+    summary: 'Size, appearance and whether it is bothering {name}.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // Parameters are generated per instance — see LUMP_MEASURES.
     perInstance: 'lump',
     parameters: [],
@@ -133,7 +133,7 @@ export const SIGN_MODULES = {
     // summary under Things to Monitor. Someone choosing what to track does
     // not need this yet; someone being asked for a number does.
     instanceNote: {
-      cat: 'Cats do not always have noticeably enlarged external lymph nodes. If you cannot feel any, ignore this section — or select N/A on the days you cannot feel one.', // PENDING ASH
+      cat: 'Cats do not always have noticeably enlarged external lymph nodes. If you cannot feel any, ignore this section — or select N/A on the days you cannot feel one.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     },
     perInstance: 'node',
     instanceLabel: 'Which lymph node?',
@@ -153,12 +153,12 @@ export const SIGN_MODULES = {
   respiratory: {
     key: 'respiratory',
     label: 'Breathing',
-    summary: 'Breathing effort and coughing.', // PENDING ASH
+    summary: 'Breathing effort and coughing.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       // Shared with Heart Disease, including the "what does it sound like"
       // follow-up. Only the reason it matters is different.
       sharedParameter('coughing', {
-        why: 'A new or worsening cough matters in a cancer patient, and is worth telling your vet about even if {name} seems well otherwise.', // PENDING ASH
+        why: 'A new or worsening cough matters in a cancer patient, and is worth telling your vet about even if {name} seems well otherwise.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       }),
       // Shared with Heart Disease — one definition, one place to edit.
       sharedParameter('breathing_effort'),
@@ -168,7 +168,7 @@ export const SIGN_MODULES = {
   gums: {
     key: 'gums',
     label: 'Gum colour',
-    summary: 'Pale, white or blue gums can mean bleeding inside, or that {name} is not getting enough oxygen.', // PENDING ASH
+    summary: 'Pale, white or blue gums can mean bleeding inside, or that {name} is not getting enough oxygen.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       // Identical to Heart Disease's, from the same definition — including
       // the how-to for lifting the lip. See SHARED_PARAMETERS in
@@ -181,7 +181,7 @@ export const SIGN_MODULES = {
   mobility: {
     key: 'mobility',
     label: 'Lameness and Mobility',
-    summary: 'Whether {name} is using the leg, and how {they} {are} getting about.', // PENDING ASH
+    summary: 'Whether {name} is using the leg, and how {they} {are} getting about.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'weight_bearing',
@@ -196,8 +196,8 @@ export const SIGN_MODULES = {
           { value: 'partial', label: 'Limping, but still using it', severity: SEVERITY.CONCERN },
           { value: 'none', label: 'Not putting the leg down at all', severity: SEVERITY.EMERGENCY },
         ],
-        emergencyMessage: 'A leg that suddenly cannot be used at all needs veterinary attention today. In a pet with a bone tumour this can mean the bone has broken.', // PENDING ASH
-        concernMessage: 'Worth telling your vet about, especially if the limp is new or getting worse.', // PENDING ASH
+        emergencyMessage: 'A leg that suddenly cannot be used at all needs veterinary attention today. In a pet with a bone tumour this can mean the bone has broken.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        concernMessage: 'Worth telling your vet about, especially if the limp is new or getting worse.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },
@@ -205,7 +205,7 @@ export const SIGN_MODULES = {
   urinary: {
     key: 'urinary',
     label: 'Urination',
-    summary: 'Straining, blood, and how often.', // PENDING ASH
+    summary: 'Straining, blood, and how often.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'unable_to_pass_urine',
@@ -217,7 +217,7 @@ export const SIGN_MODULES = {
         // question with a different answer on the phone.
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
-        emergencyMessage: 'A pet straining to urinate without producing anything is an emergency. Contact your vet or the nearest emergency clinic now.', // PENDING ASH
+        emergencyMessage: 'A pet straining to urinate without producing anything is an emergency. Contact your vet or the nearest emergency clinic now.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
       {
         key: 'straining_to_urinate',
@@ -252,7 +252,7 @@ export const SIGN_MODULES = {
         covers: 'vomiting',
         relationship: RELATIONSHIP.SUPERSEDES,
         vcogCategory: 'Vomiting',
-        concernFromGrade: 3, // PENDING ASH
+        concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // NOTE on the "(emergency)" markers below. For a `scale` parameter
         // that marker drives BOTH the hazard icon and the severity. For a
         // `vcog` parameter severity comes from concernFromGrade /
@@ -274,7 +274,7 @@ export const SIGN_MODULES = {
         covers: 'stool',
         relationship: RELATIONSHIP.SUPERSEDES,
         vcogCategory: 'Diarrhoea',
-        concernFromGrade: 3, // PENDING ASH
+        concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         grades: [
           { grade: 0, owner: 'Normal stools.' },
           { grade: 1, owner: 'Slightly softer than usual.' },
@@ -294,7 +294,7 @@ export const SIGN_MODULES = {
         // perfectly well on the daily question.
         covers: 'stool',
         relationship: RELATIONSHIP.DISTINCT,
-        concernMessage: 'Black, tarry stools can mean bleeding higher up the gut. Book a visit with your vet.', // PENDING ASH
+        concernMessage: 'Black, tarry stools can mean bleeding higher up the gut. Book a visit with your vet.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },
@@ -302,14 +302,14 @@ export const SIGN_MODULES = {
   haemorrhage: {
     key: 'haemorrhage',
     label: 'Collapse or a swollen tummy',
-    summary: 'Signs that a tumour may be bleeding inside.', // PENDING ASH
+    summary: 'Signs that a tumour may be bleeding inside.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'collapse_episode',
         label: 'Collapse Or Fainting',
         type: 'yesno',
         emergencyWhen: 'yes',
-        emergencyMessage: 'Collapse in a pet with a tumour that can bleed needs veterinary attention immediately. Contact your vet or the nearest emergency clinic now.', // PENDING ASH
+        emergencyMessage: 'Collapse in a pet with a tumour that can bleed needs veterinary attention immediately. Contact your vet or the nearest emergency clinic now.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
       { key: 'swollen_abdomen', label: 'Swollen Or Bloated Tummy', type: 'yesno', concernWhen: 'yes' },
     ],
@@ -318,7 +318,7 @@ export const SIGN_MODULES = {
   nasal: {
     key: 'nasal',
     label: 'Nose and face',
-    summary: 'Discharge, facial swelling and noisy breathing.', // PENDING ASH
+    summary: 'Discharge, facial swelling and noisy breathing.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'nasal_discharge',
@@ -331,7 +331,7 @@ export const SIGN_MODULES = {
           { value: 'coloured', label: 'Yellow or green', severity: SEVERITY.CONCERN },
           { value: 'bloody', label: 'Bloody', severity: SEVERITY.CONCERN },
         ],
-        concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // PENDING ASH
+        concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
       {
         key: 'facial_swelling',
@@ -358,7 +358,7 @@ export const SIGN_MODULES = {
     label: 'Mouth and eating mechanics',
     // Deliberately separate from appetite. A pet with an oral tumour is
     // hungry and WANTS to eat — an appetite grade alone reads that as fine.
-    summary: 'Whether {name} can eat comfortably — not whether {they} {are} hungry.', // PENDING ASH
+    summary: 'Whether {name} can eat comfortably — not whether {they} {are} hungry.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       // The two mechanics questions sit in the appetite domain and are not
       // appetite: this patient is hungry. Declared so the check can see the
@@ -391,10 +391,10 @@ const MEASURE_HOW_TO = [
 ]
 
 const LUMP_CAVEAT =
-  '**A lump that is not getting bigger on the outside does not always mean nothing is happening inside.**' // PENDING ASH
+  '**A lump that is not getting bigger on the outside does not always mean nothing is happening inside.**' // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
 
 const NODE_CAVEAT =
-  '**A lymph node that is not getting bigger does not always mean nothing is happening on the inside.**' // PENDING ASH
+  '**A lymph node that is not getting bigger does not always mean nothing is happening on the inside.**' // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
 
 export const LUMP_MEASURES = [
   {
@@ -422,7 +422,7 @@ export const LUMP_MEASURES = [
       { value: 'ulcerated', label: 'Broken open', severity: SEVERITY.CONCERN },
       { value: 'bleeding', label: 'Bleeding', severity: SEVERITY.CONCERN },
     ],
-    concernMessage: 'Worth telling your vet about, particularly if this is a change from last time.', // PENDING ASH
+    concernMessage: 'Worth telling your vet about, particularly if this is a change from last time.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // Stored under its own key rather than overwriting the choice, so "the
     // skin has changed colour" and "here is what colour" stay separate facts.
     followUp: {
@@ -467,7 +467,7 @@ export const MEASURES_BY_INSTANCE_TYPE = {
 }
 
 // ---------------------------------------------------- treatment modules
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, wording and thresholds both,
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026, wording and thresholds both,
 // and shared between dogs and cats on her instruction.
 //
 // Defined once and referenced from both species keys rather than pasted
@@ -498,7 +498,7 @@ export const TREATMENT_MODULES = {
   chemo: {
     key: 'chemo',
     label: 'Chemotherapy',
-    summary: 'Side effects to watch for while {name} is on treatment.', // PENDING ASH
+    summary: 'Side effects to watch for while {name} is on treatment.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // Days since the last treatment is DERIVED from the condition event the
     // owner already logs, never asked.
     usesTreatmentDay: true,
@@ -515,7 +515,7 @@ export const TREATMENT_MODULES = {
         // normal, which is what the daily activity score measures.
         covers: 'activity',
         relationship: RELATIONSHIP.SUPERSEDES,
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Amber from grade 2, red
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Amber from grade 2, red
         // from grade 3. The earliest amber of any cancer parameter, and
         // deliberately: a dog sleeping most of the day after chemotherapy is
         // the finding that most often turns out to be the start of something,
@@ -544,7 +544,7 @@ export const TREATMENT_MODULES = {
         // rather than a slightly lower score.
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
-        // PENDING ASH — drafted by me, and the most urgent of the outstanding
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me, and the most urgent of the outstanding
         // ones. Until now this field held a note to myself, which meant an
         // owner answering "yes" was shown "PENDING ASH — this is the
         // neutropenic sepsis question" as their alert.
@@ -561,7 +561,7 @@ export const TREATMENT_MODULES = {
         //      them seen rather than triaged to tomorrow.
         //
         concernMessage: 'Ring your vet today, not tomorrow, and tell them {name} is having chemotherapy. Being very quiet, shivering or feeling hot can be the first sign of a serious infection in the week or so after a treatment, and it needs treating quickly. Do this even if {they} otherwise seem{s} well.',
-        // PENDING ASH — drafted for review. The point being made: chemo drops
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted for review. The point being made: chemo drops
         // the white cells that fight infection, the dip lands roughly a week
         // after treatment, and at that point an ordinary infection can become
         // serious quickly. Owners cannot see a white cell count; what they
@@ -574,7 +574,7 @@ export const TREATMENT_MODULES = {
   radiation: {
     key: 'radiation',
     label: 'Radiation therapy',
-    summary: 'Skin and comfort at the treated site.', // APPROVED — Ash Cullen (BVSc), 25 Aug 2026
+    summary: 'Skin and comfort at the treated site.', // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026
     parameters: [
       {
         key: 'skin_at_site',
@@ -613,7 +613,7 @@ export const TREATMENT_MODULES = {
   palliative_meds: {
     key: 'palliative_meds',
     label: 'Steroids or palliative medication',
-    summary: 'Expected effects, tracked but not treated as deterioration.', // PENDING ASH
+    summary: 'Expected effects, tracked but not treated as deterioration.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // EVERY parameter here is informational — see the note on `informational`
     // in conditions.js. Drinking more, urinating more and panting are what
     // steroids DO. Scored as concerns they would flag a comfortable,
@@ -639,7 +639,7 @@ export const TREATMENT_MODULES = {
 // modules — the owner can add or remove any of them afterwards, which is why
 // this is a suggestion table and not a schema.
 //
-// PENDING ASH — the whole table. Two in particular: skin/soft tissue → `gi`
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The whole table. Two in particular: skin/soft tissue → `gi`
 // carries the mast cell case (histamine-driven gut ulceration) now that mast
 // cell is no longer listed separately, and mammary → `respiratory` assumes
 // metastasis surveillance is useful to an owner rather than just alarming.
@@ -678,7 +678,7 @@ export const DIAGNOSES = [
   {
     key: 'git',
     label: 'Gastrointestinal (GIT) tumour',
-    // PENDING ASH — the suggested modules, as with every other diagnosis
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The suggested modules, as with every other diagnosis
     // here. `gi` covers appetite, nausea, vomiting and diarrhoea; `haemorrhage`
     // is here because a bleeding gut tumour presents as collapse and a pale,
     // swollen pet rather than as anything an owner would call a gut sign, and

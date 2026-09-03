@@ -21,7 +21,7 @@ export const STOOL_SYMPTOM_OPTIONS = [
 // and an owner who does not know that will tick it and move on. So this one
 // raises the same interruption the male-cat urinary blockage does.
 //
-// PENDING ASH — wording drafted by me, not reviewed.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording drafted by me, not reviewed.
 export const STOOL_EMERGENCY = {
   chips: ['Black/tarry'],
   title: 'This could be an emergency',
@@ -37,7 +37,7 @@ export const STOOL_EMERGENCY = {
 // that the pattern matters more than the hours. Species-specific because a
 // dog owner does not need to read about cats.
 //
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, except where noted below.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026, except where noted below.
 export const SLEEP_NOTES = {
   dog: [
     'Most dogs sleep between 8-14 hours out of a 24-hour day, and a good deal of that is daytime napping. A change in sleep pattern is what matters.',
@@ -56,7 +56,7 @@ export const SLEEP_NOTES = {
 // Species-keyed for the same reason the notes are: a dog owner asking this
 // is not asking about cats.
 //
-// PENDING ASH — wording.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
 export const SLEEP_NOTES_LABEL = {
   dog: 'How much sleep is normal for a dog?',
   cat: 'How much sleep is normal for a cat?',

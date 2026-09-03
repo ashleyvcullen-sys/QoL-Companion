@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FileDown } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
@@ -8,6 +8,7 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
+import ExpandableNote from '../components/ExpandableNote'
 import OverviewBars from '../components/OverviewBars'
 import ChartView from '../components/ChartView'
 import DayAnswersModal from '../components/DayAnswersModal'
@@ -17,7 +18,21 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
 import { computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
-import { buildChartRegistry, chartByKey } from '../lib/charts'
+import {
+  buildChartRegistry,
+  chartByKey,
+  chartsForCondition,
+  configsByCondition,
+  resolveTrackedConditions,
+} from '../lib/charts'
+import {
+  useAllConditionEntries,
+  useAllConditionEvents,
+  usePetConditions,
+} from '../lib/conditionsData'
+import { describeConditionDay } from '../lib/conditions'
+import { parametersFor } from '../lib/cancerConfig'
+import { useEntitlements } from '../lib/EntitlementsContext'
 import { useMedications } from '../lib/medicationsData'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
@@ -30,10 +45,22 @@ export default function Trends() {
   const navigate = useNavigate()
   const { generalEntries, painEntries, loading, refresh } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
+  const { hasPremium } = useEntitlements()
+  // Everything needed to draw a condition's summary calendar, for every
+  // condition at once. The per-condition screen loads one condition's worth
+  // through the singular hooks; these are the same queries without the
+  // conditionKey filter, and the report already uses them for exactly this.
+  const { conditions } = usePetConditions(pet?.id)
+  const { byCondition: entriesByCondition } = useAllConditionEntries(pet?.id)
+  const { byCondition: eventsByCondition } = useAllConditionEvents(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   // Which day's answers are open, as an ISO date. Null is closed.
   const [openDay, setOpenDay] = useState(null)
   const [noteError, setNoteError] = useState('')
+  // The same idea for a CONDITION calendar, but a date alone is not enough:
+  // two conditions can both have been logged on the same day and they are
+  // different sets of answers. Held as { conditionKey, date }.
+  const [openConditionDay, setOpenConditionDay] = useState(null)
 
   // The two halves of one day's assessment, for the day whose answers are
   // open. Looked up rather than carried on the calendar descriptor, so the
@@ -85,6 +112,62 @@ export default function Trends() {
 
   const overallChart = chartByKey(charts, 'overall')
   const goodBadDays = chartByKey(charts, 'good-bad-days')
+
+  // --- Tracked conditions, summarised here too -----------------------------
+  //
+  // Added 3 Sep 2026 on Ash's instruction: an owner monitoring three things
+  // had to visit three screens to see how the month had gone. The summary
+  // calendars now also gather on this screen, which is the one place already
+  // meant for "how have we been doing".
+  //
+  // Built with chartsForCondition, the SAME function the condition's own
+  // screen and the exported report call, rather than a second drawing of the
+  // same data. A calendar that disagreed with itself between two screens
+  // would be worse than not having it here at all.
+  //
+  // Gated on premium because condition monitoring is a paid feature. In
+  // practice the rows would not load for a free account anyway — the RLS
+  // policy refuses them — but a lapsed subscription must not leave stale
+  // calendars sitting on a free screen.
+  const conditionConfigs = configsByCondition(conditions)
+  const conditionSummaries = (hasPremium ? resolveTrackedConditions(conditions) : [])
+    .map((definition) => {
+      const entries = entriesByCondition[definition.key] ?? []
+      const built = chartsForCondition({
+        definition,
+        entries,
+        events: eventsByCondition[definition.key] ?? [],
+        medications,
+        species: pet?.species,
+        pet,
+        config: conditionConfigs[definition.key],
+      })
+      return {
+        definition,
+        entries,
+        calendar: chartByKey(built, `${definition.key}:calendar`),
+      }
+    })
+
+  // The entry behind the open condition day, and the definition as it was
+  // actually asked — cancer resolves its parameters per pet, so the static
+  // list would describe questions this owner was never shown.
+  const openConditionSummary = openConditionDay
+    ? conditionSummaries.find((item) => item.definition.key === openConditionDay.conditionKey) ?? null
+    : null
+  const openConditionEntry = openConditionSummary
+    ? openConditionSummary.entries.find((entry) => entry.date === openConditionDay.date) ?? null
+    : null
+  const openConditionDefinition = openConditionSummary
+    ? {
+        ...openConditionSummary.definition,
+        parameters: parametersFor(
+          openConditionSummary.definition,
+          conditionConfigs[openConditionSummary.definition.key],
+          pet?.species,
+        ),
+      }
+    : null
 
   const overviewToggle = useConceptToggle()
   const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
@@ -153,11 +236,46 @@ export default function Trends() {
         {overallChart ? <ChartView chart={overallChart} /> : <p>No assessments logged yet.</p>}
       </Card>
 
+      {/* One card per condition being monitored, between the overall charts
+          and the notes. Below the overall picture because that is the one
+          every pet has; above History because a calendar is scanned and a
+          note is read. */}
+      {conditionSummaries.map(({ definition, calendar }) => (
+        <Card key={definition.key}>
+          <SectionTitle>{pet?.name}&apos;s {definition.label} Summary</SectionTitle>
+          {calendar ? (
+            <ChartView
+              chart={calendar}
+              onOpenDay={(date) => setOpenConditionDay({ conditionKey: definition.key, date })}
+            />
+          ) : (
+            /* Tracked, but nothing logged for it yet. Said out loud rather
+               than the card being dropped: a condition silently missing from
+               a screen that promises all of them reads as a bug. */
+            <p>No {definition.label.toLowerCase()} entries logged yet.</p>
+          )}
+          <Link className="subtle-link trends-condition-link" to={`/conditions/${definition.key}`}>
+            Go to {definition.label} Monitoring
+          </Link>
+        </Card>
+      ))}
+
       <Card>
         <SectionTitle>History</SectionTitle>
         {notesHistory.length === 0 ? (
           <p>No notes logged yet.</p>
         ) : (
+          /* Collapsed by default, on Ash's instruction 3 Sep 2026. Ten notes
+             of free text is the longest thing on this screen and it sat under
+             everything an owner actually came here to look at. The count is
+             in the label so a closed section still says how much is behind
+             it.
+
+             APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */
+          <ExpandableNote
+            className="history-expander"
+            label={`${notesHistory.length} note${notesHistory.length === 1 ? '' : 's'} you've written`}
+          >
           <div className="history-list">
             {/* A button, not a div. A note is written about a particular day,
                 and the questions it was written beside are the context that
@@ -179,6 +297,7 @@ export default function Trends() {
               </button>
             ))}
           </div>
+          </ExpandableNote>
         )}
       </Card>
 
@@ -199,6 +318,23 @@ export default function Trends() {
           }
           noteError={noteError}
           onClose={() => { setOpenDay(null); setNoteError('') }}
+        />
+      )}
+
+      {/* Read-only here, deliberately. Deleting a note is an edit to that
+          condition's record and belongs on that condition's own screen,
+          which the link on each card above goes to. */}
+      {openConditionDay && (
+        <DayAnswersModal
+          title="This Day's Answers"
+          dateLabel={formatDateDDMMYYYY(openConditionDay.date)}
+          rows={openConditionDefinition
+            ? describeConditionDay(openConditionDefinition, openConditionEntry?.values, pet?.species)
+            : []}
+          pet={pet}
+          emptyMessage="Nothing was recorded for this condition on this day."
+          note={openConditionEntry?.notes ?? null}
+          onClose={() => setOpenConditionDay(null)}
         />
       )}
 

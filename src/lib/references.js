@@ -64,7 +64,7 @@ export const REFERENCES = [
   {
     key: 'dishaa',
     where: 'condition',
-    // PENDING ASH — confirm the instrument and the exact wording. Nothing
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the instrument and the exact wording. Nothing
     // from DISHAA is reproduced; the domains are followed and the owner
     // wording is drafted.
     short: 'Incorporates assessment structures from the DISHAA cognitive assessment domains.',
@@ -73,7 +73,7 @@ export const REFERENCES = [
   {
     key: 'acvim-cardiac',
     where: 'condition',
-    // PENDING ASH — drafted by me, both lines. Heart disease was the one
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me, both lines. Heart disease was the one
     // monitoring section with no citation at all. The parameters it collects
     // (resting respiratory rate, exercise tolerance, syncope, abdominal
     // distension) are the ones these two sources describe, but the instrument
@@ -85,7 +85,7 @@ export const REFERENCES = [
   {
     key: 'pvas',
     where: 'condition',
-    // PENDING ASH — confirm both instruments and the exact wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm both instruments and the exact wording.
     //
     // TWO scales, not one. The canine PVAS does not apply to cats, and the
     // feline instrument was published thirteen years later precisely because

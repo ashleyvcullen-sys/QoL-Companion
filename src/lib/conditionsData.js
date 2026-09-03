@@ -221,7 +221,7 @@ export function useConditionEntries(petId, conditionKey) {
 // thing in the one box a vet reads first. An example is only useful when it
 // is an example of what is actually being asked for.
 //
-// PENDING ASH — the four examples. "e.g. heart disease" is hers.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — the four examples. "e.g. heart disease" is hers.
 // `mark` decides which badge the day wears on the calendar, and `prefix` how
 // the event reads on the day's line.
 //

@@ -23,8 +23,8 @@ export function beapCategoryDisplayName(species, key) {
 // normal night — and the dog levels below it are Ash's. The cat levels from
 // "occasionally restless" down are still mine.
 //
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026, for level 0 and the dog scale.
-// PENDING ASH for cat levels 1 to 5.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026, for level 0 and the dog scale.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.  for cat levels 1 to 5.
 const SLEEPS_NORMALLY =
   'Sleeps through the night and is awake, or can be woken easily, throughout the day (napping throughout the day is normal).'
 

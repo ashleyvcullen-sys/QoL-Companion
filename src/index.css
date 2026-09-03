@@ -287,6 +287,27 @@ code {
 /* Every text field in the app, wherever it lives. The condition forms had
    their own byte-identical copy of this block that differed only by adding
    width: 100% — two definitions of one control, free to drift. */
+/* iOS renders date and time inputs with its own intrinsic width and its own
+   internal padding, and ignores the box the rest of the form agrees on: on a
+   414pt screen the control overflowed its field, which is what threw the
+   medication form's date row out of line. Pinned to the same box as every
+   other input, with a minimum height so the native control has somewhere to
+   draw itself rather than clipping its own digits. */
+.field input[type="date"],
+.field input[type="time"],
+.med-date-row input[type="date"],
+.med-slot-row input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  /* Safari centres the value in the control by default and left-aligns it in
+     some locales; stated so it matches the text fields either way. */
+  text-align: left;
+}
+
 .field input,
 .field select,
 .field textarea,
@@ -651,13 +672,23 @@ code {
    same news, and colouring both red spends the alarm before it is needed. */
 .pet-summary-duenote {
   display: flex;
-  align-items: center;
+  /* flex-start, not center: "This assessment is 3 days overdue" wraps to two
+     lines on a 375px screen, and centred the triangle floated into the gap
+     between them, level with neither. Nudged down by 3px it sits on the
+     first line where it belongs, and a single-line notice is unchanged. */
+  align-items: flex-start;
   justify-content: center;
   gap: var(--gap-inline);
   margin: 0;
   font-size: var(--type-meta);
   font-weight: 600;
   color: var(--severity-moderate);
+  text-align: center;
+}
+
+.pet-summary-duenote > svg {
+  flex-shrink: 0;
+  margin-top: 3px;
 }
 
 .pet-summary-duenote.late {
@@ -1618,16 +1649,34 @@ code {
   gap: 14px;
 }
 
+/* Top-aligned, not centred.
+   //
+   Two of these labels are longer than one line on a phone — "Disease-Specific
+   Monitoring" wraps at 414pt with one word on the second line, and the End of
+   Life row wraps at any width. Centred, a wrapped row hung its badge halfway
+   down two lines of text while every row above it had its badge level with a
+   single line, so the badges no longer formed a column and the list read as
+   misaligned. Top-aligned, every badge sits level with the first line of its
+   own label whatever the label does. */
 .welcome-help-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   font-size: var(--type-support);
+  line-height: 140%;
   color: var(--text-h);
 }
 
 .welcome-help-row .icon-badge {
   flex-shrink: 0;
+}
+
+/* Optically level with the first line of the label rather than with the top
+   of its box: the badge is 44px and the line is about 20px. */
+.welcome-help-row > span:last-child {
+  min-width: 0;
+  padding-top: 11px;
+  text-wrap: pretty;
 }
 
 .welcome-alert-badge {
@@ -1706,8 +1755,18 @@ code {
   background: var(--accent-wash);
 }
 
+/* No coloured border, on Ash's instruction 3 Sep 2026.
+   //
+   Selection in this list is shown by a coloured border and a tinted ground
+   (.severity-option.selected above). Giving the emergency rungs their own
+   coloured border made them the only two options that arrive looking picked
+   — an owner scrolling a six-rung scale saw the bottom two already outlined
+   and read that as their previous answer.
+   //
+   The red triangle beside the text is what marks these as emergencies, and
+   it says it without borrowing the vocabulary of "chosen". */
 .severity-option.emergency {
-  border-color: var(--severity-severe);
+  border-color: var(--border);
 }
 
 .severity-option-emergency-icon {
@@ -2596,6 +2655,23 @@ code {
   background: var(--surface);
 }
 
+/* Inside a card rather than between cards, so it does not carry
+   .subtle-link's 24px bottom margin — that space exists to separate a
+   standalone link from the card below it, and here there is nothing below
+   it but the card's own padding. */
+.trends-condition-link {
+  margin: 12px 0 0;
+}
+
+/* The notes list collapses inside an ExpandableNote on Trends. That
+   component's outer box is `align-items: flex-start`, which shrink-wraps its
+   body to the width of the longest line — so a one-word note would draw a
+   one-word-wide list with its divider rules stopping halfway across the card. */
+.history-expander,
+.history-expander .expandable-note-body {
+  width: 100%;
+}
+
 .history-list {
   display: flex;
   flex-direction: column;
@@ -2821,6 +2897,9 @@ code {
   margin-top: 4px;
 }
 
+/* Fallback only. Footer.jsx measures the bar and sets this height inline —
+   see the note there. This value applies for the one frame before that
+   happens, and on a WebView with no ResizeObserver. */
 .app-footer-spacer {
   height: calc(120px + env(safe-area-inset-bottom));
   flex-shrink: 0;
@@ -2910,24 +2989,100 @@ code {
   padding: 0;
 }
 
-.delete-pet-link {
-  display: block;
+/* One row per extra dose time, under the first. Indented so the group reads
+   as belonging to "Remind me at" above it rather than as five sibling
+   fields. */
+.med-dose-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.med-dose-time label {
+  flex: 0 0 auto;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+  min-width: 52px;
+}
+
+.med-dose-time input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* An empty state that offers the way out of being empty: the sentence, then
+   the button, rather than a link buried mid-sentence. */
+.empty-with-action {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty-with-action p {
+  margin: 0;
+}
+
+/* The two destructive actions in Account.
+   //
+   The lesser one — removing a pet — stays a quiet line. The graver one is
+   boxed, in the severity colour, and carries a sentence saying what it
+   destroys. See the note beside them in Settings.jsx. */
+/* Removing a pet is the everyday one — someone rehoming a foster, or tidying
+   up after a loss — so it reads at normal size. Ending the account is rare
+   and irreversible, and Ash's call (3 Sep 2026) is that it should be quiet
+   rather than loud: a red box at the foot of Settings is a permanent alarm
+   for something almost nobody does.
+   //
+   They still have to be told apart, which was the point of the previous
+   pass. Three things still separate them, none of them loudness: the sizes
+   are different, only one carries the consequence sentence, and only one is
+   in the severity colour. */
+.destructive-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-inline);
   width: 100%;
-  text-align: center;
   background: none;
   border: none;
   font: inherit;
-  font-size: var(--type-label);
-  color: var(--text-muted);
-  opacity: 0.6;
+  font-size: var(--type-support);
+  color: var(--text-h);
   cursor: pointer;
-  margin: -12px 0 8px;
+  /* Apple's minimum: these were a 12px line with no padding, a smaller target
+     than anything else on the screen — and an accidental tap on the wrong one
+     of two adjacent destructive actions is the worst mis-tap in the app. */
+  min-height: 44px;
   padding: 0;
 }
 
-.delete-pet-link:hover {
-  opacity: 1;
+.destructive-link:hover {
   color: var(--severity-severe);
+}
+
+/* The account one: smaller, quieter, and set below a rule rather than in a
+   box. */
+.destructive-block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.destructive-link.severe {
+  color: var(--severity-severe);
+  font-size: var(--type-label);
+  min-height: 32px;
+}
+
+.destructive-note {
+  margin: 2px 0 0;
+  font-size: var(--type-micro);
+  line-height: 140%;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .modal-actions {
@@ -3583,6 +3738,13 @@ code {
 
 .med-date-row .subtle-link {
   flex: 0 0 auto;
+  /* .subtle-link is written for the foot of a screen: full width, and a 24px
+     bottom margin. Inside this row the width was already overridden and the
+     MARGIN was not, so "Clear" dragged 24px of empty space under the date
+     field and pushed the row out of line with every other field on the
+     form. */
+  width: auto;
+  margin: 0;
 }
 
 /* The medications recorded for a pet, listed under the condition's

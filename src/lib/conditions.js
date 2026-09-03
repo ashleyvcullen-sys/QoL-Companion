@@ -7,8 +7,8 @@
 // changing wording is an edit to this file alone.
 // ============================================================================
 //
-// CLINICAL CONTENT: written and signed off by Ash Cullen (BVSc), 23 Aug 2026.
-// Anything added later that has NOT been through him must be marked PENDING.
+// CLINICAL CONTENT: written and signed off by Dr Ash Cullen (BSc, DVM), 23 Aug 2026.
+// Anything added later that has NOT been through her must be marked PENDING.
 //
 // Parameter `type` values the UI knows how to render. Every type also offers
 // "Not sure", stored as the string 'unsure' and never treated as an answer.
@@ -367,7 +367,7 @@ export function visibleParameters(parameters = [], values = {}) {
 // definition further down the file threw "Cannot access 'SEEK_VET_ASAP'
 // before initialization" the moment anything imported this file.
 //
-// PENDING ASH — wording. Phrased to match the aspiration alert in the GI
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Phrased to match the aspiration alert in the GI
 // section rather than inventing a second way to say it.
 export const SEEK_VET_ASAP = 'Seek veterinary attention as soon as possible.'
 
@@ -492,12 +492,12 @@ export const SHARED_PARAMETERS = {
     // together without keeping them in step.
     covers: 'stool',
     relationship: RELATIONSHIP.DISTINCT,
-    concernFrom: 4, // PENDING ASH
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026, wording and severities both.
+    concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026, wording and severities both.
     // Severe and very severe are emergencies: the stool itself is not the
     // problem, what leaves with it is.
     emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
-    // PENDING ASH — all six levels drafted by me, following the shape of a
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me, following the shape of a
     // published faecal scoring chart without reproducing one. Written to what
     // an owner sees when they pick it up.
     levels: {
@@ -509,7 +509,7 @@ export const SHARED_PARAMETERS = {
         'Mostly watery. Cannot be picked up. (emergency)',
         'Entirely liquid. (emergency)',
       ],
-      // PENDING ASH — the cat wording is mine, following the structure of the
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The cat wording is mine, following the structure of the
       // dog levels above rather than inventing a second way of describing the
       // same thing. Same six rungs, same escalation through the scoop test:
       // hard to scoop cleanly, cannot scoop cleanly, cannot be scooped.
@@ -559,7 +559,7 @@ export function sharedParameter(key, overrides = {}) {
 // explanations of that would undo it. Any parameter with `beapKey` should
 // carry it.
 //
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, verbatim.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Her wording, verbatim.
 //
 // One sentence, shown once, only when the answer is actually already there.
 // The static "this is the same question as..." subtext that used to sit above
@@ -572,7 +572,7 @@ export const prefilledFrom = (sourceLabel) =>
 
 export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessment')
 
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, verbatim.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Her wording, verbatim.
 //
 // Shown once, under the Disease-Specific Monitoring title. It was on each
 // individual condition page too for a while; repeating it at the top of every
@@ -589,7 +589,7 @@ export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessm
 // A parameter can override this with `whyLabel` where the generic phrasing
 // does not fit what its subtext actually says.
 //
-// APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
 export const WHY_LABEL = 'More info'
 
 export const MONITORING_DISCLAIMER =
@@ -610,7 +610,7 @@ export const CONDITIONS = {
     Icon: HeartOrganIcon,
     // Shown on the condition list to say what monitoring involves before
     // someone commits to it.
-    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Murmurs added, and named
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Murmurs added, and named
     // FIRST: an owner who has been told "there's a murmur, we'll keep an eye
     // on it" and nothing more is the person most likely to think this section
     // is not for them, and is exactly who it is for.
@@ -618,7 +618,7 @@ export const CONDITIONS = {
       'For pets with a heart murmur — including where the underlying cause has not been determined — and for conditions such as myxomatous mitral valve disease (MMVD), dilated cardiomyopathy (DCM) and hypertrophic cardiomyopathy (HCM).',
     intro:
       'Monitoring parameters such as resting breathing rate and exercise tolerance can help catch subtle changes over time. Earlier detection often leads to earlier intervention and better outcomes.',
-    // PENDING ASH — see the 'acvim-cardiac' entry in lib/references.js.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. See the 'acvim-cardiac' entry in lib/references.js.
     citation: referenceText('acvim-cardiac'),
     parameters: [
       {
@@ -656,7 +656,7 @@ export const CONDITIONS = {
         // on. Change one, change all three.
         howToFooter:
           '**If the RRR is consistently greater than 30 breaths per minute, contact your vet.**',
-        // APPROVED — Ash Cullen (BVSc), 23 Aug 2026: 30 breaths/min for both
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 23 Aug 2026: 30 breaths/min for both
         // dogs and cats.
         //
         // The published sources do not differentiate by species either. Tufts
@@ -777,13 +777,13 @@ export const CONDITIONS = {
     // today is green unless a seizure was recorded on it, which means the
     // owner only has to open this when something happens.
     calendarAssumesWell: true,
-    // PENDING ASH — wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
     calendarKeyLabels: {
       ok: 'Seizure-free',
       concern: 'Seizure',
       emergency: 'Seizure with emergency signs',
     },
-    // PENDING ASH — wording. Shown under the calendar itself, because the
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Shown under the calendar itself, because the
     // rule it describes is not one an owner could infer from the colours.
     calendarUnloggedTitle: 'Seizure-free',
     calendarCaption:
@@ -794,10 +794,10 @@ export const CONDITIONS = {
     // still carries the clinical thresholds — five minutes, and more than one
     // in 24 hours — which is the part that decides whether to call a vet.
     intro: [
-      // PENDING ASH — wording.
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
       'You do not need to fill this in every day — only on a day {name} has a seizure. Every other day is counted as seizure-free, so the gaps between seizures show up on the calendar without you doing anything.',
-      // PENDING ASH — wording.
-      'What your vet needs most is how long it lasted, how many there were, and how long {name} took to come back to {them}self afterwards — so those are asked first, in the order you are most likely to remember them.',
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
+      'What your vet needs most is how long it lasted, how many there were, and how long {name} took to come back to {them}self afterwards.',
     ],
     parameters: [
       {
@@ -814,15 +814,21 @@ export const CONDITIONS = {
         // second today. Someone watching a seizure right now needs the five
         // minute rule in front of them, not three questions further down.
         //
-        // PENDING ASH — the thresholds and the wording. Five minutes and more
-        // than one in 24 hours are the conventional figures; confirm they are
-        // the ones you want owners acting on.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Both thresholds confirmed:
+        // five minutes, and more than one seizure in 24 hours.
+        //
+        // Split into two sentences on her instruction the same day. One
+        // sentence graded both at the same urgency, which stopped being true
+        // when a cluster became amber and over-five-minutes stayed red — the
+        // alert at the top of the form was telling the owner one thing and
+        // the answer they gave was flagging another.
         standingAlert:
-          'A seizure lasting more than 5 minutes, or more than one seizure in 24 hours, is an emergency. Contact your vet or the nearest emergency service straight away.',
-        // PENDING ASH — wording.
+          'A seizure lasting more than 5 minutes is an emergency — contact your vet or the nearest emergency service straight away. '
+          + 'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Answer no on days nothing happens and there is nothing else to fill in. A record of the quiet days is what makes the pattern visible.',
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         concernMessage:
           'Recorded. Tell your vet about any seizure, even a short one that {name} recovered from quickly.',
         // Offered on every seizure day, not only the first.
@@ -837,7 +843,7 @@ export const CONDITIONS = {
           key: 'seizure_video',
           when: 'yes',
           type: 'photo',
-          // PENDING ASH — wording.
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
           label: 'Show your vet',
           hint: 'If you can film a seizure safely, do — from a distance, and only if {name} is not left alone to do it. A video shows your vet things that are almost impossible to describe, and it matters most early on, before the seizures are under control.',
         },
@@ -848,9 +854,9 @@ export const CONDITIONS = {
         label: 'How Many Seizures Today?',
         type: 'choice',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
-          'More than one seizure in 24 hours is called a cluster, and it is treated differently to a single seizure.',
+          'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
         // Severities here describe ESCALATION, not the event.
         //
         // Every option was amber to begin with, which meant a single
@@ -864,16 +870,25 @@ export const CONDITIONS = {
         // that only a genuine escalation adds anything: a cluster, over five
         // minutes, or not recovered a day later.
         //
-        // PENDING ASH — the severities. Two or more in a day is the
-        // conventional cluster definition and is marked as an emergency here.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Two or more in a day is the
+        // conventional cluster definition. Two flags amber and asks for
+        // veterinary attention as soon as possible; three or more is an
+        // emergency. Her call, 3 Sep 2026 — a cluster is urgent at two, and
+        // grading both the same left nothing for the worse case to escalate to.
         options: [
           { value: 'one', label: 'One', severity: SEVERITY.OK },
-          { value: 'two', label: 'Two', severity: SEVERITY.EMERGENCY },
+          { value: 'two', label: 'Two', severity: SEVERITY.CONCERN },
           { value: 'three_plus', label: 'Three or more', severity: SEVERITY.EMERGENCY },
         ],
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         emergencyMessage:
-          'More than one seizure in 24 hours is a cluster and needs veterinary attention today. Contact your vet or the nearest emergency service.',
+          'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
+        // Two seizures now flags amber rather than red (item 16), and a choice
+        // parameter reads `concernMessage` on that branch — without one the
+        // owner would get the colour and no words. Same sentence: a cluster is
+        // a cluster at two.
+        concernMessage:
+          'More than one seizure in 24 hours is called a cluster, and requires vet attention as soon as possible.',
       },
 
       {
@@ -886,10 +901,10 @@ export const CONDITIONS = {
         label: 'How Long Did The Longest One Last?',
         type: 'choice',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
-          'Seizures almost always feel far longer than they are. If you can, look at a clock when it starts — but an honest estimate is much better than nothing.',
-        // PENDING ASH — the bands and their severities.
+          'It is often difficult to time the exact duration of a seizure. A rough estimate is fine.',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The bands and their severities.
         options: [
           { value: 'under_1', label: 'Less than a minute', severity: SEVERITY.OK },
           { value: '1_2', label: '1 to 2 minutes', severity: SEVERITY.OK },
@@ -897,7 +912,7 @@ export const CONDITIONS = {
           { value: 'over_5', label: 'More than 5 minutes', severity: SEVERITY.EMERGENCY },
           { value: 'still_going', label: 'Still going now', severity: SEVERITY.EMERGENCY },
         ],
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         emergencyMessage:
           'A seizure lasting more than 5 minutes needs emergency treatment. Contact your vet or the nearest emergency service now.',
       },
@@ -909,11 +924,11 @@ export const CONDITIONS = {
         dependsOn: { key: 'had_seizure', equals: 'yes' },
         allowOther: true,
         otherLabel: 'Describe it yourself',
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Written to be answerable
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Written to be answerable
         // by someone who has never heard the words focal or generalised.
         why:
           'Whether a seizure involves the whole body or only part of it helps your vet narrow down possible causes.',
-        // PENDING ASH — the options and their severities.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The options and their severities.
         options: [
           { value: 'generalised', label: 'Whole body — collapsed, stiff or paddling', severity: SEVERITY.OK },
           { value: 'focal', label: 'One part only — face, one limb, twitching', severity: SEVERITY.OK },
@@ -925,7 +940,7 @@ export const CONDITIONS = {
         followUp: {
           key: 'seizure_type_detail',
           whenAny: ['focal', 'started_focal'],
-          // PENDING ASH — wording.
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
           label: 'Which part of the body?',
           type: 'text',
           placeholder: 'e.g. left side of the face twitching, then the front leg',
@@ -937,13 +952,13 @@ export const CONDITIONS = {
         label: 'Was {name} Aware Of You During It?',
         type: 'choice',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Whether a pet is conscious through a seizure is one of the things a vet will ask.',
-        // PENDING ASH — the options and their severities.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The options and their severities.
         options: [
           { value: 'aware', label: 'Aware — responded to me', severity: SEVERITY.OK },
-          { value: 'unaware', label: 'Not aware — no response at all', severity: SEVERITY.OK },
+          { value: 'unaware', label: 'Not aware — no response at all', severity: SEVERITY.CONCERN },
           { value: 'unsure_aware', label: 'Hard to tell', severity: SEVERITY.OK },
         ],
       },
@@ -961,10 +976,10 @@ export const CONDITIONS = {
         dependsOn: { key: 'had_seizure', equals: 'yes' },
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'This is common during a seizure and is not something {name} can help. It is worth recording because it helps your vet judge how severe the seizure was.',
-        // PENDING ASH — the options and their severities.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The options and their severities.
         options: [
           { value: 'neither', label: 'No', severity: SEVERITY.OK },
           { value: 'bladder', label: 'Yes — passed urine', severity: SEVERITY.OK },
@@ -978,9 +993,9 @@ export const CONDITIONS = {
         label: 'Was There Any Warning Beforehand?',
         type: 'yesno',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
-          'Some pets behave oddly in the minutes or hours before a seizure — clingy, restless, hiding, staring. Recognising it can give you time to get somewhere safe.',
+          'Some pets behave oddly in the minutes or hours before a seizure — clingy, restless, hiding, staring. Recognising these behaviours can give you time to get somewhere safe for both yourself and your pet.',
         followUp: {
           key: 'warning_signs_detail',
           when: 'yes',
@@ -995,17 +1010,17 @@ export const CONDITIONS = {
         label: 'How Long To Get Back To Normal?',
         type: 'choice',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
-          'The period after a seizure is called the post-ictal phase. Pacing, blindness, hunger, disorientation and clinginess are all normal in it, and how long it lasts is worth tracking — a recovery that gets longer over months is a change your vet will want to know about.',
-        // PENDING ASH — the bands and their severities.
+          'The period after a seizure is called the post-ictal phase. Pacing, disorientation and clinginess are common. How long the post-ictal phase lasts is worth tracking — a recovery that gets longer over months is a change your vet will want to know about.',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The bands and their severities.
         options: [
           { value: 'minutes', label: 'A few minutes', severity: SEVERITY.OK },
           { value: 'under_hour', label: 'Under an hour', severity: SEVERITY.OK },
-          { value: 'hours', label: 'Several hours', severity: SEVERITY.OK },
+          { value: 'hours', label: 'Several hours', severity: SEVERITY.CONCERN },
           { value: 'over_day', label: 'More than a day, or not back to normal yet', severity: SEVERITY.EMERGENCY },
         ],
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         emergencyMessage:
           'A pet who has not returned to normal more than a day after a seizure needs to be seen. Contact your vet.',
       },
@@ -1015,7 +1030,7 @@ export const CONDITIONS = {
         label: 'Anything Else You Noticed?',
         type: 'text',
         dependsOn: { key: 'had_seizure', equals: 'yes' },
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'What {they} {were} doing beforehand, the time of day, anything different about this one. Small details are what turn a list of dates into a pattern.',
         placeholder: 'e.g. 2am, asleep on the sofa beforehand, wet {them}self during it',
@@ -1046,7 +1061,7 @@ export const CONDITIONS = {
     // Credited once, at the top of the assessment, the same way the app
     // credits BEAAAAPP and the WSAVA body condition chart — rather than
     // explaining the provenance again inside every graded question.
-    // PENDING ASH — confirm the version to cite and the exact wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the version to cite and the exact wording.
     citation: referenceText('vcog-ctcae'),
     parameters: [],
   },
@@ -1056,7 +1071,7 @@ export const CONDITIONS = {
     label: 'Gastrointestinal Disease',
     shortLabel: 'gastrointestinal disease',
     Icon: GutOrganIcon,
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
     summary:
       'Digestive problems can be a condition in their own right — such as IBD, food allergies, infection or parasites — or a sign of something else. It is therefore important to always consult your vet first.',
     // Composed, like cancer: the owner says which conditions apply and gets
@@ -1068,7 +1083,7 @@ export const CONDITIONS = {
     // See lib/giModules.js for the questions and lib/giConfig.js for how a
     // config becomes a parameter list.
     composed: true,
-    // PENDING ASH — the whole section. Every owner-facing string in
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The whole section. Every owner-facing string in
     // giModules.js is drafted by me, including all the thresholds.
     intro: [
       'Tell us what applies to {name} and this section will ask about those things only.',
@@ -1099,12 +1114,12 @@ export const CONDITIONS = {
     label: 'Cognitive Decline / Dementia',
     shortLabel: 'cognitive decline',
     Icon: CognitiveOrganIcon,
-    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. The "sometimes called
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. The "sometimes called
     // canine/feline dementia" tail has gone: the title says Dementia now, so
     // the sentence was introducing a word already on the screen above it.
     summary:
       'Changes in memory, orientation, sleep patterns and interaction that can come with ageing.',
-    // PENDING ASH — confirm the instrument and the exact wording. Nothing from
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm the instrument and the exact wording. Nothing from
     // DISHAA is reproduced here; the domains are followed and the owner
     // wording is drafted.
     citation: referenceText('dishaa'),
@@ -1115,7 +1130,7 @@ export const CONDITIONS = {
     // Bolded because PetText renders **runs** as <strong>, and this is the
     // one instruction on the screen that changes what someone does today.
     //
-    // PENDING ASH — the first two sentences are mine. The rest is yours,
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The first two sentences are mine. The rest is yours,
     // approved 25 Aug 2026.
     intro: [
       '**Many signs of cognitive decline can also be signs of illness.** A veterinary assessment is important to rule out other causes before assuming cognitive decline.',
@@ -1127,12 +1142,12 @@ export const CONDITIONS = {
         species: 'dog',
         label: 'Orientation',
         type: 'scale',
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her cut: the examples
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her cut: the examples
         // that followed are already the six levels below, and repeating them
         // above the scale asks the owner to read the same list twice.
         why:
           'This is about whether {name} still finds {their} way around places {they} {have} always known.',
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Finds {their} way around the house and garden normally.',
@@ -1149,12 +1164,12 @@ export const CONDITIONS = {
         species: 'cat',
         label: 'Orientation',
         type: 'scale',
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Same cut as the dog
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Same cut as the dog
         // version, for the same reason.
         why:
           'This is about whether {name} still moves around {their} own home with confidence.',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026, for every level EXCEPT
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026, for every level EXCEPT
         // moderate. That one ("Sometimes stares at walls or into space") is
         // still mine — it was the one level not sent, and it is the only rung
         // between "occasionally hesitates" and "often seems unsure", so it is
@@ -1163,7 +1178,7 @@ export const CONDITIONS = {
           cat: [
             'Moves around the house confidently and settles in the usual places.',
             'Occasionally hesitates before entering a room, walking through a doorway or jumping onto usual perches.',
-            'Sometimes stares at walls or into space for a while.', // PENDING ASH
+            'Sometimes stares at walls or into space for a while.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
             'Often seems unsure of where {they} {are}, or hides/settles in unusual places.',
             'Frequently disorientated, cannot find the litter tray or food. May vocalise or become distressed if alone. Sometimes gets \'stuck\' in unusual places.',
             'Constantly disorientated, needs constant guidance to food, water and/or litter tray. Often vocalises or gets distressed if left alone. Often gets \'stuck\' in unusual places.',
@@ -1182,10 +1197,10 @@ export const CONDITIONS = {
         // fall away first: the greeting at the door, asking to be stroked.
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         why:
           'All dogs interact differently, and some are naturally more independent than others. The main thing is to know what is normal for {name}, and to notice a change from that.',
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Greets you, seeks attention and enjoys interacting with you as {they} normally {do}.',
@@ -1204,14 +1219,14 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. The same point the dog
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. The same point the dog
         // anxiety question makes, and for the same reason: a scale that reads
         // as "less affectionate is worse" would mark an aloof cat down from
         // the first day for being exactly {them}self.
         why:
           'Not all cats actively seek attention or affection. The main thing is to know what is normal for {name}, and to recognise if things are changing.',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. "OR" left capitalised as
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. "OR" left capitalised as
         // written: it separates two opposite presentations on one rung, and
         // level text has no bold, so the capitals are the only emphasis
         // available.
@@ -1246,7 +1261,7 @@ export const CONDITIONS = {
         // an owner judging "is this a lot?" has the number in front of them
         // wherever they are asked.
         why: SLEEP_NOTES.dog[0],
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: { dog: SLEEP_SCALE.dog },
       },
       {
@@ -1258,7 +1273,7 @@ export const CONDITIONS = {
         relationship: RELATIONSHIP.SUPERSEDES,
         scoreKey: 'sleep',
         why: SLEEP_NOTES.cat[0],
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: { cat: SLEEP_SCALE.cat },
       },
 
@@ -1273,8 +1288,8 @@ export const CONDITIONS = {
         // has been lost — a house-trained dog forgetting is the finding.
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation, full stops
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Capitalisation, full stops
         // and one comma normalised; "uses doggy door" given its article.
         levels: {
           dog: [
@@ -1298,8 +1313,8 @@ export const CONDITIONS = {
         notApplicableLabel: 'My cat does not use a litter tray',
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // PENDING ASH — worth a note on this one: toileting outside the tray
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Worth a note on this one: toileting outside the tray
         // has more common explanations than dementia (arthritis, kidney
         // disease, cystitis, a tray in the wrong place). Should this question
         // carry a line saying so, or is that the vet's job?
@@ -1326,15 +1341,15 @@ export const CONDITIONS = {
         // circuit for an hour is busy and not well.
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Two sentences, and the
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Two sentences, and the
         // second is the one doing the work: an owner who has already answered
         // the daily activity question will otherwise read this as the same
         // question and give it the same answer.
         why:
           'Your Overall Quality of Life Assessment asks how much {name} is doing. '
           + 'This asks whether it still has a point to it.',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation and full
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Capitalisation and full
         // stops normalised (severe ended on a colon), and "the world around
         // them" made a pronoun token so it follows the pet's sex.
         levels: {
@@ -1355,15 +1370,15 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Two sentences, and the
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Two sentences, and the
         // second is the one doing the work: an owner who has already answered
         // the daily activity question will otherwise read this as the same
         // question and give it the same answer.
         why:
           'Your Overall Quality of Life Assessment asks how much {name} is doing. '
           + 'This asks whether it still has a point to it.',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         levels: {
           cat: [
             'Grooming, playing and investigating new things as usual. Regular routines are intact.',
@@ -1382,11 +1397,11 @@ export const CONDITIONS = {
         species: 'dog',
         label: 'Anxiety',
         type: 'scale',
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         why:
           'Anxiety from cognitive decline looks different in every dog, and some dogs are naturally more anxious than others. The main thing is to know what is normal for {name}, and to watch for a change from that.',
         howToTitle: 'Common Signs Of Anxiety In Dogs',
-        // PENDING ASH — the list is mine. Written as things an owner can see
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The list is mine. Written as things an owner can see
         // from across a room rather than as clinical signs, since that is who
         // is reading it.
         howTo: [
@@ -1406,10 +1421,10 @@ export const CONDITIONS = {
         // this is the list most likely to have them conclude "it's just
         // anxiety" about a sign that is pain, illness or a drug side effect.
         //
-        // PENDING ASH — drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me.
         howToFooter:
           '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           dog: [
             'Settled and content with small changes or being left alone.',
@@ -1426,11 +1441,11 @@ export const CONDITIONS = {
         species: 'cat',
         label: 'Anxiety',
         type: 'scale',
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         why:
           'All cats have different thresholds for anxiety. The main thing is to know what is normal for {name}, and to notice a change from that.',
         howToTitle: 'Common Signs Of Anxiety In Cats',
-        // PENDING ASH — the list is mine. Deliberately not the dog list with
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The list is mine. Deliberately not the dog list with
         // the words changed: a frightened dog is loud and busy, a frightened
         // cat mostly does LESS of everything, and half of these are things
         // stopping rather than starting. The over-grooming and under-grooming
@@ -1454,11 +1469,11 @@ export const CONDITIONS = {
         // this is the list most likely to have them conclude "it's just
         // anxiety" about a sign that is pain, illness or a drug side effect.
         //
-        // PENDING ASH — drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted by me.
         howToFooter:
           '**Many of these can also be signs of illness or pain.** It is important for a vet to rule those out before assuming anxiety.',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         levels: {
           cat: [
             'Copes with the usual household comings and goings.',
@@ -1480,10 +1495,10 @@ export const CONDITIONS = {
     Icon: BoneOrganIcon,
     summary:
       'Stiffness, lameness and willingness to move.',
-    // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
     intro:
       'Symptoms of arthritis are usually gradual.',
-    // PENDING ASH — confirm both instruments and the exact wording. Neither
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Confirm both instruments and the exact wording. Neither
     // is reproduced here; the parameters follow their domains and the owner
     // wording below is drafted.
     citation: referenceText('load-fmpi'),
@@ -1519,11 +1534,11 @@ export const CONDITIONS = {
         // limp.
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // The most severe rung carries the "(emergency)" marker; this is the
         // line that appears under it.
         emergencyMessage: SEEK_VET_ASAP,
-        // PENDING ASH — all six levels drafted by me. Written to what an
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me. Written to what an
         // owner can see from across a room: whether there is a limp, when it
         // shows, and whether it settles.
         levels: {
@@ -1554,11 +1569,11 @@ export const CONDITIONS = {
         // nobody is watching a walk.
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // The most severe rung carries the "(emergency)" marker; this is the
         // line that appears under it.
         emergencyMessage: SEEK_VET_ASAP,
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Her wording, one set for
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Her wording, one set for
         // both species: nothing in it is dog- or cat-specific, so the drafted
         // versions that differed at moderate-to-severe are gone. Only
         // capitalisation and full stops were normalised to match the rest of
@@ -1605,12 +1620,12 @@ export const CONDITIONS = {
         // reason as ambulation above.
         covers: 'palpation',
         relationship: RELATIONSHIP.SUPERSEDES,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         followUp: {
           key: 'palpation_where',
           // A threshold, not an exact score — asked at every level from
           // "flinches or pulls away" upwards.
-          whenAtLeast: 4, // PENDING ASH
+          whenAtLeast: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
           type: 'text',
           label: 'Where Is {name} Sore?',
           placeholder: 'Hips, lower back, a particular leg…',
@@ -1627,8 +1642,8 @@ export const CONDITIONS = {
         // a comparison the daily activity grade has no way to make.
         covers: 'activity',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026. Capitalisation and full
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026. Capitalisation and full
         // stops normalised to match the other scales; wording otherwise hers.
         levels: {
           dog: [
@@ -1647,7 +1662,7 @@ export const CONDITIONS = {
       // chart whatever the species. Species filtering guarantees a pet is only
       // ever shown one of the two.
       //
-      // PENDING ASH — options drafted by me, not reviewed. No `why` on this
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options drafted by me, not reviewed. No `why` on this
       // one: the options say it themselves.
       {
         key: 'jump_height',
@@ -1692,13 +1707,13 @@ export const CONDITIONS = {
           { value: 'lower_only', label: 'Only jumps to lower places now', severity: SEVERITY.CONCERN },
           { value: 'stopped', label: 'Has stopped jumping up', severity: SEVERITY.CONCERN },
         ],
-        // PENDING ASH — drafted. This one WAS the literal string 'PENDING ASH',
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Drafted. This one WAS the literal string 'PENDING ASH',
         // which an owner picking anything below "gets to all the usual places"
         // would have read as their alert.
         concernMessage:
           'Worth mentioning to your vet, particularly if this is a change from a few months ago.',
         why:
-          'Choosing a lower windowsill, or taking the sofa in two steps instead of one, is often the first sign of sore joints.', // PENDING ASH
+          'Choosing a lower windowsill, or taking the sofa in two steps instead of one, is often the first sign of sore joints.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
       {
         key: 'grooming',
@@ -1711,7 +1726,7 @@ export const CONDITIONS = {
         // badly on the other, and that gap is the finding.
         covers: 'hygiene',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         levels: {
           cat: [
             'Coat is well kept all over.',
@@ -1722,7 +1737,7 @@ export const CONDITIONS = {
             'Not grooming at all. Coat is severely matted and greasy.',
           ],
         },
-        // APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
         why:
           'A cat who cannot comfortably turn or position to groom will stop doing so. The most common areas they will stop grooming are over the back, the hips and the base of the tail.',
       },
@@ -1742,7 +1757,7 @@ export const CONDITIONS = {
           { value: 'avoiding', label: 'Avoiding it altogether', severity: SEVERITY.CONCERN },
         ],
         concernMessage:
-          'A high-sided tray can be hard to climb into with sore joints. A lower one, or a second tray closer by, often helps.', // PENDING ASH
+          'A high-sided tray can be hard to climb into with sore joints. A lower one, or a second tray closer by, often helps.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },
@@ -1769,7 +1784,7 @@ export const CONDITIONS = {
     label: 'Allergies and Skin Disease',
     shortLabel: 'allergies',
     Icon: AllergyOrganIcon,
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her paragraphs, with
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her paragraphs, with
     // sentence capitals and full stops added. Split across summary and intro
     // so they render as separate paragraphs rather than one block.
     //
@@ -1803,12 +1818,12 @@ export const CONDITIONS = {
       'Signs of allergies include itching, over-grooming (particularly in cats), paw licking/chewing, ear infections '
       + 'and sometimes gastrointestinal issues. '
       + 'It is important to intervene early if any of these symptoms are noticed, to prevent inflammation and infection.',
-    // PENDING ASH — see the 'pvas' entry in lib/references.js.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. See the 'pvas' entry in lib/references.js.
     citation: referenceText('pvas'),
     // Shown above the "is {name} on any medication?" question, because in
     // skin disease the answer is very often yes-but-they-did-not-think-so.
     //
-    // PENDING ASH — wording.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
     medicationNote:
       'Please include topical treatments as well as tablets — medicated shampoos, mousses, sprays, ear drops and creams all count.',
     parameters: [
@@ -1839,7 +1854,7 @@ export const CONDITIONS = {
         // form.
         carryForward: true,
         askOnce: true,
-        // PENDING ASH — wording. Updated for multi-select.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Updated for multi-select.
         why:
           'Pick as many as apply. This decides which questions you are asked, and you can change it at any time — if you are not sure yet, choose "Not known yet".',
         // Informational: it describes what is being monitored rather than
@@ -1862,7 +1877,7 @@ export const CONDITIONS = {
           // is not what they mean and which put them onto a food trial path.
           { value: 'other', label: 'Other' },
         ],
-        // PENDING ASH — one decision to confirm. "Other" does NOT open the
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. One decision to confirm. "Other" does NOT open the
         // diet-trial questions (see on_diet_trial's dependsOn below, which
         // lists food, both and unknown). The reasoning: a pet diagnosed with
         // something other than an allergy has no food trial to run, so the
@@ -1872,7 +1887,7 @@ export const CONDITIONS = {
         followUp: {
           key: 'allergy_type_other',
           when: 'other',
-          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026 ("allow user to enter
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026 ("allow user to enter
           // condition if known"), phrased as a question.
           label: 'What is the diagnosis?',
           type: 'text',
@@ -1888,7 +1903,7 @@ export const CONDITIONS = {
         // continuous, which is the one difference from a true visual analog
         // scale and is worth knowing when comparing to a clinic's own score.
         key: 'itch',
-        // PENDING ASH — wording. What the calendar's day line says when this
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
         // names which part of {name} it was about.
         finding: 'Itching — {answer}',
@@ -1906,14 +1921,14 @@ export const CONDITIONS = {
         // itch_sleep) are deliberately NOT charted yet — Ash's call once this
         // one has been seen.
         chart: true,
-        // CONFIRMED — Ash Cullen (BVSc), 1 Sep 2026. Was PENDING; cleared
+        // CONFIRMED — Dr Ash Cullen (BSc, DVM), 1 Sep 2026. Was PENDING; cleared
         // once the chart made it visible. This is not only a severity rule
         // any more: it is the dashed line an owner reads and may take to
         // their vet, which is why it needed confirming before shipping.
         // Inclusive — evaluateParameter uses `score >= concernFrom`, so a 4
         // is itself a concern, and the chart caption says "at or above".
         concernFrom: 4,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Species-keyed: the cat
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Species-keyed: the cat
         // version carries Ash's point about over-grooming, which is the whole
         // reason a cat's itch gets missed.
         why: {
@@ -1923,7 +1938,7 @@ export const CONDITIONS = {
             'This is the single most useful thing you can record. It helps determine whether treatments are working or not. '
             + 'In cats this often presents as over-grooming a particular area — often the tummy or the limbs.',
         },
-        // PENDING ASH — ALL TWELVE LEVELS ARE MINE, AND THEY ARE NOT THE
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. ALL TWELVE LEVELS ARE MINE, AND THEY ARE NOT THE
         // VALIDATED DESCRIPTORS.
         //
         // Dogs and cats have SEPARATE validated instruments, which is why
@@ -1980,7 +1995,7 @@ export const CONDITIONS = {
         key: 'skin',
         label: 'Skin And Coat',
         type: 'scale',
-        // PENDING ASH — wording. What the calendar's day line says when this
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
         // names which part of {name} it was about.
         finding: 'Skin and coat — {answer}',
@@ -1991,11 +2006,11 @@ export const CONDITIONS = {
         // red, sore belly and a matted dog can have perfectly healthy skin.
         covers: 'hygiene',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // PENDING ASH — wording.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Look at the belly, armpits, groin and the inside of the back legs — the thinly furred places where redness shows first.',
-        // PENDING ASH — all six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
         levels: {
           dog: [
             'Skin and coat look normal.',
@@ -2019,7 +2034,7 @@ export const CONDITIONS = {
           {
             key: 'skin_notes',
             always: true,
-            // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+            // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
             label: 'Additional notes',
             type: 'text',
             placeholder: 'e.g. both armpits and the belly, red with small scabs',
@@ -2029,7 +2044,7 @@ export const CONDITIONS = {
             always: true,
             type: 'photo',
             label: 'Show your vet',
-            // PENDING ASH — wording.
+            // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
             hint: 'Skin changes fast, and by the appointment it may look completely different. A photo now gives your vet something to compare against, and something to judge from if they cannot see {name} today.',
           },
         ],
@@ -2039,15 +2054,15 @@ export const CONDITIONS = {
         key: 'ears',
         label: 'Ears',
         type: 'scale',
-        // PENDING ASH — wording. What the calendar's day line says when this
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
         // names which part of {name} it was about.
         finding: 'Ears — {answer}',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Ears are the most common thing to flare alongside allergic skin, and an ear infection left alone gets harder to treat. Head shaking and scratching the ears are worth acting on early.',
-        // PENDING ASH — all six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
         levels: {
           dog: [
             'Ears look and smell normal.',
@@ -2065,7 +2080,7 @@ export const CONDITIONS = {
         key: 'paws_face',
         label: 'Paws And Face',
         type: 'scale',
-        // PENDING ASH — wording. What the calendar's day line says when this
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
         // names which part of {name} it was about.
         finding: 'Paws and face — {answer}',
@@ -2075,11 +2090,11 @@ export const CONDITIONS = {
         // licking and face rubbing was asking the dog's version of a question
         // they have already answered.
         species: 'dog',
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Licking or chewing the paws and rubbing the face are very common signs of allergies and itch.',
-        // PENDING ASH — all six levels drafted by me.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. All six levels drafted by me.
         levels: {
           dog: [
             'Not licking the feet or rubbing the face at all.',
@@ -2097,7 +2112,7 @@ export const CONDITIONS = {
         key: 'itch_sleep',
         label: 'Sleep Disturbed By Itching',
         type: 'scale',
-        // PENDING ASH — wording. What the calendar's day line says when this
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
         // names which part of {name} it was about.
         finding: 'Sleep — {answer}',
@@ -2114,11 +2129,11 @@ export const CONDITIONS = {
         // it at 3am.
         covers: 'sleep',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Being woken by scratching is one of the clearest signs that a flare is genuinely bad, and it is worth telling your vet about.',
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, with
         // sentence capitals and full stops added and her "scratch/lick"
         // written out as "scratch or lick" to read as a sentence.
         //
@@ -2156,7 +2171,7 @@ export const CONDITIONS = {
         // longer exists as an option, and a legacy 'both' normalises to
         // ['food', 'environmental'], so those owners still reach the trial.
         dependsOn: { key: 'allergy_type', includesAny: ['food', 'unknown'] },
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording, with
         // sentence capitals and "This means" added at the front so it reads
         // as an answer to the question above rather than a fragment.
         why:
@@ -2202,7 +2217,7 @@ export const CONDITIONS = {
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
         carryForward: true,
         askOnce: true,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Word for word the same
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Word for word the same
         // as Which Food Are You Using To Re-Challenge?, on her instruction —
         // it is the same ask, so it should not be two different sentences.
         why:
@@ -2225,7 +2240,7 @@ export const CONDITIONS = {
         // Turns the answer into "started 6 weeks and 2 days ago", which is
         // the number the whole trial is judged on.
         showElapsed: true,
-        // PENDING ASH — wording. The figure is Ash's, from the question
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. The figure is Ash's, from the question
         // above: "at least 8 weeks". It said "six to eight" until 29 Aug
         // 2026, which put two different numbers for the same protocol on one
         // form.
@@ -2248,10 +2263,10 @@ export const CONDITIONS = {
       // and a GI condition has one record rather than two free to disagree.
       {
         ...sharedParameter('vomiting', {
-          // PENDING ASH — wording.
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
           concernMessage:
             'Worth recording. Vomiting can be part of a food allergy, so tell your vet — especially if it follows a particular food.',
-          // PENDING ASH — wording. Declared on the allergy copy only, so the
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Declared on the allergy copy only, so the
           // GI and cardiac calendars are untouched. {answer:lower} drops the
           // capital off "Vomited — 2 today — bile" so it reads as one
           // sentence.
@@ -2273,7 +2288,7 @@ export const CONDITIONS = {
       },
       {
         ...sharedParameter('stool_consistency', {
-          // PENDING ASH — wording. Allergy copy only, as above.
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Allergy copy only, as above.
           finding: 'Stool — {answer}',
         }),
         // Same gate as vomiting above.
@@ -2286,7 +2301,7 @@ export const CONDITIONS = {
         type: 'yesno',
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
         concernWhen: 'yes',
-        // PENDING ASH — wording. This is the one Ash named: the calendar used
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. This is the one Ash named: the calendar used
         // to quote the question back ("Has Bailey Had Anything Other Than The
         // Trial Food Today?") on the very day the answer was the point.
         finding: { yes: 'The diet trial was broken' },
@@ -2297,10 +2312,10 @@ export const CONDITIONS = {
         // still have wrecked a diet trial with one dropped chip.
         covers: 'appetite',
         relationship: RELATIONSHIP.DISTINCT,
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Treats, chews, flavoured medication, toothpaste, someone else\'s bowl, something picked up on a walk. A single slip can restart the clock on the whole trial, so it is worth recording honestly rather than tidily.',
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         concernMessage:
           'Worth writing down. One slip does not usually ruin a trial, but your vet needs to know about it when they judge the result.',
         // Marked on the calendar, every time — not just the first. Two breaks
@@ -2353,7 +2368,7 @@ export const CONDITIONS = {
         // enthusiastically can be reacting to every mouthful.
         covers: 'appetite',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording, with
         // sentence capitals and full stops added.
         why:
           'If {name}\'s skin disease has improved on the elimination diet after the 8 weeks, the next step is to '
@@ -2385,7 +2400,7 @@ export const CONDITIONS = {
         // enthusiastically can be reacting to every mouthful.
         covers: 'appetite',
         relationship: RELATIONSHIP.DISTINCT,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Be as specific as possible, and try to name the protein and/or the brand of food.',
         placeholder: 'e.g. chicken — Brand X chicken and rice',
@@ -2401,7 +2416,7 @@ export const CONDITIONS = {
         milestone: { on: 'date', label: 'Re-challenge', withAnswerFrom: 'rechallenge_food' },
         dependsOn: { key: 'rechallenge', equals: 'yes' },
         showElapsed: true,
-        // PENDING ASH — wording, and the two-week figure.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording, and the two-week figure.
         why:
           'A reaction can take up to two weeks to show, so a food is not cleared until {name} has been on it that long with no flare.',
       },
@@ -2410,7 +2425,7 @@ export const CONDITIONS = {
         key: 'rechallenge_reaction',
         label: 'Any Reaction To The New Food?',
         type: 'choice',
-        // PENDING ASH — wording. Your option labels, lower-cased to sit after
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Your option labels, lower-cased to sit after
         // the dash.
         finding: 'Re-challenge — {answer:lower}',
         dependsOn: { key: 'rechallenge', equals: 'yes' },
@@ -2425,10 +2440,10 @@ export const CONDITIONS = {
         // honest answer. It is not an appetite question either way.
         covers: 'appetite',
         relationship: RELATIONSHIP.DISTINCT,
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Compare against how {they} {were} on the trial diet alone, not against how {they} {were} before the trial started.',
-        // PENDING ASH — the options and their severities.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The options and their severities.
         options: [
           { value: 'none', label: 'No reaction so far', severity: SEVERITY.OK },
           { value: 'itch', label: 'More itchy', severity: SEVERITY.CONCERN },
@@ -2441,7 +2456,7 @@ export const CONDITIONS = {
         // question can be answered with flags red, and a message for a
         // severity that cannot occur would be dead wording.
         //
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         concernMessage:
           'Worth recording, and worth stopping this food and going back to the trial diet. Tell your vet what {name} reacted to — that is the result the trial exists to produce.',
       },
@@ -2453,7 +2468,7 @@ export const CONDITIONS = {
     label: 'Kidney Disease',
     shortLabel: 'kidney disease',
     Icon: KidneyOrganIcon,
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
     //
     // Both sentences sit in `summary` rather than one here and one in
     // `intro`, because they are one thought: here is what to watch for, and
@@ -2475,7 +2490,7 @@ export const CONDITIONS = {
     // does not replace a vet, and running it on from the sentence above
     // buries it.
     //
-    // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her wording, with a comma
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording, with a comma
     // added after "home monitoring".
     intro:
       'Regular vet checks are important in conjunction with home monitoring, to monitor blood pressure, check urine concentration and perform blood tests to check the progression of kidney disease.',
@@ -2500,7 +2515,7 @@ export const CONDITIONS = {
         beapKey: 'appetite',
         covers: 'appetite',
         relationship: RELATIONSHIP.SUPERSEDES,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // The top two rungs of the shared appetite scale already carry the
         // emergency marker; this is the line that appears under them. Set on
         // the kidney parameter, not on the scale in beapScales.js — the scale
@@ -2508,7 +2523,7 @@ export const CONDITIONS = {
         // that borrows it, and what to do about a pet refusing food is not
         // the same sentence in every context.
         emergencyMessage: SEEK_VET_ASAP,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Appetite loss or reduction is one of the most common symptoms of kidney disease. '
           + 'It is a valuable indicator of how well {name} is feeling each day.',
@@ -2537,13 +2552,13 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'waterIntake',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // The scale branch of evaluateParameter reads `emergencyMessage`, and
         // a parameter without one draws the hazard colour with no words
         // under it. The marker in the level text makes it an emergency; this
         // is what tells the owner to act on it.
         emergencyMessage: SEEK_VET_ASAP,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Increased thirst is a very common symptom of kidney disease. '
           + 'Measuring daily water intake can help your vet to determine whether {name} is drinking excessively.',
@@ -2597,11 +2612,11 @@ export const CONDITIONS = {
         // that flags 800ml would be wrong for a Labrador and far too late for
         // a cat. Trend over days is what this is for.
         //
-        // PENDING ASH — if you want a threshold here it needs to be per kg,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. If you want a threshold here it needs to be per kg,
         // and the form would need {name}'s weight to apply it.
         why:
           'A measured amount is more useful to your vet than an impression, and the trend over several days is more useful than any single day.',
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her steps, verbatim,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her steps, verbatim,
         // with sentence capitals and full stops added and "this will =" in
         // step 3 written out as "is".
         howToTitle: 'How To Measure Daily Water Intake',
@@ -2611,7 +2626,7 @@ export const CONDITIONS = {
           'Subtract the finishing amount from the starting amount. This is {name}\'s daily water intake.',
           'Do this over a few days to get an idea of the average daily intake.',
         ],
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her note, verbatim.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her note, verbatim.
         howToFooter:
           'Note: this can be difficult/impossible to measure if there are multiple pets in the house that share the same water bowl. If you cannot measure {name}\'s water intake, that\'s ok! Just select "Not sure".',
       },
@@ -2626,17 +2641,17 @@ export const CONDITIONS = {
         type: 'scale',
         covers: 'urination',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // The scale branch of evaluateParameter reads `emergencyMessage`, and
         // a parameter without one draws the hazard colour with no words
         // under it. The marker in the level text makes it an emergency; this
         // is what tells the owner to act on it.
         emergencyMessage: SEEK_VET_ASAP,
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Kidneys that are struggling to concentrate urine produce more of it, so drinking more and passing more usually go together. A sudden drop in how much is being passed matters just as much as an increase.',
         levels: {
-          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, with
           // sentence capitals and full stops added.
           //
           // The top rung folds in complete anuria, the same way the cat list
@@ -2650,7 +2665,7 @@ export const CONDITIONS = {
             'Urinating or trying to urinate constantly. Frequent accidents inside or incontinence.',
             'Constantly trying to urinate but only passing small amounts, or not passing anything at all (end-stage kidney failure). (emergency)',
           ],
-          // APPROVED — Ash Cullen (BVSc), 29 Aug 2026. Her six levels, with
+          // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, with
           // sentence capitals and full stops added.
           //
           // The top rung folds in complete anuria, which is why the separate
@@ -2687,8 +2702,8 @@ export const CONDITIONS = {
         emergencyMessage: SEEK_VET_ASAP,
         covers: 'appetite',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         why:
           'Nausea is a common symptom of kidney disease. It is worth mentioning it to your vet as it can often be relieved with certain medications.',
         levels: {
@@ -2723,15 +2738,15 @@ export const CONDITIONS = {
         assessmentField: 'vomiting',
         covers: 'vomiting',
         relationship: RELATIONSHIP.SUPERSEDES,
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
         concernMessage:
           'Worth mentioning to your vet. Vomiting secondary to kidney disease can often be relieved with certain medications.',
-        // PENDING ASH — wording.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         emergencyMessage:
           'Blood in the vomit needs veterinary attention as soon as possible.',
       },
 
-      // PENDING ASH — the levels and the threshold. Uraemic signs in the mouth are
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The levels and the threshold. Uraemic signs in the mouth are
       // specific to kidney disease and easy for an owner to check, which is
       // an unusual combination and the reason this is here rather than folded
       // into nausea.
@@ -2751,8 +2766,8 @@ export const CONDITIONS = {
         // else in common — the same situation as the cardiac cough question.
         covers: 'breathing',
         relationship: RELATIONSHIP.DISTINCT,
-        concernFrom: 4, // PENDING ASH
-        // APPROVED — Ash Cullen (BVSc), 29 Aug 2026, for the first two
+        concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026, for the first two
         // sentences. The closing line is kept from the draft.
         why:
           'When the kidneys aren\'t functioning properly, waste products can build up. This can cause bad breath and sores in the mouth. It is worth a look every few days.',
@@ -2856,7 +2871,7 @@ export function vcogColourForIndex(index) {
 //   grade 3  Very little for more than a day despite coaxing -> 8 Little interest, even treats
 //   grade 4  Not eating at all                            -> 10  Refusing food
 //
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
 export const BEAP_APPETITE_BY_VCOG_GRADE = [0, 2, 6, 8, 10]
 
 // And back the other way.
@@ -2866,7 +2881,7 @@ export const BEAP_APPETITE_BY_VCOG_GRADE = [0, 2, 6, 8, 10]
 // was the missing piece: without it the conversion could only run one way,
 // and the cancer form could not be pre-filled from the assessment.
 //
-// APPROVED — Ash Cullen (BVSc), 25 Aug 2026.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026.
 export const VCOG_GRADE_BY_BEAP_APPETITE = { 0: 0, 2: 1, 4: 1, 6: 2, 8: 3, 10: 4 }
 
 export function vcogGradeFromBeapAppetite(score) {
@@ -3010,7 +3025,7 @@ export function evaluateParameter(parameter, value, species) {
   // today. The answer is an object, so none of the numeric branches below
   // apply.
   //
-  // PENDING ASH — the rule, not just the wording. Drafted as: blood is an
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The rule, not just the wording. Drafted as: blood is an
   // emergency, any vomiting at all is worth watching, nothing is fine. The
   // assessment scores this question its own way for the quality of life
   // percentage; this is only about whether the condition's DAY is flagged.

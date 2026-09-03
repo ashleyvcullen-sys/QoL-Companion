@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Lock, LogOut } from 'lucide-react'
+import { Check, Lock, LogOut, Trash2, TriangleAlert } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -268,23 +268,45 @@ export default function Settings() {
           <LogOut size={14} /> Sign out
         </button>
 
+        {/* Two destructive actions, told apart.
+            //
+            They shared one class until 3 Sep 2026 — same size, same muted
+            grey, same centred line — so "Remove Bailey" and "Delete Account"
+            were indistinguishable at a glance. One takes a pet off an account
+            somebody keeps using; the other ends the account and takes every
+            pet, every assessment and every photo with it. Reading them
+            wrongly is not a recoverable mistake, and the app was doing
+            nothing to help.
+
+            Three things separate them now: the account one is in the severity
+            colour rather than grey, it is boxed rather than a bare line, and
+            it says underneath what it destroys. Colour alone would not be
+            enough — it is the one signal a colour-blind owner may not get,
+            and the consequence line is the one that cannot be missed. */}
         {pet && (
           <button
             type="button"
-            className="delete-pet-link"
+            className="destructive-link"
             onClick={() => setShowDeleteConfirm(true)}
           >
-            Remove {petName}
+            <Trash2 size={14} /> Remove {petName}
           </button>
         )}
 
-        <button
-          type="button"
-          className="delete-pet-link"
-          onClick={() => setShowDeleteAccountConfirm(true)}
-        >
-          Delete Account
-        </button>
+        <div className="destructive-block">
+          <button
+            type="button"
+            className="destructive-link severe"
+            onClick={() => setShowDeleteAccountConfirm(true)}
+          >
+            <TriangleAlert size={14} /> Delete Account
+          </button>
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
+          <p className="destructive-note">
+            Permanently deletes your account and every pet, assessment, photo and
+            record on it. This cannot be undone.
+          </p>
+        </div>
       </Card>
 
       {showDeleteConfirm && (

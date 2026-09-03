@@ -247,7 +247,7 @@ export async function scheduleConditionReminder({
 // Cancelling has to cover every slot the medication might previously have
 // had, not just the ones it has now — otherwise reducing a drug from three
 // doses a day to one would leave the other two firing forever.
-const MAX_MEDICATION_SLOTS = 12
+export const MAX_MEDICATION_SLOTS = 12
 
 export async function cancelMedicationReminders(medicationId) {
   if (!medicationId) return
@@ -330,20 +330,61 @@ export async function scheduleMedicationReminders({
       : frequencyPeriod === 'month' ? 'this month'
         : 'today'
 
-    notifications = days.slice(0, MAX_MEDICATION_SLOTS).map((day, index) => {
-      const on = { hour, minute }
-      // Capacitor's weekday is 1-7 starting at Sunday; getDay() is 0-6.
-      if (frequencyPeriod === 'week') on.weekday = Number(day) + 1
-      else if (frequencyPeriod === 'month') on.day = Number(day)
+    // A TIME PER DOSE, for a medication given several times a day.
+    //
+    // Ash's request, 3 Sep 2026: a dog on three-times-daily medication was
+    // reminded once, at one time, for all three — which is a reminder for the
+    // first dose and nothing at all for the two that are easiest to forget.
+    //
+    // The extra times ride in `times`, which is already a text[] of clock
+    // times on this table and is empty for a frequency medication. That is
+    // the same meaning it carries in 'times' mode — "the clock times this
+    // drug is given" — so this is not an overloaded column, and it needs no
+    // migration. `reminderTime` stays the first of them, so a medication
+    // saved before today still has exactly the reminder it had.
+    if (frequencyPeriod === 'day') {
+      const perDose = [reminderTime, ...(times ?? [])]
+        .filter((time) => typeof time === 'string' && /^\d{1,2}:\d{2}/.test(time))
+        // One reminder per distinct time, in order, whatever order they were
+        // entered in.
+        .filter((time, i, all) => all.indexOf(time) === i)
+        .sort()
+        .slice(0, MAX_MEDICATION_SLOTS)
 
-      return {
-        id: medicationReminderId(medicationId, index),
-        title,
-        body: `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
-        schedule: { on, repeats: true, allowWhileIdle: true },
-        extra: { screen: 'medications', medicationId },
-      }
-    })
+      notifications = perDose.map((time, index) => {
+        const [doseHour, doseMinute] = time.split(':').map(Number)
+        return {
+          id: medicationReminderId(medicationId, index),
+          title,
+          // Named by which dose it is, so three identical notifications in a
+          // day are told apart on the lock screen.
+          body: perDose.length > 1
+            ? `Dose ${index + 1} of ${count}${dose ? ` — ${dose}` : ''}`
+            : `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
+          schedule: {
+            on: { hour: doseHour, minute: doseMinute },
+            repeats: true,
+            allowWhileIdle: true,
+          },
+          extra: { screen: 'medications', medicationId },
+        }
+      })
+    } else {
+        notifications = days.slice(0, MAX_MEDICATION_SLOTS).map((day, index) => {
+        const on = { hour, minute }
+        // Capacitor's weekday is 1-7 starting at Sunday; getDay() is 0-6.
+        if (frequencyPeriod === 'week') on.weekday = Number(day) + 1
+        else if (frequencyPeriod === 'month') on.day = Number(day)
+
+        return {
+          id: medicationReminderId(medicationId, index),
+          title,
+          body: `${count} ${count === 1 ? 'dose' : 'doses'} due ${period}`,
+          schedule: { on, repeats: true, allowWhileIdle: true },
+          extra: { screen: 'medications', medicationId },
+        }
+      })
+    }
   }
 
   // As-needed medications answer to no clock, so there is nothing to raise.

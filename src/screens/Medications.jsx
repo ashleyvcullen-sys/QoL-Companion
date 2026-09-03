@@ -25,6 +25,7 @@ import {
   monthStartIsoDate,
 } from '../lib/medicationsData'
 import {
+  MAX_MEDICATION_SLOTS,
   cancelMedicationReminders,
   checkNotificationPermission,
   requestNotificationPermission,
@@ -60,9 +61,15 @@ function describeReminderPlan(form) {
   const chosen = (form.reminderDays ?? []).length
 
   if (form.frequencyPeriod === 'day') {
-    return count === 1
-      ? 'One reminder each day, at this time.'
-      : `One reminder each day at this time, mentioning all ${count} doses.`
+    if (count === 1) return 'One reminder each day, at this time.'
+    // Each dose can now carry its own time; a blank one simply has no
+    // reminder. Says how many are actually set rather than promising the
+    // full count.
+    const set = [form.reminderTime, ...(form.times ?? [])]
+      .filter((time) => typeof time === 'string' && time !== '').length
+    return set >= count
+      ? `${count} reminders each day, one per dose.`
+      : `${set} of ${count} doses have a reminder time. Fill in the rest to be reminded for those too.`
   }
 
   const period = form.frequencyPeriod === 'week' ? 'week' : 'month'
@@ -114,6 +121,16 @@ export default function Medications() {
 
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+
+  // How many dose-time inputs the reminder section shows: one per dose for a
+  // daily medication, and just the one otherwise.
+  //
+  // Capped at the same number the scheduler reserves ids for
+  // (MAX_MEDICATION_SLOTS), so an owner who types 40 into "times per day"
+  // gets 12 inputs rather than 40 inputs and 12 reminders.
+  const doseTimeCount = form.frequencyPeriod === 'day'
+    ? Math.min(Number(form.frequencyCount) || 1, MAX_MEDICATION_SLOTS)
+    : 1
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [notifStatus, setNotifStatus] = useState(null)
@@ -664,14 +681,53 @@ export default function Medications() {
                     weekday, or the same date, as the day the course started. */}
                 {form.remindersEnabled && (
                 <div className="field">
-                  <label htmlFor="med-reminder-time">Remind me at</label>
+                  <label htmlFor="med-reminder-time">
+                    {doseTimeCount > 1 ? 'Remind me at (dose 1)' : 'Remind me at'}
+                  </label>
                   <input
                     id="med-reminder-time"
                     type="time"
                     value={form.reminderTime}
                     onChange={(e) => setForm({ ...form, reminderTime: e.target.value })}
                   />
+
+                  {/* A time per dose, for a medication given several times a
+                      day — Ash's request, 3 Sep 2026.
+                      //
+                      A dog on three-times-daily medication got one reminder,
+                      at one time, for all three: a nudge for the first dose
+                      and nothing for the two that are easiest to forget.
+                      //
+                      Only for a DAILY frequency. Twice a week is two
+                      reminders on two different days, which the day picker
+                      below already answers; two times on one of those days is
+                      not what "twice a week" means. */}
+                  {form.frequencyPeriod === 'day' && Array.from(
+                    { length: Math.max(0, doseTimeCount - 1) },
+                    (_, i) => (
+                      <div className="med-dose-time" key={`dose-${i + 2}`}>
+                        <label htmlFor={`med-dose-time-${i}`}>Dose {i + 2}</label>
+                        <input
+                          id={`med-dose-time-${i}`}
+                          type="time"
+                          value={(form.times ?? [])[i] ?? ''}
+                          onChange={(e) => {
+                            const next = [...(form.times ?? [])]
+                            next[i] = e.target.value
+                            setForm({ ...form, times: next })
+                          }}
+                        />
+                      </div>
+                    ),
+                  )}
+
                   <p className="assessment-hint">{describeReminderPlan(form)}</p>
+                  {form.frequencyPeriod === 'day' && doseTimeCount > 1 && (
+                    <p className="assessment-hint">
+                      {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
+                      Leave a dose blank and no reminder is set for it.
+                    </p>
+                  )}
                   {!isNative && (
                     <p className="assessment-hint">
                       Reminders only work in the app on your phone, not in a browser.

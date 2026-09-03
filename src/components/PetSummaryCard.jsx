@@ -7,7 +7,7 @@ import PetSwitcher from './PetSwitcher'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
-import { CONDITION_LIST, conditionByKey } from '../lib/conditions'
+import { CONDITION_LIST } from '../lib/conditions'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 import OverviewBars from './OverviewBars'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
@@ -94,95 +94,42 @@ export default function PetSummaryCard() {
   // Everything due, assessment first. A condition whose reminder is off, or
   // that has never been logged, is not "due" — one has no schedule to be
   // measured against and the other has no last date to measure from.
-  const due = useMemo(() => {
-    if (!pet) return []
-    const out = []
-
-    const qol = monitoringStatus({
+  const qolDue = useMemo(() => {
+    if (!pet) return null
+    const status = monitoringStatus({
       definition: assessmentCadence(pet),
       schedule: null,
       lastDate: latestGeneral?.date ?? null,
       today,
     })
-    if (qol.state === MONITORING_STATE.DUE) {
-      out.push({ key: 'qol', label: 'Quality of life assessment', overdueBy: qol.overdueBy, to: '/assessment' })
-    }
+    return status.state === MONITORING_STATE.DUE ? status : null
+  }, [pet, latestGeneral, today])
 
-    for (const row of conditions) {
-      const definition = conditionByKey(row.conditionKey)
-      if (!definition) continue
-      const entries = byCondition[row.conditionKey] ?? []
-      const status = monitoringStatus({
-        definition,
-        schedule: pet.schedule,
-        lastDate: entries[entries.length - 1]?.date ?? null,
-        today,
+  // One entry per tracked condition, each carrying its own definition and its
+  // own due state — they get a section each now, so a single pooled list of
+  // "what is due" no longer answers the question this half asks.
+  const trackedConditions = useMemo(() => {
+    if (!pet) return []
+    return CONDITION_LIST
+      .filter((definition) => conditions.some((row) => row.conditionKey === definition.key))
+      .map((definition) => {
+        const entries = byCondition[definition.key] ?? []
+        const status = monitoringStatus({
+          definition,
+          schedule: pet.schedule,
+          lastDate: entries[entries.length - 1]?.date ?? null,
+          today,
+        })
+        return {
+          definition,
+          due: status.state === MONITORING_STATE.DUE ? status : null,
+        }
       })
-      if (status.state !== MONITORING_STATE.DUE) continue
-      out.push({
-        key: row.conditionKey,
-        label: definition.label,
-        overdueBy: status.overdueBy,
-        to: `/conditions/${row.conditionKey}`,
-      })
-    }
-    return out
-  }, [pet, conditions, byCondition, latestGeneral, today])
+  }, [pet, conditions, byCondition, today])
 
   if (!pet) return null
 
-  const tracked = CONDITION_LIST.filter(
-    (definition) => conditions.some((row) => row.conditionKey === definition.key),
-  )
-  const trackedCount = tracked.length
-
-  // The heading names what {name} actually has, on Ash's instruction 29 Aug
-  // 2026 — "Allergies and Skin Disease Monitoring", not "Disease-Specific
-  // Monitoring". An owner monitoring one condition is thinking about that
-  // condition, and a category name makes them translate before they read
-  // anything.
-  //
-  // The condition's FULL label, the same name its own page and its tile use.
-  // A shortened form was tried first and Ash's call is against it: a heading
-  // here and a different heading on the page it opens are two names for one
-  // thing, and the owner has to work out that they match. Wrapping to two
-  // lines costs less than that.
-  //
-  // Two or more falls back to a category, because listing them runs to three
-  // lines and none of them is the heading; none tracked falls back to the
-  // category too, since there is nothing to name yet.
-  const diseaseHeading = trackedCount === 1
-    ? `${tracked[0].label} Monitoring`
-    : trackedCount > 1
-      ? 'Condition Monitoring'
-      : 'Disease-Specific Monitoring'
-
-  // One condition means the button can go straight to it rather than to a
-  // list with one thing on it.
-  const diseaseTarget = trackedCount === 1 ? `/conditions/${tracked[0].key}` : '/conditions'
-
-  // The condition's own organ icon where exactly one is tracked, so the
-  // heading is recognisable before it is read — it is the same mark that
-  // labels the condition on its tile and on its own page. Two or more, or
-  // none, falls back to the stethoscope the home tile uses for the section.
-  const DiseaseIcon = trackedCount === 1 && tracked[0].Icon
-    ? tracked[0].Icon
-    : Stethoscope
-
-  // The two halves are split apart rather than pooled, on Ash's instruction
-  // 29 Aug 2026. They answer different questions and the app treats them
-  // differently — one is a whole-animal score across the same questions every
-  // time, the other is a set of signs specific to a diagnosis — and a single
-  // merged list of "things due" quietly taught the owner they were the same
-  // kind of thing.
-  const qolDue = due.find((item) => item.key === 'qol') ?? null
-  const conditionsDue = due.filter((item) => item.key !== 'qol')
-  // The worst of them, for the note's wording. Zero means "due today" rather
-  // than late, which is deliberately not the same news.
-  const diseaseOverdueBy = conditionsDue.reduce(
-    (worst, item) => Math.max(worst, item.overdueBy ?? 0),
-    0,
-  )
+  const trackedCount = trackedConditions.length
 
   return (
     <Card className="pet-summary">
@@ -276,7 +223,7 @@ export default function PetSummaryCard() {
             true, since "start today's assessment" is not what someone three
             days behind is being asked for.
 
-            PENDING ASH — wording. */}
+            APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
         {qolDue ? (
           <p className={`pet-summary-duenote ${qolDue.overdueBy > 0 ? 'late' : ''}`.trim()}>
             <AlertTriangle size={14} />
@@ -303,66 +250,103 @@ export default function PetSummaryCard() {
         </Btn>
       </section>
 
-      {/* --- Disease-specific monitoring --------------------------------- */}
-      <section className="pet-summary-section">
-        <div className="pet-summary-section-head">
-          <div>
-            <h3 className="pet-summary-section-title">
-              <span className="pet-summary-section-icon" aria-hidden="true">
-                <DiseaseIcon size={16} />
-              </span>
-              {diseaseHeading}
-            </h3>
-            {/* No subtext, on Ash's instruction 29 Aug 2026 — the same call
-                as the assessment half. Naming the condition in the heading is
-                what made the sentence redundant: "Allergies Monitoring" over
-                a button reading "Go to Allergies monitoring" needs no third
-                explanation of which condition it means. */}
+      {/* --- One section per condition ------------------------------------
+          Each tracked condition gets its own titled block, on Ash's
+          instruction 3 Sep 2026 — "Allergies and Skin Disease Monitoring",
+          "Kidney Disease Monitoring" — rather than one "Condition Monitoring"
+          heading covering all of them.
+
+          A pet with two conditions is being monitored for two different
+          things on two different schedules, and one of them can be overdue
+          while the other is not. Pooled, that read as "2 assessments are
+          due" with a single button to a list — which told the owner neither
+          which one nor took them there. */}
+      {trackedConditions.map(({ definition, due: conditionDue }) => {
+        const Icon = definition.Icon ?? Stethoscope
+        return (
+          <section className="pet-summary-section" key={definition.key}>
+            <div className="pet-summary-section-head">
+              <div>
+                <h3 className="pet-summary-section-title">
+                  <span className="pet-summary-section-icon" aria-hidden="true">
+                    <Icon size={16} />
+                  </span>
+                  {definition.label} Monitoring
+                </h3>
+              </div>
+            </div>
+
+            {/* The same note the assessment above uses, and nothing else.
+                This half used to list flagged findings from the last week;
+                those are on the page the button opens, in the calendar built
+                to show them.
+
+                APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
+            {conditionDue ? (
+              <p className={`pet-summary-duenote ${conditionDue.overdueBy > 0 ? 'late' : ''}`.trim()}>
+                <AlertTriangle size={14} />
+                {conditionDue.overdueBy > 0
+                  ? `This assessment is ${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue`
+                  : 'This assessment is due today'}
+              </p>
+            ) : (
+              <p className="pet-summary-clear">
+                <Check size={14} /> Up to date
+              </p>
+            )}
+
+            {/* Only when something is actually being asked for, on Ash's
+                instruction 3 Sep 2026. A button under a section that already
+                says "Up to date" invites a tap that leads to a screen with
+                nothing to do on it — and with several conditions tracked, a
+                column of identical buttons buried the one that mattered.
+                Gone when up to date, the remaining button IS the thing that
+                needs doing.
+
+                Shown for "due today" as well as for late: due today is not
+                up to date, and a section that says an assessment is due with
+                no way to start it is a dead end.
+
+                APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — her wording. */}
+            {conditionDue && (
+              <Btn
+                type="button"
+                variant="outline"
+                className="btn-block"
+                onClick={() => navigate(`/conditions/${definition.key}`)}
+              >
+                Start {definition.label} assessment now
+              </Btn>
+            )}
+          </section>
+        )
+      })}
+
+      {/* Nothing tracked yet — one section offering the way in. */}
+      {trackedCount === 0 && (
+        <section className="pet-summary-section">
+          <div className="pet-summary-section-head">
+            <div>
+              <h3 className="pet-summary-section-title">
+                <span className="pet-summary-section-icon" aria-hidden="true">
+                  <Stethoscope size={16} />
+                </span>
+                Disease-Specific Monitoring
+              </h3>
+            </div>
           </div>
-        </div>
 
-        {/* The same note the assessment above uses, on Ash's instruction 29
-            Aug 2026 — and nothing else.
+          <Btn
+            type="button"
+            variant="outline"
+            className="btn-block"
+            onClick={() => navigate('/conditions')}
+          >
+            Set up disease monitoring
+          </Btn>
+        </section>
+      )}
 
-            This half used to list flagged findings from the last week and a
-            row per overdue condition. Both were pointers to the same page the
-            button already goes to, and between them they took more of the
-            card than the score it sits under. The one thing an owner needs
-            from a home screen is whether they owe an entry; the findings are
-            on the page they land on, in the calendar built to show them.
-
-            PENDING ASH — wording, matched to the assessment's. */}
-        {conditionsDue.length > 0 ? (
-          <p className={`pet-summary-duenote ${diseaseOverdueBy > 0 ? 'late' : ''}`.trim()}>
-            <AlertTriangle size={14} />
-            {conditionsDue.length > 1
-              ? `${conditionsDue.length} assessments are due`
-              : diseaseOverdueBy > 0
-                ? `This assessment is ${diseaseOverdueBy} day${diseaseOverdueBy === 1 ? '' : 's'} overdue`
-                : 'This assessment is due today'}
-          </p>
-        ) : trackedCount > 0 && (
-          <p className="pet-summary-clear">
-            <Check size={14} /> Up to date
-          </p>
-        )}
-
-        <Btn
-          type="button"
-          variant="outline"
-          className="btn-block"
-          onClick={() => navigate(diseaseTarget)}
-        >
-          {/* No "monitoring" on the end: the heading immediately above
-              already says it, and "Go to Allergies and Skin Disease
-              monitoring" is a mouthful of a button. */}
-          {trackedCount === 1
-            ? `Go to ${tracked[0].label}`
-            : trackedCount > 1
-              ? 'Go to condition monitoring'
-              : 'Set up disease monitoring'}
-        </Btn>
-      </section>
     </Card>
   )
 }

@@ -17,7 +17,7 @@ import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
 // tracked in the first place — and a tile that labels every possible
 // condition of the world is a tile nobody reads.
 //
-// PENDING ASH — wording. "Overdue" and "On track" are borrowed from the
+// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. "Overdue" and "On track" are borrowed from the
 // Schedule screen so the same state has the same name in both places.
 function scheduleNoteFor(status) {
   if (status.state === MONITORING_STATE.DUE) {

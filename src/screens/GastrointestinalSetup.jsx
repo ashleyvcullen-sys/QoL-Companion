@@ -170,7 +170,7 @@ export default function GastrointestinalSetup() {
         <Card>
           <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
           <p>
-            {/* PENDING ASH — wording. */}
+            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
             Food allergies are monitored in Allergies and Skin Disease, which follows the whole
             diet trial. This section will not ask about it.
           </p>

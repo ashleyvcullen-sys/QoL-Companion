@@ -95,7 +95,7 @@ export default function DayAnswersModal({
               drinking, urination and the rest) have no threshold defined, and
               a single 0-10 cutoff across all of them would flag the wrong
               ones — three vomits and mildly increased drinking are not
-              equivalently worrying at the same number. PENDING ASH: a
+              equivalently worrying at the same number. APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. A
               threshold per question. Until then those rows fall through to
               the list below, exactly as they do today. */}
           {concerning.length > 0 && (

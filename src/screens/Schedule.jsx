@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BellOff, HelpCircle } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings'
@@ -172,6 +172,7 @@ function ScheduleRow({
 }
 
 export default function Schedule() {
+  const navigate = useNavigate()
   const { refresh, selectedPet } = usePets()
   const pet = selectedPet
   const { generalEntries, loading } = useQolHistory(pet?.id)
@@ -410,11 +411,25 @@ export default function Schedule() {
       <Card>
         <SectionTitle>Medications</SectionTitle>
         {medsLoading && <p>Loading…</p>}
+        {/* The sentence whole, then the way in — Ash's call, 3 Sep 2026.
+            "Add one" was a link in the middle of the sentence, so it broke
+            the line in two and left "to get reminders for it" stranded after
+            a tap target. A reader met the button before they had finished
+            reading what it was for. */}
         {!medsLoading && activeMedications.length === 0 && (
-          <p className="assessment-hint">
-            No medications yet. <Link to="/medications" className="subtle-link">Add one</Link> to
-            get reminders for it.
-          </p>
+          <div className="empty-with-action">
+            <p className="assessment-hint">
+              No medications yet. Add one to get reminders for it.
+            </p>
+            <Btn
+              type="button"
+              variant="outline"
+              className="btn-block"
+              onClick={() => navigate('/medications')}
+            >
+              Add a medication
+            </Btn>
+          </div>
         )}
         {!medsLoading && activeMedications.map((medication) => (
           <div key={medication.id} className="schedule-row">
