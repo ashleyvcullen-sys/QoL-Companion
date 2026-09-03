@@ -20,11 +20,13 @@ export default function IntroPage({ petName, species, isFirstAssessment }) {
           what's actually changed rather than guessing.
         </p>
       ) : (
-        /* PENDING ASH — the join. "Try to answer as honestly and accurately
-           as possible" is yours; I have kept the "Not sure" clause after it
-           rather than replacing the sentence, because an owner told to be
-           accurate and given no way out is an owner who guesses. Say if you
-           wanted it gone. */
+        /* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026, the join included.
+           The instruction is hers; the "Not sure" clause stays after it
+           rather than replacing it, because an owner told to be accurate and
+           given no way out is an owner who guesses.
+           The clause is not softening, either: null genuinely means
+           unanswered all the way through the scoring, and every concern
+           threshold explicitly declines to flag on it. */
         <p>
           This assessment walks through how {petName} has been lately. Try to answer as
           honestly and accurately as possible — but "Not sure" is always a fine answer too.
