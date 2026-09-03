@@ -10,12 +10,21 @@ function mapGeneralQolRow(row) {
   return {
     id: row.id,
     date: row.entry_date,
-    scores: row.scores,
-    stoolSymptoms: row.stool_symptoms,
-    hygieneSymptoms: row.hygiene_symptoms,
-    vomiting: row.vomiting,
-    urination: row.urination,
-    waterIntake: row.water_intake,
+    scores: row.scores ?? {},
+    // Defaulted here, at the boundary, rather than guarded at each of the
+    // dozen places that read them.
+    //
+    // scoreStoolOrHygiene does `symptoms.length` with no guard, so a row
+    // whose symptom column is null — an early row, or one written before
+    // that column existed — throws on the spot. That was survivable while
+    // scoring only ran on screens an owner chose to open; it is not
+    // survivable now the home screen computes a score on launch, where the
+    // same null is a white screen instead of one broken chart.
+    stoolSymptoms: row.stool_symptoms ?? [],
+    hygieneSymptoms: row.hygiene_symptoms ?? [],
+    vomiting: row.vomiting ?? { hasVomited: null, frequency: '', unit: 'times/day', character: [] },
+    urination: row.urination ?? { status: null, symptoms: [] },
+    waterIntake: row.water_intake ?? { status: null },
     notes: row.notes,
   }
 }

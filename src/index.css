@@ -450,15 +450,6 @@ code {
   color: #fff;
 }
 
-.logo-placeholder {
-  width: 120px;
-  height: auto;
-  display: block;
-  margin-bottom: 8px;
-}
-
-
-
 .nav-section {
   display: flex;
   flex-direction: column;
@@ -529,6 +520,232 @@ code {
      its pointer at exactly the moment it starts explaining a paid feature. */
   font-family: inherit;
   cursor: pointer;
+}
+
+/* --- The pet summary, at the top of the home screen ---------------------
+   How {name} is, what is flagged, what is due, and one thing to do. Built as
+   a single card with four stacked bands rather than a grid: on a phone this
+   is read top to bottom, and every one of those questions is asked in that
+   order. */
+.pet-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Photo above the name, both centred — Ash's call, 29 Aug 2026. Everything
+   below it is centred now, and a left-aligned face and name at the top left
+   the card reading as two designs stacked. Stacking the avatar also lets it
+   be larger without stealing width from the name beside it. */
+.pet-summary-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* The two halves. Separated by a rule rather than by white space alone: they
+   answer different questions — a whole-animal score against the same
+   questions every time, and the specific signs of a diagnosis — and an owner
+   should not have to work out that the score above does not cover the
+   condition below. */
+.pet-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Centred, on Ash's instruction 29 Aug 2026. The score below is centred and
+   the two buttons are full width, so a left-aligned heading over them was the
+   only thing in the card sitting off the centre line. */
+.pet-summary-section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.pet-summary-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-inline);
+  font-family: var(--heading);
+  font-size: var(--type-item);
+  color: var(--text-h);
+  margin: 0;
+}
+
+/* In the accent, not the heading's own colour: the mark identifies the
+   section, and at 16px a dark glyph beside dark text reads as part of the
+   word rather than as a label for it. Flex so the organ icons — which are
+   masked spans rather than SVGs — sit on the same line as a lucide one. */
+.pet-summary-section-icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+/* The five pillars, collapsed. The whole row is the toggle, so the dots and
+   the finding beside them are one tap target rather than decoration next to
+   a link. */
+.pet-summary-pillars {
+  display: flex;
+  flex-direction: column;
+}
+
+/* The whole heading is the toggle: the words and the chevron are one tap
+   target rather than a label sitting beside a button.
+
+   Centred with the chevron beside the words rather than pushed to the far
+   right — at this size, a chevron alone at the edge of the card reads as
+   belonging to the row above it. */
+.pet-summary-pillars-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-inline);
+  width: 100%;
+  padding: 8px 0;
+  /* Apple's 44pt minimum, the same floor .expandable-note-toggle sets. */
+  min-height: 44px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  /* A step down from the section headings above it: this names what is behind
+     a fold, and it should not compete with the thing it sits under. */
+  font-size: var(--type-meta);
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+
+.pet-summary-pillars-toggle .expandable-note-chevron {
+  display: inline-block;
+  /* Sits on the text's baseline rather than on its own line, so it travels
+     with the last word when the heading wraps. */
+  vertical-align: -3px;
+  margin-left: 4px;
+}
+
+/* The body is laid out with flex, which beats [hidden]'s display:none on
+   specificity — the same trap that left every "More info" note permanently
+   open until it was caught. */
+.pet-summary-pillars-body[hidden] {
+  display: none !important;
+}
+
+.pet-summary-empty {
+  margin: 0;
+  font-size: var(--type-support);
+  color: var(--text-muted);
+}
+
+/* Due, on the assessment side, where there is no row to hang it on. Amber on
+   the day it falls due and red once it is behind — the two states are not the
+   same news, and colouring both red spends the alarm before it is needed. */
+.pet-summary-duenote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-inline);
+  margin: 0;
+  font-size: var(--type-meta);
+  font-weight: 600;
+  color: var(--severity-moderate);
+}
+
+.pet-summary-duenote.late {
+  color: var(--severity-severe);
+}
+
+/* The brand mark, at the top of the card. Sized to what the pet's photo
+   occupied before it, so the block above the title keeps its proportions. */
+.pet-summary-logo {
+  width: 72px;
+  height: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+.pet-summary-identity {
+  min-width: 0;
+}
+
+.pet-summary-name {
+  font-family: var(--heading);
+  font-size: var(--type-heading);
+  color: var(--text-h);
+  margin: 0;
+}
+
+.pet-summary-meta {
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* The score, centred under its heading: the ring, the band it falls in, and
+   which way it has moved, as one stack. */
+.pet-summary-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-stack-tight);
+  padding: 4px 0 2px;
+}
+
+/* The ring itself. The number sits inside it rather than beside it, so the
+   pair reads as one object at a glance. Sized by the component, which scales
+   a fixed viewBox — see ScoreRing. */
+.pet-summary-ring {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-summary-ring-value {
+  position: absolute;
+  font-family: var(--heading);
+  font-size: var(--type-heading);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pet-summary-band {
+  margin: 6px 0 0;
+  font-size: var(--type-support);
+  font-weight: 600;
+}
+
+/* The direction of travel, quieter than the band above it — it qualifies the
+   reading rather than competing with it. */
+.pet-summary-change {
+  margin: 0;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+}
+
+/* Up to date. Said out loud and in green, because keeping up is the whole
+   behaviour this screen is asking for and it otherwise goes unremarked. */
+.pet-summary-clear {
+  display: flex;
+  align-items: center;
+  /* Centred, like the due notice it alternates with — the two swap places in
+     the same slot and must not shift the line when they do. */
+  justify-content: center;
+  gap: var(--gap-inline);
+  margin: 0;
+  font-size: var(--type-meta);
+  font-weight: 600;
+  color: var(--severity-good);
 }
 
 .icon-grid {

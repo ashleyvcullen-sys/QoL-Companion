@@ -5,12 +5,10 @@ import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
 import { HOME_TOUR_MESSAGES } from '../lib/homeTourContent'
-import { petPossessive } from '../lib/petText'
 import Card from '../components/Card'
-import SectionTitle from '../components/SectionTitle'
 import HomeTour from '../components/HomeTour'
 import Footer from '../components/Footer'
-import PetSwitcher from '../components/PetSwitcher'
+import PetSummaryCard from '../components/PetSummaryCard'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 
 // Grouped rather than one flat grid. Thirteen equal tiles gave no hint of
@@ -65,7 +63,6 @@ export default function Home() {
   const { refresh, selectedPet } = usePets()
   const { hasPremium } = useEntitlements()
   const pet = selectedPet
-  const petName = pet?.name || 'your pet'
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -119,24 +116,22 @@ export default function Home() {
 
   return (
     <div className="screen">
-      <Card className="home-header">
-        <img
-          src="/images/logo.png"
-          alt="Dog and cat, nose to nose, forming a heart"
-          className="logo-placeholder"
-        />
-        <SectionTitle>{pet ? `${petName}'s Quality of Life Companion` : 'Your Quality of Life Companion'}</SectionTitle>
-        {/* One line, not two. The credit is folded into the subtext rather
-            than stacked above it — who made it and what it is for are the
-            same sentence, and two lines of supporting text under one heading
-            read as a preamble nobody finishes. */}
-        <p className="home-subtitle">
-          Developed by a veterinarian to help you monitor {petPossessive(pet)} quality
-          of life, every step of the way.
-        </p>
-        <PetSwitcher />
+      {/* The header card — logo, "{name}'s Quality of Life Companion", the
+          vet credit and the pet switcher — was removed on 29 Aug 2026 when
+          the summary card below took its title. Two cards saying the pet's
+          name, one above the other, is not a header and a summary; it is the
+          same heading twice.
 
-      </Card>
+          The logo went with it. It opens the welcome flow, where it is doing
+          brand work on a screen with nothing else to say; here it sat above
+          the fold on every visit, in front of the thing the owner came for,
+          and the pet's own photo identifies this record better than a generic
+          mark of ours does. */}
+      {/* How {name} actually is, above the ten ways of finding out.
+          The screen carried nothing but branding and navigation until 29 Aug
+          2026 — the same view for an owner with a year of entries as for one
+          who signed up a minute ago. */}
+      <PetSummaryCard />
 
       {NAV_SECTIONS.map((section) => (
         <div key={section.title} className="nav-section">
