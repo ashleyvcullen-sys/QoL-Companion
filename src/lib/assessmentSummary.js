@@ -32,7 +32,7 @@ export function describeAssessmentDay(generalEntry, painEntry, species) {
   const scores = generalEntry?.scores ?? {}
 
   // `severity` is 'concern' or null, and it is what lifts a row into the
-  // "Worth a look" group in DayAnswersModal — the same field the condition
+  // "Worth monitoring" group in DayAnswersModal — the same field the condition
   // rows already carry, so both feeds normalise the same way.
   //
   // A THRESHOLD PER QUESTION, not one across all of them. These are not a

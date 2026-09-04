@@ -30,7 +30,7 @@ export default function DayAnswersModal({
   // Split into the two groups.
   //
   // A follow-up travels with its parent: it is the detail OF that answer, and
-  // lifting "Not putting the leg down at all" into Worth a look while leaving
+  // lifting "Not putting the leg down at all" into Worth monitoring while
   // "which leg?" behind in the list below orphans the detail from the thing
   // it details. Follow-ups carry severity: null, so they can never lift on
   // their own account.
@@ -87,7 +87,7 @@ export default function DayAnswersModal({
       ) : (
         <>
           {/* Concerning answers first, and only when there are any — an empty
-              "Worth a look" on a good day is a heading that says nothing.
+              "Worth monitoring" on a good day is a heading that says nothing.
               Emergency above concern within the group, because if both are
               present the order is the order someone should read them in.
               Assessment rows do not reach this yet. Only the eight BEAAAAPP
@@ -100,7 +100,21 @@ export default function DayAnswersModal({
               the list below, exactly as they do today. */}
           {concerning.length > 0 && (
             <>
-              <p className="day-answers-group">Worth a look</p>
+              {/* "Worth monitoring", with the vet advice said underneath
+                  rather than folded into the heading — Ash's instruction
+                  4 Sep 2026, her wording for both lines.
+
+                  These rows are the answers that crossed a concern or
+                  emergency threshold. The heading names what the group IS;
+                  the line under it says what to do about it, which is a
+                  judgement the owner makes and not one the heading can make
+                  for them.
+
+                  APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026. */}
+              <p className="day-answers-group">Worth monitoring</p>
+              <p className="day-answers-group-note">
+                See your vet if you are concerned or symptoms persist.
+              </p>
               <dl className="day-answers">
                 {concerning.map((row) => (
                   <DayAnswerRow key={row.key} row={row} pet={pet} />

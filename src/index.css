@@ -717,6 +717,55 @@ code {
   color: var(--severity-severe);
 }
 
+/* --- Notifications, at the top of Reminders ------------------------------
+   //
+   Sized by state on purpose. Granted is one line and a link, so it costs
+   almost nothing sitting above the settings it is the precondition for;
+   denied grows a paragraph and a button and is then the first thing on the
+   screen. */
+.notif-state {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--severity-good);
+}
+
+.notif-state svg {
+  flex-shrink: 0;
+}
+
+.notif-state.off { color: var(--severity-severe); }
+.notif-state.warn { color: var(--severity-moderate); }
+
+.notif-sub {
+  margin: 6px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* Inside a card, so it does not carry .subtle-link's 24px bottom margin —
+   that space separates a standalone link from the card below it. */
+.notif-link {
+  margin: 13px 0 0;
+  width: auto;
+}
+
+.notif-action {
+  margin-top: 12px;
+}
+
+/* Android's precise-timing row, under a rule so it reads as a second fact
+   about the same thing rather than a second card. */
+.notif-secondary {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+
 /* --- A condition's fortnight, on the home card --------------------------
    //
    One tick per day, oldest left, coloured exactly as the calendar colours
@@ -797,6 +846,98 @@ code {
 }
 
 .dx-dot.emergency { background: var(--severity-severe); }
+
+/* --- A condition, collapsed to one row -------------------------------------
+   Ash's instruction 4 Sep 2026, from the mock-up she approved. What used to
+   be a titled section per condition — heading, status, strip, scale, trend,
+   finding, button — is one tappable row: icon, name, fortnight, state,
+   chevron. The whole row is the target, not the chevron. */
+.dx-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 0 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* iOS taps a 44px target comfortably; the strip and two lines of title
+     already clear it, but a one-line title on a condition with no history
+     would not. */
+  min-height: 44px;
+}
+
+.dx-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dx-row-title {
+  font-family: var(--heading);
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--text-h);
+  text-wrap: pretty;
+}
+
+/* The strip and the state, sharing the row's second line: what the fortnight
+   looked like on the left, what is owed on the right. */
+.dx-row-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 16px;
+}
+
+/* Green tick alone when there is nothing owed; the amber or red warning with
+   its words when there is. The words only appear in the state that needs
+   them, so an up-to-date row stays quiet. */
+.dx-row-state {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: var(--type-label);
+  font-weight: 600;
+  /* Matched to the strip beside it, so an up-to-date row and an overdue one
+     are the same height — a taller row reads as a more important one. */
+  line-height: 1;
+  color: var(--severity-good);
+}
+
+.dx-row-state.late { color: var(--severity-severe); }
+
+.dx-row-chev {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* The same fourteen ticks as the full strip, at row scale. Same colours,
+   same rules — a hollow tick is still a day nobody logged. */
+.dx-strip.mini { gap: 2px; }
+
+.dx-strip.mini .dx-day {
+  width: 5px;
+  height: 12px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1.2px var(--border);
+}
+
+.dx-strip.mini .dx-day.ok,
+.dx-strip.mini .dx-day.concern,
+.dx-strip.mini .dx-day.emergency { box-shadow: none; }
+
+.dx-strip.mini .dx-day.today {
+  box-shadow: 0 0 0 1px var(--surface), 0 0 0 2px var(--text-h);
+}
 
 /* The brand mark, at the top of the card. Sized to what the pet's photo
    occupied before it, so the block above the title keeps its proportions. */
@@ -3577,7 +3718,7 @@ code {
   line-height: 150%;
 }
 
-/* "Worth a look" / "Everything else". A group divider, in the same treatment
+/* "Worth monitoring" / "Everything else". A group divider, in the same treatment
    the app uses for one everywhere else — see .nav-section-title. */
 .day-answers-group {
   margin: 16px 0 8px;
@@ -3591,6 +3732,15 @@ code {
 /* The first group has the date and any note above it already. */
 .day-answers-group:first-of-type {
   margin-top: 12px;
+}
+
+/* What to do about the group above. Sentence case and full size, because it
+   is a sentence to be read rather than a label to be scanned — the uppercase
+   heading treatment would make it a second heading. */
+.day-answers-group-note {
+  margin: -4px 0 10px;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
 }
 
 .day-answer-detail {

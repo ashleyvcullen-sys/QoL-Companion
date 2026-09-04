@@ -74,9 +74,12 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
       {loading && <p>Loading…</p>}
 
       {!loading && events.length === 0 && !adding && (
+        // PENDING ASH — "above" became "below". The Events card moved to sit
+        // directly under the questionnaire on 4 Sep 2026, so the calendar it
+        // points at is now underneath it rather than over it.
         <p>
           Nothing recorded yet. Episodes, diagnoses and medication changes are marked on the
-          calendar above.
+          calendar below.
         </p>
       )}
 

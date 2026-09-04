@@ -784,6 +784,33 @@ export default function ConditionMonitoring() {
           </Card>
           )}
 
+          {/* Directly under the questionnaire, on Ash's instruction 4 Sep
+              2026. It used to sit below the calendar and both sets of charts,
+              which put it a long scroll past the only moment an owner is
+              reliably thinking about it — they have just answered for today,
+              and "she had a flare on Tuesday" or "we started gabapentin" is
+              the thing they came to record alongside it.
+
+              "marked on the calendar below" rather than "above": the calendar
+              it refers to now comes after this card, not before it. */}
+          <Card>
+            <SectionTitle>Events</SectionTitle>
+            {/* PENDING ASH — one word changed from the line you approved:
+                "above" became "below", because the card moved and the
+                calendar it points at is now underneath it. */}
+            <p className="assessment-hint">
+              Episodes, diagnoses, and medications started or stopped. Anything recorded on a
+              day is marked on the calendar below.
+            </p>
+            <ConditionEvents
+              petId={pet.id}
+              conditionKey={definition.key}
+              events={events}
+              loading={eventsLoading}
+              onChange={refreshEvents}
+            />
+          </Card>
+
           {/* Shown here as well as on the setup screen. An owner who chose
               "food sensitivity or allergy" weeks ago never sees that screen
               again, and this section now asks them nothing about it — so
@@ -846,21 +873,6 @@ export default function ConditionMonitoring() {
               </Btn>
             </Card>
           )}
-
-          <Card>
-            <SectionTitle>Events</SectionTitle>
-            <p className="assessment-hint">
-              Episodes, diagnoses, and medications started or stopped. Anything recorded on a
-              day is marked on the calendar above.
-            </p>
-            <ConditionEvents
-              petId={pet.id}
-              conditionKey={definition.key}
-              events={events}
-              loading={eventsLoading}
-              onChange={refreshEvents}
-            />
-          </Card>
 
           {/* Only once there is something to stop.
               

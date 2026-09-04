@@ -18,6 +18,7 @@ import { useMedications } from '../lib/medicationsData'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { daysBetween } from '../lib/monitoringStatus'
 import ReminderDayPicker from '../components/ReminderDayPicker'
+import NotificationsCard from '../components/NotificationsCard'
 import { resolveTrackedConditions } from '../lib/charts'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -318,6 +319,17 @@ export default function Schedule() {
     <div className="screen">
       <HomeLink />
 
+      {/* First, because every cadence control below it is inert without
+          this. Ash's instruction 3 Sep 2026. */}
+      <NotificationsCard
+        notifStatus={notifStatus}
+        exactAlarmStatus={exactAlarmStatus}
+        isAndroid={isAndroid}
+        onEnable={handleEnableReminders}
+        onEnableExactAlarms={handleEnableExactAlarms}
+        onOpenSettings={openNotificationSettings}
+      />
+
       <Card>
         <SectionTitle>Reminders</SectionTitle>
         <p>
@@ -447,43 +459,9 @@ export default function Schedule() {
         )}
       </Card>
 
-      {Capacitor.isNativePlatform() && (notifStatus === 'prompt' || notifStatus === 'prompt-with-rationale') && (
-        <Card>
-          <p>Allow notifications so we can remind you when it's time for your next check-in?</p>
-          <Btn type="button" className="btn-block" onClick={handleEnableReminders}>
-            Enable reminders
-          </Btn>
-        </Card>
-      )}
-
-      {Capacitor.isNativePlatform() && notifStatus === 'denied' && (
-        <Card>
-          <p className="assessment-hint">Reminders are off.</p>
-          <Btn type="button" variant="outline" className="btn-block" onClick={openNotificationSettings}>
-            Open Settings to turn them back on
-          </Btn>
-        </Card>
-      )}
-
-      {isAndroid && (exactAlarmStatus === 'prompt' || exactAlarmStatus === 'prompt-with-rationale') && (
-        <Card>
-          <p>
-            For the most precise reminder timing, Android has a separate "exact alarms"
-            setting — optional, reminders will still arrive without it, just not always
-            at the exact time.
-          </p>
-          <Btn type="button" variant="outline" className="btn-block" onClick={handleEnableExactAlarms}>
-            Enable precise timing
-          </Btn>
-        </Card>
-      )}
-
-      {isAndroid && exactAlarmStatus === 'denied' && (
-        <p className="assessment-hint">
-          Precise reminder timing is off — reminders will still arrive, just not always
-          at the exact time.
-        </p>
-      )}
+      {/* The three permission cards that used to sit here have gone into
+          NotificationsCard at the top of the screen — same states, one place,
+          and visible when the answer is yes rather than only when it is no. */}
 
       {showFrequencyInfo && (
         <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>

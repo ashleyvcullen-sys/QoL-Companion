@@ -1,10 +1,9 @@
 import { useId, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, ChevronDown, Heart, Stethoscope } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Heart, Stethoscope } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
 import PetSwitcher from './PetSwitcher'
-import PetText from './PetText'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
@@ -169,12 +168,7 @@ function shortName(label) {
   return typeof label === 'string' ? label.replace(/\s*\([^()]*\)\s*$/, '') : label
 }
 
-// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-function agoLabel(days) {
-  if (days === 0) return 'today'
-  if (days === 1) return 'yesterday'
-  return `${days} days ago`
-}
+
 
 export default function PetSummaryCard() {
   const { selectedPet: pet } = usePets()
@@ -346,9 +340,19 @@ export default function PetSummaryCard() {
         {latest ? (
           <div className="pet-summary-score">
             <ScoreRing percent={latest.percent} colour={latest.color} size={92} />
+            {/* Band, change and status each on their own line — Ash's
+                instruction 4 Sep 2026. They were briefly merged to save
+                height; the height now comes out of the condition rows
+                instead, and the score stack reads as one thing per line. */}
             <p className="pet-summary-band" style={{ color: latest.color }}>
               {latest.band}
             </p>
+
+            {/* The direction of travel. A percentage on its own says how
+                {name} is today; this is the only thing on the card that says
+                which way {they} are going.
+
+                APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026. */}
             <p className="pet-summary-change">
               {change == null
                 ? formatDateDDMMYYYY(latestGeneral.date)
@@ -412,129 +416,97 @@ export default function PetSummaryCard() {
         )}
       </section>
 
-      {/* --- One section per condition ------------------------------------
-          Each tracked condition gets its own titled block, on Ash's
-          instruction 3 Sep 2026 — "Allergies and Skin Disease Monitoring",
-          "Kidney Disease Monitoring" — rather than one "Condition Monitoring"
-          heading covering all of them.
+      {/* --- One row per condition ---------------------------------------
+          Collapsed to a single row on Ash's instruction 4 Sep 2026, from the
+          mock-up she approved. Each condition was a full section — heading,
+          status line, fortnight strip with its scale, a trend line, a named
+          finding and sometimes a button — roughly 300px each. A pet with two
+          conditions pushed every tile on the home screen below the fold, so
+          the screen that exists to say "here is what to do" had to be
+          scrolled before any of it was visible.
 
-          A pet with two conditions is being monitored for two different
-          things on two different schedules, and one of them can be overdue
-          while the other is not. Pooled, that read as "2 assessments are
-          due" with a single button to a list — which told the owner neither
-          which one nor took them there. */}
+          Everything the section said still exists, one tap away, on the
+          condition's own screen: this row opens it. What stays here is what
+          can be read without stopping — the condition, how the fortnight
+          went, and whether anything is owed.
+
+          One destination in both states, deliberately. /conditions/:key is
+          both the assessment and the summary of it, so an up-to-date row is
+          not the dead end the removed button would have been. */}
       {trackedConditions.map(({ definition, due: conditionDue, history }) => {
         const Icon = definition.Icon ?? Stethoscope
+        const late = conditionDue != null && conditionDue.overdueBy > 0
+
+        // Said in full to a screen reader. The row compresses three facts
+        // into an icon, fourteen ticks and a tick mark; none of that reads
+        // aloud, and "Arthritis and Mobility Issues, button" is not enough
+        // for someone to know whether they owe an assessment.
+        const stateLabel = conditionDue == null
+          ? 'Monitoring up to date'
+          : late
+            ? `This assessment is ${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue`
+            : 'This assessment is due today'
+
         return (
-          <section className="pet-summary-section" key={definition.key}>
-            <div className="pet-summary-section-head">
-              <div>
-                <h3 className="pet-summary-section-title">
-                  <span className="pet-summary-section-icon" aria-hidden="true">
-                    <Icon size={16} />
+          <button
+            type="button"
+            key={definition.key}
+            className="dx-row"
+            onClick={() => navigate(`/conditions/${definition.key}`)}
+          >
+            {/* The condition's own icon, in the pink circle the rest of the
+                card uses — Ash's instruction 4 Sep 2026, unchanged from the
+                section heading it replaces. */}
+            <span className="pet-summary-section-icon" aria-hidden="true">
+              <Icon size={16} />
+            </span>
+
+            <span className="dx-row-text">
+              <span className="dx-row-title">{definition.label}</span>
+
+              {/* Fortnight on the left, what is owed on the right. They shared
+                  the title's line at first and the title wrapped to make room
+                  for "1 day overdue" — a two-line condition name beside a
+                  one-line status reads as two rows, not one. */}
+              <span className="dx-row-foot">
+                {history && (
+                  <span
+                    className="dx-strip mini"
+                    role="img"
+                    aria-label={history.logged === 0
+                      ? 'Nothing logged in the last 14 days'
+                      : `Last 14 days: ${history.flagged} day${history.flagged === 1 ? '' : 's'} flagged, ${WINDOW_DAYS - history.logged} not logged`}
+                  >
+                    {history.strip.map((day, index) => (
+                      <span
+                        key={day.date}
+                        className={`dx-day ${day.severity ?? ''} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
+                      />
+                    ))}
                   </span>
-                  {definition.label}
-                </h3>
-              </div>
-            </div>
-
-            {/* The same note the assessment above uses, and nothing else.
-                This half used to list flagged findings from the last week;
-                those are on the page the button opens, in the calendar built
-                to show them.
-
-                APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
-            {conditionDue ? (
-              <p className={`pet-summary-duenote ${conditionDue.overdueBy > 0 ? 'late' : ''}`.trim()}>
-                <AlertTriangle size={14} />
-                {conditionDue.overdueBy > 0
-                  ? `This assessment is ${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue`
-                  : 'This assessment is due today'}
-              </p>
-            ) : (
-              <p className="pet-summary-clear">
-                <Check size={14} /> Monitoring up to date
-              </p>
-            )}
-
-            {/* Only when something is actually being asked for, on Ash's
-                instruction 3 Sep 2026. A button under a section that already
-                says "Up to date" invites a tap that leads to a screen with
-                nothing to do on it — and with several conditions tracked, a
-                column of identical buttons buried the one that mattered.
-                Gone when up to date, the remaining button IS the thing that
-                needs doing.
-
-                Shown for "due today" as well as for late: due today is not
-                up to date, and a section that says an assessment is due with
-                no way to start it is a dead end.
-
-                APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026 — her wording. */}
-            {/* How the fortnight went, on Ash's instruction 3 Sep 2026 —
-                option A of three she was shown. Between the status line and
-                the button: the strip is what "how is it going" means, the
-                button is what to do about it. */}
-            {history && (
-              <div className="dx-summary">
-                <div
-                  className="dx-strip"
-                  role="img"
-                  aria-label={history.logged === 0
-                    ? 'Nothing logged in the last 14 days'
-                    : `Last 14 days: ${history.flagged} day${history.flagged === 1 ? '' : 's'} flagged, ${WINDOW_DAYS - history.logged} not logged`}
-                >
-                  {history.strip.map((day, index) => (
-                    <span
-                      key={day.date}
-                      className={`dx-day ${day.severity ?? ''} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
-                    />
-                  ))}
-                </div>
-                <p className="dx-scale" aria-hidden="true">
-                  <span>14 days ago</span><span>today</span>
-                </p>
-
-                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording, all three lines. */}
-                <p className="dx-trend">
-                  {history.logged === 0
-                    ? 'Nothing logged in the last 14 days'
-                    : (
-                      <>
-                        Last 14 days — <b>{history.flagged === 0 ? 'nothing flagged' : `${history.flagged} flagged`}</b>
-                        {history.hadEarlier && history.flagged !== history.earlierFlagged && (
-                          <>
-                            {', '}
-                            <span className={history.flagged < history.earlierFlagged ? 'down' : 'up'}>
-                              {history.flagged < history.earlierFlagged ? 'down' : 'up'} from {history.earlierFlagged}
-                            </span>
-                          </>
-                        )}
-                      </>
-                    )}
-                </p>
-
-                {history.finding && (
-                  <p className="dx-finding">
-                    <span className={`dx-dot ${history.finding.severity === SEVERITY.EMERGENCY ? 'emergency' : ''}`.trim()} />
-                    <PetText template={history.finding.name} pet={pet} />
-                    {history.finding.band && <>: {history.finding.band}</>}
-                    <span className="when"> · {agoLabel(history.finding.daysAgo)}</span>
-                  </p>
                 )}
-              </div>
-            )}
 
-            {conditionDue && (
-              <Btn
-                type="button"
-                variant="outline"
-                className="btn-block"
-                onClick={() => navigate(`/conditions/${definition.key}`)}
-              >
-                Start {definition.label} assessment now
-              </Btn>
-            )}
-          </section>
+                {/* PENDING ASH — "17 days overdue" / "Due today", trimmed to
+                    fit the row. The full sentences you approved on 3 Sep 2026
+                    ("This assessment is 17 days overdue") are what a screen
+                    reader still gets, and what the condition's own screen
+                    still shows. Say the word if you want different words on
+                    the row itself. */}
+                <span
+                  className={`dx-row-state ${late ? 'late' : ''}`.trim()}
+                  role="img"
+                  aria-label={stateLabel}
+                >
+                  {conditionDue == null ? <Check size={14} /> : <AlertTriangle size={14} />}
+                  {conditionDue != null && (
+                    <span>{late ? `${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue` : 'Due today'}</span>
+                  )}
+                </span>
+              </span>
+            </span>
+
+            <ChevronRight className="dx-row-chev" size={18} aria-hidden="true" />
+          </button>
         )
       })}
 
