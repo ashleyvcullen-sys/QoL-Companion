@@ -9,7 +9,7 @@ import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
 import { useLatestGeneralQol } from '../lib/useLatestGeneralQol'
 import { computeGeneralQolResult } from '../lib/scoring'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 
 // Splits on **bold** markers and renders the matched segments as <strong>,
 // so topic content can carry simple inline emphasis from a plain data file.
@@ -53,7 +53,7 @@ export default function EndOfLife() {
                 the app that scored it that way, and it read as a different
                 measurement. */}
             <span>{latestResult.percent}% — {latestResult.band}</span>
-            <span className="assessment-hint">{formatDateDDMMYYYY(latestEntry.date)}</span>
+            <span className="assessment-hint">{formatDateDDMMYY(latestEntry.date)}</span>
           </div>
         )}
       </Card>

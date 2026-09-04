@@ -147,10 +147,16 @@ export const PAYWALL_FEATURE_LIST = [
 // Plain strings rather than the paywall list's objects: nothing here carries
 // a subline, and inventing a shape for symmetry alone would be worse than the
 // asymmetry.
+//
+// "Full BEAAAAPP pain scoring" and "Overall wellbeing score" came out on
+// Ash's instruction 4 Sep 2026. Neither feature changed — both are still in
+// the assessment and still free — but they were the assessment described
+// twice: the line above already promises it, and BEAAAAPP is a name an owner
+// meets inside the app rather than one that sells anything on the way in.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
 export const FREE_FEATURE_LIST = [
   'Unlimited quality-of-life assessments for one pet',
-  'Full BEAAAAPP pain scoring',
-  'Overall wellbeing score',
   'Trends and calendar',
   'Home-care and emergency guidance',
   'End-of-life support content',

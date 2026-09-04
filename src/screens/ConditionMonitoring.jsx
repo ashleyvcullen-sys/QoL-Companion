@@ -51,7 +51,7 @@ import {
   scheduleForCondition,
 } from '../lib/cadence'
 import { scheduleConditionReminder } from '../lib/notifications'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   addPetCondition,
   saveConditionConfig,
@@ -937,7 +937,7 @@ export default function ConditionMonitoring() {
             {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
             {!entriesLoading && latestEntry && (
               <p className="assessment-hint">
-                Last recorded {formatDateDDMMYYYY(latestEntry.date)}.
+                Last recorded {formatDateDDMMYY(latestEntry.date)}.
                 {status.dueIn != null && (
                   status.dueIn > 1
                     ? ` Next one due in ${status.dueIn} days.`
@@ -1134,7 +1134,7 @@ export default function ConditionMonitoring() {
       {openDay && (
         <DayAnswersModal
           title="This Day's Answers"
-          dateLabel={formatDateDDMMYYYY(openDay)}
+          dateLabel={formatDateDDMMYY(openDay)}
           rows={resolvedForDay
             ? describeConditionDay(resolvedForDay, openEntry?.values, pet?.species)
             : []}

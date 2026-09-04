@@ -9,7 +9,7 @@ import Footer from '../components/Footer'
 import MediaLightbox from '../components/MediaLightbox'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   MAX_VIDEO_SECONDS,
   deleteMedia,
@@ -211,7 +211,7 @@ export default function PetMedia() {
                 </button>
               )}
               <figcaption>
-                <span className="media-date">{formatDateDDMMYYYY(item.takenOn)}</span>
+                <span className="media-date">{formatDateDDMMYY(item.takenOn)}</span>
                 {item.caption && <span className="assessment-hint">{item.caption}</span>}
               </figcaption>
               <button

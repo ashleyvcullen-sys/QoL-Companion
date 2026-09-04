@@ -1,3 +1,5 @@
+import { formatDateDDMMYY } from './formatDate'
+
 // One answer to "is this due?", for every screen that asks it.
 //
 // Three screens asked it independently and two of them disagreed. Schedule
@@ -89,7 +91,10 @@ export function elapsedLabel(dateIso, today) {
   const days = Math.floor(ms / 86400000)
   const [year, month, day] = String(dateIso).split('-')
   if (!year || !month || !day) return null
-  const shown = `${day}/${month}/${year}`
+  // Through lib/formatDate rather than built here — this was one of two
+  // remaining hand-rolled copies, and they printed a four-digit year after
+  // the shared one moved to two on 4 Sep 2026.
+  const shown = formatDateDDMMYY(dateIso)
 
   if (days < 0) return `Set for ${shown}.`
   if (days === 0) return 'Started today.'

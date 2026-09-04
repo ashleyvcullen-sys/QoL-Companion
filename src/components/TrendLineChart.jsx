@@ -1,4 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush, ReferenceArea, ReferenceLine } from 'recharts'
+import { formatDateDDMM, formatDateDDMMYY } from '../lib/formatDate'
 
 const DEFAULT_VISIBLE_DAYS = 14
 const BRUSH_HEIGHT = 24
@@ -10,9 +11,14 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
     <ResponsiveContainer width="100%" height={containerHeight}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#F5DFE4" />
-        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+        {/* The axis printed the stored ISO string until 4 Sep 2026 —
+            "2026-09-03" under every tick, which is the one date format
+            nobody in the app is shown anywhere else. Day and month here,
+            because fourteen ticks on a phone cannot each carry a year; the
+            tooltip gives the full date for whichever point is tapped. */}
+        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={formatDateDDMM} />
         <YAxis domain={domain} tick={{ fontSize: 11 }} />
-        <Tooltip />
+        <Tooltip labelFormatter={formatDateDDMMYY} />
         {/* A healthy band, drawn behind everything else.
             
             A threshold line answers "am I above the line?". A band answers

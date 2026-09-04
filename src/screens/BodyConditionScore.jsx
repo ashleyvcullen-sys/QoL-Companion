@@ -15,7 +15,7 @@ import { usePremiumDenial } from '../lib/premiumErrors'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
 import {BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
 import { referenceText } from '../lib/references'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 
 
 export default function BodyConditionScore() {
@@ -108,7 +108,7 @@ export default function BodyConditionScore() {
         </p>
         {!loading && latestEntry && (
           <p className="assessment-hint">
-            Last recorded: {latestEntry.score}/9 on {formatDateDDMMYYYY(latestEntry.date)}.
+            Last recorded: {latestEntry.score}/9 on {formatDateDDMMYY(latestEntry.date)}.
           </p>
         )}
       </Card>
@@ -154,7 +154,7 @@ export default function BodyConditionScore() {
           </div>
           {lastWeighed && (
             <p className="assessment-hint">
-              Last weighed: {lastWeighed.weightKg} kg on {formatDateDDMMYYYY(lastWeighed.date)}.
+              Last weighed: {lastWeighed.weightKg} kg on {formatDateDDMMYY(lastWeighed.date)}.
             </p>
           )}
         </div>

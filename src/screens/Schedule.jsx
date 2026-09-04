@@ -26,7 +26,7 @@ import HomeLink from '../components/HomeLink'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
 import Footer from '../components/Footer'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   CADENCE_OPTIONS,
   CONDITION_CADENCE_OPTIONS,
@@ -123,7 +123,7 @@ function ScheduleRow({
         )}
       </div>
       <p className="assessment-hint">
-        Last logged: {lastDate ? formatDateDDMMYYYY(lastDate) : 'never'}
+        Last logged: {lastDate ? formatDateDDMMYY(lastDate) : 'never'}
       </p>
       <div className="field">
         <label>Repeat</label>

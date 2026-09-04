@@ -14,7 +14,7 @@ import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scori
 import OverviewBars from './OverviewBars'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 import { conditionHistory } from '../lib/conditionHistory'
 import { ConditionState, ConditionStrip } from './ConditionStrip'
 
@@ -228,7 +228,7 @@ export default function PetSummaryCard() {
                 APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026. */}
             <p className="pet-summary-change">
               {change == null
-                ? formatDateDDMMYYYY(latestGeneral.date)
+                ? formatDateDDMMYY(latestGeneral.date)
                 : change === 0
                   ? 'Unchanged since last time'
                   : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'} than last time`}

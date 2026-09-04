@@ -58,6 +58,7 @@ import {
 import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
 import { SLEEP_NOTES } from './assessmentOptions'
 import { referenceText } from './references'
+import { formatDateDDMMYY } from './formatDate'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
@@ -3233,11 +3234,11 @@ export function describeParameterAnswer(parameter, value, species) {
   }
 
   // Stored as ISO because that is what a date input gives and what sorts
-  // correctly; read back as DD/MM/YYYY, which is what the rest of the app
-  // shows and what the owner wrote on the calendar in the kitchen.
+  // correctly; read back through lib/formatDate, which is what the rest of
+  // the app shows and what the owner wrote on the calendar in the kitchen.
   if (parameter.type === 'date') {
     const [year, month, day] = String(value).split('-')
-    return year && month && day ? `${day}/${month}/${year}` : null
+    return year && month && day ? formatDateDDMMYY(value) : null
   }
 
   if (parameter.type === 'vomiting') {

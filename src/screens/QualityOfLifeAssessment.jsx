@@ -52,7 +52,7 @@ import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
 import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 
 // Local rather than shared: three screens format a date this way and each
 // has its own copy. Worth unifying one day; not worth a new module today.
@@ -738,7 +738,7 @@ export default function QualityOfLifeAssessment() {
             </div>
             {previous && (
               <div className="review-summary-row">
-                <span>Last assessment ({formatDateDDMMYYYY(previous.date)})</span>
+                <span>Last assessment ({formatDateDDMMYY(previous.date)})</span>
                 <strong>{previous.result.percent}% — {previous.result.band}</strong>
               </div>
             )}

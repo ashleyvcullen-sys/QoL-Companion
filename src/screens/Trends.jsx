@@ -36,7 +36,7 @@ import { parametersFor } from '../lib/cancerConfig'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { useMedications } from '../lib/medicationsData'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 import { clearAssessmentNote } from '../lib/qolData'
 
 
@@ -253,7 +253,7 @@ export default function Trends() {
             />
             <ConceptDefinition concept={activeOverviewConcept} />
             <p className="assessment-hint">
-              From {formatDateDDMMYYYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
+              From {formatDateDDMMYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
             </p>
             {/* The five pillars used to have a collapsed chart each, stacked
                 down this screen. Five headings you had to open one at a time
@@ -335,7 +335,7 @@ export default function Trends() {
                 className="history-item"
                 onClick={() => setOpenDay(entry.date)}
               >
-                <p className="history-date">{formatDateDDMMYYYY(entry.date)}</p>
+                <p className="history-date">{formatDateDDMMYY(entry.date)}</p>
                 <p className="history-notes">{entry.notes}</p>
                 <span className="history-open">See this day's assessment</span>
               </button>
@@ -352,7 +352,7 @@ export default function Trends() {
       {openDay && (
         <DayAnswersModal
           title="This Day's Answers"
-          dateLabel={formatDateDDMMYYYY(openDay)}
+          dateLabel={formatDateDDMMYY(openDay)}
           rows={describeAssessmentDay(openGeneralEntry, openPainEntry, pet.species)}
           pet={pet}
           emptyMessage="No assessment was saved on this day."
@@ -371,7 +371,7 @@ export default function Trends() {
       {openConditionDay && (
         <DayAnswersModal
           title="This Day's Answers"
-          dateLabel={formatDateDDMMYYYY(openConditionDay.date)}
+          dateLabel={formatDateDDMMYY(openConditionDay.date)}
           rows={openConditionDefinition
             ? describeConditionDay(openConditionDefinition, openConditionEntry?.values, pet?.species)
             : []}

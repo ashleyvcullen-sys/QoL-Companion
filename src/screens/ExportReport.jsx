@@ -35,7 +35,7 @@ import {
 } from '../lib/conditionsData'
 import { usePetMedia } from '../lib/mediaData'
 import { useMedications } from '../lib/medicationsData'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 
 // What the report contains when the owner never touches the picker: the
 // overall score and all five wellbeing pillars, which is exactly what it
@@ -180,7 +180,7 @@ async function buildReportPdf({
     // written the day something changed is what a vet wants to read, and it
     // stops being the latest as soon as anything else is logged.
     notes.forEach((note) => {
-      addLine(`${formatDateDDMMYYYY(note.date)} — ${note.source}`)
+      addLine(`${formatDateDDMMYY(note.date)} — ${note.source}`)
       addLine(note.text)
       addSpacer(6)
     })
@@ -193,7 +193,7 @@ async function buildReportPdf({
     addLine('No assessments logged yet.')
   } else {
     recent.forEach((day) => {
-      addLine(`${formatDateDDMMYYYY(day.date)}: ${day.generalPercent != null ? `${day.generalPercent}%` : '—'}`)
+      addLine(`${formatDateDDMMYY(day.date)}: ${day.generalPercent != null ? `${day.generalPercent}%` : '—'}`)
     })
   }
   addSpacer(20)
@@ -631,7 +631,7 @@ export default function ExportReport() {
               ) : (
                 notes.map((note, i) => (
                   <div key={`${note.date}-${note.source}-${i}`} className="report-note">
-                    <span className="assessment-hint">{formatDateDDMMYYYY(note.date)} — {note.source}</span>
+                    <span className="assessment-hint">{formatDateDDMMYY(note.date)} — {note.source}</span>
                     <p>{note.text}</p>
                   </div>
                 ))
@@ -689,7 +689,7 @@ export default function ExportReport() {
             ) : (
               recent.map((day) => (
                 <div key={day.date} className="report-field-row">
-                  <span>{formatDateDDMMYYYY(day.date)}</span>
+                  <span>{formatDateDDMMYY(day.date)}</span>
                   <strong>{day.generalPercent != null ? `${day.generalPercent}%` : '—'}</strong>
                 </div>
               ))

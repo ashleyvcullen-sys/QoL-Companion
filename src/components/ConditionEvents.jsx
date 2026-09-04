@@ -5,7 +5,7 @@ import Btn from './Btn'
 import ChoiceButtons from './ChoiceButtons'
 import Modal from './Modal'
 import { EVENT_TYPES, addConditionEvent, deleteConditionEvent, eventTypeByValue, todayIsoDate } from '../lib/conditionsData'
-import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { formatDateDDMMYY } from '../lib/formatDate'
 
 
 const EMPTY = { type: 'episode', title: '', notes: '', date: todayIsoDate() }
@@ -91,7 +91,7 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
                 <div className="event-body">
                   <span className="event-title">{event.title}</span>
                   <span className="assessment-hint">
-                    {type?.label ?? event.type} — {formatDateDDMMYYYY(event.date)}
+                    {type?.label ?? event.type} — {formatDateDDMMYY(event.date)}
                   </span>
                   {event.notes && <span className="assessment-hint">{event.notes}</span>}
                 </div>
