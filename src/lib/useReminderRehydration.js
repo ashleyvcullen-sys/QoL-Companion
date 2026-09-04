@@ -3,11 +3,15 @@ import { Capacitor } from '@capacitor/core'
 import { usePets } from './PetsContext'
 import {
   checkNotificationPermission,
+  conditionReminderId,
   getPendingNotificationIds,
   medicationReminderId,
+  scheduleConditionReminder,
   scheduleMedicationReminders,
 } from './notifications'
 import { fetchMedications } from './medicationsData'
+import { fetchPetConditions } from './conditionsData'
+import { conditionByKey } from './conditions'
 
 // Medication reminders are scheduled with the OS, not stored in our
 // database — so they do not survive a reinstall, a restore from backup, or a
@@ -17,13 +21,19 @@ import { fetchMedications } from './medicationsData'
 // missed. For an animal on pain relief that is a real harm, so the app
 // re-arms anything missing on launch.
 //
-// Scoped to medications on purpose. QoL check-in reminders are already
-// re-issued by the Schedule screen whenever it is opened with permission
-// granted, and re-arming those here would misfire: a one-shot check-in
-// reminder that has legitimately already fired is *supposed* to be absent
-// from the queue, and rescheduling it would nag the user a minute after
-// they opened the app. A medication reminder repeats forever, so if it is
-// missing it was genuinely lost.
+// Medications and CONDITION reminders since 3 Sep 2026. Condition reminders
+// were re-issued only by the Schedule screen, which meant anything that
+// cleared the queue — a reinstall, a restore, a lapsed subscription coming
+// back, signing out and in — left them gone until the owner happened to open
+// that screen again. They are the check-ins for the disease the app is being
+// used to watch, so silently losing them is the worst of the three.
+//
+// Still NOT the QoL check-in. That one is re-issued by the Schedule screen
+// and re-arming it here would misfire: a one-shot reminder that has
+// legitimately already fired is supposed to be absent from the queue, and
+// rescheduling it would nag the owner a minute after they opened the app.
+// A medication or condition reminder missing from the queue was genuinely
+// lost; a check-in missing from it may simply have done its job.
 export function useReminderRehydration() {
   // Visible pets only. Re-arming medication reminders for a pet the
   // account cannot currently see would notify someone about an animal the
@@ -51,6 +61,38 @@ export function useReminderRehydration() {
       for (const pet of pets) {
         const medications = await fetchMedications(pet.id).catch(() => [])
         if (cancelled) return
+
+        // Conditions first — cheap, and the same pending-set test.
+        const conditions = await fetchPetConditions(pet.id).catch(() => [])
+        if (cancelled) return
+
+        for (const condition of conditions) {
+          if (!condition.active) continue
+          if (pending.has(conditionReminderId(pet.id, condition.conditionKey))) continue
+          const definition = conditionByKey(condition.conditionKey)
+          if (!definition) continue
+
+          // Resolved exactly as scheduleForCondition does in Schedule.jsx —
+          // the saved entry is { days, day }, and an unset one falls back to
+          // the condition's own cadence rather than to nothing. Only an
+          // explicit 0 means the owner switched this reminder off; undefined
+          // means they have never touched it, which is not the same thing.
+          const saved = pet.schedule?.conditions?.[condition.conditionKey]
+          if (saved?.days === 0) continue
+          const cadenceDays = saved?.days ?? definition.cadence?.days ?? 1
+
+          await scheduleConditionReminder({
+            petId: pet.id,
+            petName: pet.name,
+            conditionKey: condition.conditionKey,
+            conditionLabel: definition.label,
+            cadenceDays,
+            cadenceDay: saved?.day ?? null,
+            fromDate: new Date(),
+          }).catch((error) => {
+            console.error('Could not restore reminder for', definition.label, error.message)
+          })
+        }
 
         for (const medication of medications) {
           // An inactive course, or an as-needed medication with no fixed

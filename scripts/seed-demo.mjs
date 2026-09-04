@@ -409,7 +409,16 @@ async function seed(userId) {
     badnessFor: dogBadness,
     notes: DOG_NOTES,
     emphasis: 1.1,
-    schedule: { qol: 1, qolDay: null, conditions: { arthritis: 1 } },
+    // { days, day } per condition, not a bare number — that is the shape
+    // Schedule.jsx writes and scheduleForCondition reads.
+    //
+    // A number made `saved?.days` undefined, which fell through to
+    // `definition.cadence?.days ?? 1`. No condition defines a cadence today,
+    // so that fallback is 1 and the seeded value was right by accident. This
+    // is correctness, not a fix for anything visible: it only starts to
+    // matter if a condition ever gains a cadence, or if this seeds a value
+    // other than daily.
+    schedule: { qol: 1, qolDay: null, conditions: { arthritis: { days: 1, day: null } } },
   })
 
   // Body condition and weight. Sparse, as an owner actually records them —

@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { usePets } from './PetsContext'
 import {
-  cancelQolReminder,
+  cancelRemindersForPet,
   checkNotificationPermission,
   getPendingNotificationIds,
   qolReminderIdForPet,
   scheduleQolReminder,
 } from './notifications'
+import { fetchMedications } from './medicationsData'
+import { fetchPetConditions } from './conditionsData'
 
 // Keeps scheduled reminders in step with which pets are actually visible.
 //
@@ -19,9 +21,17 @@ import {
 // the pet reappears with its reminder long since cancelled, and nothing
 // would ever re-arm it.
 //
-// Deliberately scoped to QoL check-in reminders. Medication reminders are
-// handled by useReminderRehydration, which already walks visible pets only;
-// condition reminders are re-issued by their own screens.
+// Covers all three kinds since 3 Sep 2026. It was scoped to the check-in on
+// the reasoning that useReminderRehydration handles medications — but that
+// hook only ever ADDS, and it walks visible pets, so a hidden pet's
+// medication reminders had nothing to cancel them. They repeat natively, so
+// a lapsed subscription meant an owner going on being reminded about doses
+// for an animal the app would not show them.
+//
+// Re-arming stays check-in only. Medications come back through
+// useReminderRehydration on the next launch, which is where that logic
+// already lives, and duplicating it here would give two places the power to
+// schedule the same id.
 export function useHiddenPetReminderSync() {
   const { pets, visiblePets, loading } = usePets()
   // Which pets we have already reconciled, so a re-render does not re-issue
@@ -50,10 +60,23 @@ export function useHiddenPetReminderSync() {
 
       // Cancel first, and unconditionally. Cancelling a reminder that is not
       // scheduled is a no-op, so this needs no knowledge of what is pending.
+      //
+      // The pet is hidden, not deleted, so its medications and conditions are
+      // still readable — the ids can be looked up rather than gathered in
+      // advance the way a delete has to.
       for (const pet of pets) {
         if (visibleIds.has(pet.id)) continue
-        await cancelQolReminder(pet.id).catch((error) => {
-          console.error('Could not cancel reminder for hidden pet:', error.message)
+        const [medications, conditions] = await Promise.all([
+          fetchMedications(pet.id).catch(() => []),
+          fetchPetConditions(pet.id).catch(() => []),
+        ])
+        if (cancelled) return
+        await cancelRemindersForPet({
+          petId: pet.id,
+          medicationIds: medications.map((medication) => medication.id),
+          conditionKeys: conditions.map((condition) => condition.conditionKey),
+        }).catch((error) => {
+          console.error('Could not cancel reminders for hidden pet:', error.message)
         })
       }
 

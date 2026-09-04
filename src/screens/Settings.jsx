@@ -11,7 +11,9 @@ import Btn from '../components/Btn'
 import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
-import { cancelQolReminder } from '../lib/notifications'
+import { cancelAllReminders, cancelRemindersForPet } from '../lib/notifications'
+import { fetchMedications } from '../lib/medicationsData'
+import { fetchPetConditions } from '../lib/conditionsData'
 import {
   CANCELLATION_KEEPS_RECORDS,
   FREE_FEATURE_LIST,
@@ -65,6 +67,14 @@ export default function Settings() {
   const [deleteAccountError, setDeleteAccountError] = useState('')
 
   async function handleSignOut() {
+    // Reminders are scheduled with the OS against this device, not this
+    // account. Left armed, they go on naming a pet belonging to someone who
+    // has signed out — on a shared or sold phone, to whoever has it next.
+    //
+    // Safe to clear because everything here is re-armed on the next launch:
+    // useReminderRehydration restores medication and condition reminders,
+    // and the Schedule screen re-issues the check-in.
+    await cancelAllReminders()
     await supabase.auth.signOut()
     navigate('/login')
   }
@@ -74,6 +84,14 @@ export default function Settings() {
     setDeleting(true)
     setDeleteError('')
 
+    // Read what this pet has scheduled BEFORE deleting it. The delete
+    // cascades its medications and conditions, and their reminder ids are
+    // derived from rows that will no longer exist.
+    const [medications, conditions] = await Promise.all([
+      fetchMedications(pet.id).catch(() => []),
+      fetchPetConditions(pet.id).catch(() => []),
+    ])
+
     const { error } = await supabase.from('pets').delete().eq('id', pet.id)
 
     if (error) {
@@ -82,11 +100,16 @@ export default function Settings() {
       return
     }
 
-    // Reminders are now per-pet, so this pet's own scheduled reminder has
-    // to go with it — otherwise it keeps firing for a pet that no longer
-    // exists. Other pets' reminders are keyed separately and unaffected.
-    cancelQolReminder(pet.id).catch((err) => {
-      console.error('Failed to cancel reminder for deleted pet:', err.message)
+    // Every reminder this pet had, not only its check-in — Ash's report,
+    // 3 Sep 2026. Other pets are untouched: every id cancelled here is
+    // derived from this pet, this pet's medications, or this pet's
+    // conditions.
+    cancelRemindersForPet({
+      petId: pet.id,
+      medicationIds: medications.map((medication) => medication.id),
+      conditionKeys: conditions.map((condition) => condition.conditionKey),
+    }).catch((err) => {
+      console.error('Failed to cancel reminders for deleted pet:', err.message)
     })
 
     // Work out the replacement *before* refreshing, while the list still
@@ -131,6 +154,12 @@ export default function Settings() {
       setDeletingAccount(false)
       return
     }
+
+    // Nothing on this account exists any more, so nothing it scheduled
+    // should still fire. Cancelled from the pending queue rather than pet by
+    // pet: the rows are already gone server-side, so there is nothing left to
+    // derive ids from.
+    await cancelAllReminders()
 
     // The account (and its session, server-side) no longer exists — signing
     // out here just clears the local session state before returning to

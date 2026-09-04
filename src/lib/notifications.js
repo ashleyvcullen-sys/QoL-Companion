@@ -393,6 +393,55 @@ export async function scheduleMedicationReminders({
   await LocalNotifications.schedule({ notifications })
 }
 
+// Everything this device has queued, gone.
+//
+// For deleting the account or signing out: there is nothing left to
+// reconcile against and nothing that should still fire. The pending queue is
+// read and cancelled wholesale rather than id by id, because an id-based
+// approach would have to know every kind of reminder the app has ever
+// scheduled — including ones written by an older version and still sitting
+// in this device's queue.
+export async function cancelAllReminders() {
+  if (!Capacitor.isNativePlatform()) return
+  try {
+    const { notifications } = await LocalNotifications.getPending()
+    if (!notifications?.length) return
+    await LocalNotifications.cancel({
+      notifications: notifications.map((notification) => ({ id: notification.id })),
+    })
+  } catch (error) {
+    console.error('Could not cancel pending reminders:', error.message)
+  }
+}
+
+// Every reminder belonging to ONE pet: its check-in, its medications and its
+// conditions.
+//
+// Deleting a pet used to cancel only the check-in, which left its medication
+// reminders firing for an animal that no longer existed — and they repeat
+// natively, so they fire forever without the app ever opening. Nothing could
+// ever clear them either: rehydration and the hidden-pet sync both walk the
+// pets that still exist, so a deleted pet is invisible to the very code that
+// would have cleaned up after it.
+//
+// The ids have to be gathered BEFORE the pet row goes. Deleting it cascades
+// its medications and conditions, and this cannot ask the database for the
+// ids of rows that have already been removed.
+export async function cancelRemindersForPet({ petId, medicationIds = [], conditionKeys = [] }) {
+  if (!petId) return
+  await cancelQolReminder(petId).catch((error) => {
+    console.error('Could not cancel check-in reminder:', error.message)
+  })
+  for (const medicationId of medicationIds) {
+    await cancelMedicationReminders(medicationId)
+  }
+  for (const conditionKey of conditionKeys) {
+    await cancelConditionReminder(petId, conditionKey).catch((error) => {
+      console.error('Could not cancel condition reminder:', error.message)
+    })
+  }
+}
+
 // Ids of everything currently queued with the OS. Used to tell "this
 // reminder was never scheduled" apart from "this reminder is fine", so
 // rehydration can be a no-op on a normal launch instead of tearing down and
