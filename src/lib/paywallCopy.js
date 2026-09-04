@@ -135,7 +135,7 @@ export const PAYWALL_FEATURE_LIST = [
   { text: 'Add up to 5 pets' },
 ]
 
-// What the free plan already gives you.
+// What QoL Companion Basic already gives you.
 //
 // The counterpart to PAYWALL_FEATURE_LIST, and it exists so the comparison on
 // Settings can be built from one definition per column rather than from a

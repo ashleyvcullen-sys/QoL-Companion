@@ -79,6 +79,7 @@ async function buildReportPdf({
   chartRefs,
   charts,
   includeOverall,
+  includeNotes,
   includeMedia,
 }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
@@ -163,6 +164,13 @@ async function buildReportPdf({
     addSpacer()
   }
 
+  // Optional, on Ash's instruction 4 Sep 2026. A note is the one free-text
+  // thing in this app: it can name a person, describe a household, or say
+  // something the owner would not put in front of a stranger. Deciding
+  // whether it goes to the vet is the owner's call, not a default.
+  //
+  // Off unless chosen — the safe default for free text is not to send it.
+  if (includeNotes) {
   addSectionHeader('Notes')
   if (notes.length === 0) {
     addLine('No notes recorded.')
@@ -178,6 +186,7 @@ async function buildReportPdf({
     })
   }
   addSpacer()
+  }
 
   addSectionHeader('Recent assessments')
   if (recent.length === 0) {
@@ -312,6 +321,20 @@ export default function ExportReport() {
   // most visits.
   const [includeMedia, setIncludeMedia] = useState(false)
 
+  // Notes are free text about a private situation; they go only if asked for.
+  // Ash's instruction 4 Sep 2026.
+  const [includeNotes, setIncludeNotes] = useState(false)
+
+  // Ash's instruction 4 Sep 2026 — a way to see the charts before generating
+  // the report. Everything else on this screen is already a live preview of
+  // what the PDF will contain; the charts were the one part that was not,
+  // because they are rendered off-screen purely to be photographed.
+  //
+  // Off by default, and rendered only while open. These are the same recharts
+  // components the Trends screen draws, and mounting a second copy of every
+  // selected one on a screen nobody has asked to see is work for nothing.
+  const [previewCharts, setPreviewCharts] = useState(false)
+
   const activeKeys = selectedKeys ?? DEFAULT_CHART_KEYS
 
   function toggleChart(key) {
@@ -427,6 +450,7 @@ export default function ExportReport() {
         chartRefs,
         charts: selectedCharts,
         includeOverall,
+        includeNotes,
         includeMedia,
       })
 
@@ -531,6 +555,27 @@ export default function ExportReport() {
           </p>
         )}
 
+        {/* PENDING ASH — the group label and the hint under it are mine.
+            The chip's own wording follows the photos one above it. */}
+        {notes.length > 0 && (
+          <div className="include-group">
+            <span className="include-group-label">Notes</span>
+            <div className="symptom-chips">
+              <button
+                type="button"
+                className={`chip ${includeNotes ? 'selected' : ''}`.trim()}
+                onClick={() => setIncludeNotes((current) => !current)}
+              >
+                Include {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+              </button>
+            </div>
+            <p className="assessment-hint">
+              Notes are your own words about {pet.name}, including anything you wrote on a day.
+              They are left out unless you add them here.
+            </p>
+          </div>
+        )}
+
         {mediaItems.length > 0 && (
           <div className="include-group">
             <span className="include-group-label">Photos and videos</span>
@@ -575,19 +620,24 @@ export default function ExportReport() {
             </Card>
           )}
 
-          <Card>
-            <SectionTitle>Notes</SectionTitle>
-            {notes.length === 0 ? (
-              <p>No notes recorded.</p>
-            ) : (
-              notes.map((note, i) => (
-                <div key={`${note.date}-${note.source}-${i}`} className="report-note">
-                  <span className="assessment-hint">{formatDateDDMMYYYY(note.date)} — {note.source}</span>
-                  <p>{note.text}</p>
-                </div>
-              ))
-            )}
-          </Card>
+          {/* The preview shows what the report will contain, so it follows
+              the same choice — a Notes card sitting here while the PDF has
+              none would be the preview lying about the artefact. */}
+          {includeNotes && (
+            <Card>
+              <SectionTitle>Notes</SectionTitle>
+              {notes.length === 0 ? (
+                <p>No notes recorded.</p>
+              ) : (
+                notes.map((note, i) => (
+                  <div key={`${note.date}-${note.source}-${i}`} className="report-note">
+                    <span className="assessment-hint">{formatDateDDMMYYYY(note.date)} — {note.source}</span>
+                    <p>{note.text}</p>
+                  </div>
+                ))
+              )}
+            </Card>
+          )}
 
           {selectedPillarKeys.length > 0 && (
             <Card>
@@ -600,6 +650,37 @@ export default function ExportReport() {
               ))}
             </Card>
           )}
+
+          {/* Last, because the PDF puts the charts last. PENDING ASH — the
+              heading, the button and the two hints are mine. */}
+          <Card>
+            <SectionTitle>Charts</SectionTitle>
+            {selectedCharts.length === 0 ? (
+              <p className="assessment-hint">
+                No charts selected. Pick them in What to Include above.
+              </p>
+            ) : (
+              <>
+                <p className="assessment-hint">
+                  {selectedCharts.length} chart{selectedCharts.length === 1 ? '' : 's'} will be
+                  included, one per page, after the summary.
+                </p>
+                <Btn
+                  type="button"
+                  variant="outline"
+                  className="btn-block"
+                  onClick={() => setPreviewCharts((open) => !open)}
+                >
+                  {previewCharts ? 'Hide charts' : 'Preview charts'}
+                </Btn>
+                {previewCharts && selectedCharts.map((chart) => (
+                  <div key={chart.key} className="report-chart-preview">
+                    <ChartView chart={chart} brush={false} showCaption={false} />
+                  </div>
+                ))}
+              </>
+            )}
+          </Card>
 
           <Card>
             <SectionTitle>Recent assessments</SectionTitle>

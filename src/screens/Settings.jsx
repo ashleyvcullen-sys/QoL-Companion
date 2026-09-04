@@ -187,18 +187,25 @@ export default function Settings() {
       <Card>
         <SectionTitle>Your Plan</SectionTitle>
 
-        {/* Until the entitlement row resolves, say nothing rather than
-            guessing. Defaulting to "Free plan" for the half-second it takes
-            would tell a paying subscriber they are not one. */}
+        {/* "QoL Companion Basic", not "Free plan" — Ash's instruction 4 Sep
+            2026. The tier has a name now, the same shape as the paid one, so
+            an owner who is not subscribed is on something rather than merely
+            not on the other thing.
+
+            APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
+
+            Until the entitlement row resolves, say nothing rather than
+            guessing. Defaulting to the unsubscribed name for the half-second
+            it takes would tell a paying subscriber they are not one. */}
         {entitlementsLoading ? (
           <p>Loading…</p>
         ) : (
           <p className="settings-plan-name">
-            {hasPremium ? 'QoL Companion Premium' : 'Free plan'}
+            {hasPremium ? 'QoL Companion Premium' : 'QoL Companion Basic'}
           </p>
         )}
 
-        {/* Hidden pets are only ever a free-plan situation, and this is the
+        {/* Hidden pets are only ever a Basic-plan situation, and this is the
             only place in the app that explains them. A statement of fact
             followed by the reassurance, in secondary type: no icon, no
             colour, no dismiss. Nothing has gone wrong and no records are at
@@ -206,8 +213,8 @@ export default function Settings() {
             about data that is perfectly safe. */}
         {!entitlementsLoading && hiddenPetCount > 0 && (
           <p className="assessment-hint">
-            {hiddenPetCount} {hiddenPetCount === 1 ? 'pet is' : 'pets are'} hidden on the
-            free plan. Your records are saved and will return if you resubscribe.
+            {hiddenPetCount} {hiddenPetCount === 1 ? 'pet is' : 'pets are'} hidden on
+            Basic. Your records are saved and will return if you resubscribe.
           </p>
         )}
 
@@ -220,7 +227,7 @@ export default function Settings() {
           <div className="plan-compare">
             <section className={`plan-tier ${!hasPremium ? 'is-current' : ''}`.trim()}>
               <h3 className="plan-tier-name">
-                Free
+                QoL Companion Basic
                 {!hasPremium && <span className="plan-tier-current">Your plan</span>}
               </h3>
               <ul className="plan-compare-list">
@@ -242,7 +249,7 @@ export default function Settings() {
                   carried that in the word "adds"; naming the tiers plainly is
                   clearer, but it would otherwise read as though Premium were
                   only these six things. */}
-              <p className="plan-tier-note">Everything in Free, plus:</p>
+              <p className="plan-tier-note">Everything in Basic, plus:</p>
               {/* Only `text`. The paywall renders each line's `detail` (the
                   named conditions under disease-specific monitoring); here it
                   would be a paragraph inside a comparison, which is a list. */}

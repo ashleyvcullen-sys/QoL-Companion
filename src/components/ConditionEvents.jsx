@@ -74,13 +74,11 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
       {loading && <p>Loading…</p>}
 
       {!loading && events.length === 0 && !adding && (
-        // PENDING ASH — "above" became "below". The Events card moved to sit
-        // directly under the questionnaire on 4 Sep 2026, so the calendar it
-        // points at is now underneath it rather than over it.
-        <p>
-          Nothing recorded yet. Episodes, diagnoses and medication changes are marked on the
-          calendar below.
-        </p>
+        // PENDING ASH — trimmed to its first sentence. The rest of it said
+        // what the line directly above now says word for word: the two used
+        // to be in different cards, and since 4 Sep 2026 they are three
+        // centimetres apart in the same one.
+        <p>Nothing recorded yet.</p>
       )}
 
       {!loading && events.length > 0 && (
@@ -160,7 +158,12 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
           </button>
         </>
       ) : (
-        <Btn type="button" className="btn-block" onClick={() => setAdding(true)}>
+        // Outline, not solid — since 4 Sep 2026 this sits inside the
+        // questionnaire card, directly above "Save entry". Two full-width
+        // pink buttons flush against each other gave an owner no way to tell
+        // which one records the answers they just gave. One solid button per
+        // card, and it is the one that saves the entry.
+        <Btn type="button" variant="outline" className="btn-block" onClick={() => setAdding(true)}>
           <Plus size={16} /> Add an event
         </Btn>
       )}

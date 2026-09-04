@@ -44,7 +44,14 @@ const SECTIONS = [
   {
     heading: '5. Subscriptions and Fees',
     content: [
-      'QoL Companion offers a free tier and a single paid subscription, Premium. The free tier remains available and does not expire.',
+      // "Basic" named once, here, and used bare afterwards — Ash's
+      // instruction 4 Sep 2026, after the tier was named in the app. "Free"
+      // stays in this sentence deliberately: it is the word that carries the
+      // meaning (it costs nothing, it does not expire), and "Basic" is a
+      // product name that on its own promises nothing.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
+      'QoL Companion offers a free tier, QoL Companion Basic, and a single paid subscription, QoL Companion Premium. Basic remains available and does not expire.',
       'Premium includes:',
       { list: [
         'Up to five pet profiles',
@@ -53,7 +60,7 @@ const SECTIONS = [
         'The ability to choose which individual measures to graph',
         'Medication tracking with reminders, and monitoring of specific diagnosed conditions, as those features become available',
       ] },
-      'If a Premium subscription ends, pet profiles beyond the free tier limit are hidden rather than deleted. Your records are retained and become visible again if you resubscribe.',
+      'If a Premium subscription ends, pet profiles beyond the Basic limit are hidden rather than deleted. Your records are retained and become visible again if you resubscribe.',
       'Billing:',
       { list: [
         'Subscriptions are auto-renewing. Payment is charged to your Apple ID or Google Play account at confirmation of purchase, and renews automatically at the same price and interval unless cancelled at least 24 hours before the end of the current period',
@@ -63,7 +70,7 @@ const SECTIONS = [
         'Refunds are handled by Apple or Google under their own policies, not by us',
       ] },
       'If your subscription lapses, features belonging to a paid tier become unavailable, but the data you created while subscribed is not deleted. It becomes visible again if you resubscribe, and you may delete it at any time regardless of subscription status.',
-      'We will not retroactively move functionality you are already using on the free tier behind a paywall without reasonable notice.',
+      'We will not retroactively move functionality you are already using on Basic behind a paywall without reasonable notice.',
       'We may change subscription pricing or the features included in a tier. Where a change affects an active subscription, we will give reasonable notice before it takes effect, and price increases will not apply to a current billing period.',
     ],
   },

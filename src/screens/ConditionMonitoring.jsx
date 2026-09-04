@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FileDown, SlidersHorizontal, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
@@ -40,6 +40,17 @@ import ConditionParameter from '../components/ConditionParameter'
 import HowTo from '../components/HowTo'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
+import ReminderDayPicker from '../components/ReminderDayPicker'
+import { ConditionState, ConditionStrip } from '../components/ConditionStrip'
+import { conditionHistory } from '../lib/conditionHistory'
+import {
+  CONDITION_CADENCE_OPTIONS,
+  cadenceLabel,
+  dayModeFor,
+  saveConditionSchedule,
+  scheduleForCondition,
+} from '../lib/cadence'
+import { scheduleConditionReminder } from '../lib/notifications'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
 import {
   addPetCondition,
@@ -124,6 +135,10 @@ export default function ConditionMonitoring() {
   // happened" and invites a second tap on Save.
   const [justSaved, setJustSaved] = useState(false)
 
+  // The cadence control at the top of the card, closed until asked for.
+  const [editingCadence, setEditingCadence] = useState(false)
+  const [cadenceError, setCadenceError] = useState('')
+
   const today = todayIsoDate()
 
   const todaysEntry = entries.find((entry) => entry.date === today) ?? null
@@ -146,6 +161,53 @@ export default function ConditionMonitoring() {
     lastDate: latestEntry?.date ?? null,
     today,
   })
+
+  // The same fourteen days the home screen shows for this condition, from the
+  // same function — Ash's instruction 4 Sep 2026, at the top of the screen
+  // with how often it is set to be assessed.
+  const history = useMemo(() => {
+    if (!definition || !pet) return null
+    try {
+      return conditionHistory({
+        definition,
+        config: petCondition?.config ?? {},
+        entries,
+        species: pet.species,
+        today,
+      })
+    } catch (error) {
+      console.error('Could not summarise that fortnight:', error.message)
+      return null
+    }
+  }, [definition, pet, petCondition, entries, today])
+
+  const cadence = definition && pet ? scheduleForCondition(pet, definition) : null
+
+  async function changeCadence(patch) {
+    setCadenceError('')
+    const error = await saveConditionSchedule({ pet, conditionKey: definition.key, patch })
+    if (error) {
+      setCadenceError(error.message || 'Could not save that.')
+      return
+    }
+    await refresh()
+
+    // Rescheduled here as well as saved. The Reminders screen self-heals its
+    // own reminders when it is opened; an owner who changes the cadence here
+    // and never goes there would otherwise keep the old reminder until they
+    // did. scheduleConditionReminder checks permission itself, so this is
+    // inert when notifications are off.
+    const next = { ...(pet.schedule?.conditions?.[definition.key] ?? {}), ...patch }
+    await scheduleConditionReminder({
+      petId: pet.id,
+      petName: pet.name,
+      conditionKey: definition.key,
+      conditionLabel: definition.label,
+      cadenceDays: next.days ?? cadence?.days ?? 1,
+      cadenceDay: next.day ?? null,
+      fromDate: latestEntry?.date ? new Date(`${latestEntry.date}T00:00:00`) : new Date(),
+    })
+  }
 
 
   // The emergency alert appears ONCE, beside the question that raised it.
@@ -523,6 +585,90 @@ export default function ConditionMonitoring() {
               )}
               <SectionTitle>{definition.label}</SectionTitle>
             </div>
+
+            {/* How it has been going, and how often it is set to be checked —
+                Ash's instruction 4 Sep 2026, at the top of the screen. The
+                same fortnight strip and the same three states the home screen
+                shows, from the same functions, so the two cannot disagree.
+
+                Only for a condition actually being tracked: a screen someone
+                is reading before they have chosen anything has no fortnight
+                to show and no cadence to change. */}
+            {petCondition && cadence && (
+              <>
+                <div className="condition-status">
+                  <ConditionStrip history={history} />
+                  <ConditionState status={status} />
+                </div>
+
+                {/* "Monitoring frequency", Ash's wording, 4 Sep 2026 — it
+                    replaced "How often", which read as a question the line
+                    then answered. The options themselves ("Daily", "Every 2
+                    weeks", "No reminder") are the same words the Reminders
+                    screen uses, and the setting is the same one: changed
+                    here, it changes there.
+
+                    APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
+
+                    PENDING ASH — the "Change" link beside it is still mine. */}
+                <p className="condition-cadence">
+                  Monitoring frequency: <b>{cadenceLabel(cadence.days)}</b>
+                  <button
+                    type="button"
+                    className="condition-cadence-change"
+                    onClick={() => setEditingCadence((open) => !open)}
+                  >
+                    {editingCadence ? 'Done' : 'Change'}
+                  </button>
+                </p>
+
+                {editingCadence && (
+                  <div className="condition-cadence-edit">
+                    <div className="field">
+                      <label htmlFor="condition-cadence">Repeat</label>
+                      <select
+                        id="condition-cadence"
+                        value={cadence.days}
+                        onChange={(event) => {
+                          const next = Number(event.target.value)
+                          changeCadence({
+                            days: next,
+                            // A weekday and a date are not interchangeable, so
+                            // the day is dropped whenever the kind of day
+                            // changes — the same rule the Reminders screen
+                            // follows.
+                            day: dayModeFor(next) === dayModeFor(cadence.days) ? cadence.day : null,
+                          })
+                        }}
+                      >
+                        {CONDITION_CADENCE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {!cadence.off && dayModeFor(cadence.days) && (
+                      <div className="field">
+                        <label>{dayModeFor(cadence.days) === 'week' ? 'Which day?' : 'Which date?'}</label>
+                        <ReminderDayPicker
+                          mode={dayModeFor(cadence.days)}
+                          value={cadence.day == null ? [] : [cadence.day]}
+                          max={1}
+                          onChange={(days) => changeCadence({ day: days.length ? days[days.length - 1] : null })}
+                        />
+                        <p className="assessment-hint">
+                          {cadence.day == null
+                            ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
+                            : 'Tap it again to go back to counting from your last entry.'}
+                        </p>
+                      </div>
+                    )}
+
+                    {cadenceError && <p className="form-error" role="alert">{cadenceError}</p>}
+                  </div>
+                )}
+              </>
+            )}
             {/* Summary first, then intro: what this condition covers, then
                 what monitoring it involves. The summary moved here from the
                 condition list, where it was being read before anyone had
@@ -739,16 +885,52 @@ export default function ConditionMonitoring() {
               </div>
             ))}
 
-            <div className="field">
-              <label htmlFor="condition-notes">Notes (optional)</label>
-              <textarea
-                id="condition-notes"
-                rows={2}
-                value={notes || todaysEntry?.notes || ''}
-                onChange={(e) => setNotes(e.target.value)}
+            {/* The standalone "Notes (optional)" box was removed on Ash's
+                instruction 4 Sep 2026: an event carries its own note, and two
+                places to write one about the same day is one too many.
+
+                `notes` is still read when saving — `notes || todaysEntry?.notes`
+                — so a note written before this change is preserved on every
+                later save rather than being blanked by a field that is no
+                longer on screen. Day notes stay readable in the calendar's day
+                view, and deletable there. */}
+
+            {/* Part of the questionnaire, on Ash's instruction 4 Sep 2026 —
+                inside this card rather than in one of its own beneath it.
+
+                It used to sit below the calendar and both sets of charts,
+                which put it a long scroll past the only moment an owner is
+                reliably thinking about it: they have just answered for today,
+                and "she had a flare on Tuesday" or "we started gabapentin" is
+                the thing they came to record alongside it. A separate card
+                directly underneath was closer but still read as a different
+                job; in the same card, under a rule, it is the last part of
+                the same one.
+
+                Inside the !needsSetup guard, so a condition that has not been
+                set up yet does not offer to record events against a question
+                set that does not exist. */}
+            <div className="card-subsection">
+              <SectionTitle>Events</SectionTitle>
+              {/* PENDING ASH — one word changed from the line you approved:
+                  "above" became "below", because this moved and the calendar
+                  it points at is now underneath it. */}
+              <p className="assessment-hint">
+                Episodes, diagnoses, and medications started or stopped. Anything recorded on a
+                day is marked on the calendar below.
+              </p>
+              <ConditionEvents
+                petId={pet.id}
+                conditionKey={definition.key}
+                events={events}
+                loading={eventsLoading}
+                onChange={refreshEvents}
               />
             </div>
 
+            {/* Under the events, on Ash's instruction 4 Sep 2026. Saving is
+                the last thing on the card because recording what happened is
+                part of the same visit as answering for today. */}
             <Btn type="button" className="btn-block" onClick={handleSave} disabled={busy}>
               {busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
             </Btn>
@@ -781,35 +963,9 @@ export default function ConditionMonitoring() {
                 <SlidersHorizontal size={16} /> Change what you're monitoring
               </Btn>
             )}
+
           </Card>
           )}
-
-          {/* Directly under the questionnaire, on Ash's instruction 4 Sep
-              2026. It used to sit below the calendar and both sets of charts,
-              which put it a long scroll past the only moment an owner is
-              reliably thinking about it — they have just answered for today,
-              and "she had a flare on Tuesday" or "we started gabapentin" is
-              the thing they came to record alongside it.
-
-              "marked on the calendar below" rather than "above": the calendar
-              it refers to now comes after this card, not before it. */}
-          <Card>
-            <SectionTitle>Events</SectionTitle>
-            {/* PENDING ASH — one word changed from the line you approved:
-                "above" became "below", because the card moved and the
-                calendar it points at is now underneath it. */}
-            <p className="assessment-hint">
-              Episodes, diagnoses, and medications started or stopped. Anything recorded on a
-              day is marked on the calendar below.
-            </p>
-            <ConditionEvents
-              petId={pet.id}
-              conditionKey={definition.key}
-              events={events}
-              loading={eventsLoading}
-              onChange={refreshEvents}
-            />
-          </Card>
 
           {/* Shown here as well as on the setup screen. An owner who chose
               "food sensitivity or allergy" weeks ago never sees that screen

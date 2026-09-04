@@ -27,31 +27,17 @@ import Modal from '../components/Modal'
 import Btn from '../components/Btn'
 import Footer from '../components/Footer'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
+import {
+  CADENCE_OPTIONS,
+  CONDITION_CADENCE_OPTIONS,
+  dayModeFor,
+  saveConditionSchedule,
+  scheduleForCondition as scheduleForConditionOf,
+} from '../lib/cadence'
 
-const CADENCE_OPTIONS = [
-  { value: 1, label: 'Daily' },
-  { value: 7, label: 'Weekly' },
-  { value: 14, label: 'Every 2 weeks' },
-  { value: 30, label: 'Monthly' },
-]
-
-// Conditions get one more option than the quality of life assessment does.
-// Someone monitoring four things does not necessarily want four reminders,
-// and the alternative — deleting the condition to stop being nudged about
-// it — would take the history with it.
-const CONDITION_CADENCE_OPTIONS = [
-  ...CADENCE_OPTIONS,
-  { value: 0, label: 'No reminder' },
-]
-
-// Which day the reminder lands on, and therefore which picker to show. A
-// daily cadence has no day to choose; a fortnightly one still lands on a
-// weekday. Monthly is the only one that asks for a date.
-function dayModeFor(cadenceDays) {
-  if (cadenceDays === 7 || cadenceDays === 14) return 'week'
-  if (cadenceDays >= 28) return 'month'
-  return null
-}
+// The options, the day-mode rule and the per-condition defaults now live in
+// lib/cadence.js — the condition's own screen offers the same control at the
+// top of it, and one of those two copies would eventually have drifted.
 
 // Local midnight from 'YYYY-MM-DD'. new Date('2026-08-25') parses as UTC,
 // which is the previous day west of Greenwich — and a weekly reminder
@@ -211,16 +197,7 @@ export default function Schedule() {
   // clinical one rather than a flat weekly.
   const conditionSchedules = pet.schedule.conditions ?? {}
 
-  function scheduleForCondition(definition) {
-    const saved = conditionSchedules[definition.key]
-    return {
-      days: saved?.days ?? definition.cadence?.days ?? 1,
-      day: saved?.day ?? null,
-      // Only an explicit 0 turns a reminder off. `undefined` means the owner
-      // has never touched this one, which is not the same thing.
-      off: saved?.days === 0,
-    }
-  }
+  const scheduleForCondition = (definition) => scheduleForConditionOf(pet, definition)
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -295,14 +272,8 @@ export default function Schedule() {
   }
 
   async function updateConditionSchedule(conditionKey, patch) {
-    const current = conditionSchedules[conditionKey] ?? {}
-    await saveSchedule({
-      ...pet.schedule,
-      conditions: {
-        ...conditionSchedules,
-        [conditionKey]: { ...current, ...patch },
-      },
-    })
+    const error = await saveConditionSchedule({ pet, conditionKey, patch })
+    if (!error) await refresh()
   }
 
   async function handleEnableReminders() {

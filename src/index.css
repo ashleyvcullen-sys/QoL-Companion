@@ -897,9 +897,9 @@ code {
   min-height: 16px;
 }
 
-/* Green tick alone when there is nothing owed; the amber or red warning with
-   its words when there is. The words only appear in the state that needs
-   them, so an up-to-date row stays quiet. */
+/* Three states, each in its own colour: green with a tick for up to date,
+   amber for due today, red for overdue. Colour is never the only signal —
+   the words say the same thing, and the mark differs too. */
 .dx-row-state {
   display: flex;
   align-items: center;
@@ -907,13 +907,94 @@ code {
   flex-shrink: 0;
   font-size: var(--type-label);
   font-weight: 600;
-  /* Matched to the strip beside it, so an up-to-date row and an overdue one
-     are the same height — a taller row reads as a more important one. */
+  /* Matched to the strip beside it, so the three states are the same height
+     — a taller row reads as a more important one. */
   line-height: 1;
-  color: var(--severity-good);
 }
 
+.dx-row-state.ok { color: var(--severity-good); }
+.dx-row-state.due { color: var(--severity-moderate); }
 .dx-row-state.late { color: var(--severity-severe); }
+/* A reminder the owner turned off is not a warning — it is a setting. Muted,
+   so it does not sit in the row claiming attention it hasn't earned. */
+.dx-row-state.off { color: var(--text-muted); }
+
+/* The same two pieces at the top of the condition's own screen, centred with
+   everything else on that card rather than pushed to the edges of a row. */
+.condition-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* How often it is set to be checked, and the way to change it. */
+.condition-cadence {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+}
+
+.condition-cadence b {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+/* Inline, unlike .subtle-link — that one is a full-width footer link with its
+   own bottom margin, and used here it broke the line in two. */
+.condition-cadence-change {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--type-meta);
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.condition-cadence-edit {
+  margin: 12px 0 20px;
+  text-align: left;
+}
+
+/* One chart in the report preview. Titled by the chart itself, spaced so a
+   stack of them does not read as one long picture. */
+.report-chart-preview {
+  margin-top: 20px;
+}
+
+/* The score at the top of Trends, stacked and centred like the home card's. */
+.trends-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-stack-tight);
+  margin-bottom: 18px;
+}
+
+/* The heading needs more room under it than the band needs under the ring. */
+.trends-score > h3 {
+  margin-bottom: 6px;
+}
+
+/* A second job inside one card, separated by a rule rather than by a card of
+   its own — the questionnaire and the events recorded alongside it. */
+.card-subsection {
+  margin-top: 28px;
+  padding-top: 24px;
+  padding-bottom: 4px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
 
 .dx-row-chev {
   flex-shrink: 0;

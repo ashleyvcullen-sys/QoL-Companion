@@ -3,18 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Heart, Stethoscope } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
+import ScoreRing from './ScoreRing'
 import PetSwitcher from './PetSwitcher'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
-import { CONDITION_LIST, SEVERITY, labelOf, summariseEntry } from '../lib/conditions'
-import { resolveDefinition } from '../lib/cancerConfig'
+import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
-import { BEAP_BANDS, computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 import OverviewBars from './OverviewBars'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
 import { formatDateDDMMYYYY } from '../lib/formatDate'
+import { conditionHistory } from '../lib/conditionHistory'
+import { ConditionState, ConditionStrip } from './ConditionStrip'
 
 // What the home screen says about this pet, before any navigation.
 //
@@ -38,136 +40,6 @@ import { formatDateDDMMYYYY } from '../lib/formatDate'
 function assessmentCadence(pet) {
   return { key: 'qol', cadence: { days: pet?.schedule?.qol ?? pet?.schedule?.general ?? 7 } }
 }
-
-
-// --- The fortnight strip ----------------------------------------------------
-//
-// What a condition's summary is INSTEAD of a percentage.
-//
-// There is no composite score for a disease and there should not be one: the
-// parameter set differs per condition, per species and per pet — allergies
-// grows three questions the day a diet trial starts, cancer resolves its own
-// from the config — so any number would change meaning mid-treatment and
-// would not be comparable to the number beside it. It would also be the one
-// figure an owner reads out to their vet.
-//
-// So: one tick per day for a fortnight, coloured exactly as the calendar
-// colours the same day, and read from the same summariseEntry the calendar
-// reads. A hollow tick is a day with nothing logged, which is a state of its
-// own rather than a green one — nothing recorded is not the same as nothing
-// wrong.
-const WINDOW_DAYS = 14
-
-// The last n ISO dates, oldest first, ending on `todayIso`. UTC arithmetic on
-// purpose: new Date('2026-09-03') is midnight UTC, and stepping days in local
-// time drifts across a DST boundary.
-function lastDates(todayIso, n) {
-  const [year, month, day] = String(todayIso).split('-').map(Number)
-  if (!year || !month || !day) return []
-  const end = Date.UTC(year, month - 1, day)
-  const out = []
-  for (let i = n - 1; i >= 0; i -= 1) {
-    const at = new Date(end - i * 86400000)
-    out.push([
-      at.getUTCFullYear(),
-      String(at.getUTCMonth() + 1).padStart(2, '0'),
-      String(at.getUTCDate()).padStart(2, '0'),
-    ].join('-'))
-  }
-  return out
-}
-
-function conditionHistory({ definition, config, entries, species, today }) {
-  // Resolved, because a cancer parameter set is built per pet and summarising
-  // against the static definition would grade questions this owner was never
-  // asked.
-  let resolved = definition
-  try {
-    resolved = resolveDefinition(definition, config, species)
-  } catch (error) {
-    console.error('Could not resolve that condition:', error.message)
-  }
-
-  const byDate = new Map()
-  for (const entry of entries) {
-    try {
-      byDate.set(entry.date, summariseEntry(resolved, entry.values, species))
-    } catch (error) {
-      // One unreadable day must not take the home screen down with it.
-      console.error('Could not summarise that day:', error.message)
-    }
-  }
-
-  const span = lastDates(today, WINDOW_DAYS * 2)
-  const earlier = span.slice(0, WINDOW_DAYS)
-  const recent = span.slice(WINDOW_DAYS)
-  const isFlagged = (date) => {
-    const severity = byDate.get(date)?.severity
-    return severity === SEVERITY.CONCERN || severity === SEVERITY.EMERGENCY
-  }
-
-  const strip = recent.map((date) => ({ date, severity: byDate.get(date)?.severity ?? null }))
-  const logged = strip.filter((day) => day.severity != null).length
-  const flagged = recent.filter(isFlagged).length
-
-  const earlierFlagged = earlier.filter(isFlagged).length
-  const earlierLogged = earlier.filter((date) => byDate.get(date)?.severity != null).length
-
-  // Only compare fortnights that are actually comparable.
-  //
-  // "8 flagged, up from 4" was being printed for a pet diagnosed 18 days ago:
-  // the previous fortnight held five logged days because monitoring had not
-  // started for the other nine, so a full fortnight was being measured against
-  // a part of one. Every newly diagnosed pet would read as deteriorating for
-  // its first month, in red, under a strip that visibly improves.
-  //
-  // Half the recent window's logged days is the bar. Below that there is no
-  // honest comparison to draw and the count stands on its own.
-  const hadEarlier = earlierLogged > 0 && earlierLogged * 2 >= logged
-
-  // The most recent thing worth naming, newest first. flagged[0] is already
-  // the worst finding of its day — summariseEntry sorts it that way.
-  //
-  // Named as "Itching: Moderate–severe" rather than by quoting the level
-  // sentence, on Ash's instruction 3 Sep 2026. The sentence is right on a
-  // calendar day-line, where it is the whole content; here it ran to three
-  // lines under a fourteen-tick strip that had already said how bad the day
-  // was. The band says the same thing in one word, and it is the same word
-  // the assessment prints beside the level the owner picked.
-  let finding = null
-  for (let i = recent.length - 1; i >= 0 && !finding; i -= 1) {
-    const first = byDate.get(recent[i])?.flagged?.[0]
-    if (!first) continue
-    const parameter = (resolved.parameters ?? []).find((entry) => entry.key === first.key)
-    const score = Number(entries.find((entry) => entry.date === recent[i])?.values?.[first.key])
-    // A band only where there is a 0-10 answer behind it. A yes/no or a
-    // choice has no rung to name, and inventing one would be worse than the
-    // bare parameter name beside a coloured dot.
-    const band = Number.isFinite(score) && (parameter?.type === 'scale' || parameter?.type === 'beap')
-      ? BEAP_BANDS[Math.min(BEAP_BANDS.length - 1, Math.max(0, Math.ceil(score / 2)))]?.shortLabel ?? null
-      : null
-    finding = {
-      ...first,
-      name: shortName(parameter ? labelOf(parameter) : first.label),
-      band,
-      daysAgo: recent.length - 1 - i,
-    }
-  }
-
-  return { strip, logged, flagged, earlierFlagged, hadEarlier, finding }
-}
-
-// The parameter's name, trimmed for a one-line summary. "Itching (Pruritus
-// Score)" is the right label on the form, where the owner is being told which
-// instrument they are answering; on the card it is a parenthetical between
-// the name and the band. Ash's instruction 3 Sep 2026 — "just say itching".
-//
-// Trailing parenthetical only, and only here. The stored label is untouched,
-// so the form, the calendar and the export all still name the instrument.
-function shortName(label) {
-  return typeof label === 'string' ? label.replace(/\s*\([^()]*\)\s*$/, '') : label
-}
-
 
 
 export default function PetSummaryCard() {
@@ -260,6 +132,7 @@ export default function PetSummaryCard() {
         })
         return {
           definition,
+          status,
           due: status.state === MONITORING_STATE.DUE ? status : null,
           history: conditionHistory({
             definition,
@@ -433,20 +306,8 @@ export default function PetSummaryCard() {
           One destination in both states, deliberately. /conditions/:key is
           both the assessment and the summary of it, so an up-to-date row is
           not the dead end the removed button would have been. */}
-      {trackedConditions.map(({ definition, due: conditionDue, history }) => {
+      {trackedConditions.map(({ definition, status, history }) => {
         const Icon = definition.Icon ?? Stethoscope
-        const late = conditionDue != null && conditionDue.overdueBy > 0
-
-        // Said in full to a screen reader. The row compresses three facts
-        // into an icon, fourteen ticks and a tick mark; none of that reads
-        // aloud, and "Arthritis and Mobility Issues, button" is not enough
-        // for someone to know whether they owe an assessment.
-        const stateLabel = conditionDue == null
-          ? 'Monitoring up to date'
-          : late
-            ? `This assessment is ${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue`
-            : 'This assessment is due today'
-
         return (
           <button
             type="button"
@@ -469,39 +330,8 @@ export default function PetSummaryCard() {
                   for "1 day overdue" — a two-line condition name beside a
                   one-line status reads as two rows, not one. */}
               <span className="dx-row-foot">
-                {history && (
-                  <span
-                    className="dx-strip mini"
-                    role="img"
-                    aria-label={history.logged === 0
-                      ? 'Nothing logged in the last 14 days'
-                      : `Last 14 days: ${history.flagged} day${history.flagged === 1 ? '' : 's'} flagged, ${WINDOW_DAYS - history.logged} not logged`}
-                  >
-                    {history.strip.map((day, index) => (
-                      <span
-                        key={day.date}
-                        className={`dx-day ${day.severity ?? ''} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
-                      />
-                    ))}
-                  </span>
-                )}
-
-                {/* PENDING ASH — "17 days overdue" / "Due today", trimmed to
-                    fit the row. The full sentences you approved on 3 Sep 2026
-                    ("This assessment is 17 days overdue") are what a screen
-                    reader still gets, and what the condition's own screen
-                    still shows. Say the word if you want different words on
-                    the row itself. */}
-                <span
-                  className={`dx-row-state ${late ? 'late' : ''}`.trim()}
-                  role="img"
-                  aria-label={stateLabel}
-                >
-                  {conditionDue == null ? <Check size={14} /> : <AlertTriangle size={14} />}
-                  {conditionDue != null && (
-                    <span>{late ? `${conditionDue.overdueBy} day${conditionDue.overdueBy === 1 ? '' : 's'} overdue` : 'Due today'}</span>
-                  )}
-                </span>
+                <ConditionStrip history={history} />
+                <ConditionState status={status} />
               </span>
             </span>
 
@@ -589,44 +419,5 @@ function PillarSummary({ petName, overview }) {
         <OverviewBars concepts={WELLBEING_CONCEPTS} overview={overview} compact />
       </div>
     </div>
-  )
-}
-
-// The score, as a ring rather than a number on its own.
-//
-// A number says 68%; a ring says 68% of what, at a glance and without being
-// read. Drawn rather than charted — one circle needs no library, and the
-// chart library's smallest useful unit is heavier than this whole card.
-function ScoreRing({ percent, colour, size = 64 }) {
-  // Drawn in a fixed 64-unit viewBox and scaled by `size`, so the stroke and
-  // the gap keep their proportions at any diameter rather than needing a
-  // second set of numbers per size.
-  const radius = 26
-  const circumference = 2 * Math.PI * radius
-  const filled = Math.max(0, Math.min(100, percent)) / 100
-
-  return (
-    <span
-      className="pet-summary-ring"
-      role="img"
-      aria-label={`Quality of life ${percent}%`}
-      style={{ width: size, height: size }}
-    >
-      <svg viewBox="0 0 64 64" width={size} height={size}>
-        <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--border)" strokeWidth="6" />
-        <circle
-          cx="32"
-          cy="32"
-          r={radius}
-          fill="none"
-          stroke={colour}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={`${circumference * filled} ${circumference}`}
-          transform="rotate(-90 32 32)"
-        />
-      </svg>
-      <span className="pet-summary-ring-value" style={{ color: colour }}>{percent}%</span>
-    </span>
   )
 }

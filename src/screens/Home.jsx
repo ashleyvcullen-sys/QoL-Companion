@@ -41,13 +41,12 @@ const NAV_SECTIONS = [
   {
     title: 'Support',
     items: [
-      // Ash's order, 3 Sep 2026.
+      // Ash's order, 4 Sep 2026, replacing the 3 Sep one that led with
+      // Emergencies. This reads as the arc of an animal's care — what the app
+      // is, how to keep up with it, how to look after them at home, and the
+      // two tiles for when things are worst — rather than opening on the
+      // worst case every time the screen is scrolled.
       //
-      // Emergencies first, deliberately: someone reaching for this section in
-      // a hurry should not have to read past anything to find it. End of Life
-      // last, for the same reason it is last in the feature list — it is the
-      // one tile nobody wants to need.
-      { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
       // A tile rather than a link under the grid. It was the last thing left
       // in the secondary row, and one lonely underlined word beneath a grid
       // of tiles reads as leftover rather than as a choice.
@@ -58,6 +57,7 @@ const NAV_SECTIONS = [
       { to: '/schedule', label: 'Reminders', Icon: Bell },
       { to: '/home-care-tips', label: 'Home Care Tips', Icon: HomeCareTipsIcon },
       { to: '/end-of-life', label: 'End of Life', Icon: HeartHandshake },
+      { to: '/emergencies', label: 'Emergencies', Icon: AlertTriangle },
     ],
   },
 ]

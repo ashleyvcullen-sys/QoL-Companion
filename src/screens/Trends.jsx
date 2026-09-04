@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FileDown } from 'lucide-react'
+import { FileDown, Heart } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -10,13 +10,14 @@ import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import ExpandableNote from '../components/ExpandableNote'
 import OverviewBars from '../components/OverviewBars'
+import ScoreRing from '../components/ScoreRing'
 import ChartView from '../components/ChartView'
 import DayAnswersModal from '../components/DayAnswersModal'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useConceptToggle } from '../lib/useConceptToggle'
-import { computeOverviewCategories } from '../lib/scoring'
+import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import {
   buildChartRegistry,
@@ -92,6 +93,21 @@ export default function Trends() {
 
   const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
   const latestPainEntry = painEntries[painEntries.length - 1] ?? null
+
+  // The same number the home screen shows, from the same function and with
+  // the same pain entry matched by date — Ash's instruction 4 Sep 2026, the
+  // circle at the top of Trends. Wrapped, because this screen must not go
+  // down over one unscoreable row.
+  const latestResult = (() => {
+    if (!latestGeneralEntry) return null
+    try {
+      const pain = painEntries.find((row) => row.date === latestGeneralEntry.date) ?? null
+      return computeGeneralQolResult(latestGeneralEntry, pain?.beap)
+    } catch (error) {
+      console.error('Could not score that assessment:', error.message)
+      return null
+    }
+  })()
   const hasLatestData = latestGeneralEntry || latestPainEntry
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)
@@ -202,6 +218,34 @@ export default function Trends() {
         {!loading && !hasLatestData && <p>No assessments logged yet.</p>}
         {!loading && hasLatestData && (
           <>
+            {/* The circle first, then the five pillars under it — Ash's
+                instruction 4 Sep 2026. The score answers "how is {name}"; the
+                bars answer "which part of them", and the second only means
+                something once the first has been read. Same ring, same
+                component and same size as the home screen's. */}
+            {latestResult && (
+              <div className="trends-score">
+                {/* The same heading the home card puts over the same ring —
+                    Ash's instruction 4 Sep 2026: the heart in its circle, then
+                    "Overall QoL". The card above it is called Overview because
+                    it also holds the five pillars; this names the number. */}
+                <h3 className="pet-summary-section-title">
+                  <span className="pet-summary-section-icon" aria-hidden="true">
+                    <Heart size={16} />
+                  </span>
+                  Overall QoL
+                </h3>
+                <ScoreRing
+                  percent={latestResult.percent}
+                  colour={latestResult.color}
+                  size={92}
+                />
+                <p className="pet-summary-band" style={{ color: latestResult.color }}>
+                  {latestResult.band}
+                </p>
+              </div>
+            )}
+
             <OverviewBars
               concepts={WELLBEING_CONCEPTS}
               overview={overview}
