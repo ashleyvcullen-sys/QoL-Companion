@@ -1,7 +1,11 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush, ReferenceArea, ReferenceLine } from 'recharts'
 import { formatDateDDMM, formatDateDDMMYY } from '../lib/formatDate'
 
-const DEFAULT_VISIBLE_DAYS = 14
+// Points, not days — the series holds one row per LOGGED day, so this window
+// is the last fourteen check-ins whatever cadence the pet is on. It was
+// called DEFAULT_VISIBLE_DAYS until 5 Sep 2026, which described neither what
+// it counts nor what it does; the behaviour is unchanged.
+const DEFAULT_VISIBLE_POINTS = 14
 const BRUSH_HEIGHT = 24
 
 export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, markers = [], isAnimationActive = true, brush = false, allTime = false }) {
@@ -90,7 +94,7 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             //
             // The brush stays either way. This moves where it opens, not
             // whether the reader can move it.
-            startIndex={allTime ? 0 : Math.max(0, data.length - DEFAULT_VISIBLE_DAYS)}
+            startIndex={allTime ? 0 : Math.max(0, data.length - DEFAULT_VISIBLE_POINTS)}
             endIndex={Math.max(0, data.length - 1)}
           />
         )}

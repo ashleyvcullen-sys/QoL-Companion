@@ -25,28 +25,10 @@ import { BEAP_BANDS } from './scoring'
 // reads. A hollow tick is a day with nothing logged, which is a state of its
 // own rather than a green one — nothing recorded is not the same as nothing
 // wrong.
-export const WINDOW_DAYS = 14
+export const WINDOW_SLOTS = 14
 
-// The last n ISO dates, oldest first, ending on `todayIso`. UTC arithmetic on
-// purpose: new Date('2026-09-03') is midnight UTC, and stepping days in local
-// time drifts across a DST boundary.
-function lastDates(todayIso, n) {
-  const [year, month, day] = String(todayIso).split('-').map(Number)
-  if (!year || !month || !day) return []
-  const end = Date.UTC(year, month - 1, day)
-  const out = []
-  for (let i = n - 1; i >= 0; i -= 1) {
-    const at = new Date(end - i * 86400000)
-    out.push([
-      at.getUTCFullYear(),
-      String(at.getUTCMonth() + 1).padStart(2, '0'),
-      String(at.getUTCDate()).padStart(2, '0'),
-    ].join('-'))
-  }
-  return out
-}
 
-export function conditionHistory({ definition, config, entries, species, today }) {
+export function conditionHistory({ definition, config, entries, species, today, cadenceDays = 1, remindersOff = false }) {
   // Resolved, because a cancer parameter set is built per pet and summarising
   // against the static definition would grade questions this owner was never
   // asked.
@@ -67,31 +49,125 @@ export function conditionHistory({ definition, config, entries, species, today }
     }
   }
 
-  const span = lastDates(today, WINDOW_DAYS * 2)
-  const earlier = span.slice(0, WINDOW_DAYS)
-  const recent = span.slice(WINDOW_DAYS)
-  const isFlagged = (date) => {
-    const severity = byDate.get(date)?.severity
-    return severity === SEVERITY.CONCERN || severity === SEVERITY.EMERGENCY
+  // One cell per SCHEDULED CHECK-IN, not per calendar day — Ash's report
+  // 5 Sep 2026.
+  //
+  // A pet checked weekly drew twelve empty cells and two filled ones, and an
+  // owner who had not missed anything still read a strip that was mostly
+  // absence. The window was fourteen days because the cadence used to be
+  // assumed daily; measured in the pet's own cadence it is fourteen check-ins,
+  // which for a daily pet is exactly what it was before and for a weekly one
+  // is fourteen weeks.
+  //
+  // A period rather than an exact date, so logging a day late still fills its
+  // slot: period i covers the `cadence` days ending on today - i * cadence.
+  // A condition whose reminder the owner has switched off reports days: 0.
+  // Fall back to the cadence its own definition recommends so the strip still
+  // spans a sensible stretch of time — and see `missed` below, which is never
+  // set in that state.
+  const cadence = Number(cadenceDays) > 0
+    ? Number(cadenceDays)
+    : Math.max(1, Number(definition?.cadence?.days) || 1)
+  const dayMs = 86400000
+  const todayMs = Date.parse(`${today}T00:00:00Z`)
+
+  function periodDates(index) {
+    const endMs = todayMs - index * cadence * dayMs
+    const out = []
+    for (let step = cadence - 1; step >= 0; step -= 1) out.push(isoFromUtc(endMs - step * dayMs))
+    return out
   }
 
-  const strip = recent.map((date) => ({ date, severity: byDate.get(date)?.severity ?? null }))
-  const logged = strip.filter((day) => day.severity != null).length
-  const flagged = recent.filter(isFlagged).length
+  const RANK = { [SEVERITY.EMERGENCY]: 3, [SEVERITY.CONCERN]: 2, [SEVERITY.OK]: 1 }
+  function worstIn(dates) {
+    let worst = null
+    for (const date of dates) {
+      const severity = byDate.get(date)?.severity
+      if (!severity) continue
+      if (!worst || (RANK[severity] ?? 0) > (RANK[worst] ?? 0)) worst = severity
+    }
+    return worst
+  }
 
-  const earlierFlagged = earlier.filter(isFlagged).length
-  const earlierLogged = earlier.filter((date) => byDate.get(date)?.severity != null).length
+  const firstLogged = entries[0]?.date ?? null
 
-  // Only compare fortnights that are actually comparable.
+  // Whether a day was ANSWERED, which is not the same as whether it can be
+  // scored. summariseEntry returns no severity for an entry it cannot grade —
+  // a condition whose parameters have all been answered "doesn't apply", or a
+  // composed one whose config has since changed — and reading missedness off
+  // the severity marked those days as check-ins that never happened. They did
+  // happen; there is simply nothing to colour them with.
+  const loggedDates = new Set(entries.map((entry) => entry.date))
+
+  function cellFor(index) {
+    const dates = periodDates(index)
+    const end = dates[dates.length - 1]
+    const severity = worstIn(dates)
+    const answered = dates.some((date) => loggedDates.has(date))
+    return {
+      date: end,
+      severity: severity ?? null,
+      // Owed and not answered. Only inside the monitored era — periods before
+      // the first entry were never owed — and never at all where the owner has
+      // switched this condition's reminder off. Telling someone they have
+      // missed thirteen check-ins they asked not to be reminded about is the
+      // app inventing an obligation they declined.
+      missed: !remindersOff && !answered && firstLogged != null && end >= firstLogged,
+    }
+  }
+
+  // As long as the history is, up to fourteen — Ash's report 5 Sep 2026.
+  //
+  // A fixed fourteen slots meant a pet monitored fortnightly for three months
+  // drew six filled cells and eight empty ones, because eight of the fourteen
+  // fortnights predate the first entry. Those were never owed and are not
+  // missed, so they were drawn as nothing — but eight cells of nothing is
+  // still a strip that reads as absence, which is the whole complaint.
+  //
+  // Trimmed to the slots that exist. A condition monitored for six fortnights
+  // shows six marks, all of them meaning something. Strips of different
+  // lengths between two conditions is the honest answer: one of them has been
+  // watched for longer.
+  const strip = []
+  if (remindersOff) {
+    // No schedule to measure against, so no slots and no misses — one mark
+    // per check-in the owner actually did, most recent last. Ash's report
+    // 5 Sep 2026: falling back to a nominal cadence here drew a strip that
+    // was mostly empty for someone who had simply chosen not to be reminded.
+    const logged = entries.map((entry) => entry.date).slice(-WINDOW_SLOTS)
+    for (const date of logged) {
+      strip.push({ date, severity: byDate.get(date)?.severity ?? null, missed: false })
+    }
+  } else {
+    for (let index = WINDOW_SLOTS - 1; index >= 0; index -= 1) {
+      const cell = cellFor(index)
+      // Nothing before the first entry. `strip.length` guards the case of a
+      // gap inside the era, which must keep its place in the run.
+      if (strip.length === 0 && firstLogged != null && cell.date < firstLogged) continue
+      strip.push(cell)
+    }
+  }
+
+  const earlierStrip = []
+  for (let index = WINDOW_SLOTS * 2 - 1; index >= WINDOW_SLOTS; index -= 1) earlierStrip.push(cellFor(index))
+
+  const isFlagged = (cell) => cell.severity === SEVERITY.CONCERN || cell.severity === SEVERITY.EMERGENCY
+
+  const logged = strip.filter((cell) => cell.severity != null).length
+  const flagged = strip.filter(isFlagged).length
+  const earlierFlagged = earlierStrip.filter(isFlagged).length
+  const earlierLogged = earlierStrip.filter((cell) => cell.severity != null).length
+
+  // Only compare windows that are actually comparable.
   //
   // "8 flagged, up from 4" was being printed for a pet diagnosed 18 days ago:
-  // the previous fortnight held five logged days because monitoring had not
-  // started for the other nine, so a full fortnight was being measured against
-  // a part of one. Every newly diagnosed pet would read as deteriorating for
-  // its first month, in red, under a strip that visibly improves.
+  // the previous window held five logged check-ins because monitoring had not
+  // started for the rest of it, so a full window was measured against part of
+  // one. Every newly diagnosed pet would read as deteriorating for its first
+  // month, in red, under a strip that visibly improves.
   //
-  // Half the recent window's logged days is the bar. Below that there is no
-  // honest comparison to draw and the count stands on its own.
+  // Half the recent window's logged check-ins is the bar. Below that there is
+  // no honest comparison to draw and the count stands on its own.
   const hadEarlier = earlierLogged > 0 && earlierLogged * 2 >= logged
 
   // The most recent thing worth naming, newest first. flagged[0] is already
@@ -103,12 +179,18 @@ export function conditionHistory({ definition, config, entries, species, today }
   // lines under a fourteen-tick strip that had already said how bad the day
   // was. The band says the same thing in one word, and it is the same word
   // the assessment prints beside the level the owner picked.
+  //
+  // Searched across the whole period rather than only its end date: on a
+  // weekly cadence the answer that raised the flag was given on whichever day
+  // the owner sat down, not on the day the slot happens to close.
   let finding = null
-  for (let i = recent.length - 1; i >= 0 && !finding; i -= 1) {
-    const first = byDate.get(recent[i])?.flagged?.[0]
-    if (!first) continue
+  for (let i = 0; i < WINDOW_SLOTS && !finding; i += 1) {
+    const dates = periodDates(i).slice().reverse()
+    const on = dates.find((date) => byDate.get(date)?.flagged?.[0])
+    if (!on) continue
+    const first = byDate.get(on).flagged[0]
     const parameter = (resolved.parameters ?? []).find((entry) => entry.key === first.key)
-    const score = Number(entries.find((entry) => entry.date === recent[i])?.values?.[first.key])
+    const score = Number(entries.find((entry) => entry.date === on)?.values?.[first.key])
     // A band only where there is a 0-10 answer behind it. A yes/no or a
     // choice has no rung to name, and inventing one would be worse than the
     // bare parameter name beside a coloured dot.
@@ -119,7 +201,7 @@ export function conditionHistory({ definition, config, entries, species, today }
       ...first,
       name: shortName(parameter ? labelOf(parameter) : first.label),
       band,
-      daysAgo: recent.length - 1 - i,
+      daysAgo: Math.round((todayMs - Date.parse(`${on}T00:00:00Z`)) / dayMs),
     }
   }
 
@@ -135,4 +217,16 @@ export function conditionHistory({ definition, config, entries, species, today }
 // so the form, the calendar and the export all still name the instrument.
 function shortName(label) {
   return typeof label === 'string' ? label.replace(/\s*\([^()]*\)\s*$/, '') : label
+}
+
+// A UTC millisecond timestamp back to 'YYYY-MM-DD'. UTC on purpose: stepping
+// days in local time drifts across a DST boundary, which on a fortnightly
+// cadence is a whole slot in the wrong place.
+function isoFromUtc(ms) {
+  const at = new Date(ms)
+  return [
+    at.getUTCFullYear(),
+    String(at.getUTCMonth() + 1).padStart(2, '0'),
+    String(at.getUTCDate()).padStart(2, '0'),
+  ].join('-')
 }

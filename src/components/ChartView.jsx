@@ -66,8 +66,8 @@ export default function ChartView({
       <>
         {intro}
         {allTime && chart.range
-          ? <AllTimeCalendar dayFor={chart.dayFor} range={chart.range} onOpenDay={onOpenDay} />
-          : <MonthCalendar dayFor={chart.dayFor} onOpenDay={onOpenDay} />}
+          ? <AllTimeCalendar dayFor={chart.dayFor} range={chart.range} missedDays={chart.missedDays} />
+          : <MonthCalendar dayFor={chart.dayFor} missedDays={chart.missedDays} onOpenDay={onOpenDay} />}
         {severityKey}
         {caption}
       </>

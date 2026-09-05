@@ -109,3 +109,67 @@ export function elapsedLabel(dateIso, today) {
     : `${weeks} weeks and ${spare} day${spare === 1 ? '' : 's'}`
   return `Started ${weekText} ago (${shown}).`
 }
+
+// Which days a check-in was actually DUE and did not happen.
+//
+// Ash's report 5 Sep 2026: a pet monitored weekly drew six hollow boxes for
+// every filled one, and an owner who was perfectly up to date read six missed
+// check-ins. The strip was answering "was anything logged on this day?" when
+// the question an owner asks it is "did I miss anything?".
+//
+// Walked forward from the first entry rather than derived from a fixed grid,
+// because dueness is measured from the LAST entry — the same rule
+// monitoringStatus uses above. Log on the 1st and again on the 20th at a
+// weekly cadence and the 8th and the 15th were missed; the days between them
+// were never owed.
+//
+// A missed slot is treated as consumed, so a fortnight's silence on a weekly
+// cadence is two missed check-ins rather than thirteen.
+//
+// Returns an empty set when there is no cadence to be measured against: a
+// condition whose reminder the owner has switched off is not one they are
+// behind on.
+export function missedCheckIns({ dates = [], cadenceDays, from, to }) {
+  const missed = new Set()
+  if (!cadenceDays || cadenceDays < 1) return missed
+  if (!from || !to) return missed
+
+  const logged = new Set(dates)
+  const start = Date.parse(`${from}T00:00:00Z`)
+  const end = Date.parse(`${to}T00:00:00Z`)
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return missed
+
+  // Daily needs no walk: every day from the first entry onward was owed.
+  if (cadenceDays === 1) {
+    for (let at = start; at <= end; at += 86400000) {
+      const key = isoFromUtc(at)
+      if (!logged.has(key)) missed.add(key)
+    }
+    return missed
+  }
+
+  let lastLogged = start
+  for (let at = start + 86400000; at <= end; at += 86400000) {
+    const key = isoFromUtc(at)
+    if (logged.has(key)) {
+      lastLogged = at
+      continue
+    }
+    if (at - lastLogged >= cadenceDays * 86400000) {
+      missed.add(key)
+      // Consumed, so the next one is owed a full cadence later rather than
+      // every day from here on being marked.
+      lastLogged = at
+    }
+  }
+  return missed
+}
+
+function isoFromUtc(ms) {
+  const at = new Date(ms)
+  return [
+    at.getUTCFullYear(),
+    String(at.getUTCMonth() + 1).padStart(2, '0'),
+    String(at.getUTCDate()).padStart(2, '0'),
+  ].join('-')
+}

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { SEVERITY, SEVERITY_COLOURS } from '../lib/conditions'
 
 // The whole record in one view — one row per month, one cell per day.
@@ -18,74 +17,64 @@ import { SEVERITY, SEVERITY_COLOURS } from '../lib/conditions'
 //
 // Nothing about scoring lives here. The caller passes the same `dayFor` the
 // month grid takes, so the two cannot disagree about a day.
-export default function AllTimeCalendar({ dayFor, range, onOpenDay }) {
-  // Which day the reader has tapped. The month grid learned this the hard way
-  // — `title` is a hover tooltip and there is no hover on a phone, so every
-  // explanation it carried was unreachable on the device it was built for.
-  const [selectedDay, setSelectedDay] = useState(null)
-
+export default function AllTimeCalendar({ dayFor, range, missedDays }) {
   if (!range?.from || !range?.to) return null
 
   const months = monthsBetween(range.from, range.to)
   if (!months.length) return null
 
-  const counts = { logged: 0, ok: 0, concern: 0, emergency: 0, elapsed: 0 }
-  for (const month of months) {
+  const counts = { logged: 0, ok: 0, concern: 0, emergency: 0, elapsed: 0, missed: 0 }
+  const rows = months.map((month) => {
+    const row = { ...month, cells: [], ok: 0, concern: 0, emergency: 0, missed: 0 }
     for (const dateKey of month.days) {
-      if (dateKey < range.from || dateKey > range.to) continue
+      if (!dateKey || dateKey < range.from || dateKey > range.to) {
+        row.cells.push({ kind: 'pad' })
+        continue
+      }
       counts.elapsed += 1
-      const day = dayFor(dateKey)
-      const severity = severityOf(day)
+      const severity = severityOf(dayFor(dateKey))
       if (severity) {
         counts.logged += 1
         counts[severity] += 1
+        row[severity] += 1
+        row.cells.push({ kind: severity, colour: dayFor(dateKey).colour })
+      } else if (missedDays?.has(dateKey)) {
+        counts.missed += 1
+        row.missed += 1
+        row.cells.push({ kind: 'missed' })
+      } else {
+        row.cells.push({ kind: 'none' })
       }
     }
-  }
-
-  const selected = selectedDay ? dayFor(selectedDay) : null
+    return row
+  })
 
   return (
     <div className="at-cal">
-      {months.map((month) => (
-        <div key={month.key} className="at-row">
-          <span className="at-row-label">{month.label}</span>
-          {/* Always 31 columns, so every month lines up under the last and a
-              vertical band of amber reads as the same days of the month
-              across a year. February's missing three are blanks. */}
-          <div className="at-row-days">
-            {month.days.map((dateKey, index) => {
-              if (!dateKey || dateKey < range.from || dateKey > range.to) {
-                return <span key={index} className="at-day at-day-pad" aria-hidden="true" />
-              }
-              const day = dayFor(dateKey)
-              const label = day?.title ? `${dateKey}: ${day.title}` : dateKey
-              return (
-                <button
-                  key={dateKey}
-                  type="button"
-                  className={`at-day ${day?.colour ? '' : 'at-day-empty'}`.trim()}
-                  style={day?.colour ? { background: day.colour } : undefined}
-                  title={label}
-                  aria-label={label}
-                  onClick={() => {
-                    setSelectedDay(dateKey)
-                    if (onOpenDay && day) onOpenDay(dateKey)
-                  }}
-                />
-              )
-            })}
+      {rows.map((row) => (
+        <div key={row.key} className="at-row">
+          <span className="at-row-label">{row.label}</span>
+          {/* Not tappable, on Ash's instruction 5 Sep 2026. Thirty-one days
+              across a phone leaves each one a few pixels wide, and a target
+              nobody can aim at is worse than no target: the reader cannot
+              tell which day they are about to open. The month grid is where
+              a day is opened, and every day there is full size.
+
+              So the row is read as one picture rather than as thirty-one
+              controls — which is also what a screen reader wants. A grid of
+              three hundred individually labelled dots is unusable; one
+              sentence per month is the record. */}
+          <div className="at-row-days" role="img" aria-label={rowLabel(row)}>
+            {row.cells.map((cell, index) => (
+              <span
+                key={index}
+                className={`at-day at-day-${cell.kind}`}
+                style={cell.colour ? { background: cell.colour } : undefined}
+              />
+            ))}
           </div>
         </div>
       ))}
-
-      {/* What the reader tapped, in words. The same job the month grid's
-          selected-day line does, for the same reason. */}
-      {selected?.title && (
-        <p className="at-selected">
-          <b>{formatDayLabel(selectedDay)}</b> — {selected.title}
-        </p>
-      )}
 
       {/* The sentence someone reads out in a consult. It did not exist
           anywhere in the app before this view: the calendar could show a
@@ -100,11 +89,22 @@ export default function AllTimeCalendar({ dayFor, range, onOpenDay }) {
             {counts.emergency > 0 && <>{' · '}<b>{counts.emergency}</b> needing attention</>}
           </>
         )}
+        {counts.missed > 0 && <>{' · '}<b>{counts.missed}</b> missed</>}
         <br />
         {formatDayLabel(range.from)} – {formatDayLabel(range.to)}
       </p>
     </div>
   )
+}
+
+// One sentence per month, for a reader who cannot see the row.
+function rowLabel(row) {
+  const parts = []
+  if (row.ok) parts.push(`${row.ok} good`)
+  if (row.concern) parts.push(`${row.concern} worth watching`)
+  if (row.emergency) parts.push(`${row.emergency} needing attention`)
+  if (row.missed) parts.push(`${row.missed} missed`)
+  return parts.length ? `${row.label}: ${parts.join(', ')}` : `${row.label}: nothing recorded`
 }
 
 // Which severity a day's colour stands for.

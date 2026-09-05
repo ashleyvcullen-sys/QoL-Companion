@@ -166,9 +166,18 @@ export default function ConditionMonitoring() {
     today,
   })
 
-  // The same fourteen days the home screen shows for this condition, from the
-  // same function — Ash's instruction 4 Sep 2026, at the top of the screen
-  // with how often it is set to be assessed.
+  const cadence = definition && pet ? scheduleForCondition(pet, definition) : null
+
+  // The same strip the home screen shows for this condition, from the same
+  // function — Ash's instruction 4 Sep 2026, at the top of the screen with how
+  // often it is set to be assessed.
+  //
+  // Declared AFTER `cadence`, and that ordering is the point: the strip counts
+  // fourteen CHECK-INS on this pet's cadence, and without it every fortnightly
+  // condition fell back to daily and drew thirteen missed check-ins for an
+  // owner who was up to date. Ash's report 5 Sep 2026 — the home card was
+  // passing this and this screen was not, so the same condition drew two
+  // different strips on two screens.
   const history = useMemo(() => {
     if (!definition || !pet) return null
     try {
@@ -178,14 +187,15 @@ export default function ConditionMonitoring() {
         entries,
         species: pet.species,
         today,
+        cadenceDays: cadence?.days ?? 1,
+        remindersOff: cadence?.off ?? false,
       })
     } catch (error) {
       console.error('Could not summarise that fortnight:', error.message)
       return null
     }
-  }, [definition, pet, petCondition, entries, today])
+  }, [definition, pet, petCondition, entries, today, cadence?.days, cadence?.off])
 
-  const cadence = definition && pet ? scheduleForCondition(pet, definition) : null
 
   async function changeCadence(patch) {
     setCadenceError('')

@@ -1,5 +1,4 @@
 import { AlertTriangle, Check } from 'lucide-react'
-import { WINDOW_DAYS } from '../lib/conditionHistory'
 import { MONITORING_STATE } from '../lib/monitoringStatus'
 
 // The fortnight, and what is owed. Two pieces, used together on the home
@@ -7,9 +6,12 @@ import { MONITORING_STATE } from '../lib/monitoringStatus'
 // extracted 4 Sep 2026 so the two cannot drift apart.
 
 // Fourteen ticks, oldest left, coloured exactly as the calendar colours the
-// same day. A hollow tick is a day with nothing logged: nothing recorded is
-// not the same as nothing wrong, and a strip that painted those green would
-// tell an owner their pet was fine on days nobody looked.
+// same day. A hollow tick is a check-in that was owed and did not happen:
+// nothing recorded is not the same as nothing wrong, and a strip that painted
+// those green would tell an owner their pet was fine on days nobody looked.
+//
+// One tick per SCHEDULED CHECK-IN since 5 Sep 2026, not per calendar day —
+// see conditionHistory. A weekly pet used to get two marks and twelve blanks.
 export function ConditionStrip({ history, className = '' }) {
   if (!history) return null
 
@@ -17,14 +19,21 @@ export function ConditionStrip({ history, className = '' }) {
     <span
       className={`dx-strip mini ${className}`.trim()}
       role="img"
-      aria-label={history.logged === 0
-        ? 'Nothing logged in the last 14 days'
-        : `Last 14 days: ${history.flagged} day${history.flagged === 1 ? '' : 's'} flagged, ${WINDOW_DAYS - history.logged} not logged`}
+      // Check-ins, not days — the strip counts the pet's own cadence since
+      // 5 Sep 2026, so for a weekly condition these marks are weeks. Counted
+      // off the strip itself rather than off WINDOW_SLOTS: the strip is only
+      // as long as the history is, and a fortnightly pet with seven marks was
+      // being announced as "0 flagged, 7 missed".
+      // PENDING ASH: the wording is mine.
+      aria-label={describe(history)}
     >
       {history.strip.map((day, index) => (
         <span
           key={day.date}
-          className={`dx-day ${day.severity ?? ''} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
+          // `none` where nothing was owed — see the note on missed in
+          // lib/conditionHistory.js. An outline is a missed check-in, not
+          // merely a day without one.
+          className={`dx-day ${day.severity ?? (day.missed ? '' : 'none')} ${index === history.strip.length - 1 ? 'today' : ''}`.replace(/\s+/g, ' ').trim()}
         />
       ))}
     </span>
@@ -80,4 +89,14 @@ export function ConditionState({ status }) {
       <span>{text}</span>
     </span>
   )
+}
+
+function describe(history) {
+  const shown = history.strip.length
+  if (!shown) return 'Nothing logged yet'
+  const missed = history.strip.filter((day) => day.missed).length
+  if (history.logged === 0) return `Nothing logged in the last ${shown} check-ins`
+  const parts = [`${history.flagged} flagged`]
+  if (missed > 0) parts.push(`${missed} missed`)
+  return `Last ${shown} check-in${shown === 1 ? '' : 's'}: ${parts.join(', ')}`
 }

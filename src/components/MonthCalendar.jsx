@@ -9,7 +9,7 @@ const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 //
 // The caller supplies `dayFor(dateKey)`, returning { colour, title } for a
 // day with data or null for one without. Nothing about scoring lives here.
-export default function MonthCalendar({ dayFor, onOpenDay }) {
+export default function MonthCalendar({ dayFor, onOpenDay, missedDays }) {
   const now = new Date()
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth())
@@ -106,15 +106,22 @@ export default function MonthCalendar({ dayFor, onOpenDay }) {
           // string is truthy, so the fallbacks below would never fire and an
           // unrecorded day would render white text on a near-white cell.
           const colour = info?.colour ?? null
-          const title = info?.title || 'Nothing recorded'
+          // Owed and not answered, versus simply not a day anything was owed
+          // on — Ash's report 5 Sep 2026. Every unlogged day used to be filled
+          // solid grey, so a pet checked weekly showed six grey blocks a week
+          // and an owner who was perfectly up to date read six missed
+          // check-ins. Same rule as the strips: a mark means something was
+          // missed, and a day nothing was due on is left quiet.
+          const isMissed = !colour && missedDays?.has(dateKeyFor(day))
+          const title = info?.title || (isMissed ? 'Check-in missed' : 'Nothing recorded')
           const isSelected = selectedDay === day
 
           return (
             <button
               key={day}
               type="button"
-              className={`calendar-cell ${isSelected ? 'selected' : ''}`.trim()}
-              style={{ background: colour ?? '#E5DEE1', color: colour ? '#fff' : 'var(--text-h)' }}
+              className={`calendar-cell ${isSelected ? 'selected' : ''} ${!colour && !isMissed ? 'calendar-cell-quiet' : ''} ${isMissed ? 'calendar-cell-missed' : ''}`.replace(/\s+/g, ' ').trim()}
+              style={colour ? { background: colour, color: '#fff' } : undefined}
               title={title}
               aria-label={`${day} ${monthLabel}: ${title}`}
               onClick={() => setSelectedDay(isSelected ? null : day)}

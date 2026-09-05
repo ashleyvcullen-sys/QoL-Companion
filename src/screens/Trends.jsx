@@ -17,7 +17,6 @@ import DayAnswersModal from '../components/DayAnswersModal'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
-import { useConceptToggle } from '../lib/useConceptToggle'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
 import { buildDailySeries } from '../lib/qolData'
 import {
@@ -68,6 +67,11 @@ export default function Trends() {
   // instruction 4 Sep 2026. Month by default: the daily question is "how is
   // she today", and someone opening the app to log an entry should not have
   // to narrow a year first.
+  // Which pillar's chart is open, if any. One at a time: five charts stacked
+  // down the screen is what this card had before 29 Aug 2026, and the reason
+  // they were taken out.
+  const [openPillar, setOpenPillar] = useState(null)
+
   const [range, setRange] = useState('month')
   const allTime = range === 'all'
 
@@ -137,6 +141,10 @@ export default function Trends() {
 
   const overallChart = chartByKey(charts, 'overall')
   const goodBadDays = chartByKey(charts, 'good-bad-days')
+  // Built by the registry already — they were dropped from this screen on
+  // 29 Aug 2026 and kept for the report. Ash's instruction 5 Sep 2026 brings
+  // them back, one at a time and only when asked for.
+  const openPillarChart = openPillar ? chartByKey(charts, `pillar:${openPillar}`) : null
 
   // --- Tracked conditions, summarised here too -----------------------------
   //
@@ -194,8 +202,7 @@ export default function Trends() {
       }
     : null
 
-  const overviewToggle = useConceptToggle()
-  const activeOverviewConcept = WELLBEING_CONCEPTS.find((c) => c.key === overviewToggle.activeKey)
+  const openConcept = WELLBEING_CONCEPTS.find((concept) => concept.key === openPillar) ?? null
 
   const notesHistory = [...generalEntries]
     .reverse()
@@ -219,12 +226,6 @@ export default function Trends() {
         <Btn type="button" className="btn-block" onClick={() => navigate('/export-report')}>
           <FileDown size={17} /> Export A Report For Your Vet
         </Btn>
-
-        {/* One control for every picture below it — Ash's instruction 4 Sep
-            2026. It lives in the intro card rather than floating above the
-            first chart, because it governs the screen rather than that one
-            chart. */}
-        <RangeToggle value={range} onChange={setRange} />
       </Card>
 
       <Card>
@@ -261,26 +262,78 @@ export default function Trends() {
               </div>
             )}
 
+            {/* Tapping anywhere on a pillar — icon, name or bar — opens its
+                chart, and tapping it again closes it. Ash's instruction 5 Sep
+                2026, replacing a version where the icon opened the pillar's
+                definition and the rest of the row opened its chart: two
+                targets an inch apart doing different things, with nothing to
+                say which was which. */}
+            {/* Above the bars, not below them: an instruction that arrives
+                after the thing it describes has already been scrolled past is
+                not an instruction.
+
+                It replaces "Want to see a pillar over time? Pick it in the
+                report" — which was true until 5 Sep 2026 and is now the
+                wrong answer to its own question, since the chart is one tap
+                away right here.
+
+                PENDING ASH — the wording is mine. */}
+            <p className="assessment-hint">
+              Tap a pillar to see how it has changed over time.
+            </p>
             <OverviewBars
               concepts={WELLBEING_CONCEPTS}
               overview={overview}
-              onIconClick={overviewToggle.toggle}
+              onSelect={(key) => setOpenPillar((current) => (current === key ? null : key))}
+              selectedKey={openPillar}
             />
-            <ConceptDefinition concept={activeOverviewConcept} />
+
+            {/* Open in place, under the bars rather than at the foot of the
+                card, so the chart and the bar that opened it are read
+                together. Follows the screen's Month / All time toggle like
+                every other chart here.
+
+                The definition travels with the chart. It used to be what the
+                icon opened; folding it in here means one tap answers both
+                "what is Comfort?" and "how has it been?" rather than making
+                the owner find two controls to ask two halves of one
+                question. */}
+            {openPillarChart && (
+              <div className="trends-pillar-chart">
+                <h3 className="report-chart-title">{openPillarChart.title}</h3>
+                <ConceptDefinition concept={openConcept} />
+                <ChartView chart={openPillarChart} allTime={allTime} />
+                <button
+                  type="button"
+                  className="condition-cadence-change"
+                  onClick={() => setOpenPillar(null)}
+                >
+                  Hide
+                </button>
+              </div>
+            )}
             <p className="assessment-hint">
               From {formatDateDDMMYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
             </p>
-            {/* The five pillars used to have a collapsed chart each, stacked
-                down this screen. Five headings you had to open one at a time
-                is a poor way to find anything, and most owners never opened
-                them — so the charts moved to the report, where you pick the
-                ones the visit is actually about. */}
-            <p className="assessment-hint">
-              Want to see a pillar over time? Pick it in the report — you can choose any
-              combination there.
-            </p>
           </>
         )}
+      </Card>
+
+      {/* Overall QoL before Good / Bad Days — Ash's instruction 5 Sep 2026,
+          swapping the two. The line is the same number the card above it has
+          just shown as a ring, so the two read as one thought: here it is
+          today, here is how it got here. The calendar then breaks that same
+          span into individual days. */}
+      <Card>
+        <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
+        {/* One control for every chart on this screen, not just this one —
+            Ash's instruction 4 Sep 2026, moved out of the intro card the next
+            day. It sat under the export button, which put it in a card with
+            no picture in it and left it reading as something to do with
+            exporting. It travels with whichever chart card comes first, so it
+            is always directly above the first thing it changes. */}
+        <RangeToggle value={range} onChange={setRange} />
+        {overallChart ? <ChartView chart={overallChart} allTime={allTime} /> : <p>No assessments logged yet.</p>}
       </Card>
 
       <Card>
@@ -288,11 +341,6 @@ export default function Trends() {
         {goodBadDays
           ? <ChartView chart={goodBadDays} allTime={allTime} onOpenDay={setOpenDay} />
           : <p>No assessments logged yet.</p>}
-      </Card>
-
-      <Card>
-        <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
-        {overallChart ? <ChartView chart={overallChart} allTime={allTime} /> : <p>No assessments logged yet.</p>}
       </Card>
 
       {/* One card per condition being monitored, between the overall charts

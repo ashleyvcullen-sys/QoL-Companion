@@ -794,6 +794,10 @@ code {
   box-shadow: inset 0 0 0 1.5px var(--border);
 }
 
+/* Nothing was owed on this day, so nothing is drawn — see the note on
+   missed in lib/conditionHistory.js. */
+.dx-day.none { box-shadow: none; }
+
 .dx-day.ok { background: var(--severity-good); box-shadow: none; }
 .dx-day.concern { background: var(--severity-moderate); box-shadow: none; }
 .dx-day.emergency { background: var(--severity-severe); box-shadow: none; }
@@ -965,10 +969,57 @@ code {
   text-align: left;
 }
 
-/* One chart in the report preview. Titled by the chart itself, spaced so a
-   stack of them does not read as one long picture. */
+/* One chart in the report preview, with the heading the PDF gives it. Spaced
+   so a stack of them does not read as one long picture. */
 .report-chart-preview {
-  margin-top: 20px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* A pillar's chart, opened by tapping its bar. */
+.trends-pillar-chart {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trends-pillar-chart > :not(button) {
+  width: 100%;
+}
+
+/* The whole row bar the icon, laid over it rather than around it — the icon
+   is itself a button and buttons cannot nest. */
+.overview-bar-row.is-selectable {
+  position: relative;
+}
+
+/* The whole row, icon included — one control, one thing it does. */
+.overview-bar-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  border-radius: var(--radius-cell);
+  cursor: pointer;
+}
+
+.overview-bar-row.is-open .overview-bar-label {
+  color: var(--accent);
+}
+
+.report-chart-title {
+  margin: 0 0 12px;
+  font-family: var(--heading);
+  font-size: var(--type-item);
+  color: var(--text-h);
+  text-align: center;
+  text-wrap: balance;
 }
 
 /* --- Month / All time -------------------------------------------------------
@@ -978,7 +1029,11 @@ code {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 4px;
+  /* Room on both sides. It shipped with `margin: 0 0 4px`, which left it
+     flush against the button above it on Trends and four pixels off the
+     calendar below it everywhere — a control with nothing around it reads as
+     part of whichever thing it is touching. */
+  margin: 16px 0 18px;
 }
 
 .range-toggle-option {
@@ -1007,7 +1062,7 @@ code {
 .at-cal {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .at-row {
@@ -1017,10 +1072,12 @@ code {
 }
 
 .at-row-label {
-  width: 44px;
+  /* Every pixel here is a pixel the 31 cells do not get. Narrowed from 44px
+     on Ash's report 5 Sep 2026 that the cells were too small to tap. */
+  width: 34px;
   flex: none;
   white-space: nowrap;
-  font-size: var(--type-label);
+  font-size: 10px;
   color: var(--text-muted);
   text-align: right;
 }
@@ -1031,39 +1088,49 @@ code {
   display: grid;
   /* Always 31, so the same day of the month lines up down the whole year. */
   grid-template-columns: repeat(31, 1fr);
-  gap: 2px;
+  gap: 1.5px;
 }
 
 .at-day {
-  aspect-ratio: 1;
+  /* Squarer, on Ash's instruction 5 Sep 2026.
+     
+     It was a 24px strip while the cells were tap targets — 31 days across a
+     phone cannot be 44pt wide, so height was the only dimension left to give.
+     They stopped being tappable the same day, which frees the height to serve
+     the picture instead of the finger.
+     
+     A ratio rather than a fixed height, so the proportion holds as the cells
+     shrink on a narrower screen: 7.6x12 at 414px, 4.6x7 at 320px. Not a true
+     square — at 31 across that would leave rows too thin to read a colour
+     from — but read as tiles rather than as bars. */
+  aspect-ratio: 1 / 1.6;
   min-width: 0;
   padding: 0;
   border: 0;
   border-radius: 2px;
   background: transparent;
   box-shadow: inset 0 0 0 1px var(--border);
-  cursor: pointer;
 }
 
-/* A hole, not a grey block — the same rule the fortnight strip follows.
-   Nothing recorded is not the same as nothing wrong. */
-.at-day-empty {
+/* A check-in that was owed and did not happen. A hole, not a grey block —
+   the same rule the fortnight strip follows: nothing recorded is not the same
+   as nothing wrong. */
+.at-day-missed {
   background: transparent;
+}
+
+/* A day nothing was owed on. Drawn as nothing, not as an empty box: on a
+   weekly cadence six days in seven are like this, and an outline on each of
+   them told an owner who was up to date that they had missed six. */
+.at-day-none {
+  background: transparent;
+  box-shadow: none;
 }
 
 /* A day the month does not have. No outline: an empty 31st in February is
    not a day nobody logged, it is not a day. */
 .at-day-pad {
   box-shadow: none;
-  cursor: default;
-}
-
-.at-selected {
-  margin: 10px 0 0;
-  font-size: var(--type-meta);
-  color: var(--text-h);
-  text-align: center;
-  text-wrap: pretty;
 }
 
 .at-stats {
@@ -2810,6 +2877,21 @@ code {
   justify-content: center;
   font-size: var(--type-micro);
   font-weight: 600;
+}
+
+/* A day nothing was owed on. The number, and nothing else — no fill, because
+   a solid grey block is a state and this is the absence of one. */
+.calendar-cell-quiet {
+  background: none;
+  color: var(--text-muted);
+}
+
+/* A check-in that was owed and did not happen. Outlined rather than filled,
+   the same convention the strips use. */
+.calendar-cell-missed {
+  background: none;
+  color: var(--text-h);
+  box-shadow: inset 0 0 0 1.5px var(--border-strong);
 }
 
 .calendar-cell-empty {

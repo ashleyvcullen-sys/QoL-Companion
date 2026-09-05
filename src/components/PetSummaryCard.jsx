@@ -16,6 +16,7 @@ import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import { conditionHistory } from '../lib/conditionHistory'
+import { scheduleForCondition } from '../lib/cadence'
 import { ConditionState, ConditionStrip } from './ConditionStrip'
 
 // What the home screen says about this pet, before any navigation.
@@ -120,9 +121,11 @@ export default function PetSummaryCard() {
 
   const trackedConditions = useMemo(() => {
     if (!pet) return []
+    const schedules = {}
     return CONDITION_LIST
       .filter((definition) => conditions.some((row) => row.conditionKey === definition.key))
       .map((definition) => {
+        schedules[definition.key] = scheduleForCondition(pet, definition)
         const entries = byCondition[definition.key] ?? []
         const status = monitoringStatus({
           definition,
@@ -134,7 +137,12 @@ export default function PetSummaryCard() {
           definition,
           status,
           due: status.state === MONITORING_STATE.DUE ? status : null,
+          // The cadence this pet is actually on, so a weekly condition's
+          // strip does not draw six missed check-ins a week — Ash's report
+          // 5 Sep 2026.
           history: conditionHistory({
+            cadenceDays: schedules[definition.key].days,
+            remindersOff: schedules[definition.key].off,
             definition,
             config: configs[definition.key],
             entries,

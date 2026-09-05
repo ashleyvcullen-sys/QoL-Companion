@@ -673,8 +673,26 @@ export default function ExportReport() {
                 >
                   {previewCharts ? 'Hide charts' : 'Preview charts'}
                 </Btn>
+                {/* Titled, on Ash's instruction 5 Sep 2026. The charts were
+                    stacked unlabelled, so a report with a calendar, a weight
+                    line and two condition summaries in it previewed as four
+                    pictures with nothing to say which was which. The PDF puts
+                    a heading above each one; this is the same heading, in the
+                    same order.
+
+                    Overview leads, because that is the order the PDF builds
+                    them in — see addChartSection above — and it was missing
+                    from the preview entirely, so the report had a page the
+                    preview never showed. */}
+                {previewCharts && includeOverall && (
+                  <div className="report-chart-preview">
+                    <h3 className="report-chart-title">Overview</h3>
+                    <OverviewBars concepts={WELLBEING_CONCEPTS} overview={overview} compact />
+                  </div>
+                )}
                 {previewCharts && selectedCharts.map((chart) => (
                   <div key={chart.key} className="report-chart-preview">
+                    <h3 className="report-chart-title">{chart.title}</h3>
                     {/* All time, like the report itself — see the capture
                         block at the foot of this file. A preview that showed
                         one month of a chart the PDF renders in full would be

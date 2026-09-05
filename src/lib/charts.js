@@ -29,6 +29,8 @@ import {
 } from './conditions'
 import { eventTypeByValue, todayIsoDate } from './conditionsData'
 import { resolveDefinition } from './cancerConfig'
+import { missedCheckIns } from './monitoringStatus'
+import { scheduleForCondition } from './cadence'
 import { computeGeneralQolResult } from './scoring'
 import { fillPetText } from './petText'
 import { BCS_MIN, BCS_MAX, BCS_IDEAL_MIN, BCS_IDEAL_MAX } from './bcsScale'
@@ -325,7 +327,7 @@ function rangeOf(...maps) {
   return from && to ? { from, to } : null
 }
 
-function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map()) {
+function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map(), pet = null) {
   const medicationDays = medicationDayLabels(medications)
   if (!generalEntries.length && medicationDays.size === 0 && noteDays.size === 0) return null
 
@@ -351,6 +353,19 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
     // Where the record starts and stops, for the all-time view. The month
     // grid does not need it; a view that draws every day does.
     range: rangeOf(resultByDate, medicationDays, noteDays),
+    // Which days a check-in was owed and did not happen — see missedCheckIns.
+    // Only these are drawn as an empty box; a day that was never due is drawn
+    // as nothing at all. Ash's report 5 Sep 2026.
+    missedDays: (() => {
+      const range = rangeOf(resultByDate)
+      if (!range) return new Set()
+      return missedCheckIns({
+        dates: [...resultByDate.keys()],
+        cadenceDays: pet?.schedule?.qol ?? pet?.schedule?.general ?? 7,
+        from: range.from,
+        to: todayIsoDate(),
+      })
+    })(),
     dayFor: (dateKey) => {
       const result = resultByDate.get(dateKey)
       const marker = medicationDays.get(dateKey) ?? null
@@ -581,6 +596,25 @@ export function chartsForCondition({
         if (!found) return null
         return { from: found.from, to: assumesWell && todayKey > found.to ? todayKey : found.to }
       })(),
+      // Which days a check-in was owed and did not happen. A pet monitored
+      // weekly drew six empty boxes for every filled one and read as six
+      // missed check-ins — Ash's report 5 Sep 2026. Only a genuinely missed
+      // day is drawn as an empty box now; a day that was never due is drawn
+      // as nothing.
+      //
+      // An exception log (assumesWell) has none: those paint an unlogged day
+      // green inside the window they can vouch for, so there is nothing left
+      // for an empty box to mean.
+      missedDays: (() => {
+        if (assumesWell) return new Set()
+        if (!firstLoggedDate) return new Set()
+        return missedCheckIns({
+          dates: entries.map((entry) => entry.date),
+          cadenceDays: scheduleForCondition(pet, resolved).days,
+          from: firstLoggedDate,
+          to: todayKey,
+        })
+      })(),
       dayFor: (dateKey) => {
         const day = summaryByDate.get(dateKey)
         const marker = medicationDays.get(dateKey) ?? null
@@ -760,7 +794,7 @@ export function buildChartRegistry({
 
   const charts = [
     overallChart(dailySeries),
-    goodBadDaysChart(generalEntries, painEntries, medications, noteDays),
+    goodBadDaysChart(generalEntries, painEntries, medications, noteDays, pet),
     ...pillarCharts(dailySeries),
     ...bodyCharts(bcsEntries),
   ].filter(Boolean)
