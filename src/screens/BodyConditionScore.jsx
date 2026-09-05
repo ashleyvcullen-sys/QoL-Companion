@@ -8,6 +8,7 @@ import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
 import SeverityOptionList from '../components/SeverityOptionList'
 import ChartView from '../components/ChartView'
+import RangeToggle from '../components/RangeToggle'
 import ChoiceButtons from '../components/ChoiceButtons'
 import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
@@ -29,6 +30,7 @@ export default function BodyConditionScore() {
   // The same two charts Trends draws, from the same descriptions — not a
   // second implementation that looks similar until one of them is edited.
   const [bodyMetric, setBodyMetric] = useState('body:score')
+  const [range, setRange] = useState('month')
   const bodyCharts = buildChartRegistry({ bcsEntries: entries })
   const scoreChart = chartByKey(bodyCharts, 'body:score')
   const weightChart = chartByKey(bodyCharts, 'body:weight')
@@ -190,7 +192,13 @@ export default function BodyConditionScore() {
             />
           )}
 
-          <ChartView chart={activeBodyChart} />
+          {/* Body condition and weight are graphable content too, so they
+              get the same control — Ash's instruction 4 Sep 2026: all time
+              for everything graphable. A weight trend in particular is the
+              one an owner is most likely to want across a whole year. */}
+          <RangeToggle value={range} onChange={setRange} />
+
+          <ChartView chart={activeBodyChart} allTime={range === 'all'} />
 
           {scoreChart && !weightChart && (
             <p className="assessment-hint">

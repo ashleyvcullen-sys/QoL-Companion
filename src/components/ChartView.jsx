@@ -1,5 +1,6 @@
 import TrendLineChart from './TrendLineChart'
 import MonthCalendar from './MonthCalendar'
+import AllTimeCalendar from './AllTimeCalendar'
 import { SEVERITY_KEY_ITEMS } from '../lib/charts'
 
 // Draws one descriptor from lib/charts.js.
@@ -14,6 +15,11 @@ import { SEVERITY_KEY_ITEMS } from '../lib/charts'
 export default function ChartView({
   chart,
   brush = true,
+  // The whole record rather than the current month / the last fortnight.
+  // One prop for both kinds, because the screens toggle them together: a
+  // calendar showing all time above a graph showing a fortnight would be two
+  // answers to one question.
+  allTime = false,
   isAnimationActive = true,
   showCaption = true,
   // Given only by the screens that can answer "what was answered that day?".
@@ -59,7 +65,9 @@ export default function ChartView({
     return (
       <>
         {intro}
-        <MonthCalendar dayFor={chart.dayFor} onOpenDay={onOpenDay} />
+        {allTime && chart.range
+          ? <AllTimeCalendar dayFor={chart.dayFor} range={chart.range} onOpenDay={onOpenDay} />
+          : <MonthCalendar dayFor={chart.dayFor} onOpenDay={onOpenDay} />}
         {severityKey}
         {caption}
       </>
@@ -80,6 +88,7 @@ export default function ChartView({
         band={chart.band}
         markers={chart.markers ?? []}
         brush={brush}
+        allTime={allTime}
         isAnimationActive={isAnimationActive}
       />
       {caption}

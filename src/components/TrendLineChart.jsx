@@ -4,7 +4,7 @@ import { formatDateDDMM, formatDateDDMMYY } from '../lib/formatDate'
 const DEFAULT_VISIBLE_DAYS = 14
 const BRUSH_HEIGHT = 24
 
-export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, markers = [], isAnimationActive = true, brush = false }) {
+export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, markers = [], isAnimationActive = true, brush = false, allTime = false }) {
   const containerHeight = brush ? height + BRUSH_HEIGHT + 10 : height
 
   return (
@@ -81,7 +81,16 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             height={BRUSH_HEIGHT}
             stroke={color}
             travellerWidth={8}
-            startIndex={Math.max(0, data.length - DEFAULT_VISIBLE_DAYS)}
+            // All time opens the window on the whole series — Ash's
+            // instruction 4 Sep 2026. The default fortnight is right for the
+            // question an owner asks daily and wrong for the one they ask
+            // before a vet visit: nine months of a pet who declined to 52%
+            // and recovered drew as a flat line at 77%, because the last
+            // fourteen days of it were flat.
+            //
+            // The brush stays either way. This moves where it opens, not
+            // whether the reader can move it.
+            startIndex={allTime ? 0 : Math.max(0, data.length - DEFAULT_VISIBLE_DAYS)}
             endIndex={Math.max(0, data.length - 1)}
           />
         )}

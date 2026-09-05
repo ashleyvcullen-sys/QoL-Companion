@@ -442,6 +442,22 @@ export async function cancelRemindersForPet({ petId, medicationIds = [], conditi
   }
 }
 
+// Cancel a specific set of pending ids.
+//
+// Added 4 Sep 2026 for the orphan sweep. cancelAllReminders clears the queue
+// wholesale and cancelRemindersForPet needs a pet to derive ids from; neither
+// can express "cancel these three, which belong to nothing".
+export async function cancelReminderIds(ids) {
+  if (!Capacitor.isNativePlatform()) return
+  const notifications = (ids ?? []).filter((id) => Number.isFinite(id)).map((id) => ({ id }))
+  if (!notifications.length) return
+  try {
+    await LocalNotifications.cancel({ notifications })
+  } catch (error) {
+    console.error('Could not cancel those reminders:', error.message)
+  }
+}
+
 // Ids of everything currently queued with the OS. Used to tell "this
 // reminder was never scheduled" apart from "this reminder is fine", so
 // rehydration can be a no-op on a normal launch instead of tearing down and

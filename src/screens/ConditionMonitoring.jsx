@@ -41,6 +41,7 @@ import HowTo from '../components/HowTo'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
 import ReminderDayPicker from '../components/ReminderDayPicker'
+import RangeToggle from '../components/RangeToggle'
 import { ConditionState, ConditionStrip } from '../components/ConditionStrip'
 import { conditionHistory } from '../lib/conditionHistory'
 import {
@@ -136,6 +137,9 @@ export default function ConditionMonitoring() {
   const [justSaved, setJustSaved] = useState(false)
 
   // The cadence control at the top of the card, closed until asked for.
+  const [range, setRange] = useState('month')
+  const allTime = range === 'all'
+
   const [editingCadence, setEditingCadence] = useState(false)
   const [cadenceError, setCadenceError] = useState('')
 
@@ -993,7 +997,11 @@ export default function ConditionMonitoring() {
           {calendarChart && (
             <Card>
               <SectionTitle>{pet.name}'s {definition.label} Summary</SectionTitle>
-              <ChartView chart={calendarChart} onOpenDay={setOpenDay} />
+              {/* One control for the calendar and every parameter chart under
+                  it — Ash's instruction 4 Sep 2026. It sits on the first card
+                  that has a picture on it, and governs all of them. */}
+              <RangeToggle value={range} onChange={setRange} />
+              <ChartView chart={calendarChart} allTime={allTime} onOpenDay={setOpenDay} />
             </Card>
           )}
 
@@ -1003,7 +1011,7 @@ export default function ConditionMonitoring() {
           {parameterCharts.map((chart) => (
             <Card key={chart.key}>
               <SectionTitle>{chart.title}</SectionTitle>
-              <ChartView chart={chart} />
+              <ChartView chart={chart} allTime={allTime} />
             </Card>
           ))}
 

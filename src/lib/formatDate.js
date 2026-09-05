@@ -41,6 +41,16 @@ export function formatDateDDMM(dateStr) {
 // whatever the series put in `date`.
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
+// Exported so a caller that has to BRANCH on validity — return null, skip a
+// line — asks the same question this file answers, rather than running its
+// own hyphen-split beside it. Two callers did exactly that until 4 Sep 2026,
+// and their looser test passed "2026-9-3" (unpadded) through to a formatter
+// that then handed the raw ISO string back. No caller can produce an
+// unpadded date today; one rule means none ever can.
+export function isIsoDate(dateStr) {
+  return isoParts(dateStr) != null
+}
+
 function isoParts(dateStr) {
   if (typeof dateStr !== 'string') return null
   const match = ISO_DATE.exec(dateStr)

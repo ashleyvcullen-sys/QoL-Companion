@@ -971,6 +971,114 @@ code {
   margin-top: 20px;
 }
 
+/* --- Month / All time -------------------------------------------------------
+   One control per screen, in the pill-pair shape the pet switcher uses, so a
+   second segmented control does not introduce a second visual language. */
+.range-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.range-toggle-option {
+  flex: 0 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-card);
+  padding: 6px 16px;
+  font: inherit;
+  font-size: var(--type-meta);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.range-toggle-option.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* --- The whole record, one row per month ----------------------------------
+   Cells size themselves to the card rather than to a fixed pixel width: a
+   fixed 8px cell fitted ten months and ran off the edge at eighteen, which
+   is the scrolling this view exists to remove. */
+.at-cal {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.at-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.at-row-label {
+  width: 44px;
+  flex: none;
+  white-space: nowrap;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.at-row-days {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  /* Always 31, so the same day of the month lines up down the whole year. */
+  grid-template-columns: repeat(31, 1fr);
+  gap: 2px;
+}
+
+.at-day {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+/* A hole, not a grey block — the same rule the fortnight strip follows.
+   Nothing recorded is not the same as nothing wrong. */
+.at-day-empty {
+  background: transparent;
+}
+
+/* A day the month does not have. No outline: an empty 31st in February is
+   not a day nobody logged, it is not a day. */
+.at-day-pad {
+  box-shadow: none;
+  cursor: default;
+}
+
+.at-selected {
+  margin: 10px 0 0;
+  font-size: var(--type-meta);
+  color: var(--text-h);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.at-stats {
+  margin: 12px 0 0;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.at-stats b {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
 /* The score at the top of Trends, stacked and centred like the home card's. */
 .trends-score {
   display: flex;

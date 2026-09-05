@@ -58,7 +58,7 @@ import {
 import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
 import { SLEEP_NOTES } from './assessmentOptions'
 import { referenceText } from './references'
-import { formatDateDDMMYY } from './formatDate'
+import { formatDateDDMMYY, isIsoDate } from './formatDate'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
@@ -3007,8 +3007,9 @@ export const beapLevelsFor = levelsFor
 
 // The score at or above which a BEAAAAPP-backed parameter is an emergency,
 // straight from the scale definition. null for a parameter that is not
-// BEAAAAPP-backed, and for the categories with no emergency band at all
-// (eyes, and palpation on the dog scale).
+// BEAAAAPP-backed, and for eyes, which has no emergency band at all. The
+// parenthetical here used to name palpation too; palpation was given a band
+// on 3 Sep 2026 and this was not updated with it.
 export function beapEmergencyFromFor(parameter, species) {
   if (parameter?.type !== 'beap' || !parameter.beapKey) return null
   const scale = BEAP_SCALES[species] ?? BEAP_SCALES.dog
@@ -3237,8 +3238,7 @@ export function describeParameterAnswer(parameter, value, species) {
   // correctly; read back through lib/formatDate, which is what the rest of
   // the app shows and what the owner wrote on the calendar in the kitchen.
   if (parameter.type === 'date') {
-    const [year, month, day] = String(value).split('-')
-    return year && month && day ? formatDateDDMMYY(value) : null
+    return isIsoDate(value) ? formatDateDDMMYY(value) : null
   }
 
   if (parameter.type === 'vomiting') {

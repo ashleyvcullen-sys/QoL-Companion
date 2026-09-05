@@ -76,8 +76,19 @@ export const SLEEP_SCALE = {
 //     nearly identical, and for cats the score is the summed Feline Grimace
 //     Scale rather than a six-step picker, so it does not behave like the
 //     other seven and should not be graded like them;
-//   - attitude's concernFrom is 8, which is now also its emergency threshold,
-//     so attitude no longer has an amber band at all.
+//   - ATTITUDE GAINED ITS AMBER BAND on Ash's instruction 4 Sep 2026:
+//     concern from 6, emergency unchanged at 8. It had no amber band at all
+//     for three days — concernFrom and emergencyFrom were both 8, so 8 and
+//     10 fired red and 6 was clear, and the one thing an owner could never
+//     see on attitude was a warning.
+//
+//     Her call on the rungs: "withdrawn, less interested in family" (6) is
+//     worth surfacing without sending anyone to a vet tonight; "avoids
+//     interaction, anxious or irritable, hides often" (8) and "unresponsive
+//     or clearly distressed" (10) are both red. Eyes therefore remains the
+//     only category that departs from severe-means-emergency-at-8.
+//
+//     APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
 //
 // CONCERN IS NEW, and set per category rather than as one cutoff, because the
 // six levels do not mean equivalent things across the eight. At 6 a dog has
@@ -86,8 +97,10 @@ export const SLEEP_SCALE = {
 // is a description of most older dogs on a quiet day. Numbers set by Ash,
 // 1 Sep 2026:
 //
-//   >= 6   ambulation, activity, palpation, posture, breathing, appetite
-//   >= 8   attitude
+//   >= 6   ambulation, activity, palpation, posture, breathing, appetite,
+//          and attitude since 4 Sep 2026 — see the note above; it was >= 8,
+//          which collided with its own emergency threshold and left the
+//          category with no amber band at all
 //   never  eyes
 //
 // Eyes is excluded deliberately. Its 6 and 8 wording is nearly identical, and
@@ -138,7 +151,7 @@ export const BEAP_SCALES = {
       "Little interest in food, even treats.",
       "Refusing food.",
     ] },
-    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 8, levels: [
+    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 6, emergencyFrom: 8, levels: [
       "Happy, interested, seeks attention.",
       "Generally happy, occasionally withdrawn.",
       "Somewhat subdued or less interested.",
@@ -204,7 +217,7 @@ export const BEAP_SCALES = {
       "Little interest in food, even treats.",
       "Refusing food.",
     ] },
-    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 8, emergencyFrom: 8, levels: [
+    { key: "attitude", letter: "A", label: "Attitude", concernFrom: 6, emergencyFrom: 8, levels: [
       "Sociable, curious, seeks attention.",
       "Generally sociable, occasionally withdrawn.",
       "Somewhat subdued or less interested.",

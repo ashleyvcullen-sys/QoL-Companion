@@ -10,6 +10,7 @@ import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import ExpandableNote from '../components/ExpandableNote'
 import OverviewBars from '../components/OverviewBars'
+import RangeToggle from '../components/RangeToggle'
 import ScoreRing from '../components/ScoreRing'
 import ChartView from '../components/ChartView'
 import DayAnswersModal from '../components/DayAnswersModal'
@@ -62,6 +63,14 @@ export default function Trends() {
   // two conditions can both have been logged on the same day and they are
   // different sets of answers. Held as { conditionKey, date }.
   const [openConditionDay, setOpenConditionDay] = useState(null)
+
+  // Month or all time, for every chart on this screen at once — Ash's
+  // instruction 4 Sep 2026. Month by default: the daily question is "how is
+  // she today", and someone opening the app to log an entry should not have
+  // to narrow a year first.
+  const [range, setRange] = useState('month')
+  const allTime = range === 'all'
+
 
   // The two halves of one day's assessment, for the day whose answers are
   // open. Looked up rather than carried on the calendar descriptor, so the
@@ -210,6 +219,12 @@ export default function Trends() {
         <Btn type="button" className="btn-block" onClick={() => navigate('/export-report')}>
           <FileDown size={17} /> Export A Report For Your Vet
         </Btn>
+
+        {/* One control for every picture below it — Ash's instruction 4 Sep
+            2026. It lives in the intro card rather than floating above the
+            first chart, because it governs the screen rather than that one
+            chart. */}
+        <RangeToggle value={range} onChange={setRange} />
       </Card>
 
       <Card>
@@ -271,13 +286,13 @@ export default function Trends() {
       <Card>
         <SectionTitle>{goodBadDays?.title ?? 'Good / Bad Days'}</SectionTitle>
         {goodBadDays
-          ? <ChartView chart={goodBadDays} onOpenDay={setOpenDay} />
+          ? <ChartView chart={goodBadDays} allTime={allTime} onOpenDay={setOpenDay} />
           : <p>No assessments logged yet.</p>}
       </Card>
 
       <Card>
         <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
-        {overallChart ? <ChartView chart={overallChart} /> : <p>No assessments logged yet.</p>}
+        {overallChart ? <ChartView chart={overallChart} allTime={allTime} /> : <p>No assessments logged yet.</p>}
       </Card>
 
       {/* One card per condition being monitored, between the overall charts
@@ -290,6 +305,7 @@ export default function Trends() {
           {calendar ? (
             <ChartView
               chart={calendar}
+              allTime={allTime}
               onOpenDay={(date) => setOpenConditionDay({ conditionKey: definition.key, date })}
             />
           ) : (

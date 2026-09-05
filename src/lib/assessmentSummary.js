@@ -205,8 +205,11 @@ function beapLevelText(category, value, species) {
 // note above BEAP_SCALES: a marker typed into a sentence could be lost to a
 // typo with nothing to notice, and had to be scrubbed before display.
 //
-// Emergency behaviour is deliberately identical to the string matching this
-// replaces — breathing and appetite at 8 and 10, attitude and posture at 10.
+// Both bands come from beapScales.js, so this and the assessment form cannot
+// disagree about the same answer. Emergency is 8 on every category except
+// eyes, which has no bands at all — see the note above BEAP_SCALES. The line
+// that used to sit here described the string-matching behaviour this replaced
+// and had been wrong since 3 Sep.
 function beapSeverity(category, value, species) {
   const score = Number(value)
   if (!Number.isFinite(score)) return null

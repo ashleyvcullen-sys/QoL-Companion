@@ -34,6 +34,7 @@ import Support from './screens/Support'
 import StartupErrorScreen from './components/StartupErrorScreen'
 import { useReminderRehydration } from './lib/useReminderRehydration'
 import { useHiddenPetReminderSync } from './lib/useHiddenPetReminderSync'
+import { useOrphanReminderSweep } from './lib/useOrphanReminderSweep'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
@@ -98,6 +99,16 @@ function App() {
   // subscription changes, and a reminder for a pet the app will not show
   // them is worse than no reminder at all.
   useHiddenPetReminderSync()
+
+  // Cancels reminders that belong to nothing — a pet or an account deleted
+  // outside the app, or armed by a build that predates the cleanup added on
+  // 3 Sep 2026. Ash's report, 4 Sep 2026: a check-in fired for a pet on an
+  // account she had already deleted.
+  //
+  // Here rather than on a screen because there is no screen to visit: the
+  // account it belonged to cannot be signed into, and on a signed-out device
+  // there is nothing but this.
+  useOrphanReminderSweep()
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return

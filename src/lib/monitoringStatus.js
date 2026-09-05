@@ -1,4 +1,4 @@
-import { formatDateDDMMYY } from './formatDate'
+import { formatDateDDMMYY, isIsoDate } from './formatDate'
 
 // One answer to "is this due?", for every screen that asks it.
 //
@@ -89,11 +89,12 @@ export function elapsedLabel(dateIso, today) {
   const ms = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${dateIso}T00:00:00Z`)
   if (!Number.isFinite(ms)) return null
   const days = Math.floor(ms / 86400000)
-  const [year, month, day] = String(dateIso).split('-')
-  if (!year || !month || !day) return null
   // Through lib/formatDate rather than built here — this was one of two
   // remaining hand-rolled copies, and they printed a four-digit year after
-  // the shared one moved to two on 4 Sep 2026.
+  // the shared one moved to two on 4 Sep 2026. The validity test comes from
+  // the same file, so this function and the formatter cannot disagree about
+  // what counts as a date.
+  if (!isIsoDate(dateIso)) return null
   const shown = formatDateDDMMYY(dateIso)
 
   if (days < 0) return `Set for ${shown}.`

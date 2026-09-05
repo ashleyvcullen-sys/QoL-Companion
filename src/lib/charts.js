@@ -305,6 +305,26 @@ function overallChart(dailySeries) {
   }
 }
 
+// The first and last day a calendar has anything to say about.
+//
+// Added 4 Sep 2026 for the all-time view, which has to know where the record
+// starts and stops — the month grid never did, because it only ever drew the
+// month you were looking at. Every key from every map that can put something
+// on a day, so a calendar whose only mark in March is a vet visit still
+// starts in March.
+function rangeOf(...maps) {
+  let from = null
+  let to = null
+  for (const map of maps) {
+    for (const key of map.keys()) {
+      if (typeof key !== 'string') continue
+      if (from == null || key < from) from = key
+      if (to == null || key > to) to = key
+    }
+  }
+  return from && to ? { from, to } : null
+}
+
 function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map()) {
   const medicationDays = medicationDayLabels(medications)
   if (!generalEntries.length && medicationDays.size === 0 && noteDays.size === 0) return null
@@ -328,6 +348,9 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
     label: 'Good / bad days',
     title: 'Good / Bad Days',
     kind: 'calendar',
+    // Where the record starts and stops, for the all-time view. The month
+    // grid does not need it; a view that draws every day does.
+    range: rangeOf(resultByDate, medicationDays, noteDays),
     dayFor: (dateKey) => {
       const result = resultByDate.get(dateKey)
       const marker = medicationDays.get(dateKey) ?? null
@@ -547,6 +570,17 @@ export function chartsForCondition({
       label: 'Summary calendar',
       title: `${resolved.label} Summary`,
       kind: 'calendar',
+      // Where the record starts and stops, for the all-time view.
+      //
+      // Runs to today rather than to the last mark on an exception log: those
+      // paint an unlogged day green inside the window they can vouch for (see
+      // dayFor below), so stopping at the last logged day would cut the run
+      // of good days the calendar is there to show.
+      range: (() => {
+        const found = rangeOf(summaryByDate, medicationDays, noteDays, eventDays, milestoneDays)
+        if (!found) return null
+        return { from: found.from, to: assumesWell && todayKey > found.to ? todayKey : found.to }
+      })(),
       dayFor: (dateKey) => {
         const day = summaryByDate.get(dateKey)
         const marker = medicationDays.get(dateKey) ?? null

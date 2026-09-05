@@ -675,7 +675,11 @@ export default function ExportReport() {
                 </Btn>
                 {previewCharts && selectedCharts.map((chart) => (
                   <div key={chart.key} className="report-chart-preview">
-                    <ChartView chart={chart} brush={false} showCaption={false} />
+                    {/* All time, like the report itself — see the capture
+                        block at the foot of this file. A preview that showed
+                        one month of a chart the PDF renders in full would be
+                        a preview of a different document. */}
+                    <ChartView chart={chart} brush={false} allTime showCaption={false} />
                   </div>
                 ))}
               </>
@@ -726,9 +730,24 @@ export default function ExportReport() {
             ref={(el) => { chartRefs.current[chart.key] = el }}
             className="pdf-chart-block"
           >
+            {/* `allTime` on Ash's instruction 4 Sep 2026 — the reason she
+                asked for an all-time view at all was "especially important
+                for exporting reports to see the full picture". Without it a
+                vet was handed whichever month the owner happened to have
+                open, and a calendar page could show September for a pet whose
+                flare was in March.
+
+                The line charts were already all-time here: no brush means
+                recharts plots the entire series. It was only the calendars
+                that were stuck on one month.
+
+                A comment cannot go between JSX attributes: a braced comment
+                in attribute position parses as a spread and fails the build,
+                which is why this one sits above the element. */}
             <ChartView
               chart={chart}
               brush={false}
+              allTime
               isAnimationActive={false}
               showCaption={false}
             />
