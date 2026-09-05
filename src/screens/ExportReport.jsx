@@ -555,7 +555,7 @@ export default function ExportReport() {
           </p>
         )}
 
-        {/* PENDING ASH — the group label and the hint under it are mine.
+        {/* The group label and the hint under it — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026.
             The chip's own wording follows the photos one above it. */}
         {notes.length > 0 && (
           <div className="include-group">
@@ -651,8 +651,8 @@ export default function ExportReport() {
             </Card>
           )}
 
-          {/* Last, because the PDF puts the charts last. PENDING ASH — the
-              heading, the button and the two hints are mine. */}
+          {/* Last, because the PDF puts the charts last. The heading, the
+              button and the two hints — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
           <Card>
             <SectionTitle>Charts</SectionTitle>
             {selectedCharts.length === 0 ? (

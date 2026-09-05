@@ -24,7 +24,7 @@ export function ConditionStrip({ history, className = '' }) {
       // off the strip itself rather than off WINDOW_SLOTS: the strip is only
       // as long as the history is, and a fortnightly pet with seven marks was
       // being announced as "0 flagged, 7 missed".
-      // PENDING ASH: the wording is mine.
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026.
       aria-label={describe(history)}
     >
       {history.strip.map((day, index) => (
@@ -62,7 +62,7 @@ const STATES = {
 // APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026 — up to date, due today,
 // overdue, and their colours.
 //
-// PENDING ASH — the other two states. Taking the whole status rather than
+// The other two states — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. Taking the whole status rather than
 // just "is it due" is what surfaced them: a condition with no entries at all,
 // and one whose reminder the owner has turned off, were both being drawn as
 // a green "Up to date", which for a condition nobody has ever logged is

@@ -74,7 +74,7 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
       {loading && <p>Loading…</p>}
 
       {!loading && events.length === 0 && !adding && (
-        // PENDING ASH — trimmed to its first sentence. The rest of it said
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. Trimmed to its first sentence. The rest of it said
         // what the line directly above now says word for word: the two used
         // to be in different cards, and since 4 Sep 2026 they are three
         // centimetres apart in the same one.

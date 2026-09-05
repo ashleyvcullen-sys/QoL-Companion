@@ -13,7 +13,7 @@ const OPTIONS = [
 // Defaults to Month. The daily question is "how is she today", and someone
 // opening the app to log an entry should not have to narrow a year first.
 //
-// PENDING ASH — "Month" and "All time" are mine.
+// "Month" and "All time" — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026.
 export default function RangeToggle({ value, onChange, className = '' }) {
   return (
     <div className={`range-toggle ${className}`.trim()} role="group" aria-label="How much history to show">

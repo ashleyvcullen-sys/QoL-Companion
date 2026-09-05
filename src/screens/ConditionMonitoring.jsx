@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FileDown, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { FileDown, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -33,7 +33,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../lib/qolData'
 import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
-import { elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
+import { MONITORING_STATE, elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, hasGiFoodAllergySelected, isGiConfigured } from '../lib/giConfig'
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
@@ -44,6 +44,7 @@ import ReminderDayPicker from '../components/ReminderDayPicker'
 import RangeToggle from '../components/RangeToggle'
 import { ConditionState, ConditionStrip } from '../components/ConditionStrip'
 import { conditionHistory } from '../lib/conditionHistory'
+import { monitoredLabels } from '../lib/monitoredList'
 import {
   CONDITION_CADENCE_OPTIONS,
   cadenceLabel,
@@ -137,6 +138,14 @@ export default function ConditionMonitoring() {
   const [justSaved, setJustSaved] = useState(false)
 
   // The cadence control at the top of the card, closed until asked for.
+  // Whether the questionnaire is open. Ash's instruction 5 Sep 2026: a
+  // condition that is up to date should not open onto a form.
+  //
+  // Held as an override rather than as the state itself, so it follows the
+  // due-ness until the owner says otherwise — a form opened by hand stays
+  // open, and one nobody has touched opens or closes with the schedule.
+  const [formOpenOverride, setFormOpenOverride] = useState(null)
+
   const [range, setRange] = useState('month')
   const allTime = range === 'all'
 
@@ -167,6 +176,20 @@ export default function ConditionMonitoring() {
   })
 
   const cadence = definition && pet ? scheduleForCondition(pet, definition) : null
+
+  // Open when something is owed, closed when nothing is — Ash's instruction
+  // 5 Sep 2026, the same rule the home card follows for its buttons.
+  //
+  // Never closed for a condition with no entries at all: there is nothing to
+  // be up to date with, and a screen that offers to "edit" a record that does
+  // not exist is a dead end.
+  const nothingOwed = status?.state === MONITORING_STATE.OK && latestEntry != null
+  const formOpen = formOpenOverride ?? !nothingOwed
+
+  // What a composed condition is currently set to watch — Ash's instruction
+  // 5 Sep 2026. Empty for everything else: a condition with a fixed question
+  // set has nothing to list and nothing to change.
+  const monitoring = definition ? monitoredLabels(definition, config) : []
 
   // The same strip the home screen shows for this condition, from the same
   // function — Ash's instruction 4 Sep 2026, at the top of the screen with how
@@ -624,7 +647,33 @@ export default function ConditionMonitoring() {
 
                     APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
 
-                    PENDING ASH — the "Change" link beside it is still mine. */}
+                    The "Change" link beside it — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
+                {/* Which of the options this pet is set up for, and the way
+                    back to change them — Ash's instruction 5 Sep 2026. The
+                    only way to see it was to open the setup screen and read
+                    the ticks, so a GI owner could be told how their pet was
+                    without being told which condition it was being measured
+                    against.
+
+                    Only for a composed condition, and only once something has
+                    been chosen: an empty "Currently monitoring:" on a screen
+                    that has not been set up yet says nothing and asks nothing.
+
+                    "Currently monitoring" and the Change link —
+                    APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
+                {monitoring.length > 0 && (
+                  <p className="condition-cadence">
+                    Currently monitoring: <b>{monitoring.join(', ')}</b>
+                    <button
+                      type="button"
+                      className="condition-cadence-change"
+                      onClick={() => navigate(`/conditions/${definition.key}/setup`)}
+                    >
+                      Change
+                    </button>
+                  </p>
+                )}
+
                 <p className="condition-cadence">
                   Monitoring frequency: <b>{cadenceLabel(cadence.days)}</b>
                   <button
@@ -833,6 +882,47 @@ export default function ConditionMonitoring() {
               </p>
             )}
 
+            {/* Up to date, so the form is closed and the two ways back into
+                it are offered instead — Ash's instruction 5 Sep 2026, to
+                match how the overall assessment behaves when today's is
+                already saved.
+
+                Two buttons or one, depending on whether there is an entry for
+                TODAY to edit. Up to date on a weekly cadence with the last
+                entry on Tuesday means there is nothing to edit and only a new
+                one to start; up to date because it was answered this morning
+                means editing is the likelier intent, so it leads.
+
+                All four strings here — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
+            {!formOpen && (
+              <div className="condition-closed">
+                <p className="assessment-hint">
+                  {todaysEntry
+                    ? `Today's ${definition.label.toLowerCase()} entry is saved.`
+                    : `Last recorded ${formatDateDDMMYY(latestEntry.date)}. Nothing is due yet.`}
+                </p>
+                {todaysEntry ? (
+                  <>
+                    <Btn type="button" className="btn-block" onClick={() => setFormOpenOverride(true)}>
+                      Edit today's entry
+                    </Btn>
+                    <Btn
+                      type="button"
+                      variant="outline"
+                      className="btn-block"
+                      onClick={() => { setDraft({}); setFormOpenOverride(true) }}
+                    >
+                      Start again
+                    </Btn>
+                  </>
+                ) : (
+                  <Btn type="button" className="btn-block" onClick={() => setFormOpenOverride(true)}>
+                    Record an entry now
+                  </Btn>
+                )}
+              </div>
+            )}
+
             {/* What you have already told us, and a way back to it.
                 
                 These questions have left the daily form — the diagnosis, the
@@ -867,7 +957,7 @@ export default function ConditionMonitoring() {
               </button>
             )}
 
-            {parameters.map((parameter, index) => (
+            {formOpen && parameters.map((parameter, index) => (
               <div key={parameter.key}>
                 {/* A heading each time the group changes, so one lump's
                     questions read as a block rather than three unrelated
@@ -926,7 +1016,8 @@ export default function ConditionMonitoring() {
                 set that does not exist. */}
             <div className="card-subsection">
               <SectionTitle>Events</SectionTitle>
-              {/* PENDING ASH — one word changed from the line you approved:
+              {/* APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. One word changed from the line approved on
+                  4 Sep 2026:
                   "above" became "below", because this moved and the calendar
                   it points at is now underneath it. */}
               <p className="assessment-hint">
@@ -944,39 +1035,37 @@ export default function ConditionMonitoring() {
 
             {/* Under the events, on Ash's instruction 4 Sep 2026. Saving is
                 the last thing on the card because recording what happened is
-                part of the same visit as answering for today. */}
-            <Btn type="button" className="btn-block" onClick={handleSave} disabled={busy}>
-              {busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
-            </Btn>
-            {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
-            {!entriesLoading && latestEntry && (
-              <p className="assessment-hint">
-                Last recorded {formatDateDDMMYY(latestEntry.date)}.
-                {status.dueIn != null && (
-                  status.dueIn > 1
-                    ? ` Next one due in ${status.dueIn} days.`
-                    : status.dueIn === 1
-                      ? ' Next one due tomorrow.'
-                      : ' Due now.'
+                part of the same visit as answering for today.
+
+                Only with the form — a Save button under a closed
+                questionnaire would save nothing anyone had just answered. */}
+            {formOpen && (
+              <>
+                <Btn type="button" className="btn-block" onClick={handleSave} disabled={busy}>
+                  {busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
+                </Btn>
+                {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
+                {!entriesLoading && latestEntry && (
+                  <p className="assessment-hint">
+                    Last recorded {formatDateDDMMYY(latestEntry.date)}.
+                    {status.dueIn != null && (
+                      status.dueIn > 1
+                        ? ` Next one due in ${status.dueIn} days.`
+                        : status.dueIn === 1
+                          ? ' Next one due tomorrow.'
+                          : ' Due now.'
+                    )}
+                  </p>
                 )}
-              </p>
+              </>
             )}
 
-            {/* A button rather than a text link, on Ash's instruction 29 Aug
-                2026. It sat under the save button as a small underlined line
-                and read as a footnote — but for a composed condition it is
-                the only way back to the question list, and an owner whose pet
-                has developed a new sign has no other route to add it. */}
-            {definition.composed && (
-              <Btn
-                type="button"
-                variant="outline"
-                className="btn-block"
-                onClick={() => navigate(`/conditions/${definition.key}/setup`)}
-              >
-                <SlidersHorizontal size={16} /> Change what you're monitoring
-              </Btn>
-            )}
+            {/* "Change what you're monitoring" was here from 29 Aug 2026 until
+                5 Sep 2026, when Ash had it removed: the "Currently monitoring:
+                ... Change" line added to the top of this screen the same day
+                is the same journey, said next to the thing it changes and
+                without the owner having to scroll past the whole questionnaire
+                to find it. Two routes to one setup screen is one too many. */}
 
           </Card>
           )}

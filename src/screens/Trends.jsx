@@ -72,6 +72,11 @@ export default function Trends() {
   // they were taken out.
   const [openPillar, setOpenPillar] = useState(null)
 
+  // Which condition parameter's line is open, keyed by chart key. Separate
+  // from openPillar: they are different cards and closing one should not
+  // close the other.
+  const [openLine, setOpenLine] = useState(null)
+
   const [range, setRange] = useState('month')
   const allTime = range === 'all'
 
@@ -179,6 +184,16 @@ export default function Trends() {
         definition,
         entries,
         calendar: chartByKey(built, `${definition.key}:calendar`),
+        // The measured numbers this condition draws a line for — Ash's
+        // instruction 5 Sep 2026. Two exist in the whole app: heart disease's
+        // resting respiratory rate and kidney disease's daily water intake.
+        // Both were already built here for the condition's own screen and the
+        // report; Trends simply never rendered them, so the one screen called
+        // Trends was the one place a measured trend could not be seen.
+        //
+        // Filtered by kind rather than by name, so a third charted parameter
+        // appears here the day it is added with no further wiring.
+        lines: built.filter((chart) => chart.kind === 'line'),
       }
     })
 
@@ -277,7 +292,7 @@ export default function Trends() {
                 wrong answer to its own question, since the chart is one tap
                 away right here.
 
-                PENDING ASH — the wording is mine. */}
+                APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
             <p className="assessment-hint">
               Tap a pillar to see how it has changed over time.
             </p>
@@ -347,7 +362,7 @@ export default function Trends() {
           and the notes. Below the overall picture because that is the one
           every pet has; above History because a calendar is scanned and a
           note is read. */}
-      {conditionSummaries.map(({ definition, calendar }) => (
+      {conditionSummaries.map(({ definition, calendar, lines }) => (
         <Card key={definition.key}>
           <SectionTitle>{pet?.name}&apos;s {definition.label} Summary</SectionTitle>
           {calendar ? (
@@ -362,6 +377,37 @@ export default function Trends() {
                a screen that promises all of them reads as a bug. */
             <p>No {definition.label.toLowerCase()} entries logged yet.</p>
           )}
+
+          {/* A measured number, under the calendar that cannot show it —
+              Ash's instruction 5 Sep 2026. Opened rather than always drawn,
+              and one at a time, for the same reason the pillars are: a column
+              of lines down this screen is what it looked like before 29 Aug
+              2026 and why they were taken out.
+
+              Only appears once there are readings. Both of these questions
+              are deliberately skippable, so a kidney owner who has never
+              managed a millilitre figure gets no empty chart and no button
+              promising one.
+
+              "Graph <name>" and "Hide <name>" — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
+          {lines.map((chart) => (
+            <div key={chart.key} className="trends-pillar-chart">
+              <button
+                type="button"
+                className="condition-cadence-change"
+                aria-expanded={openLine === chart.key}
+                onClick={() => setOpenLine((current) => (current === chart.key ? null : chart.key))}
+              >
+                {openLine === chart.key ? `Hide ${chart.title}` : `Graph ${chart.title}`}
+              </button>
+              {openLine === chart.key && (
+                <>
+                  <h3 className="report-chart-title">{chart.title}</h3>
+                  <ChartView chart={chart} allTime={allTime} />
+                </>
+              )}
+            </div>
+          ))}
           <Link className="subtle-link trends-condition-link" to={`/conditions/${definition.key}`}>
             Go to {definition.label} Monitoring
           </Link>

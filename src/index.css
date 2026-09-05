@@ -1160,6 +1160,13 @@ code {
   margin-bottom: 6px;
 }
 
+/* The questionnaire, closed because nothing is due. Its two ways back in. */
+.condition-closed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 /* A second job inside one card, separated by a rule rather than by a card of
    its own — the questionnaire and the events recorded alongside it. */
 .card-subsection {
