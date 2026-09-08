@@ -1,0 +1,16 @@
+# Supabase CLI configuration.
+#
+# Written 6 Sep 2026. The project had none until now: every deploy carried
+# --no-verify-jwt on the command line, so the live webhook's auth setting
+# lived in whoever's shell history rather than in the repo. A deploy that
+# forgot the flag would turn JWT verification back on and reject every call
+# RevenueCat makes — and RevenueCat cannot send a Supabase JWT, so the failure
+# is total, silent from our side, and looks like nothing at all until a
+# subscription fails to appear.
+project_id = "xnyashlpoodcluumbijg"
+
+# The webhook authenticates itself, with the shared secret checked inside the
+# function — see the header check in functions/revenuecat-webhook/index.ts.
+# Supabase's own JWT gate has to be off for that call to arrive at all.
+[functions.revenuecat-webhook]
+verify_jwt = false
