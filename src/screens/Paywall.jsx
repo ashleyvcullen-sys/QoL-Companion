@@ -212,6 +212,13 @@ export default function Paywall() {
           <p className="form-error" role="alert">
             Premium isn't available right now. Please try again later.
           </p>
+          {/* TEMPORARY DIAGNOSTIC, 12 Sep 2026 - remove before the next App
+              Store submission. The friendly sentence above hides the reason,
+              and the reason is the only thing that distinguishes a network
+              failure from a plugin that did not register. */}
+          <p className="assessment-hint" style={{ wordBreak: 'break-word' }}>
+            {String(configureError)}
+          </p>
         </Card>
       )}
 
