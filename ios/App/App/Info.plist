@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>QoL Companion</string>
+	<string>QoL Companion</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -37,6 +37,12 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>QoL Companion uses the camera so you can photograph or film your pet — a wound, their posture, or how they are walking or breathing — and keep it with their health record to show your vet.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>QoL Companion records audio as part of any video you film of your pet, so sounds like laboured breathing or coughing are captured for your vet.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>QoL Companion lets you choose photos and videos of your pet from your library to add to their health record.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -48,23 +54,15 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>QoL Companion uses the camera so you can photograph or film your pet — a wound, their posture, or how they are walking or breathing — and keep it with their health record to show your vet.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>QoL Companion records audio as part of any video you film of your pet, so sounds like laboured breathing or coughing are captured for your vet.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>QoL Companion lets you choose photos and videos of your pet from your library to add to their health record.</string>
 </dict>
 </plist>

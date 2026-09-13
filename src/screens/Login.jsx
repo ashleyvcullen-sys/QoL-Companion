@@ -47,6 +47,17 @@ export default function Login() {
         <Card>
           <SectionTitle>Check your email</SectionTitle>
           <p>We sent a login link to {email}.</p>
+          {/* The single most common reason someone sits on this screen and
+              gives up. Said here rather than only in support: by the time a
+              person emails to say the link never arrived, they have usually
+              already decided the app does not work.
+              //
+              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. */}
+          <p className="assessment-hint">
+            It should arrive within a minute. If you can't see it, check your junk
+            or spam folder — and add us to your contacts so the next one reaches
+            your inbox.
+          </p>
         </Card>
       </div>
     )

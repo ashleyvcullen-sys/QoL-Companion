@@ -373,6 +373,28 @@ export default function Settings() {
           <p>
             This will permanently delete your account and all associated data. This cannot be undone.
           </p>
+          {/* An App Store subscription belongs to the Apple ID, not to this
+              account, so deleting here cannot and does not cancel it. Without
+              this, a subscriber deletes, keeps being charged, and has nothing
+              left to connect the charge to — and during a trial the charge
+              lands days AFTER they deleted. The Terms say so; nobody reads
+              the Terms with a finger over a red button.
+              //
+              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. */}
+          {hasPremium && (
+            <p className="form-error" role="alert">
+              <strong>Your subscription will not be cancelled.</strong> Deleting your
+              account here does not cancel your Premium subscription — you will continue
+              to be charged unless you cancel it in your Apple ID settings.{' '}
+              <button
+                type="button"
+                className="subtle-link"
+                onClick={openManageSubscription}
+              >
+                Manage subscription
+              </button>
+            </p>
+          )}
           {deleteAccountError && <p className="form-error" role="alert">{deleteAccountError}</p>}
           <div className="modal-confirm-actions">
             <Btn type="button" variant="outline" onClick={() => setShowDeleteAccountConfirm(false)} disabled={deletingAccount}>

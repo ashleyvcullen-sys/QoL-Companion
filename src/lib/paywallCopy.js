@@ -184,3 +184,24 @@ export const APPLE_DISCLOSURE =
   'Your subscription renews automatically unless cancelled at least 24 hours ' +
   'before the end of the current period. Payment is charged to your Apple ID ' +
   'at confirmation of purchase. Manage or cancel anytime in your Apple ID settings.'
+
+// APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+// The trial line shown on a plan tile when this customer is
+// eligible for the introductory offer. Reads the length off the offer itself
+// rather than hard-coding "7 days", so changing the offer in App Store
+// Connect changes what the paywall says with it. A wrong number here is a
+// Guideline 3.1.2 rejection, not a typo.
+export function trialLine(lengthText, priceString, periodWord) {
+  return `${lengthText} free, then ${priceString} / ${periodWord}`
+}
+
+// APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+// Replaces APPLE_DISCLOSURE whenever a trial is on offer.
+// Apple requires the purchase screen itself to state the trial length and
+// that it converts to a paid subscription; the App Store listing saying so
+// is not sufficient.
+export const APPLE_TRIAL_DISCLOSURE =
+  'Your free trial converts to a paid subscription at the end of the trial ' +
+  'period unless cancelled at least 24 hours before it ends. Payment is ' +
+  'charged to your Apple ID at confirmation of purchase. Manage or cancel ' +
+  'anytime in your Apple ID settings.'

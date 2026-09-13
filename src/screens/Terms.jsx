@@ -52,6 +52,16 @@ const SECTIONS = [
       //
       // APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026.
       'QoL Companion offers a free tier, QoL Companion Basic, and a single paid subscription, QoL Companion Premium. Basic remains available and does not expire.',
+      // Placed here, with free and paid access, to mirror clause 5.1 of the
+      // website Terms — the document the paywall links and the one Apple
+      // reads. The two must not drift.
+      //
+      // No trial LENGTH is stated anywhere in these Terms. The length lives
+      // in App Store Connect, so a document that does not repeat it cannot
+      // go stale when the offer changes.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'Premium may be offered with a free trial period. Trials are subject to eligibility determined by Apple: one introductory offer per Apple ID per subscription group, so a customer who has previously subscribed to Premium is not eligible. Unless cancelled at least 24 hours before the trial ends, the trial converts automatically to a paid subscription at the price and interval shown before purchase. Cancelling during a trial keeps access until the trial period ends, and no payment is taken.',
       'Premium includes:',
       { list: [
         'Up to five pet profiles',
@@ -65,7 +75,7 @@ const SECTIONS = [
       { list: [
         'Subscriptions are auto-renewing. Payment is charged to your Apple ID or Google Play account at confirmation of purchase, and renews automatically at the same price and interval unless cancelled at least 24 hours before the end of the current period',
         'The price, billing period, and renewal terms are shown to you before you purchase, and are also available on the subscription screen in the App',
-        'You can manage or cancel a subscription at any time in your Apple ID or Google Play account settings. Cancelling stops future renewals; it does not refund the current period',
+        'You can manage or cancel a subscription at any time in your Apple ID or Google Play account settings. Cancelling stops future renewals and keeps access for the remainder of the billing period or free trial period you have already begun; it does not refund the current period',
         'Deleting the App does not cancel a subscription',
         'Refunds are handled by Apple or Google under their own policies, not by us',
       ] },

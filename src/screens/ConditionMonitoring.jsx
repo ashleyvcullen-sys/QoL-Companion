@@ -67,7 +67,7 @@ import {
 
 
 export default function ConditionMonitoring() {
-  const { selectedPet } = usePets()
+  const { selectedPet, refresh: refreshPets } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
   const premiumOr = usePremiumDenial('conditions')
   const pet = selectedPet
@@ -227,7 +227,14 @@ export default function ConditionMonitoring() {
       setCadenceError(error.message || 'Could not save that.')
       return
     }
-    await refresh()
+    // BOTH refreshes, and the pets one is the one that matters. The cadence
+    // shown on this screen comes from scheduleForCondition(pet, ...), which
+    // reads pet.schedule out of PetsContext — and saveConditionSchedule
+    // writes to the pets table. Refreshing only the CONDITIONS left the pet
+    // in context holding its old schedule, so the select snapped straight
+    // back to the previous value and stayed there until the app was
+    // reloaded. Ash's report, 13 Sep 2026.
+    await Promise.all([refresh(), refreshPets()])
 
     // Rescheduled here as well as saved. The Reminders screen self-heals its
     // own reminders when it is opened; an owner who changes the cadence here

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Check, X } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
+import { Purchases, INTRO_ELIGIBILITY_STATUS } from '@revenuecat/purchases-capacitor'
 import { Browser } from '@capacitor/browser'
 import Card from '../components/Card'
 import Btn from '../components/Btn'
@@ -11,6 +12,8 @@ import { usePets } from '../lib/PetsContext'
 import { PRIVACY_POLICY_URL, TERMS_URL } from '../lib/legalUrls'
 import {
   APPLE_DISCLOSURE,
+  APPLE_TRIAL_DISCLOSURE,
+  trialLine,
   CANCELLATION_KEEPS_RECORDS,
   PAYWALL_FEATURE_LIST,
   PAYWALL_SUBHEAD,
@@ -25,6 +28,21 @@ import {
 // PENDING ASH — the Play Store equivalent, once there is an Android build:
 // https://play.google.com/store/account/subscriptions
 const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
+
+// Apple reports a one-week trial as WEEK x 1, which would render as "1 week
+// free". The offer is marketed as seven days, and a paywall that says
+// something different from the ad is both confusing and a review risk, so a
+// single week is spelled in days. Everything else is rendered as Apple
+// states it, pluralised.
+function trialLengthText(intro) {
+  if (!intro) return null
+  const n = intro.periodNumberOfUnits
+  const unit = String(intro.periodUnit || '').toUpperCase()
+  if (unit === 'WEEK' && n === 1) return '7 days'
+  const word = { DAY: 'day', WEEK: 'week', MONTH: 'month', YEAR: 'year' }[unit]
+  if (!word) return null
+  return `${n} ${word}${n === 1 ? '' : 's'}`
+}
 
 // Re-read the entitlement, then the pets, after a purchase or a restore.
 //
@@ -93,6 +111,12 @@ export default function Paywall() {
   const [restoring, setRestoring] = useState(false)
   const [actionError, setActionError] = useState('')
   const [restoreMessage, setRestoreMessage] = useState('')
+  // productId -> true when THIS Apple ID can still take the introductory
+  // offer. Eligibility is per Apple ID and per subscription group, so it is
+  // not something we can infer from the product alone — anyone who has
+  // subscribed before is ineligible and must not be shown a trial they
+  // cannot have.
+  const [introEligible, setIntroEligible] = useState({})
 
   const packages = offerings?.current?.availablePackages ?? []
 
@@ -110,7 +134,39 @@ export default function Paywall() {
     setSelectedId((annual ?? ordered[0]).identifier)
   }, [selectedId, ordered, annual])
 
+  // Ask Apple, not the product. A null introPrice means no offer exists at
+  // all; a present one only means the offer exists, not that this customer
+  // may have it. Failure is silent and falls back to showing no trial, which
+  // under-promises rather than advertising something the purchase sheet will
+  // then refuse.
+  const productIds = ordered.map((p) => p.product.identifier).join(',')
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !productIds) return
+    let cancelled = false
+    const ids = productIds.split(',')
+    Purchases.checkTrialOrIntroductoryPriceEligibility({ productIdentifiers: ids })
+      .then((result) => {
+        if (cancelled) return
+        const next = {}
+        for (const id of ids) {
+          next[id] = result?.[id]?.status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE
+        }
+        setIntroEligible(next)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [productIds])
+
+  // The trial text for a package, or null when there is no offer, the
+  // customer is not eligible, or the period is one we do not have wording
+  // for.
+  function trialFor(pkg) {
+    if (!introEligible[pkg.product.identifier]) return null
+    return trialLengthText(pkg.product.introPrice)
+  }
+
   const selected = ordered.find((p) => p.identifier === selectedId) ?? null
+  const selectedTrial = selected ? trialFor(selected) : null
 
   async function handlePurchase() {
     if (!selected || purchasing || !identityReady) return
@@ -212,13 +268,6 @@ export default function Paywall() {
           <p className="form-error" role="alert">
             Premium isn't available right now. Please try again later.
           </p>
-          {/* TEMPORARY DIAGNOSTIC, 12 Sep 2026 - remove before the next App
-              Store submission. The friendly sentence above hides the reason,
-              and the reason is the only thing that distinguishes a network
-              failure from a plugin that did not register. */}
-          <p className="assessment-hint" style={{ wordBreak: 'break-word' }}>
-            {String(configureError)}
-          </p>
         </Card>
       )}
 
@@ -260,7 +309,9 @@ export default function Paywall() {
                   {isAnnual && <span className="paywall-plan-badge">Best value</span>}
                 </span>
                 <span className="paywall-plan-price">
-                  {pkg.product.priceString} / {isAnnual ? 'year' : 'month'}
+                  {trialFor(pkg)
+                    ? trialLine(trialFor(pkg), pkg.product.priceString, isAnnual ? 'year' : 'month')
+                    : `${pkg.product.priceString} / ${isAnnual ? 'year' : 'month'}`}
                 </span>
               </button>
             )
@@ -270,21 +321,25 @@ export default function Paywall() {
 
       {ordered.length > 0 && (
         <>
-          {/* Spec section 5. "Continue" — not "Subscribe now", not "Start
-              free trial" (there is no trial), not "Buy". */}
+          {/* Spec section 5. "Continue" by default — not "Subscribe now",
+              not "Buy". "Start free trial" ONLY when this customer is
+              actually eligible for one: offering a trial the purchase sheet
+              then refuses is a rejection and a broken promise. */}
           <Btn
             type="button"
             className="btn-block"
             disabled={purchasing || !selected || !identityReady}
             onClick={handlePurchase}
           >
-            {purchasing ? 'Processing…' : 'Continue'}
+            {purchasing ? 'Processing…' : selectedTrial ? 'Start free trial' : 'Continue'}
           </Btn>
 
           {/* Spec section 6. VERBATIM — do not reword this for layout. If it
               does not fit, the layout gives way, not the text. This is the
               string Apple checks under Guideline 3.1.2. */}
-          <p className="paywall-disclosure">{APPLE_DISCLOSURE}</p>
+          <p className="paywall-disclosure">
+            {selectedTrial ? APPLE_TRIAL_DISCLOSURE : APPLE_DISCLOSURE}
+          </p>
         </>
       )}
 
