@@ -29,11 +29,15 @@ import {
 // https://play.google.com/store/account/subscriptions
 const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
 
-// Apple reports a one-week trial as WEEK x 1, which would render as "1 week
-// free". The offer is marketed as seven days, and a paywall that says
-// something different from the ad is both confusing and a review risk, so a
-// single week is spelled in days. Everything else is rendered as Apple
-// states it, pluralised.
+// Renders whatever length Apple reports, so the paywall cannot disagree with
+// the offer configured in App Store Connect. Nothing here hard-codes a
+// duration — changing the offer changes this line with it.
+//
+// The one special case: Apple reports a one-week offer as WEEK x 1, which
+// would read "1 week free". Trials are understood in days, so a single week
+// is spelled as seven of them. Inert while the live offer is three days;
+// kept because the offer length is a dashboard setting that can change
+// without anyone touching this file.
 function trialLengthText(intro) {
   if (!intro) return null
   const n = intro.periodNumberOfUnits

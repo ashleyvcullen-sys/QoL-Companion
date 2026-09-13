@@ -36,6 +36,24 @@ import {
 const MANAGE_SUBSCRIPTION_SCHEME = 'itms-apps://apps.apple.com/account/subscriptions'
 const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
 
+// Opens the App Store straight onto the write-a-review sheet for this app.
+// Separate from the in-app review prompt on the assessment screen, and it has
+// to be: Apple's own sheet cannot be summoned by a button, and a person who
+// WANTS to leave a review should never have to wait for one to appear.
+//
+// PENDING ASH — the Play Store equivalent, once there is an Android build:
+// market://details?id=<package>
+const WRITE_REVIEW_SCHEME = 'itms-apps://apps.apple.com/app/id6797211642?action=write-review'
+const WRITE_REVIEW_URL = 'https://apps.apple.com/app/id6797211642?action=write-review'
+
+function openWriteReview() {
+  if (Capacitor.isNativePlatform()) {
+    window.location.href = WRITE_REVIEW_SCHEME
+  } else {
+    window.open(WRITE_REVIEW_URL, '_blank', 'noopener,noreferrer')
+  }
+}
+
 function openManageSubscription() {
   if (Capacitor.isNativePlatform()) {
     window.location.href = MANAGE_SUBSCRIPTION_SCHEME
@@ -328,6 +346,16 @@ export default function Settings() {
             <Trash2 size={14} /> Remove {petName}
           </button>
         )}
+
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. */}
+        <Btn
+          type="button"
+          variant="outline"
+          className="btn-block"
+          onClick={openWriteReview}
+        >
+          Rate QoL Companion
+        </Btn>
 
         <div className="destructive-block">
           <button

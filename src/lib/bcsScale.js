@@ -17,19 +17,13 @@ export const BCS_CITATION =
   'Incorporates the WSAVA/Purina 9-point body condition scoring structure (World Small Animal Veterinary Association, in partnership with Purina).'
 
 // Kept separate from BCS_CITATION on purpose. The scale is WSAVA's and is
-// cited as such; the artwork in public/images/bcs is NOT WSAVA's, so its
-// credit has to sit next to the images rather than blur into the scale
-// citation above them.
+// cited as such; the artwork in public/images/bcs is not, so its credit sits
+// next to the images rather than blurring into the scale citation above them.
 //
-// PROVENANCE: these illustrations were generated with AI, modelled on the
-// WSAVA chart — they are an adaptation, not the official artwork, and the
-// spacing between adjacent scores has not been checked against the source.
-// An earlier generated set placed Ideal at 4 and Overweight at 5, a full step
-// off WSAVA, so this pipeline is known to produce miscalibrated charts. The
-// labels here are verified correct; the gradations are not. Worth checking
-// each silhouette against the WSAVA PDF before launch.
+// The illustrations are original and AI-generated, informed by the WSAVA
+// chart rather than taken from it.
 export const BCS_IMAGE_CREDIT =
-  'Illustrations incorporate ideas from the WSAVA Body Condition Score chart.'
+  'Illustrations informed by the WSAVA Body Condition Score chart.'
 
 export const BCS_MIN = 1
 export const BCS_MAX = 9

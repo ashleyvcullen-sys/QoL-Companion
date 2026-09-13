@@ -38,7 +38,7 @@ const SECTIONS = [
   {
     heading: 'Data deletion',
     paragraphs: [
-      "You can remove a pet's data at any time from Account Management, which deletes that pet's stored record.",
+      "You can remove a pet's data at any time using the \"Remove pet\" option under Account Management in Settings, which deletes that pet's stored record.",
       "You can also delete your entire account from within the app. This permanently removes all of your information, including anything hidden because a subscription has ended. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
     ],
   },
@@ -67,7 +67,13 @@ const SECTIONS = [
   {
     heading: 'AI disclaimer',
     paragraphs: [
-      "This app does not use artificial intelligence to diagnose, score, or make medical decisions about your pet — all scoring is done with fixed, transparent rules you can review in the assessment itself. Some illustrations and reference imagery in this app were AI-assisted in their creation.",
+      // "Some ... AI-assisted" understated it and, in doing so, worked against
+      // us: the useful thing to say is that the illustrations are ORIGINAL and
+      // therefore not reproductions of any published scale's artwork. Hedging
+      // invited the opposite reading.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      "This app does not use artificial intelligence to diagnose, score, or make medical decisions about your pet — all scoring is done with fixed, transparent rules you can review in the assessment itself. All illustrations and reference imagery in this app are original and AI-generated. None are reproduced from the published instruments the app credits.",
     ],
   },
   {
@@ -83,6 +89,12 @@ const SECTIONS = [
     paragraphs: [
       ...allReferencesText(),
       "All other text, design, and code in this app are original to this app unless otherwise credited.",
+      // The plain-language half of clause 8 of the Terms. On this screen it
+      // matters more than the ownership claim does: an owner reading a legal
+      // page wants to know what happens to their photographs, not what we own.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      "You keep ownership of everything you put into this app — your pet's records, photographs, videos and notes. You give us permission to store and display it only so the app can work for you, and that permission ends when you delete it or your account. We do not use it to train artificial intelligence models, and we do not sell it or share it with advertisers.",
     ],
   },
   {

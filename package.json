@@ -15,6 +15,7 @@
     "check:onboarding": "node scripts/check-onboarding-path.mjs"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "^8.0.0",
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
@@ -22,6 +23,8 @@
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/share": "^8.0.1",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
     "@revenuecat/purchases-capacitor": "13.4.0",
     "@supabase/supabase-js": "^2.110.8",
     "capacitor-native-settings": "^8.2.0",

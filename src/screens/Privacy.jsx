@@ -85,6 +85,8 @@ const SECTIONS = [
         'Vercel — Web hosting (for the companion website) — Standard web request data',
         "Apple / Google — App distribution, payment processing, and device-level services on iOS/Android — As governed by Apple's and Google's own privacy policies",
       ] },
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'Some of these providers are located overseas, including in the United States. Your information may be stored or processed on their servers.',
       'We do not share your information with any other third party, and we do not permit these providers to use your information for their own purposes.',
     ],
   },
@@ -99,11 +101,14 @@ const SECTIONS = [
   {
     heading: '8. Data Retention and Deletion',
     content: [
-      'Your data is retained for as long as your account remains active.',
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'Your data is retained for as long as your account remains open. If an account is inactive for an extended period we may contact you before deleting it, and you can delete your account yourself at any time.',
       'You can delete an individual photo or video at any time from the Photos & Videos screen. Deleting it removes the file itself, not merely its listing.',
       'You can permanently delete a pet\'s data at any time using the "Remove pet" option in Settings — this immediately and permanently removes that pet\'s profile and all associated assessments, notes, history, medications, photos, and videos.',
       'You can permanently delete your entire account at any time using the "Delete Account" option in Settings. This immediately and permanently deletes your account, your pet profile(s), and all associated data including all stored files — this action cannot be undone, and does not require contacting us.',
       'Deleting the App from your device does not delete your data, because it is stored in your account rather than on the device. Use Delete Account if that is what you intend.',
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      "Deletion removes your information from our live systems. Residual copies may persist in our providers' encrypted backups for a short period, after which they are overwritten. We retain nothing beyond that except where the law requires it. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
     ],
   },
   {
@@ -154,7 +159,7 @@ export default function Privacy() {
 
       <Card>
         <SectionTitle>Privacy Policy</SectionTitle>
-        <p className="assessment-hint">Last updated: 23 August 2026</p>
+        <p className="assessment-hint">Last updated: 13 September 2026</p>
       </Card>
 
       {SECTIONS.map((section) => (

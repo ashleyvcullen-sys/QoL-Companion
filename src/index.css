@@ -1,4 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+/* Self-hosted, not fetched from Google's CDN.
+ *
+ * The remote @import sent every user's IP to fonts.googleapis.com on every
+ * launch, which sits badly beside a privacy policy promising no third-party
+ * tracking — and meant the typeface silently fell back to a system font for
+ * anyone doing a check-in with no signal. Vite bundles these from
+ * node_modules, so they ship inside the app and work offline.
+ *
+ * Both families are SIL Open Font Licence, which permits this. The licence
+ * files travel with the packages in node_modules. */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
 
 :root {
   /* QoL Companion design system — see QoLCompanion_Developer_Handoff.md, Section 7 */

@@ -22,12 +22,21 @@ const SECTIONS = [
   {
     heading: '3. Permitted Use',
     content: [
-      "We grant you a limited, non-exclusive, non-transferable, revocable license to use the App on devices you own or control, solely for your personal, non-commercial use in tracking and monitoring your own pet's wellbeing.",
+      // "personal, non-commercial use ... your own pet" forbade the two
+      // things the clinic strategy depends on: a vet using this in practice,
+      // and a vet showing it to a client whose pet is not theirs. "Pets in
+      // your care" covers an owner and a vet alike. The restriction that
+      // matters — reselling access — moves into the list below, where the
+      // restrictions live.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'We grant you a limited, non-exclusive, non-transferable, revocable licence to use the App on devices you own or control, for tracking and monitoring the wellbeing of pets in your care. Veterinary professionals may use the App in the course of their practice, including to demonstrate it to clients.',
       'You agree not to:',
       { list: [
         'Use the App for any unlawful purpose or in violation of any applicable law or regulation',
         'Attempt to reverse engineer, decompile, or extract the source code of the App, except where permitted by applicable law',
         'Copy, modify, distribute, sell, or lease any part of the App',
+        'Resell, sublicense, or charge a third party for access to the App',
         'Use automated systems (bots, scrapers) to access or interact with the App',
         'Interfere with or disrupt the operation of the App or its underlying infrastructure',
         "Use the App to input false or misleading information about a pet's health with intent to deceive a third party (e.g., a veterinarian)",
@@ -117,7 +126,24 @@ const SECTIONS = [
   {
     heading: '8. Intellectual Property',
     content: [
-      'The App, including its design, content, source code, trademarks, and the BEAAAAPP scoring framework as implemented within the App, is owned by us or our licensors and is protected by copyright and other intellectual property laws. Except for the limited license granted in Section 3, no rights are transferred to you.',
+      // Mirrors clause 8 of the website Terms word for word. Three changes
+      // from what stood here:
+      //
+      //   "to the extent such protection subsists" — the illustrations are
+      //   AI-generated, and Australian copyright wants a human author, so a
+      //   flat claim that everything is protected by copyright was an
+      //   overclaim. This is true either way and costs nothing.
+      //
+      //   The trade mark is named rather than implied. It is registered with
+      //   IP Australia; a generic "trademarks" does not put anyone on notice.
+      //
+      //   "the BEAAAAPP scoring framework" is now just "scoring framework".
+      //   BEAAAAPP is Dr Cox's concept, and claiming ownership of it by name
+      //   read badly even with "as implemented within the App" carrying the
+      //   qualification.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'The App, including its design, content, source code, trade marks, and scoring framework as implemented within the App, is owned by us or our licensors and is protected by copyright, trade mark and other intellectual property laws to the extent such protection subsists. QoL Companion and the QoL Companion logo are trade marks of QoL Companion (ABN 68 923 567 002), registered in Australia. Except for the limited licence granted in Section 3, no rights are transferred to you.',
       'Content referenced in the App is attributed to its original sources. The published instruments the App draws on are:',
       // Listed in full here as well as on the Legal & Privacy page, from the
       // same source file, so the Terms are complete on their own — an App
@@ -135,12 +161,12 @@ const SECTIONS = [
       'You are responsible for what you upload. By adding content you confirm that:',
       { list: [
         'You have the right to upload it',
-        'It relates to your own pet and to your use of the App',
+        'It relates to a pet in your care and to your use of the App',
         'It does not contain another identifiable person who has not agreed to appear in it',
         'It is not unlawful, and does not infringe anyone else\'s rights',
       ] },
       'We do not routinely review uploaded content, and there is no expectation that we will see it. We may remove content that we become aware is unlawful, or that is being stored in breach of these Terms.',
-      'Storage is provided for the reasonable personal use described in Section 3. We may apply limits on file size, length, or total storage, and will tell you what those limits are within the App. The App may refuse a file that exceeds them.',
+      'Storage is provided for the reasonable use described in Section 3. We may apply limits on file size, length, or total storage, and will tell you what those limits are within the App. The App may refuse a file that exceeds them.',
       'You can delete any individual photo or video at any time from within the App. Deleting removes the file itself. See the Privacy Policy for what happens to your content when a pet profile or an account is deleted.',
     ],
   },
@@ -159,8 +185,31 @@ const SECTIONS = [
   {
     heading: '12. Termination',
     content: [
-      'You may stop using the App and delete your account at any time via the in-app "Delete Pet" and account deletion options, or by contacting us at info@qolcompanion.com.au.',
-      'We may suspend or terminate your access to the App if you breach these Terms, or for any other reason with reasonable notice, except where immediate termination is warranted by unlawful conduct or risk to others.',
+      // Three gaps closed, 13 Sep 2026:
+      //
+      //   The subscription warning. Deleting an account does not cancel an
+      //   Apple subscription — the App now says so in the deletion dialog,
+      //   and the Terms were silent on it.
+      //
+      //   Data on termination BY US. Section 5.7 covers a lapsed
+      //   subscription; nothing covered an account we suspend.
+      //
+      //   Survival. Nothing in this document said which clauses outlive it,
+      //   which left the disclaimers and the liability cap arguable after
+      //   someone leaves.
+      //
+      // The first sentence also untangles "Delete Pet" from account deletion.
+      // They are different things and it read as though either would end your
+      // use of the App.
+      //
+      // Section numbers here are the APP's, which differ from the website's
+      // because the App carries a separate Your Content section.
+      //
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+      'You may stop using the App at any time. You can delete individual pet records using "Delete Pet", and delete your account entirely using the in-app account deletion option, or by contacting us at info@qolcompanion.com.au.',
+      'Deleting your account does not cancel an active subscription or free trial. Subscriptions are managed by Apple and must be cancelled in your Apple ID settings — see Section 5.',
+      'We may suspend or terminate your access to the App if you breach these Terms, or for any other reason with reasonable notice, except where immediate termination is warranted by unlawful conduct or risk to others. If we terminate your access other than for breach, you may request a copy of your data at info@qolcompanion.com.au before it is deleted.',
+      'Sections 6, 7, 8, 9 and 13, and any fees already payable under Section 5, survive termination of these Terms.',
     ],
   },
   {
@@ -193,7 +242,21 @@ const SECTIONS = [
     ],
   },
   {
-    heading: '16. Contact',
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+    heading: '16. Severability',
+    content: [
+      'If any provision of these Terms is found to be invalid or unenforceable, that provision will be limited or removed to the minimum extent necessary, and the remaining provisions will continue in full force and effect.',
+    ],
+  },
+  {
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
+    heading: '17. Assignment',
+    content: [
+      'You may not transfer your rights or obligations under these Terms. We may transfer ours to a successor in connection with a merger, acquisition, or sale of the business, on notice to you.',
+    ],
+  },
+  {
+    heading: '18. Contact',
     content: [
       'Questions about these Terms can be directed to: info@qolcompanion.com.au',
     ],
@@ -207,7 +270,7 @@ export default function Terms() {
 
       <Card>
         <SectionTitle>Terms &amp; Conditions</SectionTitle>
-        <p className="assessment-hint">Last updated: 23 August 2026</p>
+        <p className="assessment-hint">Last updated: 13 September 2026</p>
       </Card>
 
       {SECTIONS.map((section) => (

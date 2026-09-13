@@ -47,6 +47,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import { scheduleQolReminder } from '../lib/notifications'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
+import { maybeAskForReview } from '../lib/reviewPrompt'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
@@ -274,6 +275,18 @@ export default function QualityOfLifeAssessment() {
   // written a moment ago and reading it back to display what we already know
   // is a round trip that can only introduce a delay or a discrepancy.
   const [completed, setCompleted] = useState(null)
+
+  // Counts the assessment and, occasionally, asks for a review. Deliberately
+  // on the SAVED screen rather than mid-assessment: the owner has finished,
+  // they have their number, and nothing is interrupted. maybeAskForReview
+  // decides for itself whether this is a moment worth asking in — it declines
+  // after a poor score, and after too few assessments to have earned the
+  // question. It never throws.
+  const completedPercent = completed?.result?.percent
+  useEffect(() => {
+    if (completedPercent == null) return
+    maybeAskForReview(completedPercent)
+  }, [completedPercent])
 
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)

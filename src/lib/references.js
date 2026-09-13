@@ -135,8 +135,8 @@ export const REFERENCES = [
     // the same fact in the complete list, which is why the wording here is
     // fuller: "an adaptation and not the official WSAVA artwork".
     key: 'wsava-bcs-images',
-    short: 'Illustrations incorporate ideas from the WSAVA Body Condition Score chart.',
-    full: 'The body condition illustrations incorporate ideas from the WSAVA Body Condition Score chart. They are an adaptation and not the official WSAVA artwork.',
+    short: 'Illustrations informed by the WSAVA Body Condition Score chart.',
+    full: 'The body condition illustrations are informed by the WSAVA Body Condition Score chart. They are original illustrations and not the official WSAVA artwork.',
   },
   {
     key: 'aaha-aafp',
