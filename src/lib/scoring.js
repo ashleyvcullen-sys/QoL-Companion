@@ -1,6 +1,6 @@
 // Reference: QoLCompanion_Developer_Handoff.md, Section 4.
 
-import { STOOL_EMERGENCY, URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
+import { URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
 
 export const SEVERITY = {
   GOOD: 'good',
@@ -58,8 +58,14 @@ const GENERAL_QOL_BANDS = [
   { min: 0, label: 'Severely reduced', severity: SEVERITY.SEVERE },
 ]
 
-const BAND_INDEX_MODERATE_IMPACT = 2
 const BAND_INDEX_SEVERE_IMPACT = 3
+
+// The highest percentage each band can show: one below the minimum of the
+// band above it. Used to cap the headline number when a floor has pulled the
+// band down, so the ring never reads 94% "Severely reduced".
+function bandCeiling(bandIndex) {
+  return bandIndex === 0 ? 100 : GENERAL_QOL_BANDS[bandIndex - 1].min - 1
+}
 
 function generalQolBandIndexFromPercent(percent) {
   const index = GENERAL_QOL_BANDS.findIndex((band) => percent >= band.min)
@@ -78,9 +84,12 @@ export function generalQolBandFromPercent(percent) {
 // than the worst single finding justifies, mirroring how triage works:
 // urgency is set by the worst problem, not the mean of all of them.
 //
-// The percentage itself is deliberately left untouched — only the band and
-// its colour are floored, so the underlying average stays honest and
-// comparable over time.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. The percentage now
+// follows the band down: it is capped at the top of whichever band a floor
+// forces (49% for Severely reduced, 74% for Moderately reduced). It used to be
+// left untouched so the average stayed comparable over time, but a ring
+// reading 94% beside "Severely reduced" confused owners more than it helped.
+// The uncapped average is still returned as `averagePercent`.
 function beapBandFloorIndex(beap) {
   if (!beap) return 0
 
@@ -90,36 +99,34 @@ function beapBandFloorIndex(beap) {
   if (answered.length === 0) return 0
 
   const worst = Math.max(...answered)
-  // >= 9 rather than == 10 so the floor tier lines up with the band labels
-  // BEAP_BANDS uses: 7-8 is "Severe", 9-10 is "Very severe". Only the
-  // Feline Grimace Scale can produce an odd score (it sums five 0-2 action
-  // units); every other category uses the even-only 0/2/4/6/8/10 picker and
-  // so can never land on 9. Without this, a cat scoring 9 on Eyes/Face read
-  // as "marked Very severe ... recorded as Moderately reduced", which looks
-  // self-contradictory even though both halves were correct.
-  if (worst >= 9) return BAND_INDEX_SEVERE_IMPACT
-  if (worst >= 8) return BAND_INDEX_MODERATE_IMPACT
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. "Severe" and "Very
+  // severe" on ANY category, Eyes included, both floor to Severely reduced
+  // (score capped at 49%). Until then 8 floored only to Moderately reduced
+  // and 9-10 to Severely reduced. For cats' Eyes/Face this means a Feline
+  // Grimace Scale total of 8 or more.
+  if (worst >= 8) return BAND_INDEX_SEVERE_IMPACT
   return 0
 }
 
-// The three answers in the assessment that stop the owner with an emergency
-// pop-up — the same chips, read from the same lists, as StoolPage (via
-// SliderWithChipsPage), VomitingPage and UrinationPage.
+// Two of the three answers in the assessment that stop the owner with an
+// emergency pop-up — the same chips, read from the same lists, as
+// VomitingPage and UrinationPage. (The third, black/tarry stool, pops up but
+// does not floor — see below.)
 //
-// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Each floors the band to
-// Severely reduced, the same as a Very severe BEAAAAPP answer. Until then a
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Blood in the vomit and a
+// possible cat urinary blockage floor the band to Severely reduced (capped
+// at 49%). Black, tarry stool deliberately does NOT: it still raises its
+// pop-up, but scores like any other stool chip (the flat 5-point penalty),
+// the same as fresh blood or mucous. Until then a
 // pop-up told the owner to call the vet while the ring could still read
 // "Good": each of these is one item of sixteen, worth about 6 points.
 //
 // The urinary one is cats only, matching the pop-up, so it needs the
-// species. Callers that do not pass one get the stool and vomiting floors
-// only — never a floor the owner was not shown an alert for.
+// species. Callers that do not pass one get the vomiting floor only — never
+// a floor the owner was not shown an alert for.
 export function assessmentEmergencies(entry, species = null) {
   if (!entry) return []
   const found = []
-  if ((entry.stoolSymptoms ?? []).some((chip) => STOOL_EMERGENCY.chips.includes(chip))) {
-    found.push('stool')
-  }
   if (entry.vomiting?.hasVomited === true
     && (entry.vomiting.character ?? []).some((chip) => VOMITING_EMERGENCY.chips.includes(chip))) {
     found.push('vomiting')
@@ -132,8 +139,13 @@ export function assessmentEmergencies(entry, species = null) {
   return found
 }
 
+const EMERGENCY_FLOOR_BAND = {
+  vomiting: BAND_INDEX_SEVERE_IMPACT,
+  urination: BAND_INDEX_SEVERE_IMPACT,
+}
+
 function emergencyBandFloorIndex(entry, species) {
-  return assessmentEmergencies(entry, species).length > 0 ? BAND_INDEX_SEVERE_IMPACT : 0
+  return Math.max(0, ...assessmentEmergencies(entry, species).map((key) => EMERGENCY_FLOOR_BAND[key]))
 }
 
 const VOMIT_DAILY_THRESHOLD = 2
@@ -229,28 +241,34 @@ export function computeGeneralQolResult(entry, beap, species = null) {
   const scored = [...functionScores, ...painScores].filter((score) => score !== null)
   const total = scored.reduce((sum, score) => sum + score, 0)
   const max = scored.length * 10
-  const percent = max === 0 ? 0 : Math.round((total / max) * 100)
+  const averagePercent = max === 0 ? 0 : Math.round((total / max) * 100)
 
   // The band is whichever is worse: what the average alone suggests, the
   // floor imposed by the single worst BEAAAAPP finding, or the floor imposed
   // by an emergency pop-up answer.
+  const averageBandIndex = generalQolBandIndexFromPercent(averagePercent)
   const bandIndex = Math.max(
-    generalQolBandIndexFromPercent(percent),
+    averageBandIndex,
     beapBandFloorIndex(beap),
     emergencyBandFloorIndex(entry, species),
   )
   const band = GENERAL_QOL_BANDS[bandIndex]
 
+  // The headline number is capped to the band, so the two always agree. When
+  // no floor fired the average is already inside its band and is unchanged.
+  const percent = Math.min(averagePercent, bandCeiling(bandIndex))
+
   return {
     total,
     max,
     percent,
+    averagePercent,
     band: band.label,
     color: SEVERITY_COLORS[band.severity],
     // True when the worst BEAAAAPP finding or an emergency answer pulled the
-    // band below what the average alone would have given — lets the UI explain the discrepancy
-    // rather than looking simply inconsistent.
-    bandFlooredBySeverity: bandIndex > generalQolBandIndexFromPercent(percent),
+    // band (and so the percentage) below what the average alone would have
+    // given — lets the UI explain why.
+    bandFlooredBySeverity: bandIndex > averageBandIndex,
   }
 }
 
@@ -335,6 +353,7 @@ export function describeBeapSeverityFloor(beap) {
     // 'Moderately reduced' or 'Severely reduced' — the band this floor
     // forces, whatever the average would otherwise have given.
     bandLabel: GENERAL_QOL_BANDS[floorIndex].label,
+    ceiling: bandCeiling(floorIndex),
     color: SEVERITY_COLORS[GENERAL_QOL_BANDS[floorIndex].severity],
   }
 }
@@ -343,7 +362,6 @@ export function describeBeapSeverityFloor(beap) {
 // describeBeapSeverityFloor() does for BEAAAAPP. Returns null when none of
 // the three pop-up answers is present.
 const EMERGENCY_FINDING_LABELS = {
-  stool: 'black, tarry stool',
   vomiting: 'blood in the vomit',
   urination: 'signs of a possible urinary blockage',
 }
@@ -351,10 +369,13 @@ const EMERGENCY_FINDING_LABELS = {
 export function describeEmergencyFloor(entry, species = null) {
   const found = assessmentEmergencies(entry, species)
   if (found.length === 0) return null
-  const band = GENERAL_QOL_BANDS[BAND_INDEX_SEVERE_IMPACT]
+  // The worst of the findings present sets the band the note names.
+  const bandIndex = emergencyBandFloorIndex(entry, species)
+  const band = GENERAL_QOL_BANDS[bandIndex]
   return {
     findings: found.map((key) => EMERGENCY_FINDING_LABELS[key]),
     bandLabel: band.label,
+    ceiling: bandCeiling(bandIndex),
     color: SEVERITY_COLORS[band.severity],
   }
 }

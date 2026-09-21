@@ -17,8 +17,13 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
   // the average alone would have given — otherwise a high percentage sitting
   // next to a severe band looks like a bug rather than a deliberate safety
   // override.
-  const floor = describeBeapSeverityFloor(entry.beap)
-  const emergencyFloor = describeEmergencyFloor(entry, species)
+  // Each note is shown only when it names the band the assessment actually
+  // ended up in. With black, tarry stool (Moderately reduced) and a Severe
+  // pain answer (Severely reduced) together, the stool note would otherwise
+  // say "capped at 74%" beside a 49% score.
+  const bandSetBy = (note) => (note && note.bandLabel === generalResult.band ? note : null)
+  const floor = bandSetBy(describeBeapSeverityFloor(entry.beap))
+  const emergencyFloor = bandSetBy(describeEmergencyFloor(entry, species))
   const floorCategoryNames = floor
     ? floor.categories.map((key) => beapCategoryDisplayName(species, key))
     : []
@@ -37,17 +42,18 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
             ⚠️ Because <strong>{formatList(floorCategoryNames)}</strong>{' '}
             {floorCategoryNames.length > 1 ? 'were' : 'was'} marked{' '}
             <strong>{floor.severityLabel}</strong>, this assessment is recorded as{' '}
-            <strong>{floor.bandLabel}</strong>, regardless of the overall average.
+            <strong>{floor.bandLabel}</strong> and its score is capped at {floor.ceiling}%.
           </p>
         )}
-        {/* PENDING ASH — wording drafted to mirror the approved BEAAAAPP
-            note above. */}
+        {/* PENDING ASH — both notes. The BEAAAAPP one above was approved
+            ending "regardless of the overall average"; since 21 Sep 2026 the
+            percentage is capped too, so both now say so. */}
         {emergencyFloor && (
           <p className="review-summary-floor-note" style={{ color: emergencyFloor.color }}>
             ⚠️ Because <strong>{formatList(emergencyFloor.findings)}</strong>{' '}
             {emergencyFloor.findings.length > 1 ? 'were' : 'was'} recorded, this assessment
-            is recorded as <strong>{emergencyFloor.bandLabel}</strong>, regardless of the
-            overall average.
+            is recorded as <strong>{emergencyFloor.bandLabel}</strong> and its score is
+            capped at {emergencyFloor.ceiling}%.
           </p>
         )}
       </div>

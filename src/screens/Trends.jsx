@@ -128,7 +128,7 @@ export default function Trends() {
   })()
   const hasLatestData = latestGeneralEntry || latestPainEntry
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
-  const dailySeries = buildDailySeries(generalEntries, painEntries)
+  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species)
 
   // Every chart this screen can draw, described in one place. Trends decides
   // the layout — which cards, which collapse — but not what a chart IS.

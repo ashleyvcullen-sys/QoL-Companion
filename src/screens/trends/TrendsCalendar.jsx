@@ -1,7 +1,7 @@
 import MonthCalendar from '../../components/MonthCalendar'
 import { computeGeneralQolResult } from '../../lib/scoring'
 
-export default function TrendsCalendar({ generalEntries, painEntries = [] }) {
+export default function TrendsCalendar({ generalEntries, painEntries = [], species = null }) {
   // BEAAAAPP now feeds the overall score too, so each day's general entry
   // is paired with that same day's pain entry (if one exists).
   const beapByDate = new Map(painEntries.map((entry) => [entry.date, entry.beap]))
@@ -12,7 +12,7 @@ export default function TrendsCalendar({ generalEntries, painEntries = [] }) {
   const resultByDate = new Map(
     generalEntries.map((entry) => [
       entry.date,
-      computeGeneralQolResult(entry, beapByDate.get(entry.date)),
+      computeGeneralQolResult(entry, beapByDate.get(entry.date), species),
     ])
   )
 

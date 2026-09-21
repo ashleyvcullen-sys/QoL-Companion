@@ -362,7 +362,7 @@ export default function ExportReport() {
     ? computeGeneralQolResult(latestGeneralEntry, painForLatestGeneral?.beap, pet?.species)
     : null
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
-  const dailySeries = buildDailySeries(generalEntries, painEntries)
+  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species)
   const recent = dailySeries.slice(-10).reverse()
   // Every note the app holds, from wherever it was written, newest first.
   // Assessment notes and condition notes answer different questions and a
