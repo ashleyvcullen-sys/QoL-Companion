@@ -151,6 +151,8 @@ const SECTIONS = [
       // second document. Naming two of them and pointing elsewhere for the
       // rest, which is what this said before, was not attribution.
       ...allReferencesText(),
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Mirrors the website Terms.
+      'The App incorporates ideas and assessment structures from these sources; it does not reproduce them, and no endorsement by their authors or owners is implied.',
     ],
   },
   {
@@ -270,7 +272,7 @@ export default function Terms() {
 
       <Card>
         <SectionTitle>Terms &amp; Conditions</SectionTitle>
-        <p className="assessment-hint">Last updated: 13 September 2026</p>
+        <p className="assessment-hint">Last updated: 21 September 2026</p>
       </Card>
 
       {SECTIONS.map((section) => (
