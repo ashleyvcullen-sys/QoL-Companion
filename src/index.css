@@ -1695,6 +1695,18 @@ code {
 
 /* Under a centred intro on a condition page, where flex-start would leave it
    the only thing on the card off the centre line. */
+/* Favourite things: each named activity with its answer row beneath. */
+.favourite-thing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-block: 10px;
+  border-top: 1px solid var(--border);
+}
+.favourite-thing-name {
+  margin: 0;
+}
+
 .how-to-button.centred {
   align-self: center;
   /* align-self only centres inside a flex column, and the condition intro

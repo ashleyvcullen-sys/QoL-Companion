@@ -1,4 +1,5 @@
 import {
+  FAVOURITE_THING_OPTIONS,
   HYGIENE_SYMPTOM_OPTIONS,
   STOOL_NONE_TODAY_OPTION,
   STOOL_SYMPTOM_OPTIONS,
@@ -94,6 +95,18 @@ export function describeAssessmentDay(generalEntry, painEntry, species) {
   // Sleep is the one general score with real level wording behind it, so it
   // reads back as those words rather than as a number.
   add('Sleep', sleepAnswer(scores.sleep, species), null, atOrBelow(scoreSlider(scores.sleep), 4))
+
+  // Favourite things, one line listing each with its answer. Amber when any
+  // of them is no longer enjoyed at all. APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. The threshold.
+  const favourites = (generalEntry?.favouriteThings ?? []).filter((item) => item?.answer)
+  if (favourites.length > 0) {
+    add('Favourite Things',
+      favourites
+        .map((item) => `${item.thing} — ${optionLabel(item.answer, FAVOURITE_THING_OPTIONS) ?? item.answer}`)
+        .join('; '),
+      null,
+      favourites.some((item) => item.answer === 'none') ? 'concern' : null)
+  }
 
   // The BEAAAAPP categories, in the order they are asked, each as the level
   // text that was on screen when it was chosen.

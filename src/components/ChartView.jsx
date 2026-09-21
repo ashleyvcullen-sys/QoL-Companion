@@ -65,7 +65,7 @@ export default function ChartView({
     return (
       <>
         {intro}
-        {/* PENDING ASH — wording. Only where a tap does something: the
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Wording. Only where a tap does something: the
             month view with a caller that can open the day. The all-time view
             and the PDF capture have no tappable days, so they say nothing. */}
         {onOpenDay && !(allTime && chart.range) && (

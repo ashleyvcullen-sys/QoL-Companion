@@ -25,6 +25,9 @@ function mapGeneralQolRow(row) {
     vomiting: row.vomiting ?? { hasVomited: null, frequency: '', unit: 'times/day', character: [] },
     urination: row.urination ?? { status: null, symptoms: [] },
     waterIntake: row.water_intake ?? { status: null },
+    // [{ thing, answer }] — the list as it stood that day, so renaming a
+    // favourite later does not rewrite what was answered about the old one.
+    favouriteThings: row.favourite_things ?? null,
     notes: row.notes,
   }
 }

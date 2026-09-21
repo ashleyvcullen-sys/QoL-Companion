@@ -16,6 +16,7 @@ import DrinkingPage from './assessment/DrinkingPage'
 import SliderOnlyPage from './assessment/SliderOnlyPage'
 import BeapCategoryPage from './assessment/BeapCategoryPage'
 import SleepPage from './assessment/SleepPage'
+import FavouriteThingsPage from './assessment/FavouriteThingsPage'
 import FelineGrimacePage from './assessment/FelineGrimacePage'
 import ReviewPage from './assessment/ReviewPage'
 import {
@@ -65,6 +66,8 @@ const INITIAL_ENTRY = {
   vomiting: { hasVomited: null, frequency: '', unit: 'times/day', character: [] },
   urination: { status: null, symptoms: [] },
   waterIntake: { status: null },
+  // [{ thing, answer }] once the owner has a list; null until then.
+  favouriteThings: null,
   notes: '',
   beap: Object.fromEntries(BEAP_CATEGORIES.map((category) => [category, null])),
   // Only ever used for cats — the 5 Feline Grimace Scale action-unit answers
@@ -81,6 +84,7 @@ const INITIAL_ENTRY = {
 const PAGE_KEY_ORDER = [
   'intro',
   'stool', 'vomiting', 'urination', 'drinking', 'hygiene', 'vision', 'hearing', 'sleep',
+  'favourites',
   ...BEAP_CATEGORIES,
   'review',
 ]
@@ -110,6 +114,12 @@ function isSectionAnswered(entryToCheck, pageKey) {
       return entryToCheck.scores.hearing !== 'unsure'
     case 'sleep':
       return entryToCheck.scores.sleep !== 'unsure'
+    case 'favourites':
+      // Optional: with no list there is nothing to resume to, and a list
+      // with every item answered is done.
+      return !Array.isArray(entryToCheck.favouriteThings)
+        || entryToCheck.favouriteThings.length === 0
+        || entryToCheck.favouriteThings.every((item) => item.answer != null)
     default:
       // BEAP categories (key is the category name itself) — 'intro' and
       // 'review' also fall through here and are always "answered", since
@@ -151,6 +161,7 @@ function entryFromServerRows(generalRow, painRow) {
     vomiting: generalRow?.vomiting ?? INITIAL_ENTRY.vomiting,
     urination: generalRow?.urination ?? INITIAL_ENTRY.urination,
     waterIntake: generalRow?.waterIntake ?? INITIAL_ENTRY.waterIntake,
+    favouriteThings: generalRow?.favouriteThings ?? null,
     notes: generalRow?.notes ?? painRow?.notes ?? '',
     beap: painRow?.beap ?? INITIAL_ENTRY.beap,
     // Every action unit the stored answer names, over a blank set — so a
@@ -164,7 +175,7 @@ function entryFromServerRows(generalRow, painRow) {
 }
 
 export default function QualityOfLifeAssessment() {
-  const { selectedPet } = usePets()
+  const { selectedPet, refresh: refreshPets } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
 
@@ -497,6 +508,11 @@ export default function QualityOfLifeAssessment() {
         vomiting: entry.vomiting,
         urination: entry.urination,
         water_intake: entry.waterIntake,
+        // Only answered items are kept: an item on the list but not answered
+        // today says nothing about today.
+        favourite_things: (entry.favouriteThings ?? []).some((item) => item.answer != null)
+          ? entry.favouriteThings.filter((item) => item.answer != null)
+          : null,
         notes: entry.notes,
       }, { onConflict: 'pet_id,entry_date' })
 
@@ -573,6 +589,20 @@ export default function QualityOfLifeAssessment() {
       setErrorMessage(
         `Assessment saved, but the condition form could not be updated to match: ${syncError.message}`,
       )
+    }
+
+    // The favourite-things list lives on the pet, so it carries to the next
+    // assessment. Written only when the owner changed it here. A failure is
+    // not fatal: today's answers are already saved with the assessment.
+    const listNow = (entry.favouriteThings ?? []).map((item) => item.thing)
+    const listSaved = pet.favourite_things ?? []
+    if (listNow.length > 0 && JSON.stringify(listNow) !== JSON.stringify(listSaved)) {
+      const { error: listError } = await supabase
+        .from('pets')
+        .update({ favourite_things: listNow })
+        .eq('id', pet.id)
+      if (listError) console.error('Could not save favourite things:', listError.message)
+      else refreshPets?.()
     }
 
     // Reschedule from this completion, not the cadence-change baseline —
@@ -695,6 +725,13 @@ export default function QualityOfLifeAssessment() {
           ? prefilledFrom(`${scoresFromConditions.sleep.conditionLabel} assessment`)
           : null
       }
+    />,
+    <FavouriteThingsPage
+      key="favourites"
+      pet={pet}
+      value={entry.favouriteThings}
+      savedThings={pet.favourite_things}
+      onChange={(v) => updateField('favouriteThings', v)}
     />,
     ...BEAP_CATEGORIES.map((category) =>
       category === 'eyes' && pet.species === 'cat' ? (

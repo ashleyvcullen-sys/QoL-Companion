@@ -195,6 +195,24 @@ export function scoreUrination(urination) {
   return urination.symptoms.length > 0 ? 0 : 5
 }
 
+// Favourite things: up to three activities the owner named as the ones their
+// pet loves, each answered every assessment. One item in the average, the
+// mean of the answers given. "Didn't have the chance" is left out, like
+// "Not sure" everywhere else — a rainy day is not a lost interest.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Counts as one item
+// alongside the other sixteen; three answer levels.
+export const FAVOURITE_THING_SCORES = { usual: 10, less: 5, none: 0 }
+
+export function scoreFavouriteThings(favouriteThings) {
+  if (!Array.isArray(favouriteThings)) return null
+  const scores = favouriteThings
+    .map((item) => FAVOURITE_THING_SCORES[item?.answer])
+    .filter((score) => score != null)
+  if (scores.length === 0) return null
+  return scores.reduce((sum, score) => sum + score, 0) / scores.length
+}
+
 function scoreWaterIntake(waterIntake) {
   if (waterIntake.status === 'unsure') return null
   if (waterIntake.status === 'normal') return 10
@@ -234,6 +252,7 @@ export function computeGeneralQolResult(entry, beap, species = null) {
     scoreSlider(entry.scores.vision),
     scoreSlider(entry.scores.hearing),
     scoreSlider(entry.scores.sleep),
+    scoreFavouriteThings(entry.favouriteThings),
   ]
 
   const painScores = BEAP_CATEGORIES.map((category) => scoreBeapCategory(beap?.[category]))
@@ -425,6 +444,7 @@ export const INDIVIDUAL_MEASURE_GROUPS = [
       { key: 'vision', label: 'Vision' },
       { key: 'hearing', label: 'Hearing' },
       { key: 'sleep', label: 'Sleep' },
+      { key: 'favouriteThings', label: 'Favourite Things' },
     ],
   },
   {
@@ -468,6 +488,7 @@ export function computeIndividualMeasures(entry, beap) {
         vision: scoreSlider(entry.scores?.vision),
         hearing: scoreSlider(entry.scores?.hearing),
         sleep: scoreSlider(entry.scores?.sleep),
+        favouriteThings: scoreFavouriteThings(entry.favouriteThings),
       }
     : {}
 

@@ -45,7 +45,7 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
             <strong>{floor.bandLabel}</strong> and its score is capped at {floor.ceiling}%.
           </p>
         )}
-        {/* PENDING ASH — both notes. The BEAAAAPP one above was approved
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Both notes. The BEAAAAPP one above was approved
             ending "regardless of the overall average"; since 21 Sep 2026 the
             percentage is capped too, so both now say so. */}
         {emergencyFloor && (

@@ -147,6 +147,21 @@ export const URINATION_STATUS_OPTIONS = [
   { value: 'unsure', label: 'Not sure' },
 ]
 
+// Favourite things. APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. All owner-facing wording below.
+export const FAVOURITE_THINGS_MAX = 3
+
+export const FAVOURITE_THING_OPTIONS = [
+  { value: 'usual', label: 'As much as usual' },
+  { value: 'less', label: 'Less than usual' },
+  { value: 'none', label: 'Not at all' },
+  { value: 'no_chance', label: "Didn't have the chance" },
+]
+
+export const FAVOURITE_THINGS_PLACEHOLDERS = {
+  dog: ['e.g. Chasing the ball at the park', 'e.g. Greeting you at the door', 'e.g. Sniffing around the garden'],
+  cat: ['e.g. Watching birds from the window', 'e.g. Chasing the feather toy', 'e.g. Curling up on your lap'],
+}
+
 export const WATER_INTAKE_OPTIONS = [
   { value: 'reduced', label: 'Reduced' },
   { value: 'normal', label: 'Normal' },
