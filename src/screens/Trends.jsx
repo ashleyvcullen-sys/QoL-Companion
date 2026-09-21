@@ -18,6 +18,7 @@ import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
 import { buildDailySeries } from '../lib/qolData'
 import {
   buildChartRegistry,
@@ -53,6 +54,10 @@ export default function Trends() {
   // conditionKey filter, and the report already uses them for exactly this.
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition: entriesByCondition } = useAllConditionEntries(pet?.id)
+  // Red disease days floor that day's Overall QoL — see lib/diseaseDays.js.
+  const diseaseByDate = diseaseDaysByDate({
+    petConditions: conditions, entriesByCondition, species: pet?.species,
+  })
   const { byCondition: eventsByCondition } = useAllConditionEvents(pet?.id)
   const [showScoringExplainer, setShowScoringExplainer] = useState(false)
   // Which day's answers are open, as an ISO date. Null is closed.
@@ -120,15 +125,22 @@ export default function Trends() {
     if (!latestGeneralEntry) return null
     try {
       const pain = painEntries.find((row) => row.date === latestGeneralEntry.date) ?? null
-      return computeGeneralQolResult(latestGeneralEntry, pain?.beap, pet?.species)
+      return computeGeneralQolResult(
+        latestGeneralEntry, pain?.beap, pet?.species,
+        diseaseEmergenciesOn(diseaseByDate, latestGeneralEntry.date),
+      )
     } catch (error) {
       console.error('Could not score that assessment:', error.message)
       return null
     }
   })()
   const hasLatestData = latestGeneralEntry || latestPainEntry
-  const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
-  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species)
+  const overview = computeOverviewCategories(
+    latestGeneralEntry, latestPainEntry,
+    pillarAnswersOn(diseaseByDate, latestGeneralEntry?.date ?? latestPainEntry?.date),
+    pet?.species,
+  )
+  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species, diseaseByDate)
 
   // Every chart this screen can draw, described in one place. Trends decides
   // the layout — which cards, which collapse — but not what a chart IS.
@@ -142,6 +154,8 @@ export default function Trends() {
     // lives on its own screen.
     medications,
     species: pet?.species,
+    pet,
+    diseaseByDate,
   })
 
   const overallChart = chartByKey(charts, 'overall')
@@ -495,7 +509,8 @@ export default function Trends() {
       {showScoringExplainer && (
         <Modal title="How Does QoL Companion Calculate Quality of Life?" onClose={() => setShowScoringExplainer(false)}>
           <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
-          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) draw on your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework — shown separately rather than averaged, so you can see what is changing. For cats, the Comfort score also incorporates assessment structures from the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
+          {/* PENDING ASH — rewritten 21 Sep 2026 for the new pillar mapping. */}
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin and itch; Appetite covers eating, drinking, digestion and toileting; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is held at 49% or below.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more), your pet's favourite things, and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
           {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Updated to match the floor rules: any
               Severe pain answer, blood in the vomit and a cat's possible

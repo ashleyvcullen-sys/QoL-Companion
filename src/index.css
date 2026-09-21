@@ -1695,6 +1695,16 @@ code {
 
 /* Under a centred intro on a condition page, where flex-start would leave it
    the only thing on the card off the centre line. */
+/* Each tracked condition's status beside the Overall QoL result. */
+.disease-today {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.disease-today-title {
+  margin: 0 0 4px;
+}
+
 /* Favourite things: each named activity with its answer row beneath. */
 .favourite-thing {
   display: flex;

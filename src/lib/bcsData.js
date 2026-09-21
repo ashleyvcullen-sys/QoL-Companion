@@ -28,13 +28,19 @@ export async function fetchBcsEntries(petId) {
 // still gets a usable BCS entry. Passing undefined leaves the stored value
 // alone is NOT how upsert works, so callers must pass the existing weight
 // through explicitly when they aren't changing it.
+function localIsoDate() {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)
+}
+
 export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate }) {
   const { error } = await supabase
     .from('bcs_entries')
     .upsert(
       {
         pet_id: petId,
-        entry_date: entryDate ?? new Date().toISOString().slice(0, 10),
+        // Local date, like every other screen — was UTC until 21 Sep 2026.
+        entry_date: entryDate ?? localIsoDate(),
         score,
         weight_kg: weightKg ?? null,
         notes: notes || null,

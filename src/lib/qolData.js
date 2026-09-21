@@ -5,6 +5,7 @@ import {
   computeIndividualMeasures,
   computeOverviewCategories,
 } from './scoring'
+import { diseaseEmergenciesOn, pillarAnswersOn } from './diseaseDays'
 
 function mapGeneralQolRow(row) {
   return {
@@ -269,7 +270,7 @@ export function buildMeasureSeries(generalEntries, painEntries) {
   }))
 }
 
-export function buildDailySeries(generalEntries, painEntries, species = null) {
+export function buildDailySeries(generalEntries, painEntries, species = null, diseaseByDate = null) {
   const generalByDate = new Map(generalEntries.map((entry) => [entry.date, entry]))
   const painByDate = new Map(painEntries.map((entry) => [entry.date, entry]))
   const allDates = Array.from(new Set([...generalByDate.keys(), ...painByDate.keys()])).sort()
@@ -278,8 +279,12 @@ export function buildDailySeries(generalEntries, painEntries, species = null) {
     const generalEntry = generalByDate.get(date) ?? null
     const painEntry = painByDate.get(date) ?? null
     // Same-date pain entry feeds the BEAAAAPP half of the overall score.
-    const generalResult = generalEntry ? computeGeneralQolResult(generalEntry, painEntry?.beap, species) : null
-    const categories = computeOverviewCategories(generalEntry, painEntry)
+    const generalResult = generalEntry
+      ? computeGeneralQolResult(generalEntry, painEntry?.beap, species, diseaseEmergenciesOn(diseaseByDate, date))
+      : null
+    const categories = computeOverviewCategories(
+      generalEntry, painEntry, pillarAnswersOn(diseaseByDate, date), species,
+    )
 
     return {
       date,

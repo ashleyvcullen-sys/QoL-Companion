@@ -49,6 +49,8 @@ import { supabase } from '../lib/supabase'
 import { scheduleQolReminder } from '../lib/notifications'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
+import { diseaseDaysByDate, diseaseEmergenciesOn } from '../lib/diseaseDays'
+import DiseaseTodayList from '../components/DiseaseTodayList'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
 import EyesIcon from '../components/icons/EyesIcon'
@@ -185,7 +187,10 @@ export default function QualityOfLifeAssessment() {
   const { generalEntries, painEntries, loading: historyLoading } = useQolHistory(pet.id)
   const isFirstAssessment = !historyLoading && generalEntries.length === 0
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  // Local date, not UTC. This was toISOString() until 21 Sep 2026, which in
+  // Australia filed any assessment done before ~10am under the previous day,
+  // and meant "today" never matched the disease forms' local date.
+  const todayStr = todayIsoDate()
   const todaysGeneralEntry = generalEntries.find((e) => e.date === todayStr) ?? null
   const todaysPainEntry = painEntries.find((e) => e.date === todayStr) ?? null
 
@@ -280,6 +285,19 @@ export default function QualityOfLifeAssessment() {
     }
     return { beap: found, scores: foundScores, fields: foundFields }
   }, [conditionEntriesByCondition, petConditions, todayDate, pet.species])
+
+  // Each tracked condition's status by date, for the disease floor and the
+  // "Disease Monitoring Today" list. Same day only.
+  const diseaseDays = useMemo(
+    () => diseaseDaysByDate({
+      petConditions,
+      entriesByCondition: conditionEntriesByCondition,
+      species: pet.species,
+    }),
+    [petConditions, conditionEntriesByCondition, pet.species],
+  )
+  const diseaseToday = diseaseDays.get(todayStr) ?? []
+  const diseaseEmergenciesToday = diseaseEmergenciesOn(diseaseDays, todayStr)
 
   // Set once the assessment is saved. Holds what was just recorded so the
   // finish screen can show it without re-reading the database — the row was
@@ -494,7 +512,7 @@ export default function QualityOfLifeAssessment() {
     setSaving(true)
     setErrorMessage('')
 
-    const entryDate = new Date().toISOString().slice(0, 10)
+    const entryDate = todayIsoDate()
     const beapWorst = computeBeapWorst(entry.beap)
 
     const { error: generalError } = await supabase
@@ -622,11 +640,15 @@ export default function QualityOfLifeAssessment() {
     const previousPain = painEntries.find((row) => row.date === previousGeneral?.date) ?? null
 
     setCompleted({
-      result: computeGeneralQolResult(entry, entry.beap, pet.species),
+      result: computeGeneralQolResult(entry, entry.beap, pet.species, diseaseEmergenciesToday),
+      diseaseToday,
       previous: previousGeneral
         ? {
             date: previousGeneral.date,
-            result: computeGeneralQolResult(previousGeneral, previousPain?.beap, pet.species),
+            result: computeGeneralQolResult(
+              previousGeneral, previousPain?.beap, pet.species,
+              diseaseEmergenciesOn(diseaseDays, previousGeneral.date),
+            ),
           }
         : null,
     })
@@ -763,6 +785,9 @@ export default function QualityOfLifeAssessment() {
       onNotesChange={(v) => updateField('notes', v)}
       errorMessage={errorMessage}
       species={pet.species}
+      pet={pet}
+      diseaseEmergencies={diseaseEmergenciesToday}
+      diseaseToday={diseaseToday}
     />,
   ]
 
@@ -785,6 +810,7 @@ export default function QualityOfLifeAssessment() {
                 {result.percent}% — {result.band}
               </strong>
             </div>
+            <DiseaseTodayList days={completed.diseaseToday} pet={pet} />
             {previous && (
               <div className="review-summary-row">
                 <span>Last assessment ({formatDateDDMMYY(previous.date)})</span>

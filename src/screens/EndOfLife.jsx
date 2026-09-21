@@ -9,6 +9,8 @@ import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
 import { useLatestGeneralQol } from '../lib/useLatestGeneralQol'
 import { computeGeneralQolResult } from '../lib/scoring'
+import { diseaseDaysByDate, diseaseEmergenciesOn } from '../lib/diseaseDays'
+import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { formatDateDDMMYY } from '../lib/formatDate'
 
 // Splits on **bold** markers and renders the matched segments as <strong>,
@@ -28,7 +30,17 @@ export default function EndOfLife() {
   const [activeTopicKey, setActiveTopicKey] = useState(null)
 
   const activeTopic = END_OF_LIFE_TOPICS.find((topic) => topic.key === activeTopicKey)
-  const latestResult = latestEntry ? computeGeneralQolResult(latestEntry, latestBeap, pet?.species) : null
+  const { conditions } = usePetConditions(pet?.id)
+  const { byCondition } = useAllConditionEntries(pet?.id)
+  const latestResult = latestEntry
+    ? computeGeneralQolResult(
+      latestEntry, latestBeap, pet?.species,
+      diseaseEmergenciesOn(
+        diseaseDaysByDate({ petConditions: conditions, entriesByCondition: byCondition, species: pet?.species }),
+        latestEntry.date,
+      ),
+    )
+    : null
 
   return (
     <div className="screen">

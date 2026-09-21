@@ -9,8 +9,10 @@ function draftKey(petId) {
   return `qol_assessment_draft_${petId}`
 }
 
+// Local date, not UTC — see todayIsoDate in conditionsData.js.
 function todayDateString() {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)
 }
 
 // Returns the saved draft's entry only if it was started today — a draft

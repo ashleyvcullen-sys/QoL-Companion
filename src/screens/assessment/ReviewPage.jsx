@@ -1,5 +1,11 @@
 import SectionTitle from '../../components/SectionTitle'
-import { computeGeneralQolResult, describeBeapSeverityFloor, describeEmergencyFloor } from '../../lib/scoring'
+import {
+  computeGeneralQolResult,
+  describeBeapSeverityFloor,
+  describeDiseaseFloor,
+  describeEmergencyFloor,
+} from '../../lib/scoring'
+import DiseaseTodayList from '../../components/DiseaseTodayList'
 import { beapCategoryDisplayName } from '../../lib/beapScales'
 
 // "A", "A and B", "A, B and C"
@@ -8,8 +14,10 @@ function formatList(items) {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
-export default function ReviewPage({ entry, onNotesChange, errorMessage, species }) {
-  const generalResult = computeGeneralQolResult(entry, entry.beap, species)
+export default function ReviewPage({
+  entry, onNotesChange, errorMessage, species, pet, diseaseEmergencies = [], diseaseToday = [],
+}) {
+  const generalResult = computeGeneralQolResult(entry, entry.beap, species, diseaseEmergencies)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
 
@@ -24,6 +32,7 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
   const bandSetBy = (note) => (note && note.bandLabel === generalResult.band ? note : null)
   const floor = bandSetBy(describeBeapSeverityFloor(entry.beap))
   const emergencyFloor = bandSetBy(describeEmergencyFloor(entry, species))
+  const diseaseFloor = bandSetBy(describeDiseaseFloor(diseaseEmergencies))
   const floorCategoryNames = floor
     ? floor.categories.map((key) => beapCategoryDisplayName(species, key))
     : []
@@ -56,6 +65,15 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
             capped at {emergencyFloor.ceiling}%.
           </p>
         )}
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. */}
+        {diseaseFloor && (
+          <p className="review-summary-floor-note" style={{ color: diseaseFloor.color }}>
+            ⚠️ Because <strong>{formatList(diseaseFloor.conditions)}</strong> monitoring
+            recorded an urgent finding today, this assessment is recorded as{' '}
+            <strong>{diseaseFloor.bandLabel}</strong> and its score is capped at {diseaseFloor.ceiling}%.
+          </p>
+        )}
+        <DiseaseTodayList days={diseaseToday} pet={pet} />
       </div>
 
       <div className="field">

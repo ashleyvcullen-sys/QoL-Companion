@@ -242,7 +242,9 @@ function scoreBeapCategory(value) {
 // question, or a missing/incomplete BEAAAAPP category — is excluded from
 // the average entirely rather than counted as zero, so a partial
 // assessment isn't penalised for what it doesn't contain.
-export function computeGeneralQolResult(entry, beap, species = null) {
+// `diseaseEmergencies` is the same day's red disease findings, from
+// diseaseEmergenciesOn() in lib/diseaseDays.js — any one floors the band.
+export function computeGeneralQolResult(entry, beap, species = null, diseaseEmergencies = []) {
   const functionScores = [
     scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { symptomPenalty: 5 }),
     scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { symptomPenalty: 5 }),
@@ -270,6 +272,7 @@ export function computeGeneralQolResult(entry, beap, species = null) {
     averageBandIndex,
     beapBandFloorIndex(beap),
     emergencyBandFloorIndex(entry, species),
+    (diseaseEmergencies?.length ?? 0) > 0 ? BAND_INDEX_SEVERE_IMPACT : 0,
   )
   const band = GENERAL_QOL_BANDS[bandIndex]
 
@@ -399,6 +402,18 @@ export function describeEmergencyFloor(entry, species = null) {
   }
 }
 
+// The disease-monitoring floor, described for the Review page.
+export function describeDiseaseFloor(diseaseEmergencies = []) {
+  if (!diseaseEmergencies?.length) return null
+  const band = GENERAL_QOL_BANDS[BAND_INDEX_SEVERE_IMPACT]
+  return {
+    conditions: [...new Set(diseaseEmergencies.map((item) => item.conditionLabel))],
+    bandLabel: band.label,
+    ceiling: bandCeiling(BAND_INDEX_SEVERE_IMPACT),
+    color: SEVERITY_COLORS[band.severity],
+  }
+}
+
 export function computeDiseaseInstrumentResult(scoresByDomain) {
   const values = Object.values(scoresByDomain).filter((v) => v !== 'unsure' && v != null)
   const total = values.reduce((sum, v) => sum + v, 0)
@@ -507,22 +522,85 @@ export function computeIndividualMeasures(entry, beap) {
 // else. Must stay in step with the object returned below.
 export const OVERVIEW_PILLAR_KEYS = ['comfort', 'appetite', 'sleep', 'curiosity', 'connection']
 
-export function computeOverviewCategories(latestGeneralQolEntry, latestPainLogEntry) {
-  const beap = latestPainLogEntry?.beap
-  // A stored beapWorst of null is a real "nothing answered" rather than a
-  // missing field, so only fall back to recomputing when it's absent
-  // entirely (?? handles null/undefined identically, hence the explicit
-  // 'beapWorst' in check).
-  const hasStoredWorst =
-    latestPainLogEntry != null && 'beapWorst' in latestPainLogEntry && latestPainLogEntry.beapWorst != null
-  const beapWorst = hasStoredWorst ? latestPainLogEntry.beapWorst : computeBeapWorst(beap)
-  const sleepScore = latestGeneralQolEntry?.scores?.sleep
+// The five wellbeing pillars.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Each pillar is the average
+// (0-100) of the Overall Assessment answers that belong to it plus the same
+// day's disease-monitoring answers mapped to it (lib/pillarMap.js). Any red
+// answer in a pillar caps it at 49 — the same rule as the overall score.
+//
+// Until then Comfort was the single worst BEAAAAPP answer, and the other four
+// were one assessment question each, so disease monitoring never reached the
+// pillars at all.
+//
+//   Comfort     pain: breathing, eyes/face, ambulation, posture, palpation;
+//               hygiene
+//   Appetite    pain: appetite; vomiting, stool, urination, drinking
+//   Sleep       sleep
+//   Curiosity   pain: activity; vision, hearing, favourite things
+//   Connection  pain: attitude
+//
+// `pillarAnswers` is [{ pillar, score, red }] from pillarAnswersOn() in
+// lib/diseaseDays.js. A pillar with nothing answered is null ("no data").
+const PILLAR_RED_CAP = 49
+
+export function computeOverviewCategories(latestGeneralEntry, latestPainEntry, pillarAnswers = [], species = null) {
+  const beap = latestPainEntry?.beap ?? {}
+  const entry = latestGeneralEntry
+  const items = { comfort: [], appetite: [], sleep: [], curiosity: [], connection: [] }
+  const push = (pillar, score, red = false) => {
+    if (score == null || !Number.isFinite(score)) return
+    items[pillar].push({ score, red })
+  }
+  // BEAAAAPP, 0 best .. 10 worst. 8 and above is red, matching the band floor.
+  const pain = (pillar, category) => {
+    const value = beap?.[category]
+    if (value == null) return
+    push(pillar, invert(value), value >= 8)
+  }
+  // Everyday-function items, already 0-10 higher-is-better.
+  const everyday = (pillar, score, red = false) => {
+    if (score == null) return
+    push(pillar, score * 10, red)
+  }
+
+  pain('comfort', 'breathing')
+  pain('comfort', 'eyes')
+  pain('comfort', 'ambulation')
+  pain('comfort', 'posture')
+  pain('comfort', 'palpation')
+  pain('appetite', 'appetite')
+  pain('curiosity', 'activity')
+  pain('connection', 'attitude')
+
+  if (entry) {
+    const redFindings = new Set(assessmentEmergencies(entry, species))
+    everyday('comfort', scoreStoolOrHygiene(entry.scores?.hygiene, entry.hygieneSymptoms ?? []))
+    everyday('appetite', entry.vomiting ? scoreVomiting(entry.vomiting) : null, redFindings.has('vomiting'))
+    everyday('appetite', scoreStoolOrHygiene(entry.scores?.stool, entry.stoolSymptoms ?? []))
+    everyday('appetite', entry.urination ? scoreUrination(entry.urination) : null, redFindings.has('urination'))
+    everyday('appetite', entry.waterIntake ? scoreWaterIntake(entry.waterIntake) : null)
+    everyday('sleep', scoreSlider(entry.scores?.sleep))
+    everyday('curiosity', scoreSlider(entry.scores?.vision))
+    everyday('curiosity', scoreSlider(entry.scores?.hearing))
+    everyday('curiosity', scoreFavouriteThings(entry.favouriteThings))
+  }
+
+  for (const answer of pillarAnswers ?? []) {
+    if (items[answer.pillar]) push(answer.pillar, answer.score, Boolean(answer.red))
+  }
+
+  const pillar = (list) => {
+    if (list.length === 0) return null
+    const average = Math.round(list.reduce((sum, item) => sum + item.score, 0) / list.length)
+    return list.some((item) => item.red) ? Math.min(average, PILLAR_RED_CAP) : average
+  }
 
   return {
-    comfort: invert(beapWorst),
-    appetite: invert(beap?.appetite),
-    sleep: typeof sleepScore === 'number' ? sleepScore * 10 : null,
-    curiosity: invert(beap?.activity),
-    connection: invert(beap?.attitude),
+    comfort: pillar(items.comfort),
+    appetite: pillar(items.appetite),
+    sleep: pillar(items.sleep),
+    curiosity: pillar(items.curiosity),
+    connection: pillar(items.connection),
   }
 }

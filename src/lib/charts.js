@@ -32,6 +32,7 @@ import { resolveDefinition } from './cancerConfig'
 import { missedCheckIns } from './monitoringStatus'
 import { scheduleForCondition } from './cadence'
 import { computeGeneralQolResult } from './scoring'
+import { diseaseEmergenciesOn } from './diseaseDays'
 import { fillPetText } from './petText'
 import { BCS_MIN, BCS_MAX, BCS_IDEAL_MIN, BCS_IDEAL_MAX } from './bcsScale'
 
@@ -327,7 +328,7 @@ function rangeOf(...maps) {
   return from && to ? { from, to } : null
 }
 
-function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map(), pet = null) {
+function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map(), pet = null, diseaseByDate = null) {
   const medicationDays = medicationDayLabels(medications)
   if (!generalEntries.length && medicationDays.size === 0 && noteDays.size === 0) return null
 
@@ -339,7 +340,10 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
   const resultByDate = new Map(
     generalEntries.map((entry) => [
       entry.date,
-      computeGeneralQolResult(entry, beapByDate.get(entry.date), pet?.species),
+      computeGeneralQolResult(
+        entry, beapByDate.get(entry.date), pet?.species,
+        diseaseEmergenciesOn(diseaseByDate, entry.date),
+      ),
     ]),
   )
 
@@ -785,6 +789,9 @@ export function buildChartRegistry({
   configByCondition = {},
   species,
   pet,
+  // Map<date, disease days> from lib/diseaseDays.js, so a red disease day
+  // floors the good/bad-days calendar the same way it floors the ring.
+  diseaseByDate = null,
 } = {}) {
   // The assessment and the pain log are saved together but keep separate
   // notes fields, so a day's note can be in either. Built once and shared by
@@ -794,7 +801,7 @@ export function buildChartRegistry({
 
   const charts = [
     overallChart(dailySeries),
-    goodBadDaysChart(generalEntries, painEntries, medications, noteDays, pet),
+    goodBadDaysChart(generalEntries, painEntries, medications, noteDays, pet, diseaseByDate),
     ...pillarCharts(dailySeries),
     ...bodyCharts(bcsEntries),
   ].filter(Boolean)

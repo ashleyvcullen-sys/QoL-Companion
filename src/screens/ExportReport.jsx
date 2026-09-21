@@ -20,6 +20,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
 import { conditionByKey } from '../lib/conditions'
 import {
   CHART_GROUPS,
@@ -292,6 +293,9 @@ export default function ExportReport() {
 
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
+  const diseaseByDate = diseaseDaysByDate({
+    petConditions: conditions, entriesByCondition: byCondition, species: pet?.species,
+  })
   const { byCondition: eventsByCondition } = useAllConditionEvents(pet?.id)
   const { entries: bcsEntries } = useBcsHistory(pet?.id)
   const { items: mediaItems, urls: mediaUrls } = usePetMedia(pet?.id)
@@ -359,10 +363,17 @@ export default function ExportReport() {
     ? painEntries.find((p) => p.date === latestGeneralEntry.date) ?? null
     : null
   const generalResult = latestGeneralEntry
-    ? computeGeneralQolResult(latestGeneralEntry, painForLatestGeneral?.beap, pet?.species)
+    ? computeGeneralQolResult(
+      latestGeneralEntry, painForLatestGeneral?.beap, pet?.species,
+      diseaseEmergenciesOn(diseaseByDate, latestGeneralEntry.date),
+    )
     : null
-  const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
-  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species)
+  const overview = computeOverviewCategories(
+    latestGeneralEntry, latestPainEntry,
+    pillarAnswersOn(diseaseByDate, latestGeneralEntry?.date ?? latestPainEntry?.date),
+    pet?.species,
+  )
+  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species, diseaseByDate)
   const recent = dailySeries.slice(-10).reverse()
   // Every note the app holds, from wherever it was written, newest first.
   // Assessment notes and condition notes answer different questions and a
@@ -402,6 +413,7 @@ export default function ExportReport() {
     configByCondition: configsByCondition(conditions),
     species: pet?.species,
     pet,
+    diseaseByDate,
   })
 
   const chartGroups = groupCharts(charts)

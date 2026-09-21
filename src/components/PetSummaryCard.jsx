@@ -11,6 +11,7 @@ import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/c
 import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
 import OverviewBars from './OverviewBars'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
@@ -49,6 +50,10 @@ export default function PetSummaryCard() {
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
+  const diseaseByDate = useMemo(
+    () => diseaseDaysByDate({ petConditions: conditions, entriesByCondition: byCondition, species: pet?.species }),
+    [conditions, byCondition, pet?.species],
+  )
   const today = todayIsoDate()
 
   const latestGeneral = generalEntries[generalEntries.length - 1] ?? null
@@ -64,7 +69,9 @@ export default function PetSummaryCard() {
     if (!entry) return null
     try {
       const pain = painEntries.find((row) => row.date === entry.date) ?? null
-      return computeGeneralQolResult(entry, pain?.beap, pet?.species)
+      return computeGeneralQolResult(
+        entry, pain?.beap, pet?.species, diseaseEmergenciesOn(diseaseByDate, entry.date),
+      )
     } catch (error) {
       console.error('Could not score that assessment:', error.message)
       return null
@@ -90,12 +97,14 @@ export default function PetSummaryCard() {
     if (!latestGeneral) return null
     const pain = painEntries.find((row) => row.date === latestGeneral.date) ?? null
     try {
-      return computeOverviewCategories(latestGeneral, pain)
+      return computeOverviewCategories(
+        latestGeneral, pain, pillarAnswersOn(diseaseByDate, latestGeneral.date), pet?.species,
+      )
     } catch (error) {
       console.error('Could not build the pillar overview:', error.message)
       return null
     }
-  }, [latestGeneral, painEntries])
+  }, [latestGeneral, painEntries, diseaseByDate, pet?.species])
 
   // Everything due, assessment first. A condition whose reminder is off, or
   // that has never been logged, is not "due" — one has no schedule to be

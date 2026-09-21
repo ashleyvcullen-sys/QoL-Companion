@@ -35,7 +35,8 @@ export default function BodyConditionScore() {
   const weightChart = chartByKey(bodyCharts, 'body:weight')
   const activeBodyChart = chartByKey(bodyCharts, bodyMetric) ?? scoreChart ?? weightChart
 
-  const todayStr = new Date().toISOString().slice(0, 10)
+  // Local date, matching saveBcsEntry.
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10)
   const todaysEntry = entries.find((entry) => entry.date === todayStr) ?? null
   const latestEntry = entries[entries.length - 1] ?? null
 
