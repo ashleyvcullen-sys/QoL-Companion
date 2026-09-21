@@ -139,6 +139,15 @@ export const REFERENCES = [
     full: 'The body condition illustrations are informed by the WSAVA Body Condition Score chart. They are original illustrations and not the official WSAVA artwork.',
   },
   {
+    // Added 21 Sep 2026 with the faecal score (lib/faecalScore.js). The
+    // descriptions are our own; the guide's wording and photographs are not
+    // reproduced.
+    key: 'royal-canin-faecal',
+    where: 'app',
+    short: 'Faecal scoring informed by the Royal Canin Faecal Scoring Guide.',
+    full: 'The faecal score (1–5 in half-point steps) is informed by the Royal Canin Faecal Scoring Guide. The descriptions are original and do not reproduce the guide.',
+  },
+  {
     key: 'aaha-aafp',
     where: 'app',
     short: 'Incorporates ideas from published AAHA and AAFP life-stage guidelines.',

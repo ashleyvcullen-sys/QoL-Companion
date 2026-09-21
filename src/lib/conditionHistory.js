@@ -4,7 +4,7 @@
 // show the same fourteen days at the top of it. One implementation, so the
 // home screen and the disease screen cannot disagree about the same fortnight.
 
-import { SEVERITY, labelOf, summariseEntry } from './conditions'
+import { SEVERITY, labelOf, scaleIndexOf, summariseEntry } from './conditions'
 import { resolveDefinition } from './cancerConfig'
 import { BEAP_BANDS } from './scoring'
 
@@ -194,9 +194,11 @@ export function conditionHistory({ definition, config, entries, species, today, 
     // A band only where there is a 0-10 answer behind it. A yes/no or a
     // choice has no rung to name, and inventing one would be worse than the
     // bare parameter name beside a coloured dot.
-    const band = Number.isFinite(score) && (parameter?.type === 'scale' || parameter?.type === 'beap')
-      ? BEAP_BANDS[Math.min(BEAP_BANDS.length - 1, Math.max(0, Math.ceil(score / 2)))]?.shortLabel ?? null
-      : null
+    const band = !Number.isFinite(score) || !(parameter?.type === 'scale' || parameter?.type === 'beap')
+      ? null
+      : parameter.scores
+        ? parameter.bandLabels?.[scaleIndexOf(parameter, score)] ?? null
+        : BEAP_BANDS[Math.min(BEAP_BANDS.length - 1, Math.max(0, Math.ceil(score / 2)))]?.shortLabel ?? null
     finding = {
       ...first,
       name: shortName(parameter ? labelOf(parameter) : first.label),

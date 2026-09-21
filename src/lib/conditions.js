@@ -59,6 +59,14 @@ import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
 import { SLEEP_NOTES } from './assessmentOptions'
 import { referenceText } from './references'
 import { formatDateDDMMYY, isIsoDate } from './formatDate'
+import {
+  FAECAL_BAND_LABELS,
+  FAECAL_CONCERN_SCORES,
+  FAECAL_LEVELS,
+  FAECAL_SCORES,
+  FAECAL_TO_TEN,
+  faecalColourForIndex,
+} from './faecalScore'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
 
@@ -327,6 +335,12 @@ export function visibleParameters(parameters = [], values = {}) {
   const byKey = new Map(asked.map((parameter) => [parameter.key, parameter]))
 
   const isVisible = (parameter, seen) => {
+    // A retired question stays only where it was actually answered, so old
+    // entries keep their record and new ones never see it.
+    if (parameter.retired) {
+      const answer = values?.[parameter.key]
+      if (answer == null || answer === '') return false
+    }
     if (!dependencyMet(parameter, values)) return false
     const parentKey = parameter.dependsOn?.key
     if (!parentKey) return true
@@ -497,6 +511,11 @@ export const SHARED_PARAMETERS = {
     key: 'faecal_consistency',
     label: 'Stool Consistency',
     type: 'scale',
+    // Retired 21 Sep 2026 for the faecal score below. Still listed so entries
+    // saved on this scale are read, summarised and exported exactly as they
+    // were recorded; `retired` hides it from any entry that has no answer to
+    // it, which is every new one.
+    retired: true,
     // Distinct from the assessment's stool question, not a duplicate of it.
     // That one is a 0-10 impression with symptom chips; this is a described
     // scale where each rung is a recognisable stool, which is what a vet
@@ -534,6 +553,26 @@ export const SHARED_PARAMETERS = {
         'Entirely liquid. (emergency)',
       ],
     },
+  },
+
+  // The faecal score, 1-5 in half steps — lib/faecalScore.js. A `scale` with
+  // its own `scores` rather than the default 0/2/4/6/8/10, so every place that
+  // turns a scale answer into a rung has to go through scaleIndexOf().
+  //
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. The wording lives in lib/faecalScore.js.
+  faecal_score: {
+    key: 'faecal_score',
+    label: 'Faecal Score',
+    type: 'scale',
+    covers: 'stool',
+    relationship: RELATIONSHIP.DISTINCT,
+    scores: FAECAL_SCORES,
+    bandLabels: FAECAL_BAND_LABELS,
+    colorForIndex: faecalColourForIndex,
+    concernAt: FAECAL_CONCERN_SCORES,
+    scoreTen: FAECAL_TO_TEN,
+    emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
+    levels: FAECAL_LEVELS,
   },
 
   // THE SAME QUESTION as the Overall Quality of Life Assessment, not a
@@ -1065,12 +1104,21 @@ export const CONDITIONS = {
     parameters: [],
   },
 
-  // NO CITATION, AND THAT IS CHECKED RATHER THAN MISSING.
+  // NO CITATION ON THE MODULE ITSELF, AND THAT IS CHECKED RATHER THAN MISSING.
   //
-  // Confirmed by Dr Ash Cullen (BSc, DVM), 3 Sep 2026: the stool scoring here
-  // is NOT derived from the Purina, Bristol or Waltham faecal charts, or any
-  // other published scale. It is an original structure, as is the rest of the
-  // module. Asked and answered; it does not need asking again.
+  // Confirmed by Dr Ash Cullen (BSc, DVM), 3 Sep 2026: this module's structure
+  // is NOT derived from any published scale. It is original. Asked and
+  // answered; it does not need asking again.
+  //
+  // NARROWED 21 Sep 2026, because the stool half of that answer stopped being
+  // true. The six-rung Stool Consistency scale the 3 Sep note described is now
+  // `retired` below, and the faecal score that replaced it IS informed by the
+  // Royal Canin Faecal Scoring Guide — the Waltham system the original note
+  // named as one it did not draw on. That credit lives with the scale, in
+  // lib/faecalScore.js and under 'royal-canin-faecal' in lib/references.js.
+  //
+  // The 3 Sep answer still holds for everything else here, and for the retired
+  // scale as it was recorded.
   gastrointestinal: {
     key: 'gastrointestinal',
     label: 'Gastrointestinal Disease',
@@ -1618,7 +1666,7 @@ export const CONDITIONS = {
         // it reuses, so the two never read as separate measures — including
         // the "(response to touch)" gloss, which is the whole point of the
         // heading for an owner who does not use the word palpation.
-        label: 'Palpation (Response to Touch)',
+        label: 'Response to Touch',
         type: 'beap',
         beapKey: 'palpation',
         hideImages: true,
@@ -2319,6 +2367,10 @@ export const CONDITIONS = {
         // Same gate as vomiting above.
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
       },
+      {
+        ...sharedParameter('faecal_score', { finding: 'Stool — {answer}' }),
+        dependsOn: { key: 'on_diet_trial', equals: 'yes' },
+      },
 
       {
         key: 'diet_adherence',
@@ -3008,6 +3060,14 @@ export function levelsFor(parameter, species) {
 // Kept as the old name for existing callers.
 export const beapLevelsFor = levelsFor
 
+// Which rung a scale answer is. The default scale stores 0/2/4/6/8/10, so the
+// rung is the score halved; a scale with its own `scores` (the faecal score,
+// 1-5 in half steps) is looked up instead.
+export function scaleIndexOf(parameter, score) {
+  if (Array.isArray(parameter?.scores)) return parameter.scores.indexOf(Number(score))
+  return Number(score) / 2
+}
+
 // The score at or above which a BEAAAAPP-backed parameter is an emergency,
 // straight from the scale definition. null for a parameter that is not
 // BEAAAAPP-backed, and for eyes, which has no emergency band at all. The
@@ -3156,7 +3216,7 @@ export function evaluateParameter(parameter, value, species) {
     // app can't tell an owner a finding is an emergency and then colour the
     // day green, which is what happened before: these answers were recorded
     // and then contributed nothing to the summary.
-    const level = levelsFor(parameter, species)[score / 2]
+    const level = levelsFor(parameter, species)[scaleIndexOf(parameter, score)]
     if (typeof level === 'string' && level.includes('(emergency)')) {
       return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
@@ -3174,6 +3234,11 @@ export function evaluateParameter(parameter, value, species) {
     // is a clinical judgement rather than something to assume. See BEAP_BANDS
     // in scoring.js: 4 is Moderate, 6 Moderate to severe.
     if (parameter.concernFrom != null && score >= parameter.concernFrom) {
+      return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
+    }
+    // Specific rungs, for a scale that is concerning at both ends — the
+    // faecal score flags hard as well as loose.
+    if (Array.isArray(parameter.concernAt) && parameter.concernAt.includes(score)) {
       return { severity: SEVERITY.CONCERN, message: messageFor(parameter.concernMessage, species) }
     }
     return { severity: SEVERITY.OK }
@@ -3296,8 +3361,14 @@ export function describeParameterAnswer(parameter, value, species) {
   if (parameter.type === 'beap' || parameter.type === 'scale') {
     const score = Number(value)
     if (!Number.isFinite(score)) return null
-    const level = levelsFor(parameter, species)[score / 2]
-    return level ? stripEmergencyMarker(level) : String(score)
+    const index = scaleIndexOf(parameter, score)
+    const level = levelsFor(parameter, species)[index]
+    const text = level ? stripEmergencyMarker(level) : String(score)
+    // A scale with its own scores names the rung too ("Score 3.5 — …"): the
+    // number is what a vet reads, the words are what the owner chose.
+    return parameter.scores && parameter.bandLabels?.[index]
+      ? `${parameter.bandLabels[index]} — ${text}`
+      : text
   }
 
   return String(value)

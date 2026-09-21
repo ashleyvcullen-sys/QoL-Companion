@@ -10,6 +10,8 @@ import Footer from '../components/Footer'
 import SwipeableWizard from '../components/SwipeableWizard'
 import IntroPage from './assessment/IntroPage'
 import SliderWithChipsPage from './assessment/SliderWithChipsPage'
+import FaecalScorePage from './assessment/FaecalScorePage'
+import { FAECAL_TO_TEN } from '../lib/faecalScore'
 import VomitingPage from './assessment/VomitingPage'
 import UrinationPage from './assessment/UrinationPage'
 import DrinkingPage from './assessment/DrinkingPage'
@@ -62,7 +64,9 @@ import { formatDateDDMMYY } from '../lib/formatDate'
 // has its own copy. Worth unifying one day; not worth a new module today.
 
 const INITIAL_ENTRY = {
-  scores: { stool: 'unsure', hygiene: 'unsure', vision: 'unsure', hearing: 'unsure', sleep: 'unsure' },
+  // `faecal` is the 1-5 faecal score; `stool` is that score converted to
+  // 0-10 for the average (or 'unsure' / 'none'). Set together.
+  scores: { stool: 'unsure', faecal: null, hygiene: 'unsure', vision: 'unsure', hearing: 'unsure', sleep: 'unsure' },
   stoolSymptoms: [],
   hygieneSymptoms: [],
   vomiting: { hasVomited: null, frequency: '', unit: 'times/day', character: [] },
@@ -83,7 +87,7 @@ const INITIAL_ENTRY = {
 // handlers, well after any particular render's `pages` array existed, so a
 // static list decoupled from render timing is simpler than threading the
 // live one through.
-const PAGE_KEY_ORDER = [
+const pageKeyOrder = () => [
   'intro',
   'stool', 'vomiting', 'urination', 'drinking', 'hygiene', 'vision', 'hearing', 'sleep',
   'favourites',
@@ -131,9 +135,10 @@ function isSectionAnswered(entryToCheck, pageKey) {
   }
 }
 
-function findResumeIndex(hydratedEntry) {
-  const index = PAGE_KEY_ORDER.findIndex((key) => !isSectionAnswered(hydratedEntry, key))
-  return index === -1 ? PAGE_KEY_ORDER.length - 1 : index
+function findResumeIndex(hydratedEntry, species) {
+  const order = pageKeyOrder(species)
+  const index = order.findIndex((key) => !isSectionAnswered(hydratedEntry, key))
+  return index === -1 ? order.length - 1 : index
 }
 
 // Reconstructs the assessment-flow `entry` shape from already-submitted
@@ -364,7 +369,7 @@ export default function QualityOfLifeAssessment() {
       setEntry(draftEntry)
       const page = Number.isInteger(draft?.pageIndex)
         ? draft.pageIndex
-        : findResumeIndex(draftEntry)
+        : findResumeIndex(draftEntry, pet.species)
       setInitialPageIndex(page)
       currentPageRef.current = page
       setWizardKey((k) => k + 1)
@@ -462,7 +467,7 @@ export default function QualityOfLifeAssessment() {
   }
 
   function jumpTo(hydratedEntry) {
-    setInitialPageIndex(findResumeIndex(hydratedEntry))
+    setInitialPageIndex(findResumeIndex(hydratedEntry, pet.species))
     setWizardKey((k) => k + 1)
   }
 
@@ -503,9 +508,8 @@ export default function QualityOfLifeAssessment() {
   async function handleComplete() {
     if (saving) return
 
-    const beapValues = Object.values(entry.beap)
-    if (beapValues.some((v) => v === null)) {
-      setErrorMessage('Answer all 8 pain categories before saving.')
+    if (BEAP_CATEGORIES.some((category) => entry.beap[category] == null)) {
+      setErrorMessage('Answer all the pain and comfort questions before saving.')
       return
     }
 
@@ -666,18 +670,22 @@ export default function QualityOfLifeAssessment() {
 
   const pages = [
     <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
-    <SliderWithChipsPage
+    <FaecalScorePage
       key="stool"
-      title="Stool Quality"
-      sliderValue={entry.scores.stool}
-      onSliderChange={(v) => updateScore('stool', v)}
       pet={pet}
+      faecal={entry.scores.faecal}
+      stool={entry.scores.stool}
+      onScore={(score) => setEntry((prev) => ({
+        ...prev,
+        scores: { ...prev.scores, faecal: score, stool: FAECAL_TO_TEN[score] ?? 'unsure' },
+      }))}
+      onUnsure={() => setEntry((prev) => ({ ...prev, scores: { ...prev.scores, faecal: null, stool: 'unsure' } }))}
+      onNone={() => setEntry((prev) => ({ ...prev, scores: { ...prev.scores, faecal: null, stool: 'none' } }))}
       chipOptions={STOOL_SYMPTOM_OPTIONS}
       chipValue={entry.stoolSymptoms}
       onChipChange={(v) => updateField('stoolSymptoms', v)}
       icon={PooIcon}
-      scaleLabels={['Watery / diarrhoea', 'Mixed', 'Well formed']}
-      extraOption={STOOL_NONE_TODAY_OPTION}
+      noneOption={STOOL_NONE_TODAY_OPTION}
       emergency={STOOL_EMERGENCY}
     />,
     <VomitingPage

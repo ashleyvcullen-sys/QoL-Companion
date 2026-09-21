@@ -10,6 +10,13 @@ import {
 } from './assessmentOptions'
 import { BEAP_SCALES, SLEEP_SCALE, beapCategoryDisplayName } from './beapScales'
 import {
+  FAECAL_BAND_LABELS,
+  FAECAL_CONCERN_SCORES,
+  FAECAL_EMERGENCY_FROM,
+  faecalIndexOf,
+  faecalLevelsFor,
+} from './faecalScore'
+import {
   BEAP_CATEGORIES,
   scoreSlider,
   scoreStoolOrHygiene,
@@ -54,9 +61,23 @@ export function describeAssessmentDay(generalEntry, painEntry, species) {
   // The sliders read back as the number that was chosen, with the wording
   // from either end of the scale so the number means something. "7/10" on its
   // own tells an owner nothing they didn't already know.
-  add('Stool quality', sliderAnswer(scores.stool, 'Watery / diarrhoea', 'Well formed'),
-    chipList(generalEntry?.stoolSymptoms, [...STOOL_SYMPTOM_OPTIONS, STOOL_NONE_TODAY_OPTION]),
-    atOrBelow(scoreStoolOrHygiene(scores.stool, generalEntry?.stoolSymptoms ?? []), 4))
+  // Faecal score since 21 Sep 2026; entries before then read back as the
+  // 0-10 slider they were recorded on. Amber at the hard end, once clearly
+  // loose, or when a symptom chip takes the item to 4 or below.
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. The bands.
+  const faecal = scores.faecal
+  const faecalIndex = faecal != null ? faecalIndexOf(faecal) : -1
+  const stoolSymptomFlag = atOrBelow(scoreStoolOrHygiene(scores.stool, generalEntry?.stoolSymptoms ?? []), 4)
+  const stoolChips = chipList(generalEntry?.stoolSymptoms, [...STOOL_SYMPTOM_OPTIONS, STOOL_NONE_TODAY_OPTION])
+  if (faecalIndex >= 0) {
+    const text = String(faecalLevelsFor(species)[faecalIndex] ?? '').replace(/\s*\(emergency\)\s*/g, ' ').trim()
+    const bandFlag = FAECAL_CONCERN_SCORES.includes(faecal) || faecal >= FAECAL_EMERGENCY_FROM
+    add('Faecal score', `${FAECAL_BAND_LABELS[faecalIndex]} — ${text}`, stoolChips,
+      bandFlag ? 'concern' : stoolSymptomFlag)
+  } else {
+    add('Stool quality', scores.stool === 'none' ? 'No faeces today' : sliderAnswer(scores.stool, 'Watery / diarrhoea', 'Well formed'),
+      stoolChips, stoolSymptomFlag)
+  }
 
   // <= 5 is ANY vomiting: scoreVomiting gives 10 for none, 5 for vomiting
   // under the daily/weekly threshold, 0 for over it. So the flag fires the

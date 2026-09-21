@@ -4,6 +4,7 @@ import {
   describeBeapSeverityFloor,
   describeDiseaseFloor,
   describeEmergencyFloor,
+  BEAP_CATEGORIES,
 } from '../../lib/scoring'
 import DiseaseTodayList from '../../components/DiseaseTodayList'
 import { beapCategoryDisplayName } from '../../lib/beapScales'
@@ -18,8 +19,7 @@ export default function ReviewPage({
   entry, onNotesChange, errorMessage, species, pet, diseaseEmergencies = [], diseaseToday = [],
 }) {
   const generalResult = computeGeneralQolResult(entry, entry.beap, species, diseaseEmergencies)
-  const beapValues = Object.values(entry.beap)
-  const hasAllBeapAnswers = beapValues.every((v) => v !== null)
+  const hasAllBeapAnswers = BEAP_CATEGORIES.every((category) => entry.beap?.[category] != null)
 
   // Only present when the worst single finding forced the band below what
   // the average alone would have given — otherwise a high percentage sitting
@@ -88,7 +88,7 @@ export default function ReviewPage({
 
       {!hasAllBeapAnswers && (
         <p className="form-error" role="alert">
-          Please go back and answer all 8 pain categories before saving.
+          Please go back and answer all the pain and comfort questions before saving.
         </p>
       )}
 

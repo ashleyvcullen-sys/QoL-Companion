@@ -19,6 +19,7 @@ export const GI_CORE_PARAMETERS = [
   // The shared definition, so Allergies and GI cannot drift apart on what
   // a stool looks like. See SHARED_PARAMETERS in lib/conditions.js.
   sharedParameter('stool_consistency'),
+  sharedParameter('faecal_score'),
   {
     key: 'stool_frequency',
     label: 'Stool Frequency',

@@ -417,6 +417,13 @@ export default function ConditionParameter({
             // — otherwise the hazard triangle is missing from exactly the
             // rungs evaluateParameter is calling an emergency.
             emergencyFrom={beapEmergencyFromFor(parameter, species)}
+            // A scale with its own scores (the faecal score) brings its own
+            // rung labels and colours; every other scale takes the defaults.
+            {...(parameter.scores ? {
+              scores: parameter.scores,
+              bandLabels: parameter.bandLabels,
+              colorForIndex: parameter.colorForIndex,
+            } : {})}
           />
           {/* "Does not apply" alongside "Not sure", where the parameter
               offers it. A cat with no litter tray is not an owner who is

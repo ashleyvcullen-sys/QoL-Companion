@@ -79,7 +79,10 @@ function pillarAnswersFor(conditionKey, resolved, values, species) {
       continue
     }
     let score = null
-    if (parameter.type === 'scale' || parameter.type === 'beap') {
+    if (parameter.scoreTen) {
+      const ten = parameter.scoreTen[Number(value)]
+      if (ten != null) score = ten * 10
+    } else if (parameter.type === 'scale' || parameter.type === 'beap') {
       const n = Number(value)
       if (Number.isFinite(n)) score = Math.max(0, Math.min(100, 100 - n * 10))
     } else if (parameter.type === 'vcog') {

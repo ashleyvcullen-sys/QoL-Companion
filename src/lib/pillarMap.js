@@ -26,7 +26,7 @@ const CU = 'curiosity'
 const CO = 'connection'
 
 const GI = {
-  faecal_consistency: A, stool_frequency: A, blood_or_mucus: A, straining: A,
+  faecal_consistency: A, faecal_score: A, stool_frequency: A, blood_or_mucus: A, straining: A,
   abdominal_pain: C, urgency: A, visible_parasites: A, scooting: C, wound: C,
   back_to_normal: A, regurgitation: A, aspiration_signs: C, praying_position: C,
   stool_volume: A, reflux_signs: A,
@@ -35,7 +35,7 @@ const GI = {
 const BY_CONDITION = {
   allergies: {
     itch: C, skin: C, ears: C, paws_face: C, rechallenge_reaction: C,
-    itch_sleep: S, faecal_consistency: A,
+    itch_sleep: S, faecal_consistency: A, faecal_score: A,
   },
   arthritis: {
     limping: C, stiffness_after_rest: C, walk_tolerance: C, jump_height: C,

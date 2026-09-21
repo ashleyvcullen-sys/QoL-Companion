@@ -468,12 +468,12 @@ export const INDIVIDUAL_MEASURE_GROUPS = [
     measures: [
       { key: 'breathing', label: 'Breathing' },
       { key: 'eyes', label: 'Eyes' },
-      { key: 'ambulation', label: 'Ambulation' },
+      { key: 'ambulation', label: 'Mobility' },
       { key: 'activity', label: 'Activity' },
       { key: 'appetite', label: 'Appetite' },
       { key: 'attitude', label: 'Attitude' },
       { key: 'posture', label: 'Posture' },
-      { key: 'palpation', label: 'Palpation (response to touch)' },
+      { key: 'palpation', label: 'Response to Touch' },
     ],
   },
 ]
