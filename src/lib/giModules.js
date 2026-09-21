@@ -110,7 +110,7 @@ export const GI_CORE_PARAMETERS = [
     //
     // What still carries that warning, so it is clear what remains:
     //   - emergencyMessage below, on the two straining rungs that are
-    //     emergencies, and it names urinary blockage for both species;
+    //     emergencies — cats only since 21 Sep 2026 (see the note there);
     //   - the urination question in the Overall Quality of Life Assessment,
     //     which raises its own blocked-cat alert (screens/assessment/
     //     UrinationPage.jsx).
@@ -145,8 +145,11 @@ export const GI_CORE_PARAMETERS = [
     // an owner before they answer, and this is what they see once they have.
     // A dog can block too, and the owner who has just selected a straining
     // level is the one who most needs telling.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Reversed for dogs: the
+    // blockage sentence is removed from the dog alert and kept on the cat's.
+    // The first sentence stays so the red rung still shows a message.
     emergencyMessage: {
-      dog: 'A dog straining repeatedly and producing little or nothing needs to be seen today. This may indicate a urinary blockage, which is an emergency.',
+      dog: 'A dog straining repeatedly and producing little or nothing needs to be seen today.',
       cat: 'A cat straining repeatedly and producing little or nothing needs to be seen today. This may indicate a urinary blockage, which is an emergency.',
     },
   },

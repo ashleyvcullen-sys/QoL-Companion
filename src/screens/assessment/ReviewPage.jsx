@@ -1,5 +1,5 @@
 import SectionTitle from '../../components/SectionTitle'
-import { computeGeneralQolResult, describeBeapSeverityFloor } from '../../lib/scoring'
+import { computeGeneralQolResult, describeBeapSeverityFloor, describeEmergencyFloor } from '../../lib/scoring'
 import { beapCategoryDisplayName } from '../../lib/beapScales'
 
 // "A", "A and B", "A, B and C"
@@ -9,7 +9,7 @@ function formatList(items) {
 }
 
 export default function ReviewPage({ entry, onNotesChange, errorMessage, species }) {
-  const generalResult = computeGeneralQolResult(entry, entry.beap)
+  const generalResult = computeGeneralQolResult(entry, entry.beap, species)
   const beapValues = Object.values(entry.beap)
   const hasAllBeapAnswers = beapValues.every((v) => v !== null)
 
@@ -18,6 +18,7 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
   // next to a severe band looks like a bug rather than a deliberate safety
   // override.
   const floor = describeBeapSeverityFloor(entry.beap)
+  const emergencyFloor = describeEmergencyFloor(entry, species)
   const floorCategoryNames = floor
     ? floor.categories.map((key) => beapCategoryDisplayName(species, key))
     : []
@@ -37,6 +38,16 @@ export default function ReviewPage({ entry, onNotesChange, errorMessage, species
             {floorCategoryNames.length > 1 ? 'were' : 'was'} marked{' '}
             <strong>{floor.severityLabel}</strong>, this assessment is recorded as{' '}
             <strong>{floor.bandLabel}</strong>, regardless of the overall average.
+          </p>
+        )}
+        {/* PENDING ASH — wording drafted to mirror the approved BEAAAAPP
+            note above. */}
+        {emergencyFloor && (
+          <p className="review-summary-floor-note" style={{ color: emergencyFloor.color }}>
+            ⚠️ Because <strong>{formatList(emergencyFloor.findings)}</strong>{' '}
+            {emergencyFloor.findings.length > 1 ? 'were' : 'was'} recorded, this assessment
+            is recorded as <strong>{emergencyFloor.bandLabel}</strong>, regardless of the
+            overall average.
           </p>
         )}
       </div>

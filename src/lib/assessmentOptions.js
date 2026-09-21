@@ -90,6 +90,12 @@ export const VOMITING_EMERGENCY = {
   warning: 'Blood in the vomit needs veterinary attention as soon as possible.',
 }
 
+// The urination chips that raise the possible-blockage alert in cats.
+// Moved here from UrinationPage on 21 Sep 2026 so the alert and the band
+// floor in scoring.js read one list and cannot disagree. Contents unchanged —
+// Ash's instruction 3 Sep 2026 added Vocalisation.
+export const URINARY_BLOCKAGE_SYMPTOMS = ['Straining', 'Not urinating at all', 'Vocalisation']
+
 export const VOMITING_CHARACTER_OPTIONS = ['Bile', 'Foamy', 'Undigested food', 'Blood', 'Other']
 // Cats only — inserted before 'Other' by VomitingPage so 'Other' stays last.
 export const VOMITING_CHARACTER_OPTIONS_CAT_EXTRA = ['Hairball']

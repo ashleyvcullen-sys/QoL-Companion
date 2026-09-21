@@ -1,5 +1,7 @@
 // Reference: QoLCompanion_Developer_Handoff.md, Section 4.
 
+import { STOOL_EMERGENCY, URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
+
 export const SEVERITY = {
   GOOD: 'good',
   MODERATE: 'moderate',
@@ -100,6 +102,40 @@ function beapBandFloorIndex(beap) {
   return 0
 }
 
+// The three answers in the assessment that stop the owner with an emergency
+// pop-up — the same chips, read from the same lists, as StoolPage (via
+// SliderWithChipsPage), VomitingPage and UrinationPage.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Each floors the band to
+// Severely reduced, the same as a Very severe BEAAAAPP answer. Until then a
+// pop-up told the owner to call the vet while the ring could still read
+// "Good": each of these is one item of sixteen, worth about 6 points.
+//
+// The urinary one is cats only, matching the pop-up, so it needs the
+// species. Callers that do not pass one get the stool and vomiting floors
+// only — never a floor the owner was not shown an alert for.
+export function assessmentEmergencies(entry, species = null) {
+  if (!entry) return []
+  const found = []
+  if ((entry.stoolSymptoms ?? []).some((chip) => STOOL_EMERGENCY.chips.includes(chip))) {
+    found.push('stool')
+  }
+  if (entry.vomiting?.hasVomited === true
+    && (entry.vomiting.character ?? []).some((chip) => VOMITING_EMERGENCY.chips.includes(chip))) {
+    found.push('vomiting')
+  }
+  if (species === 'cat'
+    && entry.urination?.status === 'abnormal'
+    && (entry.urination.symptoms ?? []).some((chip) => URINARY_BLOCKAGE_SYMPTOMS.includes(chip))) {
+    found.push('urination')
+  }
+  return found
+}
+
+function emergencyBandFloorIndex(entry, species) {
+  return assessmentEmergencies(entry, species).length > 0 ? BAND_INDEX_SEVERE_IMPACT : 0
+}
+
 const VOMIT_DAILY_THRESHOLD = 2
 const VOMIT_WEEKLY_THRESHOLD = 5
 
@@ -176,7 +212,7 @@ function scoreBeapCategory(value) {
 // question, or a missing/incomplete BEAAAAPP category — is excluded from
 // the average entirely rather than counted as zero, so a partial
 // assessment isn't penalised for what it doesn't contain.
-export function computeGeneralQolResult(entry, beap) {
+export function computeGeneralQolResult(entry, beap, species = null) {
   const functionScores = [
     scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { symptomPenalty: 5 }),
     scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { symptomPenalty: 5 }),
@@ -195,11 +231,13 @@ export function computeGeneralQolResult(entry, beap) {
   const max = scored.length * 10
   const percent = max === 0 ? 0 : Math.round((total / max) * 100)
 
-  // The band is whichever is worse: what the average alone suggests, or the
-  // floor imposed by the single worst BEAAAAPP finding.
+  // The band is whichever is worse: what the average alone suggests, the
+  // floor imposed by the single worst BEAAAAPP finding, or the floor imposed
+  // by an emergency pop-up answer.
   const bandIndex = Math.max(
     generalQolBandIndexFromPercent(percent),
     beapBandFloorIndex(beap),
+    emergencyBandFloorIndex(entry, species),
   )
   const band = GENERAL_QOL_BANDS[bandIndex]
 
@@ -209,8 +247,8 @@ export function computeGeneralQolResult(entry, beap) {
     percent,
     band: band.label,
     color: SEVERITY_COLORS[band.severity],
-    // True when the worst BEAAAAPP finding pulled the band below what the
-    // average alone would have given — lets the UI explain the discrepancy
+    // True when the worst BEAAAAPP finding or an emergency answer pulled the
+    // band below what the average alone would have given — lets the UI explain the discrepancy
     // rather than looking simply inconsistent.
     bandFlooredBySeverity: bandIndex > generalQolBandIndexFromPercent(percent),
   }
@@ -298,6 +336,26 @@ export function describeBeapSeverityFloor(beap) {
     // forces, whatever the average would otherwise have given.
     bandLabel: GENERAL_QOL_BANDS[floorIndex].label,
     color: SEVERITY_COLORS[GENERAL_QOL_BANDS[floorIndex].severity],
+  }
+}
+
+// Describes the emergency-answer floor for the Review page, the same way
+// describeBeapSeverityFloor() does for BEAAAAPP. Returns null when none of
+// the three pop-up answers is present.
+const EMERGENCY_FINDING_LABELS = {
+  stool: 'black, tarry stool',
+  vomiting: 'blood in the vomit',
+  urination: 'signs of a possible urinary blockage',
+}
+
+export function describeEmergencyFloor(entry, species = null) {
+  const found = assessmentEmergencies(entry, species)
+  if (found.length === 0) return null
+  const band = GENERAL_QOL_BANDS[BAND_INDEX_SEVERE_IMPACT]
+  return {
+    findings: found.map((key) => EMERGENCY_FINDING_LABELS[key]),
+    bandLabel: band.label,
+    color: SEVERITY_COLORS[band.severity],
   }
 }
 

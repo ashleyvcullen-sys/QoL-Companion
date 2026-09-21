@@ -359,7 +359,7 @@ export default function ExportReport() {
     ? painEntries.find((p) => p.date === latestGeneralEntry.date) ?? null
     : null
   const generalResult = latestGeneralEntry
-    ? computeGeneralQolResult(latestGeneralEntry, painForLatestGeneral?.beap)
+    ? computeGeneralQolResult(latestGeneralEntry, painForLatestGeneral?.beap, pet?.species)
     : null
   const overview = computeOverviewCategories(latestGeneralEntry, latestPainEntry)
   const dailySeries = buildDailySeries(generalEntries, painEntries)

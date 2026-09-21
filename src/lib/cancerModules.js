@@ -57,6 +57,11 @@ export const CORE_PARAMETERS = [
     // answers appetite once a day whichever screen they open first.
     beapFromGrade: true,
     concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 4. "Not eating at all"
+    // is red in the assessment (Appetite 10) and in Kidney Disease, and was
+    // only amber here.
+    emergencyFromGrade: 4,
+    emergencyMessage: SEEK_VET_ASAP,
     grades: [
       { grade: 0, owner: 'Eating normally.' },
       { grade: 1, owner: 'Eating a little less than usual, but still eating meals.' },
@@ -71,6 +76,10 @@ export const CORE_PARAMETERS = [
     type: 'vcog',
     vcogCategory: 'Nausea',
     concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 4, where the rung already
+    // carried the hazard triangle.
+    emergencyFromGrade: 4,
+    emergencyMessage: SEEK_VET_ASAP,
     grades: [
       { grade: 0, owner: 'No sign of nausea.' },
       { grade: 1, owner: 'Occasional lip-licking or drooling, but eating normally.' },
@@ -253,12 +262,16 @@ export const SIGN_MODULES = {
         relationship: RELATIONSHIP.SUPERSEDES,
         vcogCategory: 'Vomiting',
         concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 3. Both grade 3 and 4
+        // already carried the hazard triangle; the day now matches the mark.
+        emergencyFromGrade: 3,
+        emergencyMessage: SEEK_VET_ASAP,
         // NOTE on the "(emergency)" markers below. For a `scale` parameter
         // that marker drives BOTH the hazard icon and the severity. For a
         // `vcog` parameter severity comes from concernFromGrade /
-        // emergencyFromGrade only, so the marker here is purely the icon —
-        // which is what lets grade 3 carry a warning triangle while still
-        // being graded a concern rather than an emergency.
+        // emergencyFromGrade only, so the marker here is purely the icon.
+        // Until 21 Sep 2026 that let grade 3 carry a triangle while grading
+        // the day amber; emergencyFromGrade now makes both rungs red.
         grades: [
           { grade: 0, owner: 'No vomiting.' },
           { grade: 1, owner: 'Vomited once in the last day.' },
@@ -275,6 +288,10 @@ export const SIGN_MODULES = {
         relationship: RELATIONSHIP.SUPERSEDES,
         vcogCategory: 'Diarrhoea',
         concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 4, where the rung already
+        // carried the hazard triangle.
+        emergencyFromGrade: 4,
+        emergencyMessage: SEEK_VET_ASAP,
         grades: [
           { grade: 0, owner: 'Normal stools.' },
           { grade: 1, owner: 'Slightly softer than usual.' },
@@ -526,6 +543,9 @@ export const TREATMENT_MODULES = {
         // red as well.
         concernFromGrade: 2,
         emergencyFromGrade: 3,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rungs that mark the day red
+        // had no message, so nothing appeared under the question on the form.
+        emergencyMessage: SEEK_VET_ASAP,
         grades: [
           { grade: 0, owner: 'Normal energy.' },
           { grade: 1, owner: 'Slightly quieter, but doing everything {they} normally would.' },
@@ -589,6 +609,9 @@ export const TREATMENT_MODULES = {
         // Amber from 4 — the first level where the fur is going and the
         // reaction is more than colour.
         concernFrom: 4,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rungs that mark the day red
+        // had no message, so nothing appeared under the question on the form.
+        emergencyMessage: SEEK_VET_ASAP,
         levels: { dog: RADIATION_SKIN_LEVELS, cat: RADIATION_SKIN_LEVELS },
       },
       {
@@ -605,6 +628,9 @@ export const TREATMENT_MODULES = {
         // Amber from 4 — the first level where the licking is habitual rather
         // than a passing glance.
         concernFrom: 4,
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rungs that mark the day red
+        // had no message, so nothing appeared under the question on the form.
+        emergencyMessage: SEEK_VET_ASAP,
         levels: { dog: RADIATION_DISCOMFORT_LEVELS, cat: RADIATION_DISCOMFORT_LEVELS },
       },
     ],

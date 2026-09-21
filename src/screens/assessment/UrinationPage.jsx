@@ -7,13 +7,13 @@ import SymptomChips from '../../components/SymptomChips'
 import PetText from '../../components/PetText'
 import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
-import { URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_OPTIONS } from '../../lib/assessmentOptions'
+import { URINARY_BLOCKAGE_SYMPTOMS, URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_OPTIONS } from '../../lib/assessmentOptions'
 
-// What raises the blockage alert. Ash's instruction 3 Sep 2026 added
-// vocalising, which is often the first thing an owner notices — a cat calling
-// out in the tray — and is easily read as constipation or distress rather
-// than as an obstruction.
-const BLOCKAGE_RISK_SYMPTOMS = ['Straining', 'Not urinating at all', 'Vocalisation']
+// What raises the blockage alert: URINARY_BLOCKAGE_SYMPTOMS in
+// assessmentOptions.js, shared with the band floor in scoring.js. Ash's
+// instruction 3 Sep 2026 added vocalising, which is often the first thing an
+// owner notices — a cat calling out in the tray — and is easily read as
+// constipation or distress rather than as an obstruction.
 
 export default function UrinationPage({ value, onChange, icon, species, pet }) {
   const { status, symptoms } = value
@@ -28,7 +28,7 @@ export default function UrinationPage({ value, onChange, icon, species, pet }) {
   // reads it any more.
   const isCat = species === 'cat'
   const isEmergency = isCat && status === 'abnormal' &&
-    symptoms.some((s) => BLOCKAGE_RISK_SYMPTOMS.includes(s))
+    symptoms.some((s) => URINARY_BLOCKAGE_SYMPTOMS.includes(s))
 
   useEffect(() => {
     if (isEmergency) setShowEmergencyModal(true)

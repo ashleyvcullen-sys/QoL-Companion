@@ -14,8 +14,7 @@ import { buildChartRegistry, chartByKey } from '../lib/charts'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
 import { saveBcsEntry, useBcsHistory } from '../lib/bcsData'
-import {BCS_IMAGE_CREDIT, bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
-import { referenceText } from '../lib/references'
+import {bcsImageSrc, bcsLevelsFor, bcsSeverityColor, bcsSpeciesKey} from '../lib/bcsScale'
 import { formatDateDDMMYY } from '../lib/formatDate'
 
 
@@ -129,15 +128,6 @@ export default function BodyConditionScore() {
           descriptionOnSelect
         />
 
-        {/* Both credits, directly under the thing they credit.
-            The scale line comes from lib/references.js so it cannot drift
-            from the legal page. The illustrations line is separate and has to
-            be said HERE in particular: these are an adaptation, not WSAVA's
-            artwork, and the only place a reader sees the drawings is this
-            screen. BCS_IMAGE_CREDIT has existed for that since the drawings
-            did, and had no caller. */}
-        <p className="source-note">{referenceText('wsava-bcs')}</p>
-        <p className="source-note">{BCS_IMAGE_CREDIT}</p>
 
         <div className="field">
           <label htmlFor="bcs-weight">Body weight (optional)</label>
@@ -218,11 +208,12 @@ export default function BodyConditionScore() {
         </Card>
       )}
 
-      {/* The scale citation and the illustration credit used to sit here.
-          Credits now live in one place — Legal & Privacy, and the Terms —
-          rather than at the foot of every screen that uses an instrument
-          (Ash's call, 29 Aug 2026). Both are in lib/references.js, so
-          removing them from here did not remove them from the app. */}
+      {/* APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. The scale citation and the
+          illustration credit used to sit here. Credits live in one place —
+          Legal & Privacy, and the Terms — rather than at the foot of every
+          screen that uses an instrument. Both are still in lib/references.js
+          and lib/bcsScale.js, so removing them from here did not remove them
+          from the app. */}
 
       <Footer />
     </div>

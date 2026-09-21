@@ -339,7 +339,7 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
   const resultByDate = new Map(
     generalEntries.map((entry) => [
       entry.date,
-      computeGeneralQolResult(entry, beapByDate.get(entry.date)),
+      computeGeneralQolResult(entry, beapByDate.get(entry.date), pet?.species),
     ]),
   )
 

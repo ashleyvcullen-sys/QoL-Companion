@@ -592,11 +592,11 @@ export default function QualityOfLifeAssessment() {
     const previousPain = painEntries.find((row) => row.date === previousGeneral?.date) ?? null
 
     setCompleted({
-      result: computeGeneralQolResult(entry, entry.beap),
+      result: computeGeneralQolResult(entry, entry.beap, pet.species),
       previous: previousGeneral
         ? {
             date: previousGeneral.date,
-            result: computeGeneralQolResult(previousGeneral, previousPain?.beap),
+            result: computeGeneralQolResult(previousGeneral, previousPain?.beap, pet.species),
           }
         : null,
     })
@@ -604,17 +604,16 @@ export default function QualityOfLifeAssessment() {
     setSaving(false)
   }
 
-  // The instrument credits sit on the intro page itself (see IntroPage),
-  // not under the Back/Next buttons where they used to be. Legal & Privacy
-  // still carries all of them in full; this is the short form, shown where
-  // the instrument is actually used.
+  // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. Instrument credits are
+  // no longer shown inside the assessment at all — Legal & Privacy and the
+  // Terms carry all of them in full.
   //
   // The array stays: the wizard reads a footer per page, and a page that
   // gains one later should not need this rebuilt.
   const pageFooters = [null]
 
   const pages = [
-    <IntroPage key="intro" petName={pet.name} species={pet.species} isFirstAssessment={isFirstAssessment} />,
+    <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
     <SliderWithChipsPage
       key="stool"
       title="Stool quality"

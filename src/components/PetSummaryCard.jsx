@@ -64,7 +64,7 @@ export default function PetSummaryCard() {
     if (!entry) return null
     try {
       const pain = painEntries.find((row) => row.date === entry.date) ?? null
-      return computeGeneralQolResult(entry, pain?.beap)
+      return computeGeneralQolResult(entry, pain?.beap, pet?.species)
     } catch (error) {
       console.error('Could not score that assessment:', error.message)
       return null

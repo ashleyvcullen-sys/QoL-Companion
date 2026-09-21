@@ -120,7 +120,7 @@ export default function Trends() {
     if (!latestGeneralEntry) return null
     try {
       const pain = painEntries.find((row) => row.date === latestGeneralEntry.date) ?? null
-      return computeGeneralQolResult(latestGeneralEntry, pain?.beap)
+      return computeGeneralQolResult(latestGeneralEntry, pain?.beap, pet?.species)
     } catch (error) {
       console.error('Could not score that assessment:', error.message)
       return null

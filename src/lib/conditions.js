@@ -1628,6 +1628,9 @@ export const CONDITIONS = {
         covers: 'palpation',
         relationship: RELATIONSHIP.SUPERSEDES,
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rungs that mark the day red
+        // had no message, so nothing appeared under the question on the form.
+        emergencyMessage: SEEK_VET_ASAP,
         followUp: {
           key: 'palpation_where',
           // A threshold, not an exact score — asked at every level from

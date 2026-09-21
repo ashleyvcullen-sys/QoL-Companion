@@ -28,7 +28,7 @@ export default function EndOfLife() {
   const [activeTopicKey, setActiveTopicKey] = useState(null)
 
   const activeTopic = END_OF_LIFE_TOPICS.find((topic) => topic.key === activeTopicKey)
-  const latestResult = latestEntry ? computeGeneralQolResult(latestEntry, latestBeap) : null
+  const latestResult = latestEntry ? computeGeneralQolResult(latestEntry, latestBeap, pet?.species) : null
 
   return (
     <div className="screen">

@@ -1231,19 +1231,11 @@ export default function ConditionMonitoring() {
         </Modal>
       )}
 
-      {/* The source, where the assessment is used — not only on the legal
-          page, where someone using the arthritis module would have to go
-          hunting for it.
-          definition.citation is the `short` string straight from
-          lib/references.js, so this line and the legal attribution are two
-          views of one record. It is also why nothing here can claim the app
-          IS an instrument: that file says "incorporates ideas from" and
-          "incorporates assessment structures from", never "the LOAD
-          questionnaire".
-          Only the five modules that adapt something carry one. Seizures,
-          gastrointestinal and kidney have no citation because they draw on
-          no published instrument — APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.  on the last two. */}
-      {definition.citation && <p className="source-note">{definition.citation}</p>}
+      {/* APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. The module citation used to be
+          rendered here. Credits now live in one place — Legal & Privacy, and
+          the Terms. definition.citation is still populated from
+          lib/references.js for the five modules that adapt a published
+          instrument; it is simply no longer repeated on this screen. */}
 
       {openDay && (
         <DayAnswersModal
