@@ -22,7 +22,7 @@ export const GI_CORE_PARAMETERS = [
   sharedParameter('faecal_score'),
   {
     key: 'stool_frequency',
-    label: 'Stool Frequency',
+    label: 'Frequency of Faeces',
     // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. A choice against this pet's
     // own normal, rather than a count.
     //
@@ -53,7 +53,7 @@ export const GI_CORE_PARAMETERS = [
     followUp: {
       key: 'days_since_stool',
       when: 'decreased',
-      label: 'Days Since the Last Stool',
+      label: 'Days Since Faeces Were Last Passed',
       type: 'number',
       unit: 'days',
       min: 0,
@@ -84,7 +84,7 @@ export const GI_CORE_PARAMETERS = [
   },
   {
     key: 'blood_or_mucus',
-    label: 'Blood or Mucus in the Stool',
+    label: 'Blood or Mucus in the Faeces',
     type: 'choice',
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both. Fresh blood and digested
     // blood are separated because they mean different things and different
@@ -98,11 +98,11 @@ export const GI_CORE_PARAMETERS = [
       { value: 'black', label: 'Black or tarry', severity: SEVERITY.EMERGENCY },
     ],
     concernMessage: 'Worth telling your vet about, particularly if this is new or happening most days.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
-    emergencyMessage: 'Black or tarry stool can mean bleeding higher up the gut. Contact your vet today.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    emergencyMessage: 'Black or tarry faeces can mean bleeding higher up the gut. Contact your vet today.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
   },
   {
     key: 'straining',
-    label: 'Straining to Pass Stool',
+    label: 'Straining to Pass Faeces',
     type: 'scale',
     concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // The standing alert has gone, on Ash's instruction 3 Sep 2026. It sat
@@ -118,7 +118,7 @@ export const GI_CORE_PARAMETERS = [
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     levels: {
       dog: [
-        'Passes stool easily, with no straining.',
+        'Passes faeces easily, with no straining.',
         'Takes slightly longer than usual, but passes it without difficulty.',
         'Visibly straining for a short time before passing something.',
         'Straining for a while each time, and may vocalise while straining. What comes is small or hard.',
@@ -130,7 +130,7 @@ export const GI_CORE_PARAMETERS = [
       // out, and putting the sign at the mild end would have owners hearing
       // it where it is not.
       cat: [
-        'Passes stool easily, with no straining.',
+        'Passes faeces easily, with no straining.',
         'Takes slightly longer in the tray than usual, but passes it without difficulty.',
         'Visibly straining, and may be vocalising in the tray before passing something.',
         'Straining and vocalising each visit, and what comes is small or hard.',
@@ -294,7 +294,7 @@ export const GI_MODULES = {
             'Often needs to go in a hurry, and cannot wait long.',
             'Sometimes has accidents indoors despite asking.',
             'Frequent accidents indoors, with little or no warning.',
-            'No control at all — passes stool without seeming to notice (faecal incontinence).',
+            'No control at all — passes faeces without seeming to notice (faecal incontinence).',
           ],
           cat: [
             'Uses the tray at the usual times, with no urgency.',
@@ -302,7 +302,7 @@ export const GI_MODULES = {
             'Often rushes to the litter tray and gets there just in time.',
             'Sometimes misses the tray, or toilets just outside it.',
             'Frequently toilets outside the tray, with little warning.',
-            'No control at all — passes stool without seeming to notice (faecal incontinence).',
+            'No control at all — passes faeces without seeming to notice (faecal incontinence).',
           ],
         },
       },
@@ -336,7 +336,7 @@ export const GI_MODULES = {
     parameters: [
       {
         key: 'visible_parasites',
-        label: 'Anything Visible In The Stool?',
+        label: 'Anything Visible in the Faeces?',
         type: 'yesno',
         concernWhen: 'yes',
         why: 'Worms, segments like grains of rice, or anything else you can see.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
@@ -416,10 +416,10 @@ export const GI_MODULES = {
         type: 'choice',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both.
         options: [
-          { value: 'both', label: 'Eating and passing stool normally' },
-          { value: 'eating_only', label: 'Eating, but has not passed stool yet', severity: SEVERITY.CONCERN },
-          { value: 'stool_only', label: 'Passing stool, but not eating', severity: SEVERITY.CONCERN },
-          { value: 'neither', label: 'Neither eating nor passing stool', severity: SEVERITY.EMERGENCY },
+          { value: 'both', label: 'Eating and passing faeces normally' },
+          { value: 'eating_only', label: 'Eating, but has not passed faeces yet', severity: SEVERITY.CONCERN },
+          { value: 'stool_only', label: 'Passing faeces, but not eating', severity: SEVERITY.CONCERN },
+          { value: 'neither', label: 'Neither eating nor passing faeces', severity: SEVERITY.EMERGENCY },
         ],
         concernMessage: 'Worth ringing your vet to check whether this is expected at this stage of recovery.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording.
@@ -517,7 +517,7 @@ export const GI_MODULES = {
     parameters: [
       {
         key: 'stool_volume',
-        label: 'Amount of Stool',
+        label: 'Amount of Faeces',
         type: 'choice',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities. Volume rather than
         // consistency: the classic EPI sign is a lot of pale, greasy stool

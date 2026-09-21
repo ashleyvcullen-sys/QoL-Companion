@@ -62,8 +62,8 @@ export default function FaecalScorePage({
   return (
     <div className="assessment-page">
       <SectionTitle>Faecal Score</SectionTitle>
-      <IconLabelHeader icon={icon} label="Stool" />
-      <p><PetText template="Which best describes {name}'s stools lately?" pet={pet} /></p>
+      <IconLabelHeader icon={icon} label="Faeces" />
+      <p><PetText template="Which best describes {name}'s faeces lately?" pet={pet} /></p>
       <p className="assessment-hint">Scores of 2 to 3 are ideal.</p>
 
       <SeverityOptionList

@@ -11,7 +11,7 @@
 
 import {
   CONDITION_LIST, NOT_APPLICABLE, SEVERITY, UNSURE,
-  evaluateParameter, summariseEntry, visibleParameters,
+  describeParameterAnswer, evaluateParameter, labelOf, summariseEntry, visibleParameters,
 } from './conditions'
 import { pillarFor } from './pillarMap'
 import { resolveDefinition } from './cancerConfig'
@@ -46,7 +46,7 @@ export function diseaseDaysByDate({ petConditions = [], entriesByCondition = {},
         conditionLabel: definition.label,
         severity: summary.severity,
         flagged: summary.flagged ?? [],
-        pillarAnswers: pillarAnswersFor(petCondition.conditionKey, resolved, entry.values, species),
+        pillarAnswers: pillarAnswersFor(petCondition.conditionKey, resolved, entry.values, species, definition.label),
       })
       byDate.set(entry.date, list)
     }
@@ -59,7 +59,7 @@ export function diseaseDaysByDate({ petConditions = [], entriesByCondition = {},
 // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Scored by level: a graded
 // scale by its rung (best 100 down to worst 0), a cancer grade 0-4 likewise,
 // and a yes/no, choice or number by its traffic light (100 / 50 / 0).
-function pillarAnswersFor(conditionKey, resolved, values, species) {
+function pillarAnswersFor(conditionKey, resolved, values, species, conditionLabel = '') {
   const out = []
   let parameters = []
   try {
@@ -94,7 +94,19 @@ function pillarAnswersFor(conditionKey, resolved, values, species) {
       score = verdict.severity === SEVERITY.EMERGENCY ? 0
         : verdict.severity === SEVERITY.CONCERN ? 50 : 100
     }
-    out.push({ pillar, score, red: verdict?.severity === SEVERITY.EMERGENCY })
+    let detail = null
+    try {
+      detail = describeParameterAnswer(parameter, value, species)
+    } catch {
+      detail = null
+    }
+    out.push({
+      pillar,
+      score,
+      red: verdict?.severity === SEVERITY.EMERGENCY,
+      label: `${conditionLabel} · ${labelOf(parameter)}`,
+      detail,
+    })
   }
   return out
 }

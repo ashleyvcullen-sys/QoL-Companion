@@ -293,7 +293,7 @@ export const SIGN_MODULES = {
         emergencyFromGrade: 4,
         emergencyMessage: SEEK_VET_ASAP,
         grades: [
-          { grade: 0, owner: 'Normal stools.' },
+          { grade: 0, owner: 'Normal faeces.' },
           { grade: 1, owner: 'Slightly softer than usual.' },
           { grade: 2, owner: 'Clearly loose, and going more often than usual.' },
           { grade: 3, owner: 'Watery, or having accidents indoors when {they} normally would not.' },
@@ -302,7 +302,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'black_tarry_stool',
-        label: 'Black, Tarry Stools',
+        label: 'Black, Tarry Faeces',
         type: 'yesno',
         concernWhen: 'yes',
         // Sits in the stool domain and is not a stool score. Melaena is
@@ -311,7 +311,7 @@ export const SIGN_MODULES = {
         // perfectly well on the daily question.
         covers: 'stool',
         relationship: RELATIONSHIP.DISTINCT,
-        concernMessage: 'Black, tarry stools can mean bleeding higher up the gut. Book a visit with your vet.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        concernMessage: 'Black, tarry faeces can mean bleeding higher up the gut. Book a visit with your vet.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
     ],
   },

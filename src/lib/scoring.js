@@ -451,7 +451,7 @@ export const INDIVIDUAL_MEASURE_GROUPS = [
     group: 'Everyday function',
     color: '#5C6F8A',
     measures: [
-      { key: 'stool', label: 'Stool' },
+      { key: 'stool', label: 'Faeces' },
       { key: 'hygiene', label: 'Hygiene' },
       { key: 'vomiting', label: 'Vomiting' },
       { key: 'urination', label: 'Urination' },
@@ -544,52 +544,68 @@ export const OVERVIEW_PILLAR_KEYS = ['comfort', 'appetite', 'sleep', 'curiosity'
 // lib/diseaseDays.js. A pillar with nothing answered is null ("no data").
 const PILLAR_RED_CAP = 49
 
-export function computeOverviewCategories(latestGeneralEntry, latestPainEntry, pillarAnswers = [], species = null) {
+// What each pillar is made of, answer by answer: { comfort: [{ label,
+// detail, score, red, source }], ... }. The home screen's pillar breakdown
+// reads this; computeOverviewCategories averages it, so the two can never
+// disagree about which answers pulled a pillar down.
+export function computeOverviewBreakdown(latestGeneralEntry, latestPainEntry, pillarAnswers = [], species = null) {
   const beap = latestPainEntry?.beap ?? {}
   const entry = latestGeneralEntry
   const items = { comfort: [], appetite: [], sleep: [], curiosity: [], connection: [] }
-  const push = (pillar, score, red = false) => {
+  // `key` matches the row key in describeAssessmentDay() (lib/assessmentSummary.js),
+  // so a screen can show the answer as it was given.
+  const push = (pillar, label, score, red = false, detail = null, source = 'assessment', key = null) => {
     if (score == null || !Number.isFinite(score)) return
-    items[pillar].push({ score, red })
+    items[pillar].push({ key, label, detail, score: Math.round(score), red, source })
   }
   // BEAAAAPP, 0 best .. 10 worst. 8 and above is red, matching the band floor.
-  const pain = (pillar, category) => {
+  const pain = (pillar, category, label) => {
     const value = beap?.[category]
     if (value == null) return
-    push(pillar, invert(value), value >= 8)
+    push(pillar, label, invert(value), value >= 8, beapSeverityLabel(value), 'assessment', `beap:${category}`)
   }
   // Everyday-function items, already 0-10 higher-is-better.
-  const everyday = (pillar, score, red = false) => {
+  const everyday = (pillar, label, score, red = false, key = label) => {
     if (score == null) return
-    push(pillar, score * 10, red)
+    push(pillar, label, score * 10, red, null, 'assessment', key)
   }
 
-  pain('comfort', 'breathing')
-  pain('comfort', 'eyes')
-  pain('comfort', 'ambulation')
-  pain('comfort', 'posture')
-  pain('comfort', 'palpation')
-  pain('appetite', 'appetite')
-  pain('curiosity', 'activity')
-  pain('connection', 'attitude')
+  pain('comfort', 'breathing', 'Breathing')
+  pain('comfort', 'eyes', species === 'cat' ? 'Eyes / Face' : 'Eyes')
+  pain('comfort', 'ambulation', 'Mobility')
+  pain('comfort', 'posture', 'Posture')
+  pain('comfort', 'palpation', 'Response to Touch')
+  pain('appetite', 'appetite', 'Appetite')
+  pain('curiosity', 'activity', 'Activity')
+  pain('connection', 'attitude', 'Attitude')
 
   if (entry) {
     const redFindings = new Set(assessmentEmergencies(entry, species))
-    everyday('comfort', scoreStoolOrHygiene(entry.scores?.hygiene, entry.hygieneSymptoms ?? []))
-    everyday('appetite', entry.vomiting ? scoreVomiting(entry.vomiting) : null, redFindings.has('vomiting'))
-    everyday('appetite', scoreStoolOrHygiene(entry.scores?.stool, entry.stoolSymptoms ?? []))
-    everyday('appetite', entry.urination ? scoreUrination(entry.urination) : null, redFindings.has('urination'))
-    everyday('appetite', entry.waterIntake ? scoreWaterIntake(entry.waterIntake) : null)
-    everyday('sleep', scoreSlider(entry.scores?.sleep))
-    everyday('curiosity', scoreSlider(entry.scores?.vision))
-    everyday('curiosity', scoreSlider(entry.scores?.hearing))
-    everyday('curiosity', scoreFavouriteThings(entry.favouriteThings))
+    everyday('comfort', 'Hygiene', scoreStoolOrHygiene(entry.scores?.hygiene, entry.hygieneSymptoms ?? []), false,
+      'Hygiene, coat quality and grooming')
+    everyday('appetite', 'Vomiting', entry.vomiting ? scoreVomiting(entry.vomiting) : null, redFindings.has('vomiting'))
+    everyday('appetite', entry.scores?.faecal != null ? 'Faecal Score' : 'Faeces',
+      scoreStoolOrHygiene(entry.scores?.stool, entry.stoolSymptoms ?? []), false,
+      entry.scores?.faecal != null ? 'Faecal score' : 'Faeces')
+    everyday('appetite', 'Urination', entry.urination ? scoreUrination(entry.urination) : null, redFindings.has('urination'))
+    everyday('appetite', 'Drinking', entry.waterIntake ? scoreWaterIntake(entry.waterIntake) : null)
+    everyday('sleep', 'Sleep', scoreSlider(entry.scores?.sleep))
+    everyday('curiosity', 'Vision', scoreSlider(entry.scores?.vision))
+    everyday('curiosity', 'Hearing', scoreSlider(entry.scores?.hearing))
+    everyday('curiosity', 'Favourite Things', scoreFavouriteThings(entry.favouriteThings))
   }
 
   for (const answer of pillarAnswers ?? []) {
-    if (items[answer.pillar]) push(answer.pillar, answer.score, Boolean(answer.red))
+    if (items[answer.pillar]) {
+      push(answer.pillar, answer.label ?? 'Disease monitoring', answer.score, Boolean(answer.red),
+        answer.detail ?? null, 'disease')
+    }
   }
+  return items
+}
 
+export function computeOverviewCategories(latestGeneralEntry, latestPainEntry, pillarAnswers = [], species = null) {
+  const items = computeOverviewBreakdown(latestGeneralEntry, latestPainEntry, pillarAnswers, species)
   const pillar = (list) => {
     if (list.length === 0) return null
     const average = Math.round(list.reduce((sum, item) => sum + item.score, 0) / list.length)

@@ -10,9 +10,11 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
-import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
+import { computeGeneralQolResult, computeOverviewBreakdown, computeOverviewCategories } from '../lib/scoring'
 import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
 import OverviewBars from './OverviewBars'
+import PillarBreakdownModal from './PillarBreakdownModal'
+import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
 import { formatDateDDMMYY } from '../lib/formatDate'
@@ -93,6 +95,33 @@ export default function PetSummaryCard() {
   // The same computeOverviewCategories the Trends screen uses, so the two
   // cannot disagree. Compact variant: five labelled bars have to sit under a
   // score without becoming the card.
+  const [openPillar, setOpenPillar] = useState(null)
+  // The answers behind each pillar, for the breakdown the bars open.
+  const breakdown = useMemo(() => {
+    if (!latestGeneral) return null
+    const pain = painEntries.find((row) => row.date === latestGeneral.date) ?? null
+    try {
+      const items = computeOverviewBreakdown(
+        latestGeneral, pain, pillarAnswersOn(diseaseByDate, latestGeneral.date), pet?.species,
+      )
+      // The answer as the owner gave it — the same wording the day's summary
+      // shows — in place of the bare band name.
+      const rows = new Map(
+        describeAssessmentDay(latestGeneral, pain, pet?.species).map((row) => [row.key, row]),
+      )
+      for (const list of Object.values(items)) {
+        for (const item of list) {
+          const row = item.key ? rows.get(item.key) : null
+          if (row?.answer) item.detail = row.detail ? `${row.answer} (${row.detail})` : row.answer
+        }
+      }
+      return items
+    } catch (error) {
+      console.error('Could not build the pillar breakdown:', error.message)
+      return null
+    }
+  }, [latestGeneral, painEntries, diseaseByDate, pet?.species])
+
   const overview = useMemo(() => {
     if (!latestGeneral) return null
     const pain = painEntries.find((row) => row.date === latestGeneral.date) ?? null
@@ -433,7 +462,23 @@ function PillarSummary({ petName, overview }) {
           points at with aria-controls exists whether or not it is open —
           the same rule ExpandableNote follows. */}
       <div id={bodyId} className="pet-summary-pillars-body" hidden={!open}>
-        <OverviewBars concepts={WELLBEING_CONCEPTS} overview={overview} compact />
+        {/* Each pillar opens what is holding it down. */}
+        <OverviewBars
+          concepts={WELLBEING_CONCEPTS}
+          overview={overview}
+          compact
+          onSelect={(key) => setOpenPillar(key)}
+          selectedKey={openPillar}
+        />
+        {openPillar && (
+          <PillarBreakdownModal
+            concept={WELLBEING_CONCEPTS.find((concept) => concept.key === openPillar)}
+            value={overview?.[openPillar]}
+            items={breakdown?.[openPillar] ?? []}
+            pet={pet}
+            onClose={() => setOpenPillar(null)}
+          />
+        )}
       </div>
     </div>
   )

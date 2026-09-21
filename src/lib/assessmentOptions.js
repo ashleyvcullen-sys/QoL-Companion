@@ -26,8 +26,8 @@ export const STOOL_EMERGENCY = {
   chips: ['Black/tarry'],
   title: 'This Could Be an Emergency',
   warning:
-    'Black, tarry stools usually mean digested blood, which comes from bleeding higher up in the gut. '
-    + 'It can look like ordinary dark stool, so it is easily missed.',
+    'Black, tarry faeces usually mean digested blood, which comes from bleeding higher up in the gut. '
+    + 'It can look like ordinary dark faeces, so it is easily missed.',
   advice:
     'Please contact your vet today, even if {name} seems otherwise well in {them}self.',
 }

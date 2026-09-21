@@ -1695,6 +1695,22 @@ code {
 
 /* Under a centred intro on a condition page, where flex-start would leave it
    the only thing on the card off the centre line. */
+/* The pillar breakdown: each answer holding a pillar down. */
+.pillar-breakdown .review-summary-row span {
+  display: flex;
+  flex-direction: column;
+}
+.pillar-breakdown-detail {
+  font-size: var(--type-support);
+  color: var(--text-muted, inherit);
+  opacity: 0.8;
+}
+.pillar-breakdown-flag {
+  color: #A33A2E;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
 /* Each tracked condition's status beside the Overall QoL result. */
 .disease-today {
   margin-top: 10px;

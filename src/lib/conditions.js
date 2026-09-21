@@ -509,7 +509,7 @@ export const SHARED_PARAMETERS = {
   // managing food-responsive enteropathy is reading both forms.
   stool_consistency: {
     key: 'faecal_consistency',
-    label: 'Stool Consistency',
+    label: 'Faecal Consistency',
     type: 'scale',
     // Retired 21 Sep 2026 for the faecal score below. Still listed so entries
     // saved on this scale are read, summarised and exported exactly as they
@@ -1021,7 +1021,7 @@ export const CONDITIONS = {
         options: [
           { value: 'neither', label: 'No', severity: SEVERITY.OK },
           { value: 'bladder', label: 'Yes — passed urine', severity: SEVERITY.OK },
-          { value: 'bowels', label: 'Yes — passed a stool', severity: SEVERITY.OK },
+          { value: 'bowels', label: 'Yes — passed faeces', severity: SEVERITY.OK },
           { value: 'both', label: 'Yes — both', severity: SEVERITY.OK },
         ],
       },
@@ -2362,13 +2362,13 @@ export const CONDITIONS = {
       {
         ...sharedParameter('stool_consistency', {
           // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Allergy copy only, as above.
-          finding: 'Stool — {answer}',
+          finding: 'Faeces — {answer}',
         }),
         // Same gate as vomiting above.
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
       },
       {
-        ...sharedParameter('faecal_score', { finding: 'Stool — {answer}' }),
+        ...sharedParameter('faecal_score', { finding: 'Faeces — {answer}' }),
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
       },
 
@@ -2525,7 +2525,7 @@ export const CONDITIONS = {
           { value: 'none', label: 'No reaction so far', severity: SEVERITY.OK },
           { value: 'itch', label: 'More itchy', severity: SEVERITY.CONCERN },
           { value: 'skin', label: 'Skin or ears have flared', severity: SEVERITY.CONCERN },
-          { value: 'gut', label: 'Upset tummy — vomiting or loose stools', severity: SEVERITY.CONCERN },
+          { value: 'gut', label: 'Upset tummy — vomiting or loose faeces', severity: SEVERITY.CONCERN },
         ],
         // No emergency option, and therefore no emergencyMessage. The
         // facial swelling / hives / trouble breathing option was here until

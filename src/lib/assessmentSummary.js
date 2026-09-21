@@ -75,7 +75,7 @@ export function describeAssessmentDay(generalEntry, painEntry, species) {
     add('Faecal score', `${FAECAL_BAND_LABELS[faecalIndex]} — ${text}`, stoolChips,
       bandFlag ? 'concern' : stoolSymptomFlag)
   } else {
-    add('Stool quality', scores.stool === 'none' ? 'No faeces today' : sliderAnswer(scores.stool, 'Watery / diarrhoea', 'Well formed'),
+    add('Faeces', scores.stool === 'none' ? 'No faeces today' : sliderAnswer(scores.stool, 'Watery / diarrhoea', 'Well formed'),
       stoolChips, stoolSymptomFlag)
   }
 
