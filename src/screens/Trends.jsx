@@ -509,7 +509,7 @@ export default function Trends() {
       {showScoringExplainer && (
         <Modal title="How Does QoL Companion Calculate Quality of Life?" onClose={() => setShowScoringExplainer(false)}>
           <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
-          {/* PENDING ASH — rewritten 21 Sep 2026 for the new pillar mapping. */}
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rewritten for the new pillar mapping. */}
           <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin and itch; Appetite covers eating, drinking, digestion and toileting; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is held at 49% or below.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more), your pet's favourite things, and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
           {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Updated to match the floor rules: any
