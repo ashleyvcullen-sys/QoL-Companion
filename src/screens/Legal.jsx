@@ -3,7 +3,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Footer from '../components/Footer'
-import { allReferencesText } from '../lib/references'
+import { NO_ENDORSEMENT_TEXT, allReferencesText } from '../lib/references'
 import {
   PRIVACY_POLICY_LABEL,
   PRIVACY_POLICY_URL,
@@ -88,8 +88,7 @@ const SECTIONS = [
     // an attribution nobody can pick apart is not much of an attribution.
     paragraphs: [
       ...allReferencesText(),
-      // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Travels with the source list, as in the Terms.
-      'The App incorporates ideas and assessment structures from these sources; it does not reproduce them, and no endorsement by their authors or owners is implied.',
+      NO_ENDORSEMENT_TEXT,
       "All other text, design, and code in this app are original to this app unless otherwise credited.",
       // The plain-language half of clause 8 of the Terms. On this screen it
       // matters more than the ownership claim does: an owner reading a legal

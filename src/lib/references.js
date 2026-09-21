@@ -175,6 +175,11 @@ export function assessmentReferences(species) {
 
 // Every reference, in full, for the attribution section of Terms and Privacy.
 // No filter of any kind: that section exists to be complete.
+// Said after the source list wherever it appears (Terms, Legal & Privacy,
+// and the website Terms). One copy, like the list itself.
+// APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026.
+export const NO_ENDORSEMENT_TEXT = 'The App incorporates ideas and assessment structures from these sources; it does not reproduce them, and no endorsement by their authors or owners is implied.'
+
 export function allReferencesText() {
   return REFERENCES.map((reference) => reference.full)
 }
