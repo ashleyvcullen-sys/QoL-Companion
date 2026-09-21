@@ -356,7 +356,14 @@ export default function ConditionMonitoring() {
   // formParameters then drops the standing ones and rewords the repeats
   // ("is she STILL on a diet trial?"). It runs last so the dependency chain
   // is resolved against the real answers rather than the trimmed list.
-  const parameters = formParameters(visibleParameters(askedList, values), carried, { editStanding })
+  // Retired questions are never put on the form, even on an entry that
+  // already answered one — the replacement is asked instead. Their stored
+  // answers still read back in history (visibleParameters keeps them there).
+  const parameters = formParameters(
+    visibleParameters(askedList.filter((parameter) => !parameter.retired), values),
+    carried,
+    { editStanding },
+  )
 
   // Days since the last treatment, derived from the event the owner already
   // logs rather than asked. "Lethargic on day 8" is a different question to

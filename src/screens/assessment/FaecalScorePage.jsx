@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
 import IconLabelHeader from '../../components/IconLabelHeader'
@@ -43,8 +43,16 @@ export default function FaecalScorePage({
   const [showEmergency, setShowEmergency] = useState(false)
   const isEmergency = Boolean(emergency)
     && chipValue.some((chip) => emergency.chips.includes(chip))
+  // Only on the change INTO the emergency state while the owner is on this
+  // page — not when the page opens with it already ticked (a resumed draft, a
+  // revisit, or an answer carried in from a disease form). Until 21 Sep 2026
+  // the effect also ran on mount, so moving onto the page re-raised an alert
+  // for an answer given earlier, which read as a response to whatever had
+  // just been tapped.
+  const wasEmergency = useRef(isEmergency)
   useEffect(() => {
-    if (isEmergency) setShowEmergency(true)
+    if (isEmergency && !wasEmergency.current) setShowEmergency(true)
+    wasEmergency.current = isEmergency
   }, [isEmergency])
 
   const levels = faecalLevelsFor(pet?.species).map((text) => text.replace(/\s*\(emergency\)\s*/g, ' ').trim())
