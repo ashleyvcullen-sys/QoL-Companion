@@ -58,7 +58,7 @@ export default function FavouriteThingsPage({ value, savedThings, onChange, pet 
           exists, and the owner meets it every time rather than once. */}
       <p className="assessment-hint">
         <PetText
-          template="Every pet is different. Joy and a good quality of life can look quite different from one animal to the next, shaped by {their} own personality and the things {they} {have} always loved doing. This section helps you keep track of whether {name} is still enjoying the things {they} usually {do}."
+          template="Every pet is different, and what brings them joy is as individual as their personality. This section helps you keep track of whether {name} is still enjoying the things {they} {have} always loved."
           pet={pet}
         />
       </p>
