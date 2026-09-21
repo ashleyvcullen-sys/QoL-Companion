@@ -203,7 +203,7 @@ export default function BodyConditionScore() {
               state: { preselect: [scoreChart, weightChart].filter(Boolean).map((chart) => chart.key) },
             })}
           >
-            <FileDown size={16} /> Export this for your vet
+            <FileDown size={16} /> Export This for Your Vet
           </Btn>
         </Card>
       )}

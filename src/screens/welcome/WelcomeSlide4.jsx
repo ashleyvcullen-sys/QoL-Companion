@@ -6,7 +6,7 @@ export default function WelcomeSlide4() {
   return (
     <div className="assessment-page welcome-slide">
       <PawPrint size={30} color="#C97B8C" className="welcome-slide-icon" />
-      <SectionTitle>What this app helps you do</SectionTitle>
+      <SectionTitle>What This App Helps You Do</SectionTitle>
       <div className="welcome-help-list">
         {/* The same list About shows, from lib/appFeatures.js. This slide
             used to hold its own copy of five of these and was missing disease

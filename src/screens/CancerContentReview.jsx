@@ -136,7 +136,7 @@ export default function CancerContentReview() {
       </Card>
 
       <Block
-        title="Core — always asked"
+        title="Core — Always Asked"
         subtitle="Asked for every cancer patient, whatever they have. Deliberately short: appetite, pain, activity and demeanour already come from the Overall Quality of Life Assessment."
         parameters={CORE_PARAMETERS}
         pet={previewPet}

@@ -852,7 +852,7 @@ export default function ConditionMonitoring() {
                         onClick={goToMedications}
                         disabled={busy}
                       >
-                        Add to medications
+                        Add to Medications
                       </Btn>
                     </>
                   )}
@@ -867,14 +867,14 @@ export default function ConditionMonitoring() {
               until they have chosen something. */}
           {needsSetup && (
             <Card>
-              <SectionTitle>Start With The Diagnosis</SectionTitle>
+              <SectionTitle>Start with the Diagnosis</SectionTitle>
               <p className="assessment-hint">
                 Cancer looks different in every patient, so tell us what {pet.name} has been
                 diagnosed with — or that you're still waiting to find out — and we'll ask about
                 the right things.
               </p>
               <Btn type="button" className="btn-block" onClick={() => navigate(`/conditions/${definition.key}/setup`)}>
-                Choose diagnosis
+                Choose Diagnosis
               </Btn>
             </Card>
           )}
@@ -911,7 +911,7 @@ export default function ConditionMonitoring() {
                 {todaysEntry ? (
                   <>
                     <Btn type="button" className="btn-block" onClick={() => setFormOpenOverride(true)}>
-                      Edit today's entry
+                      Edit Today's Entry
                     </Btn>
                     <Btn
                       type="button"
@@ -919,12 +919,12 @@ export default function ConditionMonitoring() {
                       className="btn-block"
                       onClick={() => { setDraft({}); setFormOpenOverride(true) }}
                     >
-                      Start again
+                      Start Again
                     </Btn>
                   </>
                 ) : (
                   <Btn type="button" className="btn-block" onClick={() => setFormOpenOverride(true)}>
-                    Record an entry now
+                    Record an Entry Now
                   </Btn>
                 )}
               </div>
@@ -954,13 +954,13 @@ export default function ConditionMonitoring() {
                   </p>
                 ))}
                 <button type="button" className="subtle-link" onClick={() => setEditStanding(true)}>
-                  Change these
+                  Change These
                 </button>
               </div>
             )}
             {editStanding && (
               <button type="button" className="subtle-link" onClick={() => setEditStanding(false)}>
-                Done changing
+                Done Changing
               </button>
             )}
 
@@ -1083,7 +1083,7 @@ export default function ConditionMonitoring() {
               without this the trial simply looks forgotten. */}
           {definition.key === GI_KEY && hasGiFoodAllergySelected(config) && (
             <Card>
-              <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
+              <SectionTitle>Food Sensitivity or Allergy</SectionTitle>
               <p>
                 {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
                 {pet.name}'s food trial is monitored in Allergies and Skin Disease — the diet,
@@ -1126,7 +1126,7 @@ export default function ConditionMonitoring() {
               they are looking at it. */}
           {charts.length > 0 && (
             <Card>
-              <SectionTitle>Take This To Your Vet</SectionTitle>
+              <SectionTitle>Take This to Your Vet</SectionTitle>
               <p className="assessment-hint">
                 Export {pet.name}'s {definition.label.toLowerCase()} record as a report.
                 Everything on this page is selected to start with, and you can add {pet.name}'s
@@ -1139,7 +1139,7 @@ export default function ConditionMonitoring() {
                   state: { preselect: charts.map((chart) => chart.key) },
                 })}
               >
-                <FileDown size={16} /> Export this record
+                <FileDown size={16} /> Export This Record
               </Btn>
             </Card>
           )}
@@ -1166,7 +1166,7 @@ export default function ConditionMonitoring() {
                 className="btn-block"
                 onClick={() => setConfirmRemove(petCondition)}
               >
-                <Trash2 size={16} /> Stop tracking {definition.label}
+                <Trash2 size={16} /> Stop Tracking {definition.label}
               </Btn>
             </Card>
           )}
@@ -1185,7 +1185,7 @@ export default function ConditionMonitoring() {
           </p>
           <div className="modal-confirm-actions">
             <Btn type="button" variant="outline" onClick={() => setJustSaved(false)}>
-              Stay here
+              Stay Here
             </Btn>
             <Btn
               type="button"
@@ -1194,7 +1194,7 @@ export default function ConditionMonitoring() {
                 navigate('/conditions')
               }}
             >
-              Back to conditions
+              Back to Conditions
             </Btn>
           </div>
         </Modal>
@@ -1216,7 +1216,7 @@ export default function ConditionMonitoring() {
           </p>
           <div className="modal-confirm-actions">
             <Btn type="button" variant="outline" onClick={() => setConfirmRemove(null)}>
-              Keep tracking
+              Keep Tracking
             </Btn>
             <Btn
               type="button"
@@ -1224,7 +1224,7 @@ export default function ConditionMonitoring() {
               disabled={busy}
               onClick={() => handleRemove(confirmRemove)}
             >
-              {busy ? 'Deleting…' : 'Delete and stop'}
+              {busy ? 'Deleting…' : 'Delete and Stop'}
             </Btn>
           </div>
           {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}

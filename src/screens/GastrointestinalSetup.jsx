@@ -93,7 +93,7 @@ export default function GastrointestinalSetup() {
               <definition.Icon size={34} color="#fff" />
             </span>
           )}
-          <SectionTitle>What To Monitor</SectionTitle>
+          <SectionTitle>What to Monitor</SectionTitle>
         </div>
         {/* The "tell us what applies to {name}" sentence has gone, on Ash's
             instruction 3 Sep 2026. The card below asks the question directly
@@ -156,7 +156,7 @@ export default function GastrointestinalSetup() {
             className="btn-block"
             onClick={() => navigate('/conditions/cancer')}
           >
-            Go to Cancer monitoring
+            Go to Cancer Monitoring
           </Btn>
         </Card>
       )}
@@ -169,7 +169,7 @@ export default function GastrointestinalSetup() {
           record across two places. Same reasoning as gut cancer above. */}
       {foodAllergySelected && (
         <Card>
-          <SectionTitle>Food Sensitivity Or Allergy</SectionTitle>
+          <SectionTitle>Food Sensitivity or Allergy</SectionTitle>
           <p>
             {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. */}
             Food allergies are monitored in Allergies and Skin Disease, which follows the whole

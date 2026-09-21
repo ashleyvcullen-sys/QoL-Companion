@@ -335,7 +335,7 @@ export default function Paywall() {
             disabled={purchasing || !selected || !identityReady}
             onClick={handlePurchase}
           >
-            {purchasing ? 'Processing…' : selectedTrial ? 'Start free trial' : 'Continue'}
+            {purchasing ? 'Processing…' : selectedTrial ? 'Start Free Trial' : 'Continue'}
           </Btn>
 
           {/* Spec section 6. VERBATIM — do not reword this for layout. If it
@@ -388,7 +388,7 @@ export default function Paywall() {
             className="subtle-link"
             onClick={() => Browser.open({ url: MANAGE_SUBSCRIPTION_URL })}
           >
-            Manage or cancel your subscription
+            Manage or Cancel Your Subscription
           </button>
         </Card>
       )}

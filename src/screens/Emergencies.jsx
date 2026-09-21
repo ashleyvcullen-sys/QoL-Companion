@@ -41,7 +41,7 @@ export default function Emergencies() {
       </div>
 
       <Card>
-        <SectionTitle>Emergency signs</SectionTitle>
+        <SectionTitle>Emergency Signs</SectionTitle>
         <ul className="emergency-list">
           {EMERGENCIES.map((item) => (
             <li key={item}>{item}</li>

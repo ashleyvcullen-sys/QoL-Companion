@@ -24,18 +24,18 @@ export default function PetLimitModal({ onClose }) {
 
   if (hasPremium) {
     return (
-      <Modal title="Pet limit reached" onClose={onClose}>
+      <Modal title="Pet Limit Reached" onClose={onClose}>
         <p>
           You can track up to {petLimit} pets on your current plan. To add another,
           remove a pet you no longer need to track.
         </p>
-        <Btn type="button" className="btn-block" onClick={onClose}>Got it</Btn>
+        <Btn type="button" className="btn-block" onClick={onClose}>Got It</Btn>
       </Modal>
     )
   }
 
   return (
-    <Modal title="Add another pet" onClose={onClose}>
+    <Modal title="Add Another Pet" onClose={onClose}>
       <p>
         Add more pets with QoL Companion Premium — track every pet in your household
         in one place.

@@ -127,7 +127,7 @@ export const BEAP_SCALES = {
       "Dull eyes, may look narrowed or distressed.",
       "Dull eyes that may be closed completely or may look panicked.",
     ] },
-    { key: "ambulation", letter: "A", label: "Ambulation (walking, stairs & jumping)", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "ambulation", letter: "A", label: "Ambulation (Walking, Stairs & Jumping)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Walks normally, manages stairs easily, no stiffness. Jumps into the car or onto furniture without hesitation.",
       "Occasional stiffness, otherwise normal. Slight hesitation before jumping.",
       "Mild or intermittent limping and/or stiffness, especially after lying down. Reluctant to use stairs and jump into the car or onto furniture.",
@@ -167,7 +167,7 @@ export const BEAP_SCALES = {
       "Hunched, tucked tail, odd position. Can't seem to get comfortable.",
       "Rigid and trembling/shaking, can't seem to get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "palpation", letter: "P", label: "Palpation (Response to Touch)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",
@@ -193,7 +193,7 @@ export const BEAP_SCALES = {
       "Ears tightly flattened, eyes tightly closed, clear grimace face.",
       "Vacant stare or unresponsive, ears pinned flat, pupils fixed.",
     ] },
-    { key: "ambulation", letter: "A", label: "Ambulation (jumping, walking & stairs)", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "ambulation", letter: "A", label: "Ambulation (Jumping, Walking & Stairs)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Jumps and walks normally, manages stairs easily.",
       "Occasional hesitation before jumping or using stairs.",
       "Mild reluctance to jump or use stairs.",
@@ -233,7 +233,7 @@ export const BEAP_SCALES = {
       "Tightly hunched, tucked in, won't move from position.",
       "Rigid, trembling, can't get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Palpation (response to touch)", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "palpation", letter: "P", label: "Palpation (Response to Touch)", concernFrom: 6, emergencyFrom: 8, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",

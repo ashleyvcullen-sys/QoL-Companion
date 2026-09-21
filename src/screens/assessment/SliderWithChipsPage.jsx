@@ -52,7 +52,7 @@ export default function SliderWithChipsPage({
           </div>
           <p>{fillPetText(emergency.advice, pet)}</p>
           <Btn type="button" variant="danger" className="btn-block" onClick={() => setShowEmergency(false)}>
-            I understand
+            I Understand
           </Btn>
         </Modal>
       )}

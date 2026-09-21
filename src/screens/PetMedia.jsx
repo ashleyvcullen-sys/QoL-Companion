@@ -133,7 +133,7 @@ export default function PetMedia() {
         {!pending && (
           <>
             <Btn type="button" className="btn-block" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={16} /> Choose photo or video
+              <Upload size={16} /> Choose Photo or Video
             </Btn>
             <p className="assessment-hint">
               Photos are shrunk before upload to save space. Videos need to be under{' '}

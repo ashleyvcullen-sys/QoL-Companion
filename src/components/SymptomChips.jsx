@@ -69,7 +69,7 @@ export default function SymptomChips({ options, selected, onChange }) {
       })}
 
       {showOtherInput && (
-        <Modal title="Describe symptom" onClose={closeOtherInput}>
+        <Modal title="Describe Symptom" onClose={closeOtherInput}>
           <div className="chip-other-modal">
             <input
               type="text"

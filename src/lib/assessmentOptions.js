@@ -24,7 +24,7 @@ export const STOOL_SYMPTOM_OPTIONS = [
 // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording drafted by me, not reviewed.
 export const STOOL_EMERGENCY = {
   chips: ['Black/tarry'],
-  title: 'This could be an emergency',
+  title: 'This Could Be an Emergency',
   warning:
     'Black, tarry stools usually mean digested blood, which comes from bleeding higher up in the gut. '
     + 'It can look like ordinary dark stool, so it is easily missed.',
@@ -86,7 +86,7 @@ export const HYGIENE_SYMPTOM_OPTIONS = [
 // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording, verbatim.
 export const VOMITING_EMERGENCY = {
   chips: ['Blood'],
-  title: 'This could be an emergency',
+  title: 'This Could Be an Emergency',
   warning: 'Blood in the vomit needs veterinary attention as soon as possible.',
 }
 

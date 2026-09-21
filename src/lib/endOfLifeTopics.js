@@ -5,7 +5,7 @@ import BrokenHeartIcon from '../components/icons/BrokenHeartIcon'
 export const END_OF_LIFE_TOPICS = [
   {
     key: 'know-when',
-    label: "How to know when it's time",
+    label: "How to Know When It's Time",
     Icon: AboutIcon,
     content: [
       { type: 'p', text: "There's no single test that decides this — it's a combination of your vet's assessment and what you observe day to day, which is exactly what the Quality of Life scores in this app are for. A useful rule of thumb many vets use: if there are consistently **more bad days than good** over a couple of weeks, or the good days are only 'okay' while the bad days are truly hard, that's usually a sign quality of life has slipped below what's fair to ask your pet to keep living with." },
@@ -24,7 +24,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'natural-death',
-    label: "Why a 'natural' death often isn't peaceful",
+    label: "Why a 'Natural' Death Often Isn't Peaceful",
     Icon: AlertTriangle,
     content: [
       { type: 'p', text: "It's a common hope that a pet will simply pass away quietly in their sleep at home, and it can happen — but for most terminal or end-stage conditions, it's the exception rather than the rule. As organs fail or disease progresses, the more common pattern is a period of labored breathing, pain, disorientation, seizures, or the body struggling in ways that are distressing to witness and, more importantly, to experience." },
@@ -34,7 +34,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'euthanasia-process',
-    label: 'The euthanasia process & options',
+    label: 'The Euthanasia Process & Options',
     Icon: BookOpen,
     content: [
       { type: 'p', text: "Most vets use a two-step process: a sedative or pain-relief injection first, which lets your pet relax fully (often they'll appear to fall asleep), followed by the euthanasia solution itself, usually given into a vein. The process is extremely peaceful and not painful." },
@@ -44,7 +44,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'aftercare',
-    label: 'Aftercare options & providers',
+    label: 'Aftercare Options & Providers',
     Icon: HeartHandshake,
     content: [
       { type: 'p', text: 'Common options are home burial (where local regulations allow it — worth checking first), private cremation (your pet is cremated individually and the ashes returned to you), and communal cremation (ashes are not returned, generally the more affordable option). Many clinics also offer memorial keepsakes — a clay paw print, a lock of fur, a certificate.' },
@@ -53,7 +53,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'anticipatory-grief',
-    label: 'Anticipatory grief',
+    label: 'Anticipatory Grief',
     Icon: BrokenHeartIcon,
     content: [
       { type: 'p', text: "Grieving often starts well before the loss itself — while you're still caring for a pet who is declining, it's very common to feel waves of sadness, guilt, dread, or even relief-tinged-with-guilt, all at once. This is called anticipatory grief, and it's a normal, well-recognised response, not a sign you're 'giving up' on your pet." },
@@ -62,7 +62,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'caregiver-burnout',
-    label: 'Caregiver burnout — looking after yourself too',
+    label: 'Caregiver Burnout — Looking After Yourself Too',
     Icon: HandHeart,
     content: [
       { type: 'p', text: "Caring for a pet through a chronic or declining illness is real work — medication schedules, mobility support, disrupted sleep, financial pressure, and near-constant watchfulness, often for weeks or months at a stretch. It's normal for that to wear you down, physically and emotionally, even when you'd do it all again without hesitation." },
@@ -73,7 +73,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'children-grief',
-    label: 'How children grieve, and how to talk to them about euthanasia',
+    label: 'How Children Grieve, and How to Talk to Them About Euthanasia',
     Icon: Heart,
     content: [
       { type: 'p', text: "Children process pet loss very differently depending on age — this is a general guide, not a strict rule, since every child is different." },
@@ -86,7 +86,7 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'other-pets-grief',
-    label: 'How other pets grieve',
+    label: 'How Other Pets Grieve',
     Icon: PawPrint,
     content: [
       { type: 'p', text: 'Surviving pets grieve just like we do. They often show real changes after a companion dies — searching the house, changes in appetite or sleep, increased clinginess, or withdrawal. These behaviour changes reflect a genuine sense of loss, not just a disrupted routine.' },

@@ -388,7 +388,7 @@ export default function Medications() {
       return (
         <div className="med-slot-row">
           <button type="button" className="med-slot" onClick={() => handleLogAsNeeded(medication)}>
-            <Plus size={14} /> Log a dose
+            <Plus size={14} /> Log a Dose
           </button>
           <span className="assessment-hint">As needed — {count} given today</span>
         </div>
@@ -471,13 +471,13 @@ export default function Medications() {
 
       {remindersBlocked && (
         <Card>
-          <SectionTitle>Reminders are switched off on this device</SectionTitle>
+          <SectionTitle>Reminders Are Switched Off on This Device</SectionTitle>
           <p>
             You've asked to be reminded about {pet.name}'s medication, but notifications aren't
             permitted for QoL Companion — so no reminder will arrive.
           </p>
           <Btn type="button" className="btn-block" onClick={handleEnableNotifications}>
-            Allow notifications
+            Allow Notifications
           </Btn>
         </Card>
       )}
@@ -501,7 +501,7 @@ export default function Medications() {
 
       <Card>
         <SectionTitle>
-          {editing ? (editingId === 'new' ? 'Add medication' : 'Edit medication') : 'All medications'}
+          {editing ? (editingId === 'new' ? 'Add Medication' : 'Edit Medication') : 'All Medications'}
         </SectionTitle>
 
         {editing ? (
@@ -858,7 +858,7 @@ export default function Medications() {
             ))}
 
             <Btn type="button" className="btn-block" onClick={startAdd}>
-              <Plus size={16} /> Add medication
+              <Plus size={16} /> Add Medication
             </Btn>
           </>
         )}

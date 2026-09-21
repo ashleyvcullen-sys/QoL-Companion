@@ -58,7 +58,7 @@ export default function UrinationPage({ value, onChange, icon, species, pet }) {
       )}
 
       {showEmergencyModal && (
-        <Modal title="This could be an emergency" onClose={() => setShowEmergencyModal(false)}>
+        <Modal title="This Could Be an Emergency" onClose={() => setShowEmergencyModal(false)}>
           <div className="warning-banner">
             <AlertTriangle size={20} />
             {/* APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Her wording,
@@ -75,7 +75,7 @@ export default function UrinationPage({ value, onChange, icon, species, pet }) {
             you're not certain.
           </p>
           <Btn type="button" variant="danger" className="btn-block" onClick={() => setShowEmergencyModal(false)}>
-            I understand
+            I Understand
           </Btn>
         </Modal>
       )}

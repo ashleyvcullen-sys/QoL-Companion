@@ -602,7 +602,7 @@ export const SAME_AS_ASSESSMENT = prefilledFrom('Overall Quality of Life Assessm
 // does not fit what its subtext actually says.
 //
 // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
-export const WHY_LABEL = 'More info'
+export const WHY_LABEL = 'More Info'
 
 export const MONITORING_DISCLAIMER =
   "This does not replace your vet's advice or clinical assessment, but will help make monitoring at home easier between visits."
@@ -850,7 +850,7 @@ export const CONDITIONS = {
           when: 'yes',
           type: 'photo',
           // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-          label: 'Show your vet',
+          label: 'Show Your Vet',
           hint: 'If you can film a seizure safely, do — from a distance, and only if {name} is not left alone to do it. A video shows your vet things that are almost impossible to describe, and it matters most early on, before the seizures are under control.',
         },
       },
@@ -1197,7 +1197,7 @@ export const CONDITIONS = {
       {
         key: 'interactions',
         species: 'dog',
-        label: 'Interaction With You',
+        label: 'Interaction with You',
         type: 'scale',
         // The daily assessment's attitude category is about demeanour — how
         // bright they seem. This is about the specific social habits that
@@ -1222,7 +1222,7 @@ export const CONDITIONS = {
       {
         key: 'interactions',
         species: 'cat',
-        label: 'Interaction With You',
+        label: 'Interaction with You',
         type: 'scale',
         covers: 'attitude',
         relationship: RELATIONSHIP.DISTINCT,
@@ -1618,7 +1618,7 @@ export const CONDITIONS = {
         // it reuses, so the two never read as separate measures — including
         // the "(response to touch)" gloss, which is the whole point of the
         // heading for an owner who does not use the word palpation.
-        label: 'Palpation (response to touch)',
+        label: 'Palpation (Response to Touch)',
         type: 'beap',
         beapKey: 'palpation',
         hideImages: true,
@@ -1699,7 +1699,7 @@ export const CONDITIONS = {
       {
         key: 'cold_or_damp',
         species: 'dog',
-        label: 'Worse In Cold Or Damp Weather',
+        label: 'Worse in Cold or Damp Weather',
         type: 'yesno',
         // Informational: weather is not deterioration, and flagging it amber
         // every wet week would drag the trend down for something that
@@ -1760,7 +1760,7 @@ export const CONDITIONS = {
       {
         key: 'litter_tray',
         species: 'cat',
-        label: 'Using The Litter Tray',
+        label: 'Using the Litter Tray',
         type: 'choice',
         // About climbing in, not about what comes out. The daily urination
         // question is unchanged by a cat who cannot get over the side.
@@ -1829,7 +1829,7 @@ export const CONDITIONS = {
     // { dog, cat } object, so a species-split here would print as
     // [object Object]. Naming the species in the sentence is both correct and
     // useful — a dog owner reading it learns something too.
-    whyLabel: 'Signs of allergies',
+    whyLabel: 'Signs of Allergies',
     why:
       'Signs of allergies include itching, over-grooming (particularly in cats), paw licking/chewing, ear infections '
       + 'and sometimes gastrointestinal issues. '
@@ -2009,7 +2009,7 @@ export const CONDITIONS = {
 
       {
         key: 'skin',
-        label: 'Skin And Coat',
+        label: 'Skin and Coat',
         type: 'scale',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
@@ -2051,7 +2051,7 @@ export const CONDITIONS = {
             key: 'skin_notes',
             always: true,
             // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026.
-            label: 'Additional notes',
+            label: 'Additional Notes',
             type: 'text',
             placeholder: 'e.g. both armpits and the belly, red with small scabs',
           },
@@ -2059,7 +2059,7 @@ export const CONDITIONS = {
             key: 'skin_photo',
             always: true,
             type: 'photo',
-            label: 'Show your vet',
+            label: 'Show Your Vet',
             // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
             hint: 'Skin changes fast, and by the appointment it may look completely different. A photo now gives your vet something to compare against, and something to judge from if they cannot see {name} today.',
           },
@@ -2094,7 +2094,7 @@ export const CONDITIONS = {
 
       {
         key: 'paws_face',
-        label: 'Paws And Face',
+        label: 'Paws and Face',
         type: 'scale',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
@@ -2126,7 +2126,7 @@ export const CONDITIONS = {
 
       {
         key: 'itch_sleep',
-        label: 'Sleep Disturbed By Itching',
+        label: 'Sleep Disturbed by Itching',
         type: 'scale',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. What the calendar's day line says when this
         // flags; see findingFor. The level text itself is yours — this only
@@ -2651,7 +2651,7 @@ export const CONDITIONS = {
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her steps, verbatim,
         // with sentence capitals and full stops added and "this will =" in
         // step 3 written out as "is".
-        howToTitle: 'How To Measure Daily Water Intake',
+        howToTitle: 'How to Measure Daily Water Intake',
         howTo: [
           'Measure how much (in ml) water goes into {name}\'s bowl at the start of the day. (Starting amount.)',
           'Measure how much (in ml) is left after 24 hours. (Finishing amount.)',
@@ -2791,7 +2791,7 @@ export const CONDITIONS = {
       // into nausea.
       {
         key: 'mouth',
-        label: 'Breath And Mouth',
+        label: 'Breath and Mouth',
         type: 'scale',
         // The scale branch of evaluateParameter reads `emergencyMessage`, and
         // a parameter without one draws the hazard colour with no words

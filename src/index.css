@@ -1697,6 +1697,12 @@ code {
    the only thing on the card off the centre line. */
 .how-to-button.centred {
   align-self: center;
+  /* align-self only centres inside a flex column, and the condition intro
+     card is not one — so "Signs of allergies" sat on the left. Auto side
+     margins centre it in either layout. */
+  display: flex;
+  width: fit-content;
+  margin-inline: auto;
 }
 
 /* The heading row on a condition page: icon beside the title rather than

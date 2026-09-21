@@ -116,7 +116,7 @@ export default function VomitingPage({
             <p>{fillPetText(VOMITING_EMERGENCY.warning, pet)}</p>
           </div>
           <Btn type="button" variant="danger" className="btn-block" onClick={() => setShowEmergency(false)}>
-            I understand
+            I Understand
           </Btn>
         </Modal>
       )}

@@ -65,6 +65,14 @@ export default function ChartView({
     return (
       <>
         {intro}
+        {/* PENDING ASH — wording. Only where a tap does something: the
+            month view with a caller that can open the day. The all-time view
+            and the PDF capture have no tappable days, so they say nothing. */}
+        {onOpenDay && !(allTime && chart.range) && (
+          <p className="assessment-hint calendar-tap-hint">
+            Tap a date to see that day&apos;s answers and notes.
+          </p>
+        )}
         {allTime && chart.range
           ? <AllTimeCalendar dayFor={chart.dayFor} range={chart.range} missedDays={chart.missedDays} />
           : <MonthCalendar dayFor={chart.dayFor} missedDays={chart.missedDays} onOpenDay={onOpenDay} />}

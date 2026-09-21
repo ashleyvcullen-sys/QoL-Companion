@@ -52,7 +52,7 @@ export const GI_CORE_PARAMETERS = [
     followUp: {
       key: 'days_since_stool',
       when: 'decreased',
-      label: 'Days Since The Last Stool',
+      label: 'Days Since the Last Stool',
       type: 'number',
       unit: 'days',
       min: 0,
@@ -83,7 +83,7 @@ export const GI_CORE_PARAMETERS = [
   },
   {
     key: 'blood_or_mucus',
-    label: 'Blood Or Mucus In The Stool',
+    label: 'Blood or Mucus in the Stool',
     type: 'choice',
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both. Fresh blood and digested
     // blood are separated because they mean different things and different
@@ -101,7 +101,7 @@ export const GI_CORE_PARAMETERS = [
   },
   {
     key: 'straining',
-    label: 'Straining To Pass Stool',
+    label: 'Straining to Pass Stool',
     type: 'scale',
     concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // The standing alert has gone, on Ash's instruction 3 Sep 2026. It sat
@@ -207,7 +207,7 @@ export const GI_CORE_PARAMETERS = [
 // anyone can hear from across a room.
 const ASPIRATION_SIGNS = {
   key: 'aspiration_signs',
-  label: 'Coughing Or Noisy Breathing',
+  label: 'Coughing or Noisy Breathing',
   type: 'yesno',
   emergencyWhen: 'yes',
   why: 'These are signs that food may have entered the airways instead of the GI tract (aspiration). This can occur after vomiting or regurgitation of food.',
@@ -275,11 +275,11 @@ export const GI_MODULES = {
 
   chronic_enteropathy: {
     key: 'chronic_enteropathy',
-    label: 'Chronic enteropathy / IBD',
+    label: 'Chronic Enteropathy / IBD',
     parameters: [
       {
         key: 'urgency',
-        label: 'Urgency And Accidents',
+        label: 'Urgency and Accidents',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Urgency is one of the
@@ -324,14 +324,14 @@ export const GI_MODULES = {
   // and selecting it is what surfaces the way across to Allergies.
   food_sensitivity: {
     key: 'food_sensitivity',
-    label: 'Food sensitivity or allergy',
+    label: 'Food Sensitivity or Allergy',
     redirectTo: 'allergies',
     parameters: [],
   },
 
   infection_parasites: {
     key: 'infection_parasites',
-    label: 'Infection or parasites',
+    label: 'Infection or Parasites',
     parameters: [
       {
         key: 'visible_parasites',
@@ -348,7 +348,7 @@ export const GI_MODULES = {
           key: 'visible_parasites_photo',
           when: 'yes',
           type: 'photo',
-          label: 'Show your vet',
+          label: 'Show Your Vet',
           hint: 'A photo is worth far more than a description here, and it will be gone by the appointment. Take one now and it is saved to {name}\'s photos, ready to show them.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         },
       },
@@ -357,11 +357,11 @@ export const GI_MODULES = {
 
   anal_glands: {
     key: 'anal_glands',
-    label: 'Anal gland disease',
+    label: 'Anal Gland Disease',
     parameters: [
       {
         key: 'scooting',
-        label: 'Scooting Or Licking At The Bottom',
+        label: 'Scooting or Licking at the Bottom',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her wording, shared
@@ -380,11 +380,11 @@ export const GI_MODULES = {
 
   post_surgery: {
     key: 'post_surgery',
-    label: 'Recovery from GIT surgery',
+    label: 'Recovery from GIT Surgery',
     parameters: [
       {
         key: 'wound',
-        label: 'External Appearance Of Surgical Site',
+        label: 'External Appearance of Surgical Site',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The six levels are still mine. What has changed on
@@ -405,13 +405,13 @@ export const GI_MODULES = {
           key: 'wound_photo',
           whenAtLeast: 4,
           type: 'photo',
-          label: 'Show your vet',
+          label: 'Show Your Vet',
           hint: 'Take a photo of the site now. A vet can often tell from a photo how urgent this is, and it gives you something to compare against tomorrow.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         },
       },
       {
         key: 'back_to_normal',
-        label: 'Eating And Toileting Since Surgery',
+        label: 'Eating and Toileting Since Surgery',
         type: 'choice',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities both.
         options: [
@@ -499,7 +499,7 @@ export const GI_MODULES = {
         // than stretching, so asking a cat owner to watch for it invites a
         // "no" that means nothing.
         species: 'dog',
-        label: 'Stretching Or Praying Position',
+        label: 'Stretching or Praying Position',
         type: 'yesno',
         concernWhen: 'yes',
         why: 'Front legs down and bottom up, held for longer than a stretch. It is a way of easing tummy pain, and is worth telling your vet about.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
@@ -512,11 +512,11 @@ export const GI_MODULES = {
 
   epi: {
     key: 'epi',
-    label: 'Exocrine pancreatic insufficiency (EPI)',
+    label: 'Exocrine Pancreatic Insufficiency (EPI)',
     parameters: [
       {
         key: 'stool_volume',
-        label: 'Amount Of Stool',
+        label: 'Amount of Stool',
         type: 'choice',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Options and severities. Volume rather than
         // consistency: the classic EPI sign is a lot of pale, greasy stool
@@ -537,7 +537,7 @@ export const GI_MODULES = {
     parameters: [
       {
         key: 'reflux_signs',
-        label: 'Gulping, Lip-Licking Or Burping',
+        label: 'Gulping, Lip-Licking or Burping',
         type: 'scale',
         concernFrom: 4, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Reflux is easy to miss
@@ -576,7 +576,7 @@ export const GI_MODULES = {
   // that here would give an owner a worse form and split their history in two.
   gi_cancer: {
     key: 'gi_cancer',
-    label: 'Gastrointestinal cancer',
+    label: 'Gastrointestinal Cancer',
     redirectTo: 'cancer',
     parameters: [],
   },

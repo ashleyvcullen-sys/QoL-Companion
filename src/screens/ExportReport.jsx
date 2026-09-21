@@ -671,7 +671,7 @@ export default function ExportReport() {
                   className="btn-block"
                   onClick={() => setPreviewCharts((open) => !open)}
                 >
-                  {previewCharts ? 'Hide charts' : 'Preview charts'}
+                  {previewCharts ? 'Hide Charts' : 'Preview Charts'}
                 </Btn>
                 {/* Titled, on Ash's instruction 5 Sep 2026. The charts were
                     stacked unlabelled, so a report with a calendar, a weight
@@ -705,7 +705,7 @@ export default function ExportReport() {
           </Card>
 
           <Card>
-            <SectionTitle>Recent assessments</SectionTitle>
+            <SectionTitle>Recent Assessments</SectionTitle>
             {recent.length === 0 ? (
               <p>No assessments logged yet.</p>
             ) : (

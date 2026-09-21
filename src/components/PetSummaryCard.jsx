@@ -292,7 +292,7 @@ export default function PetSummaryCard() {
             over unchanged from the version she approved earlier today. */}
         {(qolDue || !latestGeneral) && (
           <Btn type="button" className="btn-block" onClick={() => navigate('/assessment')}>
-            {!latestGeneral ? 'Start the first assessment' : 'Go to QoL Assessment'}
+            {!latestGeneral ? 'Start the First Assessment' : 'Go to QoL Assessment'}
           </Btn>
         )}
       </section>
@@ -368,7 +368,7 @@ export default function PetSummaryCard() {
             className="btn-block"
             onClick={() => navigate('/conditions')}
           >
-            Set up disease monitoring
+            Set Up Disease Monitoring
           </Btn>
         </section>
       )}

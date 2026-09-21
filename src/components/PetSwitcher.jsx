@@ -41,11 +41,11 @@ export default function PetSwitcher() {
           this, so the control stays and explains itself when tapped. */}
       {atPetLimit ? (
         <button type="button" className="pet-switcher-add" onClick={() => setShowLimit(true)}>
-          <Plus size={14} /> Add a pet
+          <Plus size={14} /> Add a Pet
         </button>
       ) : (
         <Link to="/onboarding" className="pet-switcher-add">
-          <Plus size={14} /> Add a pet
+          <Plus size={14} /> Add a Pet
         </Link>
       )}
 

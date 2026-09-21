@@ -7,7 +7,7 @@ export default function WelcomeSlide5() {
       <span className="welcome-alert-badge" aria-hidden="true">
         <AlertTriangle size={24} color="#fff" />
       </span>
-      <SectionTitle>One important note</SectionTitle>
+      <SectionTitle>One Important Note</SectionTitle>
       <p>
         <strong>This app does not replace a veterinary exam or professional veterinary advice.</strong>{' '}
         Always contact your vet for diagnosis, treatment, and anything urgent. This app

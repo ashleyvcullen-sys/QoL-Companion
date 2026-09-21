@@ -45,7 +45,7 @@ export default function Login() {
     return (
       <div className="screen">
         <Card>
-          <SectionTitle>Check your email</SectionTitle>
+          <SectionTitle>Check Your Email</SectionTitle>
           <p>We sent a login link to {email}.</p>
           {/* The single most common reason someone sits on this screen and
               gives up. Said here rather than only in support: by the time a
@@ -66,7 +66,7 @@ export default function Login() {
   return (
     <div className="screen">
       <Card>
-        <SectionTitle>Log in</SectionTitle>
+        <SectionTitle>Log In</SectionTitle>
         <form onSubmit={handleSubmit} className="form">
           <div className="field">
             <label htmlFor="login-email">Email</label>

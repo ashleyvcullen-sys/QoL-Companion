@@ -48,7 +48,7 @@ export default function HowTo({ title, steps = null, body = null, footer, pet, c
           {footer && (
             <p className="how-to-footer"><PetText template={footer} pet={pet} /></p>
           )}
-          <Btn type="button" className="btn-block" onClick={() => setOpen(false)}>Got it</Btn>
+          <Btn type="button" className="btn-block" onClick={() => setOpen(false)}>Got It</Btn>
         </Modal>
       )}
     </>

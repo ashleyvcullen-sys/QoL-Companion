@@ -43,7 +43,7 @@ export default function EndOfLife() {
       </Card>
 
       <Card>
-        <SectionTitle>Most recent QoL score</SectionTitle>
+        <SectionTitle>Most Recent QoL Score</SectionTitle>
         {loading && <p>Loading…</p>}
         {!loading && !latestResult && <p>No assessments logged yet.</p>}
         {!loading && latestResult && (

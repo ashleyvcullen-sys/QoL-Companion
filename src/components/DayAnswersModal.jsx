@@ -66,7 +66,7 @@ export default function DayAnswersModal({
           {onDeleteNote && (
             <>
               <button type="button" className="subtle-link" onClick={onDeleteNote}>
-                Delete this note
+                Delete This Note
               </button>
               {/* Said plainly, because "delete" beside a day's readings is
                   alarming and the owner has no way of knowing which of the two

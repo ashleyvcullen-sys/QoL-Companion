@@ -164,14 +164,14 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
         // which one records the answers they just gave. One solid button per
         // card, and it is the one that saves the entry.
         <Btn type="button" variant="outline" className="btn-block" onClick={() => setAdding(true)}>
-          <Plus size={16} /> Add an event
+          <Plus size={16} /> Add an Event
         </Btn>
       )}
 
       {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
 
       {medicationPrompt && (
-        <Modal title="Add this to Medications?" onClose={() => setMedicationPrompt(null)}>
+        <Modal title="Add This to Medications?" onClose={() => setMedicationPrompt(null)}>
           <p>
             You've recorded that {medicationPrompt} was started. Would you like to add it to
             Medications, so you can log each dose and be reminded when one is due?
@@ -186,10 +186,10 @@ export default function ConditionEvents({ petId, conditionKey, events, loading, 
               navigate('/medications', { state: { newMedicationName: name } })
             }}
           >
-            Set up reminders
+            Set Up Reminders
           </Btn>
           <button type="button" className="subtle-link modal-secondary-link" onClick={() => setMedicationPrompt(null)}>
-            Not now
+            Not Now
           </button>
         </Modal>
       )}

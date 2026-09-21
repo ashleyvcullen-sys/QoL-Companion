@@ -158,7 +158,7 @@ export default function ConditionSetup() {
               <definition.Icon size={34} color="#fff" />
             </span>
           )}
-          <SectionTitle>What To Monitor</SectionTitle>
+          <SectionTitle>What to Monitor</SectionTitle>
         </div>
         {/* The condition's setup text. NOT its summary — "there are many
             different types of cancer" is the answer to "is this the right

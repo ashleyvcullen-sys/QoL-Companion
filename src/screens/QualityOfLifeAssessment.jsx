@@ -616,7 +616,7 @@ export default function QualityOfLifeAssessment() {
     <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
     <SliderWithChipsPage
       key="stool"
-      title="Stool quality"
+      title="Stool Quality"
       sliderValue={entry.scores.stool}
       onSliderChange={(v) => updateScore('stool', v)}
       pet={pet}
@@ -659,7 +659,7 @@ export default function QualityOfLifeAssessment() {
     />,
     <SliderWithChipsPage
       key="hygiene"
-      title="Hygiene, Coat Quality And Grooming"
+      title="Hygiene, Coat Quality and Grooming"
       sliderValue={entry.scores.hygiene}
       onSliderChange={(v) => updateScore('hygiene', v)}
       chipOptions={HYGIENE_SYMPTOM_OPTIONS}
@@ -778,14 +778,14 @@ export default function QualityOfLifeAssessment() {
               },
             })}
           >
-            <FileDown size={16} /> Export a report for your vet
+            <FileDown size={16} /> Export a Report for Your Vet
           </Btn>
 
           <button type="button" className="subtle-link" onClick={() => navigate('/trends')}>
-            See all trends
+            See All Trends
           </button>
           <button type="button" className="subtle-link" onClick={() => navigate('/')}>
-            Back to home
+            Back to Home
           </button>
         </Card>
         <Footer />
@@ -814,7 +814,7 @@ export default function QualityOfLifeAssessment() {
       </Card>
 
       {showExitConfirm && (
-        <Modal title="Exit assessment?" onClose={() => setShowExitConfirm(false)}>
+        <Modal title="Exit Assessment?" onClose={() => setShowExitConfirm(false)}>
           <p>
             Your answers are saved as a draft. Nothing is recorded until you finish and
             save.
@@ -831,7 +831,7 @@ export default function QualityOfLifeAssessment() {
       )}
 
       {showExistingTodayChoice && (
-        <Modal title="Already completed today" onClose={handleStartNewToday}>
+        <Modal title="Already Completed Today" onClose={handleStartNewToday}>
           <p>
             Today's assessment is already saved. Edit it, or start again and overwrite it?
           </p>

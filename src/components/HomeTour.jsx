@@ -102,7 +102,7 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
             )}
             <p>{step.message}</p>
             <div className="home-tour-actions">
-              <button type="button" className="home-tour-skip" onClick={onFinish}>Skip tour</button>
+              <button type="button" className="home-tour-skip" onClick={onFinish}>Skip Tour</button>
               <Btn type="button" onClick={goNext}>Next</Btn>
             </div>
           </>

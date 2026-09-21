@@ -170,7 +170,7 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, cadence
     notifications: [
       {
         id: qolReminderIdForPet(petId),
-        title: 'Quality of Life check-in',
+        title: 'Quality of Life Check-In',
         body: `Time for ${petName}'s quality of life check-in`,
         schedule: { at: nextDate },
         // petId rides along so tapping the notification can open the
@@ -225,7 +225,7 @@ export async function scheduleConditionReminder({
     notifications: [
       {
         id: conditionReminderId(petId, conditionKey),
-        title: `${conditionLabel} check-in`,
+        title: `${conditionLabel} Check-In`,
         body: `Time for ${petName}'s ${conditionLabel.toLowerCase()} check-in`,
         schedule: { at: nextDate },
         // The condition key rides along so tapping the notification opens

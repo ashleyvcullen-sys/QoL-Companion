@@ -208,7 +208,7 @@ export default function MonthCalendar({ dayFor, onOpenDay, missedDays }) {
               className="subtle-link"
               onClick={() => onOpenDay(dateKeyFor(selectedDay))}
             >
-              See this day's answers
+              See This Day's Answers
             </button>
           )}
         </div>

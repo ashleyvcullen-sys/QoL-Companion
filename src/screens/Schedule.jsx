@@ -353,7 +353,7 @@ export default function Schedule() {
         {!conditionsLoading && trackedConditions.length === 0 && (
           <p className="assessment-hint">
             Nothing being monitored yet.{' '}
-            <Link to="/conditions" className="subtle-link">Browse conditions</Link>
+            <Link to="/conditions" className="subtle-link">Browse Conditions</Link>
           </p>
         )}
         {!conditionsLoading && trackedConditions.map((definition) => {
@@ -410,7 +410,7 @@ export default function Schedule() {
               className="btn-block"
               onClick={() => navigate('/medications')}
             >
-              Add a medication
+              Add a Medication
             </Btn>
           </div>
         )}
@@ -426,7 +426,7 @@ export default function Schedule() {
           </div>
         ))}
         {!medsLoading && activeMedications.length > 0 && (
-          <Link to="/medications" className="subtle-link">Change these in Medications</Link>
+          <Link to="/medications" className="subtle-link">Change These in Medications</Link>
         )}
       </Card>
 
@@ -435,7 +435,7 @@ export default function Schedule() {
           and visible when the answer is yes rather than only when it is no. */}
 
       {showFrequencyInfo && (
-        <Modal title="How often should I assess?" onClose={() => setShowFrequencyInfo(false)}>
+        <Modal title="How Often Should I Assess?" onClose={() => setShowFrequencyInfo(false)}>
           <p>
             For young, healthy pets, checking in at least weekly is a reasonable
             baseline — enough to catch any gradual changes without it feeling like a chore.

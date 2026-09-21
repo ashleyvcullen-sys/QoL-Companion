@@ -50,7 +50,7 @@ export default function NotificationsCard({
             settings.
           </p>
           <button type="button" className="subtle-link notif-link" onClick={onOpenSettings}>
-            Open notification settings
+            Open Notification Settings
           </button>
         </>
       )}
@@ -65,7 +65,7 @@ export default function NotificationsCard({
             Allow them and the app can remind you when a check-in or a dose is due.
           </p>
           <Btn type="button" className="btn-block notif-action" onClick={onEnable}>
-            Enable reminders
+            Enable Reminders
           </Btn>
         </>
       )}
@@ -113,7 +113,7 @@ export default function NotificationsCard({
               className="btn-block notif-action"
               onClick={onEnableExactAlarms}
             >
-              Enable precise timing
+              Enable Precise Timing
             </Btn>
           )}
         </div>

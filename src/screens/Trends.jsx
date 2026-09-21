@@ -239,7 +239,7 @@ export default function Trends() {
             visit is the single most valuable thing an owner does with this
             screen and it was previously the least visible thing on it. */}
         <Btn type="button" className="btn-block" onClick={() => navigate('/export-report')}>
-          <FileDown size={17} /> Export A Report For Your Vet
+          <FileDown size={17} /> Export a Report for Your Vet
         </Btn>
       </Card>
 
@@ -456,7 +456,7 @@ export default function Trends() {
       </Card>
 
       <button type="button" className="subtle-link" onClick={() => setShowScoringExplainer(true)}>
-        How does QoL Companion calculate quality of life?
+        How Does QoL Companion Calculate Quality of Life?
       </button>
 
       {openDay && (
@@ -493,7 +493,7 @@ export default function Trends() {
       )}
 
       {showScoringExplainer && (
-        <Modal title="How does QoL Companion calculate quality of life?" onClose={() => setShowScoringExplainer(false)}>
+        <Modal title="How Does QoL Companion Calculate Quality of Life?" onClose={() => setShowScoringExplainer(false)}>
           <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
           <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) draw on your pet's BEAAAAPP pain assessment — an adaptation of a validated veterinary pain-scoring framework — shown separately rather than averaged, so you can see what is changing. For cats, the Comfort score also incorporates assessment structures from the Feline Grimace Scale, a peer-reviewed facial-expression pain scale specific to cats. Sleep additionally reflects your own everyday sleep rating.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more) and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>

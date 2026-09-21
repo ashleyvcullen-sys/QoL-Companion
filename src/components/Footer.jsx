@@ -63,17 +63,17 @@ export default function Footer({ className = '' }) {
         aria-hidden="true"
       />
       <div ref={barRef} className={`app-footer ${className}`.trim()}>
-        <Link to="/" state={{ startTour: true }} className="subtle-link">Take the tour</Link>
+        <Link to="/" state={{ startTour: true }} className="subtle-link">Take the Tour</Link>
         {/* The plan, sign out, and the two irreversible deletes. Here rather
             than on Home because it is reachable from wherever the user
             happens to be when they want it, which for "cancel my
             subscription" is not necessarily the home screen. */}
         <Link to="/settings" className="subtle-link">Account Management</Link>
         <button type="button" className="subtle-link" onClick={() => openExternal(INSTAGRAM_URL)}>
-          Follow us on Instagram
+          Follow Us on Instagram
         </button>
         <button type="button" className="subtle-link" onClick={() => openExternal(WEBSITE_URL)}>
-          Visit our website
+          Visit Our Website
         </button>
         <a href={`mailto:${SUPPORT_EMAIL}`} className="subtle-link">Email us</a>
         {/* The one legal link in the bar. .legal-link gives it the 44pt tap

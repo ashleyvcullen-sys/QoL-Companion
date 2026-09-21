@@ -5,7 +5,7 @@ export default function WelcomeSlide3() {
   return (
     <div className="assessment-page welcome-slide">
       <TrendingUp size={30} color="#C97B8C" className="welcome-slide-icon" />
-      <SectionTitle>Why it's worth tracking</SectionTitle>
+      <SectionTitle>Why It's Worth Tracking</SectionTitle>
       <p>
         It's often hard to notice subtle changes when you see your pet every day. Keeping
         an active record of it means you're not left guessing at the vet, trying to

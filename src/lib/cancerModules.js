@@ -135,7 +135,7 @@ export const SIGN_MODULES = {
 
   lymph_nodes: {
     key: 'lymph_nodes',
-    label: 'Lymph nodes',
+    label: 'Lymph Nodes',
     summary: 'Size of the lymph nodes you can feel. Ask your vet how to do this if unsure.',
     // Shown where the nodes themselves are — the add card in setup, and above
     // the measurements on the daily form — but deliberately NOT in the module
@@ -176,7 +176,7 @@ export const SIGN_MODULES = {
 
   gums: {
     key: 'gums',
-    label: 'Gum colour',
+    label: 'Gum Colour',
     summary: 'Pale, white or blue gums can mean bleeding inside, or that {name} is not getting enough oxygen.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       // Identical to Heart Disease's, from the same definition — including
@@ -218,7 +218,7 @@ export const SIGN_MODULES = {
     parameters: [
       {
         key: 'unable_to_pass_urine',
-        label: 'Unable To Pass Urine',
+        label: 'Unable to Pass Urine',
         type: 'yesno',
         emergencyWhen: 'yes',
         // The daily urination question asks how it has been. This asks
@@ -230,7 +230,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'straining_to_urinate',
-        label: 'Straining To Urinate',
+        label: 'Straining to Urinate',
         type: 'yesno',
         concernWhen: 'yes',
         covers: 'urination',
@@ -238,7 +238,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'blood_in_urine',
-        label: 'Blood In The Urine',
+        label: 'Blood in the Urine',
         type: 'yesno',
         concernWhen: 'yes',
         covers: 'urination',
@@ -249,7 +249,7 @@ export const SIGN_MODULES = {
 
   gi: {
     key: 'gi',
-    label: 'Vomiting and diarrhoea',
+    label: 'Vomiting and Diarrhoea',
     summary: 'Both are common symptoms of certain cancers, but can also occur with certain treatments.',
     parameters: [
       {
@@ -318,28 +318,28 @@ export const SIGN_MODULES = {
 
   haemorrhage: {
     key: 'haemorrhage',
-    label: 'Collapse or a swollen tummy',
+    label: 'Collapse or a Swollen Tummy',
     summary: 'Signs that a tumour may be bleeding inside.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'collapse_episode',
-        label: 'Collapse Or Fainting',
+        label: 'Collapse or Fainting',
         type: 'yesno',
         emergencyWhen: 'yes',
         emergencyMessage: 'Collapse in a pet with a tumour that can bleed needs veterinary attention immediately. Contact your vet or the nearest emergency clinic now.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
-      { key: 'swollen_abdomen', label: 'Swollen Or Bloated Tummy', type: 'yesno', concernWhen: 'yes' },
+      { key: 'swollen_abdomen', label: 'Swollen or Bloated Tummy', type: 'yesno', concernWhen: 'yes' },
     ],
   },
 
   nasal: {
     key: 'nasal',
-    label: 'Nose and face',
+    label: 'Nose and Face',
     summary: 'Discharge, facial swelling and noisy breathing.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     parameters: [
       {
         key: 'nasal_discharge',
-        label: 'Discharge From The Nose',
+        label: 'Discharge from the Nose',
         type: 'choice',
         // Descriptors signed off by Ash, 24 Aug 2026.
         options: [
@@ -352,7 +352,7 @@ export const SIGN_MODULES = {
       },
       {
         key: 'facial_swelling',
-        label: 'Swelling Of The Face',
+        label: 'Swelling of the Face',
         type: 'yesno',
         concernWhen: 'yes',
         followUp: {
@@ -366,13 +366,13 @@ export const SIGN_MODULES = {
       // Noise, not effort: a nasal tumour makes a pet snore and snuffle long
       // before it makes {them} work to breathe, which is the earlier sign and
       // the one the daily breathing grade will not show.
-      { key: 'noisy_breathing', label: 'Noisy Breathing Through The Nose', type: 'yesno', concernWhen: 'yes', covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'noisy_breathing', label: 'Noisy Breathing Through the Nose', type: 'yesno', concernWhen: 'yes', covers: 'breathing', relationship: RELATIONSHIP.DISTINCT },
     ],
   },
 
   oral: {
     key: 'oral',
-    label: 'Mouth and eating mechanics',
+    label: 'Mouth and Eating Mechanics',
     // Deliberately separate from appetite. A pet with an oral tumour is
     // hungry and WANTS to eat — an appetite grade alone reads that as fine.
     summary: 'Whether {name} can eat comfortably — not whether {they} {are} hungry.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
@@ -381,8 +381,8 @@ export const SIGN_MODULES = {
       // appetite: this patient is hungry. Declared so the check can see the
       // distinction was made on purpose rather than missed.
       { key: 'dropping_food', label: 'Dropping Food While Eating', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'avoiding_hard_food', label: 'Avoiding Hard Food Or Chewing On One Side', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
-      { key: 'oral_bleeding', label: 'Bleeding From The Mouth', type: 'yesno', concernWhen: 'yes' },
+      { key: 'avoiding_hard_food', label: 'Avoiding Hard Food or Chewing on One Side', type: 'yesno', concernWhen: 'yes', covers: 'appetite', relationship: RELATIONSHIP.DISTINCT },
+      { key: 'oral_bleeding', label: 'Bleeding from the Mouth', type: 'yesno', concernWhen: 'yes' },
       { key: 'drooling', label: 'Drooling More Than Usual', type: 'yesno', concernWhen: 'yes' },
     ],
   },
@@ -556,7 +556,7 @@ export const TREATMENT_MODULES = {
       },
       {
         key: 'unusually_quiet_or_hot',
-        label: 'Very Quiet, Shivering Or Feels Hot',
+        label: 'Very Quiet, Shivering or Feels Hot',
         type: 'yesno',
         concernWhen: 'yes',
         // Reads like the attitude category and is not it. Quiet here is one
@@ -593,12 +593,12 @@ export const TREATMENT_MODULES = {
 
   radiation: {
     key: 'radiation',
-    label: 'Radiation therapy',
+    label: 'Radiation Therapy',
     summary: 'Skin and comfort at the treated site.', // APPROVED — Dr Ash Cullen (BSc, DVM), 25 Aug 2026
     parameters: [
       {
         key: 'skin_at_site',
-        label: 'Skin At The Treated Site',
+        label: 'Skin at the Treated Site',
         type: 'scale',
         // Follows the course of an acute radiation skin reaction as an OWNER
         // would see it: nothing, redness, dry flaking, then moist breakdown,
@@ -616,7 +616,7 @@ export const TREATMENT_MODULES = {
       },
       {
         key: 'pain_at_site',
-        label: 'Discomfort At The Treated Site',
+        label: 'Discomfort at the Treated Site',
         type: 'scale',
         // Deliberately not the same question as the skin one above. Skin
         // describes what the site LOOKS like; this describes what {name} does
@@ -638,7 +638,7 @@ export const TREATMENT_MODULES = {
 
   palliative_meds: {
     key: 'palliative_meds',
-    label: 'Steroids or palliative medication',
+    label: 'Steroids or Palliative Medication',
     summary: 'Expected effects, tracked but not treated as deterioration.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // EVERY parameter here is informational — see the note on `informational`
     // in conditions.js. Drinking more, urinating more and panting are what

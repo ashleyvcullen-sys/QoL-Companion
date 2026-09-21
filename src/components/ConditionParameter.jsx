@@ -511,7 +511,7 @@ export default function ConditionParameter({
                 state={{ returnTo, returnLabel }}
                 className="subtle-link"
               >
-                <Camera size={14} /> Add a photo or video
+                <Camera size={14} /> Add a Photo or Video
               </Link>
             </>
           )}

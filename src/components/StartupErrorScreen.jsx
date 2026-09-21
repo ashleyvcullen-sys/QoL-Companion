@@ -33,7 +33,7 @@ export default function StartupErrorScreen({ message = 'Something went wrong.', 
   return (
     <div className="screen">
       <Card>
-        <SectionTitle>Something went wrong</SectionTitle>
+        <SectionTitle>Something Went Wrong</SectionTitle>
         <p>{message}</p>
         {detail && <p className="form-error" role="alert">{detail}</p>}
         {onRetry && (

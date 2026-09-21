@@ -303,7 +303,7 @@ export default function Settings() {
               className="btn-block"
               onClick={openManageSubscription}
             >
-              Manage subscription
+              Manage Subscription
             </Btn>
           </>
         )}
@@ -319,7 +319,7 @@ export default function Settings() {
         <SectionTitle>Account</SectionTitle>
 
         <button type="button" className="sign-out-button" onClick={handleSignOut}>
-          <LogOut size={14} /> Sign out
+          <LogOut size={14} /> Sign Out
         </button>
 
         {/* Two destructive actions, told apart.
@@ -419,7 +419,7 @@ export default function Settings() {
                 className="subtle-link"
                 onClick={openManageSubscription}
               >
-                Manage subscription
+                Manage Subscription
               </button>
             </p>
           )}

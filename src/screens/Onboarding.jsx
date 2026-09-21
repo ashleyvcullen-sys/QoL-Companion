@@ -35,14 +35,14 @@ function OnboardingBlocked({ onRetry }) {
   return (
     <div className="screen">
       <Card>
-        <SectionTitle>We couldn't add your pet</SectionTitle>
+        <SectionTitle>We Couldn't Add Your Pet</SectionTitle>
         <p>
           Your account is signed in, but the database refused to create the pet.
           This usually means the session has gone stale rather than anything
           being wrong with your account or your data.
         </p>
         <p>Signing out and back in resolves it in almost every case.</p>
-        <Btn type="button" className="btn-block" onClick={onRetry}>Try again</Btn>
+        <Btn type="button" className="btn-block" onClick={onRetry}>Try Again</Btn>
         <button
           type="button"
           className="subtle-link"
@@ -51,9 +51,9 @@ function OnboardingBlocked({ onRetry }) {
             window.location.assign('/login')
           }}
         >
-          Sign out and start again
+          Sign Out and Start Again
         </button>
-        <Link to="/support" className="subtle-link">Contact support</Link>
+        <Link to="/support" className="subtle-link">Contact Support</Link>
       </Card>
     </div>
   )
