@@ -95,7 +95,6 @@ export default function PetSummaryCard() {
   // The same computeOverviewCategories the Trends screen uses, so the two
   // cannot disagree. Compact variant: five labelled bars have to sit under a
   // score without becoming the card.
-  const [openPillar, setOpenPillar] = useState(null)
   // The answers behind each pillar, for the breakdown the bars open.
   const breakdown = useMemo(() => {
     if (!latestGeneral) return null
@@ -286,7 +285,7 @@ export default function PetSummaryCard() {
           </p>
         )}
 
-        {overview && <PillarSummary petName={pet.name} overview={overview} />}
+        {overview && <PillarSummary petName={pet.name} overview={overview} breakdown={breakdown} pet={pet} />}
 
         {/* Said in words, with the mark the rest of the card uses for
             something needing attention.
@@ -427,7 +426,11 @@ export default function PetSummaryCard() {
 // something. Her call is that the score above already says how {name} is,
 // and that a row of dots an owner has to decode earns less than the words
 // that tell them plainly what is behind it.
-function PillarSummary({ petName, overview }) {
+function PillarSummary({ petName, overview, breakdown, pet }) {
+  // Which pillar's breakdown is open. Lives here, beside the bars that open
+  // it — declaring it in PetSummaryCard left it out of scope in this
+  // component, which crashed the home screen (21 Sep 2026).
+  const [openPillar, setOpenPillar] = useState(null)
   const [open, setOpen] = useState(false)
   const bodyId = useId()
 
