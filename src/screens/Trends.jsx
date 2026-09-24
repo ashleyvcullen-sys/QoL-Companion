@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CalendarDays, FileDown, Heart, Stethoscope, Weight } from 'lucide-react'
+import { CalendarDays, FileDown, Heart, Lock, Stethoscope, Weight } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -340,8 +340,18 @@ export default function Trends() {
             button rather than a quiet link, because taking a report to a vet
             visit is the single most valuable thing an owner does with this
             screen and it was previously the least visible thing on it. */}
-        <Btn type="button" className="btn-block" onClick={() => navigate('/export-report')}>
-          <FileDown size={17} /> Export a Report for Your Vet
+        {/* Locked on a free account — Ash's instruction 24 Sep 2026. Shown
+            rather than hidden: a feature nobody can see is a feature nobody
+            subscribes for. */}
+        <Btn
+          type="button"
+          className="btn-block"
+          onClick={() => (hasPremium
+            ? navigate('/export-report')
+            : navigate('/paywall', { state: { feature: 'export' } }))}
+        >
+          {hasPremium ? <FileDown size={17} /> : <Lock size={15} />}
+          {' '}Export a Report for Your Vet
         </Btn>
       </Card>
 

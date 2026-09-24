@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Heart, House, Menu, Pill, TrendingUp } from 'lucide-react'
+import { Heart, House, Lock, Menu, Pill, TrendingUp } from 'lucide-react'
 import { useTabBarVisible } from '../lib/useTabBar'
 import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
@@ -21,15 +21,21 @@ import { MEDICATION_STATE, medicationStatusToday, useMedications } from '../lib/
 // worse than a short one.
 const BASE_TABS = [
   { to: '/', label: 'Home', Icon: House },
-  // Premium goes to the list of things that can be recorded; a free account
-  // has exactly one of them, so its tab goes straight there. `tourTarget`
-  // keeps the home tour pointing at this tab whichever it is.
-  { to: '/assess', freeTo: '/assessment', tourTarget: '/assessment', label: 'Assess', Icon: Heart },
+  // Both tiers go to the list of things that can be recorded — Ash's
+  // instruction 24 Sep 2026. A free account used to be sent straight to the
+  // one thing it can record, which meant the other three were invisible:
+  // nothing in the app said disease monitoring, weight or photos existed.
+  // They are on the list now, locked, which is how a paid feature is found.
+  { to: '/assess', tourTarget: '/assessment', label: 'Assess', Icon: Heart },
   { to: '/trends', label: 'Trends', Icon: TrendingUp },
   { to: '/more', label: 'More', Icon: Menu },
 ]
 
-const MEDICATIONS_TAB = { to: '/medications', label: 'Meds', Icon: Pill }
+// On both tiers — Ash's instruction 24 Sep 2026. A free account sees the tab
+// with a lock on it and reaches the paywall through it; the route guard
+// (RequirePremium in App.jsx) is what actually holds the screen shut, so the
+// tab needs no special destination.
+const MEDICATIONS_TAB = { to: '/medications', label: 'Meds', Icon: Pill, premium: true }
 
 // Everything the Assess tab leads to, so tapping a condition from the home
 // card lights Assess rather than More — Ash's report 24 Sep 2026. These four
@@ -76,10 +82,9 @@ export default function TabBar() {
 
   const active = activeTab(pathname)
   // Medications sits between Assess and Trends: the two things recorded daily
-  // stay together, and the two ways of looking back stay together.
-  const tabs = hasPremium
-    ? [...BASE_TABS.slice(0, 2), MEDICATIONS_TAB, ...BASE_TABS.slice(2)]
-    : BASE_TABS
+  // stay together, and the two ways of looking back stay together. Five tabs
+  // on both tiers now.
+  const tabs = [...BASE_TABS.slice(0, 2), MEDICATIONS_TAB, ...BASE_TABS.slice(2)]
 
   return (
     <>
@@ -95,16 +100,26 @@ export default function TabBar() {
       >
         {tabs.map((tab) => {
           const { to, label, Icon } = tab
+          const locked = tab.premium && !hasPremium
           const isActive = active === to
           // A dot rather than a count. "Something is waiting" is the whole
           // message; a number would invite the owner to work out which of
           // four things it meant while standing in the kitchen.
-          const showDue = (to === '/assess' && anyDue) || (to === '/medications' && medicationsDue)
+          const showDue = !locked
+            && ((to === '/assess' && anyDue) || (to === '/medications' && medicationsDue))
           const inner = (
             <>
               <span className="tab-bar-icon">
                 <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
                 {showDue && <span className="tab-bar-dot" aria-hidden="true" />}
+                {/* A small lock rather than a hidden tab: the feature has to
+                    be visible to be wanted. Tapping it lands on the paywall
+                    by way of the route guard. */}
+                {locked && (
+                  <span className="tab-bar-lock" aria-hidden="true">
+                    <Lock size={9} strokeWidth={3} />
+                  </span>
+                )}
               </span>
               <span className="tab-bar-label">{label}</span>
             </>
@@ -114,6 +129,7 @@ export default function TabBar() {
             <NavLink
               key={to}
               to={hasPremium ? to : (tab.freeTo ?? to)}
+              aria-label={locked ? `${label}, premium feature, locked` : undefined}
               // The home tour spotlights tabs as well as tiles — see the
               // lookup in HomeTour.
               data-tour-target={tab.tourTarget ?? to}

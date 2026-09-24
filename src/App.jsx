@@ -183,7 +183,12 @@ function App() {
         <Route path="/end-of-life" element={<EndOfLife />} />
         <Route path="/home-care-tips" element={<HomeCareTips />} />
         <Route path="/schedule" element={<Schedule />} />
-        <Route path="/export-report" element={<ExportReport />} />
+        {/* Premium since 24 Sep 2026 — Ash's instruction. The report is the
+            thing an owner takes to the consult, and it is the clearest line
+            between "I keep a diary" and "my vet can read it". */}
+        <Route element={<RequirePremium feature="export" />}>
+          <Route path="/export-report" element={<ExportReport />} />
+        </Route>
         <Route path="/about" element={<About />} />
         {/* Inside RequireOnboardedPet with the rest: Account Management names the
             selected pet in "Remove {name}", so it has nothing coherent to

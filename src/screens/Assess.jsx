@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Camera, ChevronRight, Heart, Stethoscope, Weight } from 'lucide-react'
+import { Camera, ChevronRight, Heart, Lock, Stethoscope, Weight } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import { useState } from 'react'
@@ -17,8 +17,11 @@ import { useDueToday } from '../lib/useDueToday'
 // to with the back control, and it leaves the app in a place rather than in a
 // state.
 //
-// Free accounts never reach here — their Assess tab goes straight to the one
-// thing they can record. See TabBar.
+// Both tiers land here — Ash's instruction 24 Sep 2026. A free account used
+// to be sent straight to the assessment, so the other three rows were
+// invisible to it: nothing in the app said disease monitoring, weight or
+// photos existed. They are listed for everyone now, with a lock on the three
+// that are paid, and tapping one goes to the paywall carrying its name.
 const ROWS = [
   {
     to: '/assessment',
@@ -30,6 +33,8 @@ const ROWS = [
     to: '/conditions',
     label: 'Disease-Specific Monitoring',
     Icon: Stethoscope,
+    premium: true,
+    feature: 'conditions',
     due: (state) => state.dueConditionKeys.length > 0,
     // Moved off the Conditions screen on Ash's instruction 24 Sep 2026, the
     // same way the two below were: the sentence that says what a screen is
@@ -51,6 +56,8 @@ const ROWS = [
     to: '/body-condition',
     label: 'Body Condition / Weight',
     Icon: Weight,
+    premium: true,
+    feature: 'bcs',
     // Ash's instruction 24 Sep 2026: the pop-up says what the scale IS and
     // stops there. "Then pick the description that fits best" was telling an
     // owner how to use a screen they had not opened yet, and the screen
@@ -62,6 +69,8 @@ const ROWS = [
     to: '/media',
     label: 'Photos & Videos',
     Icon: Camera,
+    premium: true,
+    feature: 'media',
     blurb: "Keep a visual record of how {name} is doing. A photo of a wound, a rash or {their} posture — or a short clip of how {they} are walking or breathing.",
   },
 ]
@@ -98,18 +107,33 @@ export default function Assess() {
       <div className="more-list">
         {ROWS.map((row) => {
           const { to, label, Icon, due: isDue, blurb } = row
+          const locked = row.premium && !hasPremium
           return (
           <button
             key={to}
             type="button"
             className="more-row"
-            onClick={() => (blurb ? setAsking(row) : navigate(to))}
+            aria-label={locked ? `${label}, premium feature, locked` : undefined}
+            onClick={() => {
+              // A locked row goes to the paywall carrying the feature it was
+              // asked about — the same route the More screen's locked rows
+              // take, so the paywall can name what was tapped.
+              if (locked) navigate('/paywall', { state: { feature: row.feature } })
+              else if (blurb) setAsking(row)
+              else navigate(to)
+            }}
           >
             <span className="more-row-icon" aria-hidden="true"><Icon size={18} /></span>
             <span className="more-row-label">{label}</span>
             {/* The same fact the dot on the tab carries, said in a word now
-                that there is room for one. */}
-            {isDue?.(due) && <span className="more-row-due">Due</span>}
+                that there is room for one. Never on a locked row: nothing is
+                owed on a feature this account does not have. */}
+            {!locked && isDue?.(due) && <span className="more-row-due">Due</span>}
+            {locked && (
+              <span className="more-row-lock" aria-hidden="true">
+                <Lock size={12} strokeWidth={2.5} />
+              </span>
+            )}
             <ChevronRight className="more-row-chev" size={18} aria-hidden="true" />
           </button>
           )

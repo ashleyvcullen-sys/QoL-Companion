@@ -39,32 +39,28 @@ const SECTIONS = [
     // a free one labels four locked rows with the animal they are locked
     // for. The rows say what they are.
     items: [
-      // Disease-Specific Monitoring is on the Assess tab — Ash's instruction
-      // 23 Sep 2026. Same rule as Medications: on a FREE account the locked
-      // row stays, because it is the only way the feature can be found and
-      // the only way to its paywall.
+      // The four paid rows are listed HERE AS WELL AS on the Assess tab and,
+      // for medications, the tab bar — Ash's instruction 24 Sep 2026, after
+      // they were briefly removed from here as a duplicate. Two ways to find
+      // a paid feature is the point on a free account: More is where people
+      // look for "what else is there", and a locked row answers it.
+      //
+      // `freeOnly` throughout: on premium every one of these lives on its own
+      // tab or on Assess, and a second way in to a daily task is one too many.
       { to: '/conditions', label: 'Disease-Specific Monitoring', Icon: Stethoscope, premium: true, feature: 'conditions', freeOnly: true },
-      // Medications are a tab of their own on premium — Ash's instruction
-      // 23 Sep 2026 — so the row here would be a second way in to the same
-      // daily task. On a FREE account there is no tab, and this locked row is
-      // the only way the feature can still be found, and the only way to the
-      // paywall for it. Hence `freeOnly`.
       { to: '/medications', label: 'Medications', Icon: Pill, premium: true, feature: 'medications', freeOnly: true },
       // A weighing scale rather than lucide's Scale, which is the balanced
       // scales of justice — Ash, 23 Sep 2026.
-      //
-      // `freeOnly`, like every paid row here: on premium these all live on
-      // the Assess tab, and a second way in to a daily task is one too many.
-      // On a free account the locked row is the only way the feature can be
-      // found and the only route to its paywall — Ash's instruction
-      // 24 Sep 2026.
       { to: '/body-condition', label: 'Body Condition / Weight', Icon: Weight, premium: true, feature: 'bcs', freeOnly: true },
       { to: '/media', label: 'Photos & Videos', Icon: Camera, premium: true, feature: 'media', freeOnly: true },
       // Reminders moved into Account Management and Settings — Ash's
       // instruction 24 Sep 2026. How often the app asks you for something is
       // a setting, and it now sits with the rest of them rather than beside
       // the screens it schedules.
-      { to: '/export-report', label: 'Export Report', Icon: Upload, freeOnly: true },
+      //
+      // Export is premium since 24 Sep 2026: locked on a free account, hidden
+      // on premium, where Trends carries the button.
+      { to: '/export-report', label: 'Export Report', Icon: Upload, premium: true, feature: 'export', freeOnly: true },
     ],
   },
   {

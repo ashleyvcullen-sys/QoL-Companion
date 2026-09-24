@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, ChevronLeft, Droplet, FileDown } from 'lucide-react'
+import { Bell, ChevronLeft, Droplet, FileDown, Lock } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
@@ -887,16 +887,20 @@ export default function QualityOfLifeAssessment() {
             </p>
           )}
 
+          {/* Locked on a free account — Ash's instruction 24 Sep 2026. */}
           <Btn
             type="button"
             className="btn-block"
-            onClick={() => navigate('/export-report', {
-              state: {
-                preselect: ['overall', ...WELLBEING_CONCEPTS.map((concept) => `pillar:${concept.key}`)],
-              },
-            })}
+            onClick={() => (hasPremium
+              ? navigate('/export-report', {
+                state: {
+                  preselect: ['overall', ...WELLBEING_CONCEPTS.map((concept) => `pillar:${concept.key}`)],
+                },
+              })
+              : navigate('/paywall', { state: { feature: 'export' } }))}
           >
-            <FileDown size={16} /> Export a Report for Your Vet
+            {hasPremium ? <FileDown size={16} /> : <Lock size={15} />}
+            {' '}Export a Report for Your Vet
           </Btn>
 
           <button type="button" className="subtle-link" onClick={() => navigate('/trends')}>

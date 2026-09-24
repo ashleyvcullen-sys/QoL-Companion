@@ -786,24 +786,12 @@ code {
    cue lives on the month calendar alone, where a cell is big enough to
    carry it legibly. */
 
-/* A month cell is thirty times the area of a strip dot and carries a number
-   on it, so the same hatch reads as noise and fights the date. Wider apart
-   and fainter: enough to tell the three states apart with the colour taken
-   away, quiet enough that the number is still the first thing you see. */
-.calendar-cell.sev-concern {
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.22) 0 2px,
-    transparent 2px 13px
-  );
-}
-
-.calendar-cell.sev-emergency {
-  background-image:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.22) 0 2px, transparent 2px 13px),
-    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.22) 0 2px, transparent 2px 13px);
-}
-
+/* No texture anywhere on the severity colours — Ash's instruction 24 Sep
+   2026. The hatch that briefly lived here (and on the fortnight dots) is
+   gone: green, amber and red are solid, on the dots, the tiles and the
+   calendar cells alike. severityToneClass still puts sev-ok / sev-concern /
+   sev-emergency on a month cell, which costs nothing and leaves a hook if a
+   non-colour cue is ever wanted again. */
 /* Which end is now. Without it the strip is fourteen dots with no direction,
    and a pet getting better looks identical to one getting worse. */
 .dx-day.today {
@@ -4968,6 +4956,22 @@ code {
 /* The tab bar's "something is waiting" dot. A dot rather than a count: the
    message is that there is something to do, and a number would ask the owner
    to work out which of several things it meant. */
+/* The lock on a paid tab, tucked into the icon's corner. Small on purpose:
+   it marks the tab, it does not shout about it. */
+.tab-bar-lock {
+  position: absolute;
+  right: -7px;
+  bottom: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted-fill);
+  color: #fff;
+}
+
 .tab-bar-dot {
   position: absolute;
   top: 1px;
@@ -5546,7 +5550,6 @@ code {
 .cropper-actions > * {
   flex: 1;
 }
-
 
 /* --- The About carousel ---------------------------------------------------
    One card per panel, swiped sideways. The cards keep their own styling; the
