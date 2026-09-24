@@ -1,24 +1,21 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { FileDown, Heart } from 'lucide-react'
+import { CalendarDays, FileDown, Heart, Stethoscope, Weight } from 'lucide-react'
 import Btn from '../components/Btn'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import ConceptDefinition from '../components/ConceptDefinition'
 import ExpandableNote from '../components/ExpandableNote'
-import OverviewBars from '../components/OverviewBars'
 import RangeToggle from '../components/RangeToggle'
-import ScoreRing from '../components/ScoreRing'
 import ChartView from '../components/ChartView'
 import DayAnswersModal from '../components/DayAnswersModal'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
+import Skeleton from '../components/Skeleton'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
-import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
-import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
+import { diseaseDaysByDate } from '../lib/diseaseDays'
 import { buildDailySeries } from '../lib/qolData'
 import {
   buildChartRegistry,
@@ -36,10 +33,46 @@ import { describeConditionDay } from '../lib/conditions'
 import { parametersFor } from '../lib/cancerConfig'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { useMedications } from '../lib/medicationsData'
+import { useBcsHistory } from '../lib/bcsData'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import { clearAssessmentNote } from '../lib/qolData'
 
+
+// One labelled group of chips. Each carries its own icon — a pillar's, an
+// organ's — so the row is scanned rather than read, and the selected one
+// fills with the accent.
+function TrendChips({ label, options, activeKeys, onChoose }) {
+  return (
+    <div className="trend-chip-group">
+      <span className="nav-section-title">{label}</span>
+      <div className="trend-chips">
+        {options.map((option) => {
+          const Icon = option.Icon
+          const isActive = activeKeys.includes(option.key)
+          return (
+            <button
+              key={option.key}
+              type="button"
+              className={`trend-chip ${isActive ? 'is-active' : ''}`.trim()}
+              aria-pressed={isActive}
+              onClick={() => onChoose(option.key)}
+            >
+              <span
+                className="trend-chip-icon"
+                style={{ background: isActive ? 'rgba(255, 255, 255, 0.24)' : (option.tint ?? 'var(--accent-wash-strong)') }}
+                aria-hidden="true"
+              >
+                <Icon size={13} color={isActive ? '#fff' : (option.colour ?? '#C97B8C')} />
+              </span>
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export default function Trends() {
   const { selectedPet } = usePets()
@@ -47,6 +80,11 @@ export default function Trends() {
   const navigate = useNavigate()
   const { generalEntries, painEntries, loading, refresh } = useQolHistory(pet?.id)
   const { medications } = useMedications(pet?.id)
+  // Body condition and weight, so they can be charted here alongside
+  // everything else — Ash's instruction 23 Sep 2026. The rows are premium and
+  // RLS refuses them to a free account anyway; the guard below is so a lapsed
+  // subscription cannot leave a paid chart sitting in the picker.
+  const { entries: bcsEntries } = useBcsHistory(pet?.id)
   const { hasPremium } = useEntitlements()
   // Everything needed to draw a condition's summary calendar, for every
   // condition at once. The per-condition screen loads one condition's worth
@@ -72,18 +110,33 @@ export default function Trends() {
   // instruction 4 Sep 2026. Month by default: the daily question is "how is
   // she today", and someone opening the app to log an entry should not have
   // to narrow a year first.
-  // Which pillar's chart is open, if any. One at a time: five charts stacked
-  // down the screen is what this card had before 29 Aug 2026, and the reason
-  // they were taken out.
-  const [openPillar, setOpenPillar] = useState(null)
+  // What the owner has chosen to look at. More than one at a time — Ash's instruction 23 Sep 2026. Held as an
+  // ordered list so the charts appear in the order they were chosen rather
+  // than in the order the picker happens to list them.
+  //
+  // EMPTY on arrival, and not remembered between visits — Ash's instruction
+  // 24 Sep 2026. A screen that opens with something already chosen answers a
+  // question the owner has not asked yet, and the one it picks is rarely the
+  // one they came for.
+  const [chartKeys, setChartKeys] = useState([])
 
-  // Which condition parameter's line is open, keyed by chart key. Separate
-  // from openPillar: they are different cards and closing one should not
-  // close the other.
-  const [openLine, setOpenLine] = useState(null)
+  // Tapping a chip adds it; tapping it again takes it away. Nothing is
+  // remembered between visits, so every visit starts from the question
+  // rather than from an answer to a previous one.
+  function toggleChart(key) {
+    setChartKeys((current) => (
+      current.includes(key)
+        ? current.filter((item) => item !== key)
+        : [...current, key]
+    ))
+  }
 
   const [range, setRange] = useState('month')
-  const allTime = range === 'all'
+  // 'month' keeps the single-month calendar and the fortnight of points;
+  // 'quarter' and 'all' both open the full-span view, the first of them
+  // narrowed to ninety days.
+  const allTime = range !== 'month'
+  const windowDays = range === 'quarter' ? 90 : null
 
 
   // The two halves of one day's assessment, for the day whose answers are
@@ -114,32 +167,7 @@ export default function Trends() {
     }
   }
 
-  const latestGeneralEntry = generalEntries[generalEntries.length - 1] ?? null
-  const latestPainEntry = painEntries[painEntries.length - 1] ?? null
 
-  // The same number the home screen shows, from the same function and with
-  // the same pain entry matched by date — Ash's instruction 4 Sep 2026, the
-  // circle at the top of Trends. Wrapped, because this screen must not go
-  // down over one unscoreable row.
-  const latestResult = (() => {
-    if (!latestGeneralEntry) return null
-    try {
-      const pain = painEntries.find((row) => row.date === latestGeneralEntry.date) ?? null
-      return computeGeneralQolResult(
-        latestGeneralEntry, pain?.beap, pet?.species,
-        diseaseEmergenciesOn(diseaseByDate, latestGeneralEntry.date),
-      )
-    } catch (error) {
-      console.error('Could not score that assessment:', error.message)
-      return null
-    }
-  })()
-  const hasLatestData = latestGeneralEntry || latestPainEntry
-  const overview = computeOverviewCategories(
-    latestGeneralEntry, latestPainEntry,
-    pillarAnswersOn(diseaseByDate, latestGeneralEntry?.date ?? latestPainEntry?.date),
-    pet?.species,
-  )
   const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species, diseaseByDate)
 
   // Every chart this screen can draw, described in one place. Trends decides
@@ -150,6 +178,7 @@ export default function Trends() {
     generalEntries,
     painEntries,
     dailySeries,
+    bcsEntries: hasPremium ? bcsEntries : [],
     // Only for the calendar's start/stop marks — the medication list itself
     // lives on its own screen.
     medications,
@@ -157,13 +186,6 @@ export default function Trends() {
     pet,
     diseaseByDate,
   })
-
-  const overallChart = chartByKey(charts, 'overall')
-  const goodBadDays = chartByKey(charts, 'good-bad-days')
-  // Built by the registry already — they were dropped from this screen on
-  // 29 Aug 2026 and kept for the report. Ash's instruction 5 Sep 2026 brings
-  // them back, one at a time and only when asked for.
-  const openPillarChart = openPillar ? chartByKey(charts, `pillar:${openPillar}`) : null
 
   // --- Tracked conditions, summarised here too -----------------------------
   //
@@ -211,6 +233,74 @@ export default function Trends() {
       }
     })
 
+  // --- What can be charted, as one list -------------------------------------
+  //
+  // Two groups, both visible — Ash's instruction 23 Sep 2026. The conditions
+  // used to have a card each further down the screen, with their own "Graph
+  // X" toggles, which meant two different controls answering the same
+  // question depending on how far you had scrolled. One picker now, and a
+  // condition is a chip beside Comfort rather than something to go and find.
+  //
+  // Every option carries its own chart, so nothing here can offer something
+  // that cannot be drawn: an option with no chart is simply not built.
+  const measureOptions = [
+    { key: 'good-bad-days', label: 'Good / Bad Days', Icon: CalendarDays },
+    { key: 'overall', label: 'Overall QoL', Icon: Heart },
+    // Named as they are named everywhere else — Comfort, Appetite, Sleep,
+    // Curiosity, Connection — rather than "Comfort pillar". Ash, 23 Sep 2026.
+    ...WELLBEING_CONCEPTS.map((concept) => ({
+      key: `pillar:${concept.key}`,
+      label: concept.label,
+      Icon: concept.Icon,
+      colour: concept.color,
+      tint: concept.tint,
+      concept,
+    })),
+    { key: 'body:score', label: 'Body Condition', Icon: Weight },
+    { key: 'body:weight', label: 'Weight', Icon: Weight },
+  ]
+    .map((option) => ({ ...option, chart: chartByKey(charts, option.key) }))
+    .filter((option) => option.chart)
+
+  // A calendar per condition, plus any measured line it keeps — heart
+  // disease's resting respiratory rate, kidney disease's water intake. Both
+  // are built by chartsForCondition above, the same function the condition's
+  // own screen and the exported report use.
+  const conditionOptions = conditionSummaries.flatMap(({ definition, calendar, lines }) => [
+    ...(calendar ? [{
+      key: calendar.key,
+      label: definition.label,
+      Icon: definition.Icon ?? Stethoscope,
+      chart: calendar,
+      conditionKey: definition.key,
+      conditionLabel: definition.label,
+    }] : []),
+    ...lines.map((chart) => ({
+      key: chart.key,
+      label: chart.title,
+      Icon: definition.Icon ?? Stethoscope,
+      chart,
+      conditionKey: definition.key,
+      conditionLabel: definition.label,
+    })),
+  ])
+
+  const allOptions = [...measureOptions, ...conditionOptions]
+  // Switching pets can take a chosen chart away with it — the new pet may
+  // have no weight recorded, no arthritis, or no premium behind them. What
+  // survives is kept and the rest simply falls away, so the chips and the
+  // charts always agree.
+  const shown = chartKeys
+    .map((key) => allOptions.find((option) => option.key === key))
+    .filter(Boolean)
+  const selectedKeys = shown.map((option) => option.key)
+
+  // One chart per chosen measure, stacked in the order they were chosen —
+  // Ash's instruction 24 Sep 2026, replacing a version that drew the pillars
+  // together on a single axis. Five lines crossing each other in five colours
+  // is a puzzle rather than a comparison: each one has its own card, its own
+  // title, and its own definition, and the comparison is made by scrolling.
+
   // The entry behind the open condition day, and the definition as it was
   // actually asked — cancer resolves its parameters per pet, so the static
   // list would describe questions this owner was never shown.
@@ -230,8 +320,6 @@ export default function Trends() {
         ),
       }
     : null
-
-  const openConcept = WELLBEING_CONCEPTS.find((concept) => concept.key === openPillar) ?? null
 
   const notesHistory = [...generalEntries]
     .reverse()
@@ -257,176 +345,108 @@ export default function Trends() {
         </Btn>
       </Card>
 
+      {/* One chart at a time, chosen by the owner — Ash's instruction
+          23 Sep 2026.
+
+          This screen used to open with the score ring, the five pillars and
+          the Overall QoL line. All three say how the pet is TODAY, and all
+          three are now on the home screen, above the fold, before Trends is
+          reached at all — so the first thing here was the thing the owner had
+          just read, with the actual history pushed under it.
+
+          What is left is the question this screen exists to answer: which
+          measure, over what span. */}
       <Card>
-        <SectionTitle>Overview</SectionTitle>
-        {loading && <p>Loading…</p>}
-        {!loading && !hasLatestData && <p>No assessments logged yet.</p>}
-        {!loading && hasLatestData && (
-          <>
-            {/* The circle first, then the five pillars under it — Ash's
-                instruction 4 Sep 2026. The score answers "how is {name}"; the
-                bars answer "which part of them", and the second only means
-                something once the first has been read. Same ring, same
-                component and same size as the home screen's. */}
-            {latestResult && (
-              <div className="trends-score">
-                {/* The same heading the home card puts over the same ring —
-                    Ash's instruction 4 Sep 2026: the heart in its circle, then
-                    "Overall QoL". The card above it is called Overview because
-                    it also holds the five pillars; this names the number. */}
-                <h3 className="pet-summary-section-title">
-                  <span className="pet-summary-section-icon" aria-hidden="true">
-                    <Heart size={16} />
-                  </span>
-                  Overall QoL
-                </h3>
-                <ScoreRing
-                  percent={latestResult.percent}
-                  colour={latestResult.color}
-                  size={92}
-                />
-                <p className="pet-summary-band" style={{ color: latestResult.color }}>
-                  {latestResult.band}
-                </p>
-              </div>
-            )}
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026. This title and the
+            two group labels below it. */}
+        <SectionTitle>What Would You Like to See?</SectionTitle>
+        {/* "Tap more than one to see them one after another" was removed on
+            Ash's instruction 24 Sep 2026. The chips are directly below the
+            question and answer it themselves. */}
 
-            {/* Tapping anywhere on a pillar — icon, name or bar — opens its
-                chart, and tapping it again closes it. Ash's instruction 5 Sep
-                2026, replacing a version where the icon opened the pillar's
-                definition and the rest of the row opened its chart: two
-                targets an inch apart doing different things, with nothing to
-                say which was which. */}
-            {/* Above the bars, not below them: an instruction that arrives
-                after the thing it describes has already been scrolled past is
-                not an instruction.
-
-                It replaces "Want to see a pillar over time? Pick it in the
-                report" — which was true until 5 Sep 2026 and is now the
-                wrong answer to its own question, since the chart is one tap
-                away right here.
-
-                APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
-            <p className="assessment-hint">
-              Tap a pillar to see how it has changed over time.
-            </p>
-            <OverviewBars
-              concepts={WELLBEING_CONCEPTS}
-              overview={overview}
-              onSelect={(key) => setOpenPillar((current) => (current === key ? null : key))}
-              selectedKey={openPillar}
-            />
-
-            {/* Open in place, under the bars rather than at the foot of the
-                card, so the chart and the bar that opened it are read
-                together. Follows the screen's Month / All time toggle like
-                every other chart here.
-
-                The definition travels with the chart. It used to be what the
-                icon opened; folding it in here means one tap answers both
-                "what is Comfort?" and "how has it been?" rather than making
-                the owner find two controls to ask two halves of one
-                question. */}
-            {openPillarChart && (
-              <div className="trends-pillar-chart">
-                <h3 className="report-chart-title">{openPillarChart.title}</h3>
-                <ConceptDefinition concept={openConcept} />
-                <ChartView chart={openPillarChart} allTime={allTime} />
-                <button
-                  type="button"
-                  className="condition-cadence-change"
-                  onClick={() => setOpenPillar(null)}
-                >
-                  Hide
-                </button>
-              </div>
-            )}
-            <p className="assessment-hint">
-              From {formatDateDDMMYY(latestGeneralEntry?.date ?? latestPainEntry?.date)} — based on your most recent assessment.
-            </p>
-          </>
+        <TrendChips
+          /* Ash, 23 Sep 2026. */
+          label={`${pet?.name ?? 'Your Pet'}\u2019s Overall QoL`}
+          options={measureOptions}
+          activeKeys={selectedKeys}
+          onChoose={toggleChart}
+        />
+        {conditionOptions.length > 0 && (
+          <TrendChips
+            label="Conditions"
+            options={conditionOptions}
+            activeKeys={selectedKeys}
+            onChoose={toggleChart}
+          />
         )}
-      </Card>
 
-      {/* Overall QoL before Good / Bad Days — Ash's instruction 5 Sep 2026,
-          swapping the two. The line is the same number the card above it has
-          just shown as a ring, so the two read as one thought: here it is
-          today, here is how it got here. The calendar then breaks that same
-          span into individual days. */}
-      <Card>
-        <SectionTitle>{overallChart?.title ?? 'Overall QoL Over Time'}</SectionTitle>
         {/* One control for every chart on this screen, not just this one —
-            Ash's instruction 4 Sep 2026, moved out of the intro card the next
-            day. It sat under the export button, which put it in a card with
-            no picture in it and left it reading as something to do with
-            exporting. It travels with whichever chart card comes first, so it
-            is always directly above the first thing it changes. */}
+            Ash's instruction 4 Sep 2026. It travels with whichever chart card
+            comes first, so it is always directly above the first thing it
+            changes. */}
         <RangeToggle value={range} onChange={setRange} />
-        {overallChart ? <ChartView chart={overallChart} allTime={allTime} /> : <p>No assessments logged yet.</p>}
+
+        {loading && <Skeleton lines={4} />}
+
+        {!loading && (allOptions.length === 0 ? (
+          /* An empty state that offers the way out of itself — Ash's
+             instruction 23 Sep 2026. "No assessments logged yet" is true and
+             useless on its own: the owner is on a screen about history with
+             no history, and the thing that fixes it is one tap away. */
+          <div className="empty-state">
+            <p>No assessments logged yet.</p>
+            <Btn type="button" onClick={() => navigate('/assessment')}>
+              Start the First Assessment
+            </Btn>
+          </div>
+        ) : shown.length === 0 ? (
+          /* Nothing chosen yet. There IS something to draw — the chips above
+             say so — so this is a prompt, not an empty state, and it must not
+             read as "you have no data".
+
+             APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. */
+          <p className="assessment-hint trend-empty">Choose one or more above to see how they have changed.</p>
+        ) : (
+          <>
+            {shown.map((option) => (
+              <div className="trend-chart-block" key={option.key}>
+                <h3 className="report-chart-title trends-chart-title">
+                  <span
+                    className="trend-chip-icon"
+                    style={{ background: option.tint ?? 'var(--accent-wash-strong)' }}
+                    aria-hidden="true"
+                  >
+                    <option.Icon size={13} color={option.colour ?? '#C97B8C'} />
+                  </span>
+                  {option.chart.title}
+                </h3>
+                {/* A pillar's definition travels with its own chart, so one
+                    choice answers both "what is Comfort?" and "how has it
+                    been?" rather than making the owner find two controls to
+                    ask two halves of one question. */}
+                {option.concept && <ConceptDefinition concept={option.concept} />}
+                <ChartView
+                  chart={option.chart}
+                  allTime={allTime}
+                  windowDays={windowDays}
+                  onOpenDay={option.chart.kind !== 'calendar'
+                    ? undefined
+                    : option.conditionKey
+                      ? (date) => setOpenConditionDay({ conditionKey: option.conditionKey, date })
+                      : setOpenDay}
+                />
+                {/* The way through to the condition's own screen, where the
+                    entries are made and a note can be edited. */}
+                {option.conditionKey && (
+                  <Link className="subtle-link trends-condition-link" to={`/conditions/${option.conditionKey}`}>
+                    Go to {option.conditionLabel} Monitoring
+                  </Link>
+                )}
+              </div>
+            ))}
+          </>
+        ))}
       </Card>
-
-      <Card>
-        <SectionTitle>{goodBadDays?.title ?? 'Good / Bad Days'}</SectionTitle>
-        {goodBadDays
-          ? <ChartView chart={goodBadDays} allTime={allTime} onOpenDay={setOpenDay} />
-          : <p>No assessments logged yet.</p>}
-      </Card>
-
-      {/* One card per condition being monitored, between the overall charts
-          and the notes. Below the overall picture because that is the one
-          every pet has; above History because a calendar is scanned and a
-          note is read. */}
-      {conditionSummaries.map(({ definition, calendar, lines }) => (
-        <Card key={definition.key}>
-          <SectionTitle>{pet?.name}&apos;s {definition.label} Summary</SectionTitle>
-          {calendar ? (
-            <ChartView
-              chart={calendar}
-              allTime={allTime}
-              onOpenDay={(date) => setOpenConditionDay({ conditionKey: definition.key, date })}
-            />
-          ) : (
-            /* Tracked, but nothing logged for it yet. Said out loud rather
-               than the card being dropped: a condition silently missing from
-               a screen that promises all of them reads as a bug. */
-            <p>No {definition.label.toLowerCase()} entries logged yet.</p>
-          )}
-
-          {/* A measured number, under the calendar that cannot show it —
-              Ash's instruction 5 Sep 2026. Opened rather than always drawn,
-              and one at a time, for the same reason the pillars are: a column
-              of lines down this screen is what it looked like before 29 Aug
-              2026 and why they were taken out.
-
-              Only appears once there are readings. Both of these questions
-              are deliberately skippable, so a kidney owner who has never
-              managed a millilitre figure gets no empty chart and no button
-              promising one.
-
-              "Graph <name>" and "Hide <name>" — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
-          {lines.map((chart) => (
-            <div key={chart.key} className="trends-pillar-chart">
-              <button
-                type="button"
-                className="condition-cadence-change"
-                aria-expanded={openLine === chart.key}
-                onClick={() => setOpenLine((current) => (current === chart.key ? null : chart.key))}
-              >
-                {openLine === chart.key ? `Hide ${chart.title}` : `Graph ${chart.title}`}
-              </button>
-              {openLine === chart.key && (
-                <>
-                  <h3 className="report-chart-title">{chart.title}</h3>
-                  <ChartView chart={chart} allTime={allTime} />
-                </>
-              )}
-            </div>
-          ))}
-          <Link className="subtle-link trends-condition-link" to={`/conditions/${definition.key}`}>
-            Go to {definition.label} Monitoring
-          </Link>
-        </Card>
-      ))}
 
       <Card>
         <SectionTitle>History</SectionTitle>
@@ -509,8 +529,10 @@ export default function Trends() {
       {showScoringExplainer && (
         <Modal title="How Does QoL Companion Calculate Quality of Life?" onClose={() => setShowScoringExplainer(false)}>
           <p>Your Overview scores and your overall QoL score are calculated a little differently, and both matter.</p>
-          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rewritten for the new pillar mapping. */}
-          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin and itch; Appetite covers eating, drinking, digestion and toileting; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is held at 49% or below.</p>
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rewritten for the new pillar mapping.
+              The two clauses naming what Comfort and Appetite cover were
+              changed when urination moved between them — APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. */}
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin, itch and passing urine; Appetite covers eating, drinking and digestion; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is held at 49% or below.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more), your pet's favourite things, and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
           {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Updated to match the floor rules: any
               Severe pain answer, blood in the vomit and a cat's possible
@@ -520,7 +542,6 @@ export default function Trends() {
         </Modal>
       )}
 
-      <Footer />
     </div>
   )
 }

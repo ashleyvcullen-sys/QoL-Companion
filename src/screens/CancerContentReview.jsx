@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import ChoiceButtons from '../components/ChoiceButtons'
 import ConditionParameter from '../components/ConditionParameter'
 import PetText from '../components/PetText'
@@ -204,7 +203,6 @@ export default function CancerContentReview() {
         ))}
       </Card>
 
-      <Footer />
     </div>
   )
 }

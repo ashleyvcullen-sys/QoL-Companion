@@ -1,4 +1,4 @@
-import { Camera, FileDown, Heart, HeartHandshake, Pill, Scale, Stethoscope, TrendingUp } from 'lucide-react'
+import { Camera, FileDown, Heart, HeartHandshake, Pill, Stethoscope, TrendingUp, Weight } from 'lucide-react'
 import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 
 // What the app does, as one list.
@@ -16,9 +16,9 @@ import HomeCareTipsIcon from '../components/icons/HomeCareTipsIcon'
 // the kind of thing that gets made once.
 //
 // `premium` marks the rows a subscription is needed for. It agrees with the
-// paid features in PAYWALL_FEATURE_LIST and with the locked tiles on Home —
-// see the note in Home.jsx's NAV_SECTIONS, which still keeps its own shorter
-// tile labels and its own flags.
+// paid features in PAYWALL_FEATURE_LIST and with the locked rows on the More
+// screen — see the note in More.jsx's SECTIONS, which keeps its own shorter
+// row labels and its own flags.
 // Ordered on Ash's instruction, 3 Sep 2026: everything free first, then the
 // premium rows together, then End of Life last whatever its tier.
 //
@@ -45,7 +45,7 @@ export const APP_FEATURE_LIST = [
   // badge — at 375px the label had 209px of room and needed 259px. It also
   // matches the rest of the list, which is noun phrases: "Trends Over Time",
   // "Photos and Videos", not "Trends Over Time Tracking".
-  { Icon: Scale, label: 'Body Condition and Weight', to: '/body-condition', premium: true },
+  { Icon: Weight, label: 'Body Condition and Weight', to: '/body-condition', premium: true },
   { Icon: Camera, label: 'Photos and Videos', to: '/media', premium: true },
   { Icon: FileDown, label: 'Summaries For Your Vet', to: '/export-report', premium: true },
 

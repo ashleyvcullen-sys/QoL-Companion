@@ -1,23 +1,26 @@
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Heart, Stethoscope } from 'lucide-react'
+import { AlertTriangle, Check, ChevronRight, Heart, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
 import ScoreRing from './ScoreRing'
 import PetSwitcher from './PetSwitcher'
+import PetAvatar from './PetAvatar'
+import ConditionIntroModal from './ConditionIntroModal'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
+import { useEntitlements } from '../lib/EntitlementsContext'
+import { MEDICATION_STATE, formatMedicationTime, medicationStatusToday, useMedications } from '../lib/medicationsData'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
-import { computeGeneralQolResult, computeOverviewBreakdown, computeOverviewCategories } from '../lib/scoring'
+import { computeGeneralQolResult, computeOverviewBreakdown, computeOverviewCategories, severityColorFromPercent } from '../lib/scoring'
 import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
-import OverviewBars from './OverviewBars'
 import PillarBreakdownModal from './PillarBreakdownModal'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
-import { formatDateDDMMYY } from '../lib/formatDate'
+import { formatDateDDMMYY, isoDaysAgo } from '../lib/formatDate'
 import { conditionHistory } from '../lib/conditionHistory'
 import { scheduleForCondition } from '../lib/cadence'
 import { ConditionState, ConditionStrip } from './ConditionStrip'
@@ -48,7 +51,14 @@ function assessmentCadence(pet) {
 
 export default function PetSummaryCard() {
   const { selectedPet: pet } = usePets()
+  // The condition a tap is asking about, if any — see ConditionIntroModal.
+  const [askingCondition, setAskingCondition] = useState(null)
   const navigate = useNavigate()
+  const { hasPremium } = useEntitlements()
+  // Doses, for the line below the conditions. Only for an account that can
+  // open the screen it links to.
+  const { medications, doses } = useMedications(hasPremium ? pet?.id : null)
+  const medicationStatus = medicationStatusToday(medications, doses)
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
@@ -201,6 +211,15 @@ export default function PetSummaryCard() {
             Ash's call, 29 Aug 2026, after trying it above the photo and again
             under the title. The pet is named in the line beneath it, so the
             circle above does not also have to identify them. */}
+        {/* The pet's photo moved into the score ring below — Ash's
+            instruction 24 Sep 2026. It was a 52px circle above a 92px ring,
+            which made the smaller, more personal thing the lesser one; now
+            the animal's face IS the ring.
+
+            The brand mark came back to the top of the card on her
+            instruction the same day, smaller than it was and above the title
+            rather than beside it: it says whose app this is without being
+            the first thing the eye lands on, which is the photo. */}
         <img
           src="/images/logo.png"
           alt="Dog and cat, nose to nose, forming a heart"
@@ -257,7 +276,15 @@ export default function PetSummaryCard() {
             than as the thing the screen is about. */}
         {latest ? (
           <div className="pet-summary-score">
-            <ScoreRing percent={latest.percent} colour={latest.color} size={92} />
+            <ScoreRing
+              percent={latest.percent}
+              colour={latest.color}
+              size={148}
+              centre={<PetAvatar pet={pet} size={112} editable />}
+            />
+            <p className="pet-summary-percent" style={{ color: latest.color }}>
+              {latest.percent}%
+            </p>
             {/* Band, change and status each on their own line — Ash's
                 instruction 4 Sep 2026. They were briefly merged to save
                 height; the height now comes out of the condition rows
@@ -271,7 +298,32 @@ export default function PetSummaryCard() {
                 which way {they} are going.
 
                 APPROVED — Dr Ash Cullen (BSc, DVM), 4 Sep 2026. */}
-            <p className="pet-summary-change">
+            {/* A chip rather than another grey line — Ash's instruction
+                23 Sep 2026. This is the only thing on the card that says
+                which WAY they are going, and it was wearing the same colour
+                as the date beneath it. The arrow and the colour say it before
+                the words are read; the words stay exactly as approved. */}
+            {/* When it was last done, always — Ash's instruction 24 Sep
+                2026. The line under it says which way the score has moved,
+                which means nothing without knowing whether "last time" was
+                yesterday or five weeks ago.
+
+                APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026 — the three
+                wordings. */}
+            <p className="pet-summary-last">
+              {latestGeneral.date === todayIsoDate()
+                ? 'Last assessed today'
+                : latestGeneral.date === isoDaysAgo(1)
+                  ? 'Last assessed yesterday'
+                  : `Last assessed ${formatDateDDMMYY(latestGeneral.date)}`}
+            </p>
+
+            <p className={`pet-summary-change ${change > 0 ? 'is-up' : change < 0 ? 'is-down' : ''}`.trim()}>
+              {change != null && (
+                change > 0 ? <TrendingUp size={13} aria-hidden="true" />
+                  : change < 0 ? <TrendingDown size={13} aria-hidden="true" />
+                    : <Minus size={13} aria-hidden="true" />
+              )}
               {change == null
                 ? formatDateDDMMYY(latestGeneral.date)
                 : change === 0
@@ -285,7 +337,7 @@ export default function PetSummaryCard() {
           </p>
         )}
 
-        {overview && <PillarSummary petName={pet.name} overview={overview} breakdown={breakdown} pet={pet} />}
+        {overview && <PillarSummary overview={overview} breakdown={breakdown} pet={pet} />}
 
         {/* Said in words, with the mark the rest of the card uses for
             something needing attention.
@@ -358,7 +410,9 @@ export default function PetSummaryCard() {
             type="button"
             key={definition.key}
             className="dx-row"
-            onClick={() => navigate(`/conditions/${definition.key}`)}
+            // Says what the condition covers before opening it, the same as
+            // the list does — Ash's instruction 24 Sep 2026.
+            onClick={() => setAskingCondition(definition)}
           >
             {/* The condition's own icon, in the pink circle the rest of the
                 card uses — Ash's instruction 4 Sep 2026, unchanged from the
@@ -384,6 +438,65 @@ export default function PetSummaryCard() {
           </button>
         )
       })}
+
+      {/* --- Medications today --------------------------------------------
+          Ash's instruction 23 Sep 2026. A reminder fires once and is gone;
+          this is the standing answer to "have I given it?", on the screen
+          the owner opens anyway.
+
+          Three states and nothing else. It says nothing at all for a pet on
+          no medication — reassuring somebody about doses they do not give is
+          noise — and it never says a dose is late the minute it is due: an
+          owner who gives the 8am tablet with breakfast at 8:40 has not
+          missed anything (see DOSE_GRACE_MINUTES).
+
+          APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026. All three lines, and the 60-minute grace
+          before a dose is called late. */}
+      {medicationStatus.state !== MEDICATION_STATE.NONE && (
+        <button
+          type="button"
+          className={`dx-row med-today med-today-${medicationStatus.state}`}
+          onClick={() => navigate('/medications')}
+        >
+          <span className="pet-summary-section-icon" aria-hidden="true">
+            <Pill size={16} />
+          </span>
+
+          <span className="dx-row-text">
+            <span className="dx-row-title">Medications</span>
+            <span className="dx-row-foot med-today-state">
+              {medicationStatus.state === MEDICATION_STATE.OVERDUE ? (
+                <>
+                  <AlertTriangle size={13} aria-hidden="true" />
+                  {medicationStatus.overdue.length === 1
+                    ? `${medicationStatus.overdue[0].medication.name} was due at ${formatMedicationTime(medicationStatus.overdue[0].time)}`
+                    : `${medicationStatus.overdue.length} doses not marked as given`}
+                </>
+              ) : medicationStatus.state === MEDICATION_STATE.DUE ? (
+                `${medicationStatus.outstanding.length} ${medicationStatus.outstanding.length === 1 ? 'dose' : 'doses'} still to give today`
+              ) : (
+                <>
+                  <Check size={13} aria-hidden="true" />
+                  All given today
+                </>
+              )}
+            </span>
+          </span>
+
+          <ChevronRight className="dx-row-chev" size={18} aria-hidden="true" />
+        </button>
+      )}
+
+      <ConditionIntroModal
+        definition={askingCondition}
+        pet={pet}
+        onClose={() => setAskingCondition(null)}
+        onProceed={() => {
+          const key = askingCondition.key
+          setAskingCondition(null)
+          navigate(`/conditions/${key}`)
+        }}
+      />
 
       {/* Nothing tracked yet — one section offering the way in. */}
       {trackedCount === 0 && (
@@ -426,63 +539,78 @@ export default function PetSummaryCard() {
 // something. Her call is that the score above already says how {name} is,
 // and that a row of dots an owner has to decode earns less than the words
 // that tell them plainly what is behind it.
-function PillarSummary({ petName, overview, breakdown, pet }) {
-  // Which pillar's breakdown is open. Lives here, beside the bars that open
+// Module scope on purpose: it survives the component unmounting and
+// remounting as tabs are switched, which is exactly the case it exists for.
+let pillarsHaveAnimated = false
+
+function PillarSummary({ overview, breakdown, pet }) {
+  const [firstPaint] = useState(() => {
+    if (pillarsHaveAnimated) return false
+    pillarsHaveAnimated = true
+    return true
+  })
+  // Which pillar's breakdown is open. Lives here, beside the tiles that open
   // it — declaring it in PetSummaryCard left it out of scope in this
   // component, which crashed the home screen (21 Sep 2026).
   const [openPillar, setOpenPillar] = useState(null)
-  const [open, setOpen] = useState(false)
-  const bodyId = useId()
 
   return (
-    <div className="pet-summary-pillars">
-      <button
-        type="button"
-        className="pet-summary-pillars-toggle"
-        aria-expanded={open}
-        aria-controls={bodyId}
-        onClick={() => setOpen((wasOpen) => !wasOpen)}
-      >
-        {/* The chevron sits INSIDE the sentence rather than beside it.
-            Centred and flexed, a two-line heading left the arrow stranded
-            against the right edge of the card, level with the gap between the
-            lines and reading as though it belonged to neither. Inline, it
-            follows the last word wherever that word ends up.
+    <>
+      {/* Five tiles, always on screen — Ash's instruction 23 Sep 2026, from
+          the mock-up she approved.
 
-            Points down when there is more to see and up once it is open, so
-            the arrow describes the state rather than the action. */}
-        <span>
-          {petName}&apos;s 5 QoL Pillars
-          <ChevronDown
-            size={15}
-            className={`expandable-note-chevron ${open ? 'is-open' : ''}`.trim()}
-            aria-hidden="true"
-          />
-        </span>
-      </button>
+          They were bars behind a "{name}'s 5 QoL Pillars" disclosure, which
+          made sense while the home screen was this card on top of eleven
+          navigation tiles: the pillars had to earn their vertical space
+          against everything else. With the tiles gone to the More screen and
+          the tab bar, nothing is competing for the space, and a number an
+          owner has to go looking for is a number most of them will not see.
 
-      {/* `hidden` rather than unmounting, so the relationship the button
-          points at with aria-controls exists whether or not it is open —
-          the same rule ExpandableNote follows. */}
-      <div id={bodyId} className="pet-summary-pillars-body" hidden={!open}>
-        {/* Each pillar opens what is holding it down. */}
-        <OverviewBars
-          concepts={WELLBEING_CONCEPTS}
-          overview={overview}
-          compact
-          onSelect={(key) => setOpenPillar(key)}
-          selectedKey={openPillar}
-        />
-        {openPillar && (
-          <PillarBreakdownModal
-            concept={WELLBEING_CONCEPTS.find((concept) => concept.key === openPillar)}
-            value={overview?.[openPillar]}
-            items={breakdown?.[openPillar] ?? []}
-            pet={pet}
-            onClose={() => setOpenPillar(null)}
-          />
-        )}
+          Each tile opens the same breakdown the bars did — which answers, in
+          the owner's own words, are holding that pillar down. */}
+      <div className={`pillar-tiles ${firstPaint ? 'is-first-paint' : ''}`.trim()}>
+        {WELLBEING_CONCEPTS.map(({ key, label, Icon, color, tint }, index) => {
+          const value = overview[key]
+          return (
+            <button
+              key={key}
+              type="button"
+              // Each tile arrives 45ms after the one before it, so the row
+              // reads left to right the way it is meant to be read rather
+              // than appearing as one block of five numbers. The delay is
+              // inline because it is per-tile data, not a style.
+              style={{ animationDelay: `${index * 45}ms` }}
+              className={`pillar-tile ${openPillar === key ? 'is-open' : ''}`.trim()}
+              aria-expanded={openPillar === key}
+              aria-label={`${label}, ${value != null ? `${Math.round(value)} percent` : 'not scored'}`}
+              onClick={() => setOpenPillar(key)}
+            >
+              <span className="pillar-tile-icon" style={{ background: tint }} aria-hidden="true">
+                <Icon size={14} color={color} />
+              </span>
+              {/* Coloured by the same severity scale as the ring, so a pillar
+                  in trouble is visible without reading the number. */}
+              <span
+                className="pillar-tile-value"
+                style={{ color: value != null ? severityColorFromPercent(value) : 'var(--text-muted)' }}
+              >
+                {value != null ? `${Math.round(value)}%` : '\u2014'}
+              </span>
+              <span className="pillar-tile-label">{label}</span>
+            </button>
+          )
+        })}
       </div>
-    </div>
+
+      {openPillar && (
+        <PillarBreakdownModal
+          concept={WELLBEING_CONCEPTS.find((concept) => concept.key === openPillar)}
+          value={overview?.[openPillar]}
+          items={breakdown?.[openPillar] ?? []}
+          pet={pet}
+          onClose={() => setOpenPillar(null)}
+        />
+      )}
+    </>
   )
 }

@@ -24,6 +24,17 @@ export function severityColorFromPercent(percent) {
   return SEVERITY_COLORS[severityFromPercent(percent)]
 }
 
+// The same three bands severityFromPercent draws, as ranges a chart can shade
+// behind a line — Ash's instruction 23 Sep 2026. Defined here rather than in
+// lib/charts.js so the thresholds and the colours cannot drift apart from the
+// function above: a chart shaded green to 70% while the ring called 70%
+// moderate would be the app disagreeing with itself in two colours.
+export const QOL_SEVERITY_BANDS = [
+  { from: 0, to: 50, colour: SEVERITY_COLORS[SEVERITY.SEVERE] },
+  { from: 50, to: 75, colour: SEVERITY_COLORS[SEVERITY.MODERATE] },
+  { from: 75, to: 100, colour: SEVERITY_COLORS[SEVERITY.GOOD] },
+]
+
 // Each band carries its own severity/colour, so the label and the colour
 // come from one place and can't drift apart (they were previously computed
 // from two independent threshold lists).
@@ -72,9 +83,7 @@ function generalQolBandIndexFromPercent(percent) {
   return index === -1 ? GENERAL_QOL_BANDS.length - 1 : index
 }
 
-export function generalQolBandFromPercent(percent) {
-  return GENERAL_QOL_BANDS[generalQolBandIndexFromPercent(percent)].label
-}
+// generalQolBandFromPercent was removed on 24 Sep 2026: nothing referenced it.
 
 // A flat 16-point average dilutes any single catastrophic finding — one
 // BEAAAAPP category at 10 (e.g. "cannot breathe", which the assessment
@@ -414,19 +423,7 @@ export function describeDiseaseFloor(diseaseEmergencies = []) {
   }
 }
 
-export function computeDiseaseInstrumentResult(scoresByDomain) {
-  const values = Object.values(scoresByDomain).filter((v) => v !== 'unsure' && v != null)
-  const total = values.reduce((sum, v) => sum + v, 0)
-  const max = values.length * 10
-  const percent = max === 0 ? 0 : Math.round((total / max) * 100)
-
-  return {
-    total,
-    max,
-    percent,
-    color: severityColorFromPercent(percent),
-  }
-}
+// computeDiseaseInstrumentResult was removed on 24 Sep 2026: nothing referenced it.
 
 // Null-safe by design: an unanswered category returns null (excluded, shown
 // as "no data") rather than a value. Previously `beap ? invert(beap.x) : null`
@@ -482,9 +479,7 @@ export const INDIVIDUAL_MEASURES = INDIVIDUAL_MEASURE_GROUPS.flatMap((entry) =>
   entry.measures.map((measure) => ({ ...measure, group: entry.group, color: entry.color })),
 )
 
-export function individualMeasureByKey(key) {
-  return INDIVIDUAL_MEASURES.find((measure) => measure.key === key) ?? null
-}
+// individualMeasureByKey was removed on 24 Sep 2026: nothing referenced it.
 
 // The eight function keys and the eight BEAAAAPP keys don't overlap, so this
 // flattens to 16 distinct entries with no prefixing needed.
@@ -587,7 +582,7 @@ export function computeOverviewBreakdown(latestGeneralEntry, latestPainEntry, pi
     everyday('appetite', entry.scores?.faecal != null ? 'Faecal Score' : 'Faeces',
       scoreStoolOrHygiene(entry.scores?.stool, entry.stoolSymptoms ?? []), false,
       entry.scores?.faecal != null ? 'Faecal score' : 'Faeces')
-    everyday('appetite', 'Urination', entry.urination ? scoreUrination(entry.urination) : null, redFindings.has('urination'))
+    everyday('comfort', 'Urination', entry.urination ? scoreUrination(entry.urination) : null, redFindings.has('urination'))
     everyday('appetite', 'Drinking', entry.waterIntake ? scoreWaterIntake(entry.waterIntake) : null)
     everyday('sleep', 'Sleep', scoreSlider(entry.scores?.sleep))
     everyday('curiosity', 'Vision', scoreSlider(entry.scores?.vision))

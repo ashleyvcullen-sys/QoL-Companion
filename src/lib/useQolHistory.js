@@ -1,45 +1,27 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { fetchGeneralQolEntries, fetchPainLogEntries } from './qolData'
+import { useCachedQuery } from './queryCache'
 
+const EMPTY = { general: [], pain: [] }
+
+// The assessment history for one pet.
+//
+// Served from the session cache — see lib/queryCache.js. Both halves are
+// fetched together and cached under one key, because every caller uses them
+// together and a screen holding yesterday's pain log against today's
+// assessment would score the day wrong.
 export function useQolHistory(petId) {
-  const [generalEntries, setGeneralEntries] = useState([])
-  const [painEntries, setPainEntries] = useState([])
-  const [loading, setLoading] = useState(true)
-  // So a screen that changes one of these rows — clearing a note, say — can
-  // pull the history again rather than showing what it looked like before.
-  const [reloadToken, setReloadToken] = useState(0)
-  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `qol-history:${petId}` : null,
+    () => Promise.all([fetchGeneralQolEntries(petId), fetchPainLogEntries(petId)])
+      .then(([general, pain]) => ({ general, pain })),
+    { empty: EMPTY },
+  )
 
-  useEffect(() => {
-    if (!petId) {
-      setGeneralEntries([])
-      setPainEntries([])
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    Promise.all([fetchGeneralQolEntries(petId), fetchPainLogEntries(petId)])
-      .then(([general, pain]) => {
-        if (cancelled) return
-        setGeneralEntries(general)
-        setPainEntries(pain)
-      })
-      .catch((error) => {
-        console.error('Failed to load QoL history:', error.message)
-        if (!cancelled) {
-          setGeneralEntries([])
-          setPainEntries([])
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [petId, reloadToken])
-
-  return { generalEntries, painEntries, loading, refresh }
+  return useMemo(() => ({
+    generalEntries: data?.general ?? [],
+    painEntries: data?.pain ?? [],
+    loading,
+    refresh,
+  }), [data, loading, refresh])
 }

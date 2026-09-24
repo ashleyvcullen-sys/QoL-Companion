@@ -25,7 +25,7 @@ import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
-import Footer from '../components/Footer'
+import Skeleton from '../components/Skeleton'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   CADENCE_OPTIONS,
@@ -33,6 +33,7 @@ import {
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition as scheduleForConditionOf,
+  reminderDayHint,
 } from '../lib/cadence'
 
 // The options, the day-mode rule and the per-condition defaults now live in
@@ -147,11 +148,7 @@ function ScheduleRow({
             max={1}
             onChange={(days) => onDayChange(days.length ? days[days.length - 1] : null)}
           />
-          <p className="assessment-hint">
-            {cadenceDay == null
-              ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
-              : 'Tap it again to go back to counting from your last entry.'}
-          </p>
+          <p className="assessment-hint">{reminderDayHint(cadenceDay)}</p>
         </div>
       )}
     </div>
@@ -302,11 +299,10 @@ export default function Schedule() {
       />
 
       <Card>
+        {/* The line that used to sit here is now the sentence the More
+            screen shows before opening this one — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <SectionTitle>Reminders</SectionTitle>
-        <p>
-          Set how often to repeat each assessment. The badge shows when one is due, counting
-          from your last entry.
-        </p>
       </Card>
 
       {/* Above the cadence control, not below it. Someone who does not know
@@ -328,7 +324,7 @@ export default function Schedule() {
 
       <Card>
         {loading ? (
-          <p>Loading…</p>
+          <Skeleton lines={3} />
         ) : (
           <ScheduleRow
             label="Overall Quality of Life Assessment"
@@ -349,7 +345,7 @@ export default function Schedule() {
           which of the two this week looks like. */}
       <Card>
         <SectionTitle>Disease Monitoring</SectionTitle>
-        {conditionsLoading && <p>Loading…</p>}
+        {conditionsLoading && <Skeleton lines={3} />}
         {!conditionsLoading && trackedConditions.length === 0 && (
           <p className="assessment-hint">
             Nothing being monitored yet.{' '}
@@ -393,7 +389,7 @@ export default function Schedule() {
           list that answers to a prescription instead. */}
       <Card>
         <SectionTitle>Medications</SectionTitle>
-        {medsLoading && <p>Loading…</p>}
+        {medsLoading && <Skeleton lines={3} />}
         {/* The sentence whole, then the way in — Ash's call, 3 Sep 2026.
             "Add one" was a link in the middle of the sentence, so it broke
             the line in two and left "to get reminders for it" stranded after
@@ -449,7 +445,6 @@ export default function Schedule() {
         </Modal>
       )}
 
-      <Footer />
     </div>
   )
 }

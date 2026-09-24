@@ -2,6 +2,8 @@ import TrendLineChart from './TrendLineChart'
 import MonthCalendar from './MonthCalendar'
 import AllTimeCalendar from './AllTimeCalendar'
 import { SEVERITY_KEY_ITEMS } from '../lib/charts'
+import { QOL_SEVERITY_BANDS } from '../lib/scoring'
+import { isoDaysAgo } from '../lib/formatDate'
 
 // Draws one descriptor from lib/charts.js.
 //
@@ -20,6 +22,10 @@ export default function ChartView({
   // calendar showing all time above a graph showing a fortnight would be two
   // answers to one question.
   allTime = false,
+  // A narrower window than "all time" — 90 for the 3 months option. Null
+  // means the caller's allTime answer stands on its own, which is what every
+  // caller did before 23 Sep 2026.
+  windowDays = null,
   isAnimationActive = true,
   showCaption = true,
   // Given only by the screens that can answer "what was answered that day?".
@@ -61,6 +67,14 @@ export default function ChartView({
     ? <p className="assessment-hint chart-intro">{chart.intro}</p>
     : null
 
+  // The all-time calendar draws whatever span it is handed, so a window is
+  // just a later start date. Clamped to the record's own start, so three
+  // months of a six-week-old record is six weeks rather than a row of empty
+  // months.
+  const windowedRange = windowDays && chart.range
+    ? { ...chart.range, from: isoDaysAgo(windowDays - 1) > chart.range.from ? isoDaysAgo(windowDays - 1) : chart.range.from }
+    : chart.range
+
   if (chart.kind === 'calendar') {
     return (
       <>
@@ -74,7 +88,7 @@ export default function ChartView({
           </p>
         )}
         {allTime && chart.range
-          ? <AllTimeCalendar dayFor={chart.dayFor} range={chart.range} missedDays={chart.missedDays} />
+          ? <AllTimeCalendar dayFor={chart.dayFor} range={windowedRange} missedDays={chart.missedDays} />
           : <MonthCalendar dayFor={chart.dayFor} missedDays={chart.missedDays} onOpenDay={onOpenDay} />}
         {severityKey}
         {caption}
@@ -94,9 +108,11 @@ export default function ChartView({
         referenceValue={chart.threshold}
         referenceLabel={chart.thresholdLabel}
         band={chart.band}
+        severityBands={chart.severityBands ? QOL_SEVERITY_BANDS : null}
         markers={chart.markers ?? []}
         brush={brush}
         allTime={allTime}
+        windowDays={windowDays}
         isAnimationActive={isAnimationActive}
       />
       {caption}

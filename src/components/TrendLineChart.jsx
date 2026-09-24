@@ -1,5 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush, ReferenceArea, ReferenceLine } from 'recharts'
 import { formatDateDDMM, formatDateDDMMYY } from '../lib/formatDate'
+import { severityColorFromPercent } from '../lib/scoring'
+import { isoDaysAgo } from '../lib/formatDate'
 
 // Points, not days — the series holds one row per LOGGED day, so this window
 // is the last fourteen check-ins whatever cadence the pet is on. It was
@@ -8,8 +10,43 @@ import { formatDateDDMM, formatDateDDMMYY } from '../lib/formatDate'
 const DEFAULT_VISIBLE_POINTS = 14
 const BRUSH_HEIGHT = 24
 
-export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, markers = [], isAnimationActive = true, brush = false, allTime = false }) {
+export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, severityBands = null, markers = [], isAnimationActive = true, brush = false, allTime = false, windowDays = null }) {
   const containerHeight = brush ? height + BRUSH_HEIGHT + 10 : height
+
+  // Where the brush opens. The series is one row per logged day, so a window
+  // in DAYS has to be found by date rather than counted backwards in points —
+  // ninety days of a pet logged twice a week is twenty-six readings, not
+  // ninety. Everything earlier stays in the chart, one drag away.
+  const windowStart = windowDays
+    ? data.findIndex((row) => row.date >= isoDaysAgo(windowDays - 1))
+    : -1
+  const startIndex = windowStart > 0
+    ? windowStart
+    : allTime || windowStart === 0
+      ? 0
+      : Math.max(0, data.length - DEFAULT_VISIBLE_POINTS)
+
+  // A dot per reading, coloured by the band that reading falls in — so a line
+  // crossing out of the green is visible as a change of colour as well as a
+  // change of height. Only where the y axis IS a quality-of-life percentage:
+  // on a weight chart these colours would mean nothing.
+  const severityDot = severityBands
+    ? (props) => {
+        const value = props.payload?.[dataKey]
+        if (value == null) return null
+        return (
+          <circle
+            key={`${props.payload.date}-dot`}
+            cx={props.cx}
+            cy={props.cy}
+            r={3}
+            fill={severityColorFromPercent(value)}
+            stroke="#fff"
+            strokeWidth={1}
+          />
+        )
+      }
+    : false
 
   return (
     <ResponsiveContainer width="100%" height={containerHeight}>
@@ -34,6 +71,24 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             `ifOverflow="extendDomain"` is deliberately NOT set: the band is
             only meaningful inside the fixed 1–9 axis, and letting it stretch
             the domain would move the axis to fit the band. */}
+        {/* The three quality-of-life bands, washed in behind everything
+            else: red below 50%, amber to 75%, green above. The thresholds are
+            the ones severityFromPercent uses, so the shading and the ring
+            agree about what a number means.
+
+            Drawn before the Line so the data paints over them, and kept faint
+            — this is a backdrop telling you WHERE the line is, not a second
+            thing to read. */}
+        {(severityBands ?? []).map((zone) => (
+          <ReferenceArea
+            key={`band-${zone.from}`}
+            y1={zone.from}
+            y2={zone.to}
+            fill={zone.colour}
+            fillOpacity={0.09}
+            stroke="none"
+          />
+        ))}
         {band && (
           <ReferenceArea
             y1={band.from}
@@ -75,7 +130,7 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
           unit={unit}
           stroke={color}
           strokeWidth={2}
-          dot={false}
+          dot={severityDot}
           connectNulls
           isAnimationActive={isAnimationActive}
         />
@@ -94,7 +149,7 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             //
             // The brush stays either way. This moves where it opens, not
             // whether the reader can move it.
-            startIndex={allTime ? 0 : Math.max(0, data.length - DEFAULT_VISIBLE_POINTS)}
+            startIndex={startIndex}
             endIndex={Math.max(0, data.length - 1)}
           />
         )}

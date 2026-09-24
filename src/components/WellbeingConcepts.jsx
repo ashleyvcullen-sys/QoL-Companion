@@ -12,7 +12,11 @@ export const WELLBEING_CONCEPTS = [
     Icon: ComfortIcon,
     color: '#C97B8C',
     tint: 'rgba(201, 123, 140, 0.14)',
-    definition: 'Physical ease — moving, resting, and breathing without pain or distress.',
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Extended when urination
+    // moved into this pillar: straining, blood or an inability to pass urine
+    // are pain, and the definition should say so before an owner has to work
+    // it out.
+    definition: 'Physical ease — moving, resting, breathing and passing urine without pain or distress.',
   },
   {
     key: 'appetite',

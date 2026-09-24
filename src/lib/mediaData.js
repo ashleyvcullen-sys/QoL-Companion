@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 
+// Said by the upload itself and by the screen that checks before calling it.
+export const UNSUPPORTED_FILE_MESSAGE = 'That file type is not supported — photos and videos only.'
+
 export const MEDIA_BUCKET = 'pet-media'
+// The profile photo lives in its own private bucket, authorised by ownership
+// alone — see 20260923000000_pet_photo.sql for why it is not in the one
+// above.
+export const PET_PHOTO_BUCKET = 'pet-photos'
 
 // Videos are the expensive thing here — a minute of phone video can outweigh
 // a thousand compressed photos, and every megabyte is storage you pay for
@@ -113,7 +120,7 @@ export async function signMediaUrls(items) {
 
 export async function uploadMedia({ petId, file, caption, takenOn }) {
   const mediaType = mediaTypeFor(file)
-  if (!mediaType) throw new Error('That file type is not supported — photos and videos only.')
+  if (!mediaType) throw new Error(UNSUPPORTED_FILE_MESSAGE)
 
   if (mediaType === 'video') {
     if (file.size > MAX_VIDEO_BYTES) {
@@ -206,4 +213,144 @@ export function usePetMedia(petId) {
   }, [petId, reloadToken])
 
   return { items, urls, loading, refresh }
+}
+
+// --- The pet's profile photo -----------------------------------------------
+//
+// Ash's instruction 23 Sep 2026: the animal's own face on the home screen and
+// in the pet switcher, in place of the brand mark. It identifies the record
+// better than a logo does, and on a two-pet account it answers "which pet am
+// I looking at?" before the name is read.
+//
+// Deliberately NOT a pet_media row, for two reasons. Photos & Videos is a
+// paid feature and an identity element should not be: the path is kept on the
+// pet itself, so a free account can set one without touching the gated table.
+// And a profile photo is not part of the animal's record — it should not
+// appear in the journal, in an export, or in a vet's report among the
+// pictures of wounds.
+//
+// Its own private bucket, authorised by ownership rather than entitlement,
+// following the same '<pet_id>/…' path convention.
+export async function uploadPetPhoto({ petId, file, cropped = false }) {
+  if (!cropped && mediaTypeFor(file) !== 'image') throw new Error('Please choose a photo.')
+
+  // A cropped photo arrives as a square JPEG the cropper has already drawn at
+  // the size it will be shown at, so there is nothing left to compress.
+  const body = cropped ? file : await compressImage(file)
+  const path = `${petId}/${crypto.randomUUID()}.jpg`
+
+  const { error: uploadError } = await supabase
+    .storage
+    .from(PET_PHOTO_BUCKET)
+    .upload(path, body, { contentType: 'image/jpeg' })
+  if (uploadError) throw uploadError
+
+  // Read the old path BEFORE overwriting it, so the file it points at can be
+  // removed once the new one is safely in place.
+  const { data: before } = await supabase.from('pets').select('photo_path').eq('id', petId).maybeSingle()
+
+  const { error } = await supabase.from('pets').update({ photo_path: path }).eq('id', petId)
+  if (error) {
+    // Orphaned object otherwise: nothing would ever point at it again.
+    await supabase.storage.from(PET_PHOTO_BUCKET).remove([path]).catch(() => {})
+    throw error
+  }
+
+  if (before?.photo_path && before.photo_path !== path) {
+    await supabase.storage.from(PET_PHOTO_BUCKET).remove([before.photo_path]).catch(() => {})
+  }
+
+  return path
+}
+
+// --- The profile photo's signed URL, cached ---------------------------------
+//
+// Ash's report 24 Sep 2026: the pet's photo does not appear straight away on
+// the home screen. It could not — every mount of PetAvatar asked Supabase to
+// mint a fresh signed URL and drew the logo until the round trip came back,
+// so the face arrived after the rest of the card, and again after every
+// navigation back to Home.
+//
+// Two caches, for the two different waits:
+//
+//   In memory, so moving between screens in one session is instant.
+//   In localStorage, so a cold start paints the face from the last run
+//   instead of waiting for the network at all.
+//
+// A signed URL is good for an hour; both caches hold it for 55 minutes to
+// leave a margin, and an expired or revoked one simply fails to load, which
+// PetAvatar already handles by falling back to the logo.
+const PHOTO_URL_TTL_MS = 55 * 60 * 1000
+const photoUrlCache = new Map()
+const photoStoreKey = (path) => `qol.petPhotoUrl.${path}`
+
+function readStoredPhotoUrl(path) {
+  try {
+    const raw = window.localStorage.getItem(photoStoreKey(path))
+    if (!raw) return null
+    const entry = JSON.parse(raw)
+    return entry?.url && entry.expires > Date.now() ? entry : null
+  } catch {
+    // Private mode, cleared site data, a value someone else wrote — all of
+    // them mean "no cache", never "fail".
+    return null
+  }
+}
+
+function rememberPhotoUrl(path, url) {
+  const entry = { url, expires: Date.now() + PHOTO_URL_TTL_MS }
+  photoUrlCache.set(path, entry)
+  try {
+    window.localStorage.setItem(photoStoreKey(path), JSON.stringify(entry))
+    // A pet's photo_path changes every time the photo does, so an old key
+    // would otherwise sit in storage for ever. Dropped on the way past.
+    for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
+      const key = window.localStorage.key(i)
+      if (!key?.startsWith('qol.petPhotoUrl.') || key === photoStoreKey(path)) continue
+      const kept = JSON.parse(window.localStorage.getItem(key) || 'null')
+      if (!kept?.expires || kept.expires <= Date.now()) window.localStorage.removeItem(key)
+    }
+  } catch {
+    // Storage full or unavailable: the in-memory cache still works.
+  }
+}
+
+// The URL to draw RIGHT NOW, without waiting for anything. Null when there is
+// nothing cached, in which case signPetPhoto fetches one.
+export function cachedPetPhotoUrl(path) {
+  if (!path) return null
+  const live = photoUrlCache.get(path)
+  if (live && live.expires > Date.now()) return live.url
+  const stored = readStoredPhotoUrl(path)
+  if (stored) {
+    photoUrlCache.set(path, stored)
+    return stored.url
+  }
+  return null
+}
+
+// One signed URL, for one profile photo. An hour, like the gallery's.
+//
+// Returns the cached URL without a request when there is a live one, unless
+// `force` — which is how a failed image asks for a fresh URL rather than the
+// stale one that just failed.
+export async function signPetPhoto(path, { force = false } = {}) {
+  if (!path) return null
+  if (!force) {
+    const cached = cachedPetPhotoUrl(path)
+    if (cached) return cached
+  }
+  const { data, error } = await supabase
+    .storage
+    .from(PET_PHOTO_BUCKET)
+    .createSignedUrl(path, 60 * 60)
+  if (error) {
+    // A missing or unreadable photo is not worth an error on the home
+    // screen — the logo stands in, exactly as it does for a pet with none.
+    console.error('Could not load that pet photo:', error.message)
+    return null
+  }
+  const url = data?.signedUrl ?? null
+  if (url) rememberPhotoUrl(path, url)
+  return url
 }

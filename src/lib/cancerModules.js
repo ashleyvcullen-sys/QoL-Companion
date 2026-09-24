@@ -23,7 +23,8 @@
 // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. : owner-facing strings drafted by Claude are marked. Anything
 // NOT marked came from Ash directly.
 
-import { RELATIONSHIP, SEEK_VET_ASAP, SEVERITY, sharedParameter } from './conditions'
+import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
+import { SEEK_VET_ASAP, TELL_YOUR_VET } from './alertText'
 
 // ---------------------------------------------------------------- core
 //
@@ -348,7 +349,7 @@ export const SIGN_MODULES = {
           { value: 'coloured', label: 'Yellow or green', severity: SEVERITY.CONCERN },
           { value: 'bloody', label: 'Bloody', severity: SEVERITY.CONCERN },
         ],
-        concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        concernMessage: TELL_YOUR_VET, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },
       {
         key: 'facial_swelling',

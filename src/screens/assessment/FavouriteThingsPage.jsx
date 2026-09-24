@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Heart } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
-import IconLabelHeader from '../../components/IconLabelHeader'
 import ChoiceButtons from '../../components/ChoiceButtons'
 import PetText from '../../components/PetText'
 import Btn from '../../components/Btn'
@@ -52,7 +50,6 @@ export default function FavouriteThingsPage({ value, savedThings, onChange, pet 
   return (
     <div className="assessment-page">
       <SectionTitle>Favourite Things</SectionTitle>
-      <IconLabelHeader icon={Heart} label="Favourite Things" />
 
       {/* On both views, set-up and answering: it is the reason the page
           exists, and the owner meets it every time rather than once. */}

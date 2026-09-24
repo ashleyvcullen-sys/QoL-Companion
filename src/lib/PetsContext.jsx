@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { signPetPhoto } from './mediaData'
 import { supabase } from './supabase'
 import { useAuth } from './AuthContext'
 import { useEntitlements } from './EntitlementsContext'
@@ -75,6 +76,15 @@ export function PetsProvider({ children }) {
 
       if (error) throw error
       setPets(data ?? [])
+
+      // Start signing the photos the moment the pets are known, rather than
+      // when the avatar mounts a render or two later — Ash's report 24 Sep
+      // 2026 that the photo lags the rest of the home card. Fire and forget:
+      // signPetPhoto caches the result, so the avatar finds it already there,
+      // and a failure here is a failure that would have happened anyway.
+      for (const pet of data ?? []) {
+        if (pet.photo_path) signPetPhoto(pet.photo_path).catch(() => {})
+      }
 
       // Separate call, deliberately not fatal. If the migration has not been
       // applied the function does not exist and this errors — which is fine,

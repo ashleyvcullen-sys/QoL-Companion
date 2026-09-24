@@ -2,12 +2,19 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
+import { applyTheme, readThemePreference } from './lib/theme'
+import { applyReduceMotion, readReduceMotion } from './lib/motion'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/AuthContext'
 import { EntitlementsProvider } from './lib/EntitlementsContext'
 import { PetsProvider } from './lib/PetsContext'
 import { RevenueCatProvider } from './lib/RevenueCatContext'
+
+// Before the first paint, so a dark-mode owner never gets a white flash on
+// launch.
+applyTheme(readThemePreference())
+applyReduceMotion(readReduceMotion())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

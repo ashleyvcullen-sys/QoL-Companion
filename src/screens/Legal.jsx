@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import { NO_ENDORSEMENT_TEXT, allReferencesText } from '../lib/references'
 import {
   PRIVACY_POLICY_LABEL,
@@ -113,10 +112,9 @@ export default function Legal() {
 
       <Card>
         <SectionTitle>Legal &amp; Privacy</SectionTitle>
-        <p>
-          A plain-language summary of how this app handles your data, what it can and
-          can't do, and where its content comes from.
-        </p>
+        {/* The line that used to sit here is now the sentence the More
+            screen shows before opening this one — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <p>
           Our full Privacy Policy is at{' '}
           {/* rel="noopener noreferrer" because target="_blank" otherwise hands
@@ -153,7 +151,6 @@ export default function Legal() {
         <Link to="/privacy" className="legal-link">Privacy Policy</Link>
       </div>
 
-      <Footer />
     </div>
   )
 }

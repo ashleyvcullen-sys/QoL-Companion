@@ -8,7 +8,9 @@ export default function WelcomeSlide1({ petName }) {
         alt="Dog and cat, nose to nose, forming a heart"
         className="welcome-illustration"
       />
-      <SectionTitle>Welcome to Quality of Life Companion</SectionTitle>
+      {/* "QoL Companion", the short form the rest of the app uses — Ash's
+          instruction 24 Sep 2026. */}
+      <SectionTitle>Welcome to QoL Companion</SectionTitle>
       <p className="welcome-footnote">
         Developed by a veterinarian to help pet owners, vets and pets every step of the way.
       </p>

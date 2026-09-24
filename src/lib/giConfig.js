@@ -2,17 +2,7 @@ import { GI_CORE_PARAMETERS, GI_MODULES, giModulesForSpecies } from './giModules
 
 export const GI_KEY = 'gastrointestinal'
 
-// Much simpler than the cancer config, and deliberately so.
-//
-// Cancer needs a diagnosis layer because the diagnosis SUGGESTS what to watch:
-// an owner who knows "lymphoma" does not necessarily know that means lymph
-// nodes and gut signs. In GI the owner already knows what their pet has — the
-// list they pick from IS the list of things to monitor — so there is nothing
-// to infer and no suggestion machinery to get wrong.
-export const EMPTY_GI_CONFIG = {
-  modules: [],
-  otherCondition: '',
-}
+// EMPTY_GI_CONFIG was removed on 24 Sep 2026: nothing referenced it.
 
 export function normaliseGiConfig(config) {
   return {
@@ -54,12 +44,7 @@ export function setOtherGiCondition(config, text) {
   return { ...normaliseGiConfig(config), otherCondition: text }
 }
 
-// Whether the owner has selected gut cancer, which is monitored elsewhere.
-// Surfaced so the setup screen and the monitoring page can both offer the way
-// across rather than each working it out.
-export function hasGiCancerSelected(config) {
-  return activeGiModuleKeys(config).includes('gi_cancer')
-}
+// hasGiCancerSelected was removed on 24 Sep 2026: nothing referenced it.
 
 // Same idea for a food sensitivity or allergy, which the Allergies and Skin
 // Disease section monitors properly — diet trial, start date, adherence and
@@ -95,14 +80,4 @@ export function parametersForGi(config, species) {
   })
 }
 
-// The intro lines contributed by whichever modules are selected. Megaoesophagus
-// is the only one with one today, and it is the sentence most worth reading on
-// the whole screen — aspiration is what kills these patients, and owners are
-// rarely told to watch for it.
-export function giModuleIntros(config, species) {
-  const allowed = new Set(giModulesForSpecies(species).map((module) => module.key))
-  return activeGiModuleKeys(config)
-    .filter((key) => allowed.has(key))
-    .map((key) => GI_MODULES[key]?.intro)
-    .filter(Boolean)
-}
+// giModuleIntros was removed on 24 Sep 2026: nothing referenced it.

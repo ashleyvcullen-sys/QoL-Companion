@@ -2,7 +2,6 @@ import { AlertTriangle } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 
 const EMERGENCIES = [
   'Collapse, or unable to stand or walk',
@@ -26,10 +25,10 @@ export default function Emergencies() {
       <HomeLink />
 
       <Card>
+        {/* The line that used to sit here is now the sentence the More
+            screen shows before opening this one — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <SectionTitle>Emergencies — See Your Vet ASAP</SectionTitle>
-        <p className="home-subtitle">
-          Signs that mean 'go now', not 'monitor and see'.
-        </p>
       </Card>
 
       <div className="warning-banner">
@@ -54,7 +53,6 @@ export default function Emergencies() {
         anyway.
       </p>
 
-      <Footer />
     </div>
   )
 }

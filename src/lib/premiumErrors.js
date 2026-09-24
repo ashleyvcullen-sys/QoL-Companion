@@ -19,15 +19,15 @@ import { useNavigate } from 'react-router-dom'
 // returns no error at all) or a constraint violation (23xxx).
 const RLS_DENIED = '42501'
 
+// The fallback both condition setup screens pass to premiumOr. One sentence,
+// one place, since they are the same failure.
+export const SAVE_FAILED_MESSAGE = 'Could not save that. Please try again.'
+
 export function isPremiumDenied(error) {
   return error?.code === RLS_DENIED
 }
 
-// A single sentence for the places that show inline text rather than open
-// the paywall. Deliberately does not apologise or suggest anything went
-// wrong, because nothing did.
-export const PREMIUM_DENIED_MESSAGE =
-  'This is a Premium feature. Your records are saved and will return when your subscription is active.'
+// PREMIUM_DENIED_MESSAGE was removed on 24 Sep 2026: nothing referenced it.
 
 // One handler for every "the save failed" branch on a premium screen.
 //

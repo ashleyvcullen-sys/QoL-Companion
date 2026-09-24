@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
-import IconLabelHeader from '../../components/IconLabelHeader'
 import SeverityOptionList from '../../components/SeverityOptionList'
 import SymptomChips from '../../components/SymptomChips'
 import PetText from '../../components/PetText'
@@ -9,10 +8,11 @@ import Modal from '../../components/Modal'
 import Btn from '../../components/Btn'
 import { fillPetText } from '../../lib/petText'
 import {
-  FAECAL_BAND_LABELS,
-  FAECAL_SCORES,
-  faecalColourForIndex,
+  faecalAdviceFor,
+  faecalBandLabelsFor,
+  faecalColourForIndexFor,
   faecalLevelsFor,
+  faecalScoresFor,
 } from '../../lib/faecalScore'
 
 // The Overall Assessment's stool question, as a faecal score (1-5 in half
@@ -35,7 +35,6 @@ export default function FaecalScorePage({
   chipOptions,
   chipValue,
   onChipChange,
-  icon,
   emergency = null,
   noneOption,
   pet,
@@ -55,25 +54,43 @@ export default function FaecalScorePage({
     wasEmergency.current = isEmergency
   }, [isEmergency])
 
-  const levels = faecalLevelsFor(pet?.species).map((text) => text.replace(/\s*\(emergency\)\s*/g, ' ').trim())
+  // The rungs the Royal Canin chart draws for this species — the cat chart
+  // has no 3.5 or 4.5, so a cat owner is no longer offered them.
+  const species = pet?.species
+  const levels = faecalLevelsFor(species).map((text) => text.replace(/\s*\(emergency\)\s*/g, ' ').trim())
+  // The advice a red rung carries, where it is not one of the two the
+  // emergency alert already covers — Ash's instruction 24 Sep 2026.
+  const advice = faecal != null ? faecalAdviceFor(faecal, species) : null
   const isUnsure = stool === 'unsure' && faecal == null
   const isNone = stool === 'none'
 
   return (
     <div className="assessment-page">
       <SectionTitle>Faecal Score</SectionTitle>
-      <IconLabelHeader icon={icon} label="Faeces" />
       <p><PetText template="Which best describes {name}'s faeces lately?" pet={pet} /></p>
-      <p className="assessment-hint">Scores of 2 to 3 are ideal.</p>
+      {/* The hint under the question was removed on Ash's instruction
+          24 Sep 2026. Every rung now carries its own band word — Optimal,
+          Acceptable, Soft, Loose — so a line saying which numbers are good
+          repeated what the options already say beside themselves. */}
 
       <SeverityOptionList
         levels={levels}
         value={faecal ?? null}
         onChange={onScore}
-        scores={FAECAL_SCORES}
-        bandLabels={FAECAL_BAND_LABELS}
-        colorForIndex={faecalColourForIndex}
+        scores={faecalScoresFor(species)}
+        bandLabels={faecalBandLabelsFor(species)}
+        colorForIndex={faecalColourForIndexFor(species)}
       />
+
+      {advice && (
+        <p
+          className={advice.severity === 'emergency' ? 'condition-emergency' : 'condition-flag'}
+          role={advice.severity === 'emergency' ? 'alert' : 'status'}
+        >
+          <AlertTriangle size={advice.severity === 'emergency' ? 17 : 15} />
+          <span><PetText template={advice.text} pet={pet} /></span>
+        </p>
+      )}
 
       <div className="choice-buttons">
         <button

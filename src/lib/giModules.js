@@ -1,4 +1,5 @@
 import { RELATIONSHIP, SEVERITY, sharedParameter } from './conditions'
+import { BLOOD_IN_VOMIT_ALERT, SEEK_VET_ASAP, TELL_YOUR_VET } from './alertText'
 
 // Gastrointestinal disease, composed the way cancer is.
 //
@@ -80,7 +81,7 @@ export const GI_CORE_PARAMETERS = [
     covers: 'vomiting',
     relationship: RELATIONSHIP.SUPERSEDES,
     concernMessage: 'Worth recording. If {name} cannot keep water down, or this carries on for more than a day, contact your vet.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
-    emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    emergencyMessage: BLOOD_IN_VOMIT_ALERT, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
   },
   {
     key: 'blood_or_mucus',
@@ -178,7 +179,7 @@ export const GI_CORE_PARAMETERS = [
       { value: 'hunched', label: 'Appears hunched over and uncomfortable. Tummy is tense.', severity: SEVERITY.CONCERN },
       { value: 'praying', label: 'Hunched over, or frequent "downward dog" stretching. Tummy is tense and sore when palpated.', severity: SEVERITY.EMERGENCY },
     ],
-    concernMessage: 'Worth telling your vet about, particularly if this is new or getting worse.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+    concernMessage: TELL_YOUR_VET, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The severity on the last option is MY call, not yours.
     // I made it an emergency rather than a concern: a hunched dog stretching
     // repeatedly with a tense, painful abdomen is the pancreatitis and
@@ -212,7 +213,7 @@ const ASPIRATION_SIGNS = {
   type: 'yesno',
   emergencyWhen: 'yes',
   why: 'These are signs that food may have entered the airways instead of the GI tract (aspiration). This can occur after vomiting or regurgitation of food.',
-  emergencyMessage: 'Seek veterinary attention as soon as possible.',
+  emergencyMessage: SEEK_VET_ASAP,
 }
 
 // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, verbatim.
@@ -398,7 +399,7 @@ export const GI_MODULES = {
         // hours away from a dehisced one, and an owner who is told "worth
         // watching" will watch it.
         levels: { dog: SURGICAL_SITE_LEVELS, cat: SURGICAL_SITE_LEVELS },
-        emergencyMessage: 'Seek veterinary attention as soon as possible. Stop {name} licking the site in the meantime.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
+        emergencyMessage: `${SEEK_VET_ASAP} Stop {name} licking the site in the meantime.`, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
         // A photograph is worth more than any of these six sentences at the
         // appointment, and more still on the phone beforehand — a vet can
         // often tell from one whether this needs to be seen now or tomorrow.
@@ -443,15 +444,16 @@ export const GI_MODULES = {
   // where it appears only if the owner answers "Decreased" — so every owner
   // gets it when it is relevant, whether or not they ticked this module.
   //
-  // Kept as a selectable label rather than deleted, because selecting it is
-  // still meaningful: it records what the owner is monitoring {name} for and
-  // it appears in the setup summary. If that is not wanted, deleting the
-  // module here is all it takes — nothing else references it.
-  constipation: {
-    key: 'constipation',
-    label: 'Constipation',
-    parameters: [],
-  },
+  // The Constipation module is GONE — Ash's instruction 24 Sep 2026: the
+  // faecal score already asks it. Score 1 is "hard, dry and crumbly, breaks
+  // apart when picked up", every GI form carries that question, and a tile
+  // offering to also monitor constipation added no questions of its own — it
+  // had been emptied of them months earlier when Straining and Days Since The
+  // Last Stool moved to the core list.
+  //
+  // Nothing else references the key. A pet whose saved config still names it
+  // is unaffected: parametersForGi skips keys it does not recognise, and the
+  // monitored-for list drops labels it cannot resolve.
 
   megaoesophagus: {
     key: 'megaoesophagus',

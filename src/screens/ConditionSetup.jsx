@@ -5,11 +5,10 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import ChoiceButtons from '../components/ChoiceButtons'
 import PetText from '../components/PetText'
 import { usePets } from '../lib/PetsContext'
-import { usePremiumDenial } from '../lib/premiumErrors'
+import { SAVE_FAILED_MESSAGE, usePremiumDenial } from '../lib/premiumErrors'
 import { conditionByKey } from '../lib/conditions'
 import { DIAGNOSES, SIGN_MODULE_LIST, TREATMENT_MODULE_LIST, subtypesFor } from '../lib/cancerModules'
 import {
@@ -87,7 +86,7 @@ export default function ConditionSetup() {
       refresh()
       navigate(`/conditions/${conditionKey}`)
     } catch (error) {
-      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
+      setErrorMessage(premiumOr(error, SAVE_FAILED_MESSAGE))
     } finally {
       setBusy(false)
     }
@@ -110,7 +109,7 @@ export default function ConditionSetup() {
       } catch (error) {
         // Staying put with the draft intact beats navigating away and losing
         // it, so the error stops the trip rather than being swallowed.
-        setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
+        setErrorMessage(premiumOr(error, SAVE_FAILED_MESSAGE))
         setBusy(false)
         return
       }
@@ -141,7 +140,6 @@ export default function ConditionSetup() {
           <p>That condition isn't available.</p>
           <Link to="/conditions" className="subtle-link">Back to All Conditions</Link>
         </Card>
-        <Footer />
       </div>
     )
   }
@@ -439,7 +437,6 @@ export default function ConditionSetup() {
         </>
       )}
 
-      <Footer />
     </div>
   )
 }

@@ -419,10 +419,12 @@ export default function ConditionParameter({
             emergencyFrom={beapEmergencyFromFor(parameter, species)}
             // A scale with its own scores (the faecal score) brings its own
             // rung labels and colours; every other scale takes the defaults.
+            // Where those rungs differ by species — the cat faecal chart has
+            // no 3.5 or 4.5 — the `*For` resolvers answer for THIS pet.
             {...(parameter.scores ? {
-              scores: parameter.scores,
-              bandLabels: parameter.bandLabels,
-              colorForIndex: parameter.colorForIndex,
+              scores: parameter.scoresFor?.(species) ?? parameter.scores,
+              bandLabels: parameter.bandLabelsFor?.(species) ?? parameter.bandLabels,
+              colorForIndex: parameter.colorForIndexFor?.(species) ?? parameter.colorForIndex,
             } : {})}
           />
           {/* "Does not apply" alongside "Not sure", where the parameter

@@ -16,6 +16,10 @@ function Description({ description }) {
   ))
 }
 
+// `icon` was used below without being taken in — a ReferenceError the moment
+// Vision or Hearing rendered, which is exactly what Ash's device log showed
+// on 24 Sep 2026 ("Can't find variable: icon"). Both callers were passing it
+// all along.
 export default function SliderOnlyPage({ title, description, value, onChange, icon, scaleLabels }) {
   return (
     <div className="assessment-page">

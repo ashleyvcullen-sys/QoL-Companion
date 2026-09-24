@@ -273,10 +273,10 @@ export function useMedications(petId) {
 // "2× per day", "as needed", "8:00am, 8:00pm" — one medication's schedule in
 // the fewest words that are still true.
 //
-// Lives here rather than on a screen because three screens now show it:
-// Medications itself, the Reminders list, and the condition pages, where an
-// owner who has said "yes, {name} is on medication" should be able to see
-// what they recorded without leaving the page.
+// Lives here rather than on a screen because two screens show it: the
+// Medications list and Home's medication row. The Medications screen had its
+// own copy of this until 24 Sep 2026, which threw on a medication saved with
+// no times where this one says "no times set".
 export function describeMedicationSchedule(medication) {
   if (medication.scheduleMode === 'as_needed') return 'as needed'
   if (medication.scheduleMode === 'frequency') {
@@ -299,16 +299,95 @@ export function formatMedicationTime(value) {
   return `${display}:${String(minute).padStart(2, '0')}${suffix}`
 }
 
-// The medications recorded for one condition.
+// medicationsForCondition was removed on 24 Sep 2026: nothing referenced it.
+
+// --- What is owed today, across every medication ---------------------------
 //
-// A medication with no conditions chosen is deliberately included: "I have not
-// said what this is for" is far more common than "this is definitely not for
-// the thing I am looking at", and a drug missing from the list where an owner
-// expects it is worse than one shown that turns out to belong elsewhere.
-export function medicationsForCondition(medications = [], conditionKey) {
-  if (!conditionKey) return medications
-  return medications.filter((medication) => {
-    const keys = medication.conditionKeys ?? []
-    return keys.length === 0 || keys.includes(conditionKey)
-  })
+// Ash's instruction 23 Sep 2026, for the alert on the home screen.
+//
+// Three states, in the order they matter: a dose whose time has passed and
+// was not given (overdue), a dose still to come (due), and everything given
+// (up to date). A pet on nothing returns 'none', and the home screen says
+// nothing at all rather than reassuring an owner about medications they do
+// not give.
+//
+// GRACE is how long after a scheduled time a dose is merely due rather than
+// overdue. Sixty minutes: an owner who gives the 8am tablet with breakfast at
+// 8:40 has not missed anything, and an app that says they have will be
+// ignored by the time it matters.
+const DOSE_GRACE_MINUTES = 60
+
+export const MEDICATION_STATE = {
+  NONE: 'none',
+  UP_TO_DATE: 'up_to_date',
+  DUE: 'due',
+  OVERDUE: 'overdue',
+}
+
+function minutesOfDay(time) {
+  const [hour, minute] = String(time ?? '').split(':').map(Number)
+  if (!Number.isFinite(hour)) return null
+  return hour * 60 + (Number.isFinite(minute) ? minute : 0)
+}
+
+export function medicationStatusToday(medications = [], doses = [], now = new Date()) {
+  const today = todayIsoDate()
+  const minutesNow = now.getHours() * 60 + now.getMinutes()
+  const givenToday = doses.filter((dose) => dose.date === today)
+
+  const outstanding = []
+  const overdue = []
+  let expected = 0
+  let given = 0
+
+  for (const medication of medications) {
+    if (!medication.active) continue
+    // As-needed medications are never owed: that is what as-needed means.
+    if (medication.scheduleMode === 'as_needed') continue
+
+    const mine = givenToday.filter((dose) => dose.medicationId === medication.id)
+
+    if (medication.scheduleMode === 'frequency' && medication.frequencyPeriod !== 'day') {
+      // Weekly and monthly courses are not a question about today.
+      continue
+    }
+
+    if (medication.scheduleMode === 'frequency') {
+      const count = medication.frequencyCount ?? 1
+      expected += count
+      given += Math.min(mine.length, count)
+      const missing = count - mine.length
+      if (missing > 0) {
+        // No per-dose times to measure against, so the reminder time is the
+        // only thing that can make one late.
+        const reminder = minutesOfDay(medication.reminderTime)
+        const late = reminder != null && minutesNow > reminder + DOSE_GRACE_MINUTES
+        for (let i = 0; i < missing; i++) {
+          (late ? overdue : outstanding).push({ medication, time: medication.reminderTime ?? null })
+        }
+      }
+      continue
+    }
+
+    for (const time of (medication.times ?? []).filter(Boolean)) {
+      expected += 1
+      if (mine.some((dose) => dose.time === time)) {
+        given += 1
+        continue
+      }
+      const due = minutesOfDay(time)
+      const late = due != null && minutesNow > due + DOSE_GRACE_MINUTES
+      ;(late ? overdue : outstanding).push({ medication, time })
+    }
+  }
+
+  const state = expected === 0
+    ? MEDICATION_STATE.NONE
+    : overdue.length > 0
+      ? MEDICATION_STATE.OVERDUE
+      : outstanding.length > 0
+        ? MEDICATION_STATE.DUE
+        : MEDICATION_STATE.UP_TO_DATE
+
+  return { state, overdue, outstanding, expected, given }
 }

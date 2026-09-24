@@ -1,8 +1,16 @@
 import { supabase } from './supabase'
+import { invalidateQuery } from './queryCache'
+
+// Every write below clears the pet's cached history. Doing it here rather
+// than in each caller is the point: a screen that saves an assessment and
+// forgets to refresh would leave the home card showing yesterday's number,
+// and that is the kind of bug nobody notices until an owner does.
+function forgetQolHistory(petId) {
+  if (petId) invalidateQuery(`qol-history:${petId}`)
+}
 import {
   computeBeapWorst,
   computeGeneralQolResult,
-  computeIndividualMeasures,
   computeOverviewCategories,
 } from './scoring'
 import { diseaseEmergenciesOn, pillarAnswersOn } from './diseaseDays'
@@ -86,6 +94,7 @@ export async function fetchLatestPainLogEntry(petId) {
 // beap_worst is recomputed rather than patched, because it is a derived value
 // and the whole point of this function is that derived values stay true.
 export async function updateBeapCategory({ petId, date, category, value }) {
+  forgetQolHistory(petId)
   const { data, error } = await supabase
     .from('pain_log_entries')
     .select('*')
@@ -119,6 +128,7 @@ export async function updateBeapCategory({ petId, date, category, value }) {
 // the owner never assessed, and the overall percentage would be computed from
 // one question.
 export async function updateGeneralScore({ petId, date, key, value }) {
+  forgetQolHistory(petId)
   const { data, error } = await supabase
     .from('general_qol_entries')
     .select('*')
@@ -156,6 +166,7 @@ const GENERAL_FIELD_COLUMNS = {
 }
 
 export async function updateGeneralField({ petId, date, field, value }) {
+  forgetQolHistory(petId)
   const column = GENERAL_FIELD_COLUMNS[field]
   if (!column) return null
 
@@ -191,6 +202,7 @@ export async function updateGeneralField({ petId, date, field, value }) {
 // different — one takes a pencil mark off a day, the other takes the day out
 // of the record.
 export async function clearAssessmentNote({ petId, date }) {
+  forgetQolHistory(petId)
   // An EMPTY STRING, not null.
   //
   // general_qol_entries.notes is `not null`, so writing null is rejected
@@ -254,21 +266,7 @@ export async function fetchPainLogEntries(petId) {
   return (data ?? []).map(mapPainLogRow)
 }
 
-// Kept separate from buildDailySeries rather than folded into it: the daily
-// series already spreads the overview pillars in, and two of those (appetite,
-// sleep) share a name with an individual measure while meaning something
-// different. Two arrays, no collision, and nothing about the existing charts
-// changes.
-export function buildMeasureSeries(generalEntries, painEntries) {
-  const generalByDate = new Map(generalEntries.map((entry) => [entry.date, entry]))
-  const painByDate = new Map(painEntries.map((entry) => [entry.date, entry]))
-  const allDates = Array.from(new Set([...generalByDate.keys(), ...painByDate.keys()])).sort()
-
-  return allDates.map((date) => ({
-    date,
-    ...computeIndividualMeasures(generalByDate.get(date) ?? null, painByDate.get(date)?.beap),
-  }))
-}
+// buildMeasureSeries was removed on 24 Sep 2026: nothing referenced it.
 
 export function buildDailySeries(generalEntries, painEntries, species = null, diseaseByDate = null) {
   const generalByDate = new Map(generalEntries.map((entry) => [entry.date, entry]))

@@ -1,22 +1,37 @@
-import { useLayoutEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import Card from './Card'
 import Btn from './Btn'
 
 const SPOTLIGHT_PADDING = 8
-const TOOLTIP_GAP = 12
-const TOOLTIP_ESTIMATE_HEIGHT = 160
-// Generous placeholder just for deciding whether the "place above" branch
-// would land too close to the top to be worth it — the actual fallback
-// below is exact, via env(), not this number.
-const TOOLTIP_MIN_TOP_ESTIMATE = 80
+const TOOLTIP_GAP = 14
+// How close to the top of the screen the card may sit. Below this it is
+// under the notch.
+const TOOLTIP_MIN_TOP = 56
 
 export default function HomeTour({ steps, targetRefs, onFinish }) {
+  const navigate = useNavigate()
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState(null)
+  // The card's real height, measured after it renders. It used to be guessed
+  // at 160px, which was roughly right when every step pointed at a tile in
+  // the middle of the screen and wrong once the steps pointed at the tab bar:
+  // a taller card placed 160px above a target 60px from the bottom ended up
+  // pinned to the bottom of the screen — Ash's report, 24 Sep 2026.
+  const cardRef = useRef(null)
+  const [cardHeight, setCardHeight] = useState(0)
 
   const isCompletionStep = stepIndex >= steps.length
   const step = steps[stepIndex]
+
+  // Each step shows the screen it is describing. Done before the target is
+  // measured, so the spotlight lands on the tab of a screen that is already
+  // on show rather than on the one the owner just left.
+  useLayoutEffect(() => {
+    if (isCompletionStep || !step?.show) return
+    if (window.location.pathname !== step.show) navigate(step.show)
+  }, [isCompletionStep, step, navigate])
 
   useLayoutEffect(() => {
     if (isCompletionStep) {
@@ -24,8 +39,17 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
       return
     }
 
-    const target = targetRefs.current[step.to]
-    if (!target) return
+    // Tiles register themselves in targetRefs; the tab bar is rendered
+    // outside this screen entirely, so its tabs are found by attribute.
+    const key = step.target ?? step.to
+    const target =
+      targetRefs?.current?.[key] ?? document.querySelector(`[data-tour-target="${key}"]`)
+    // Without this the previous step's spotlight stayed on screen under the
+    // next step's text, pointing at the wrong thing.
+    if (!target) {
+      setRect(null)
+      return
+    }
 
     function measure() {
       setRect(target.getBoundingClientRect())
@@ -45,6 +69,19 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
     }
   }, [stepIndex, isCompletionStep, step, targetRefs])
 
+  useLayoutEffect(() => {
+    const card = cardRef.current
+    if (!card) return undefined
+    const measure = () => setCardHeight(card.getBoundingClientRect().height)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    // The card changes height between steps — some messages are three lines,
+    // some are six — and again if the system font size changes.
+    const observer = new ResizeObserver(measure)
+    observer.observe(card)
+    return () => observer.disconnect()
+  }, [stepIndex])
+
   function goNext() {
     setStepIndex((i) => i + 1)
   }
@@ -56,17 +93,24 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
     height: rect.height + SPOTLIGHT_PADDING * 2,
   }
 
-  const tooltipStyle = rect
-    ? rect.bottom + TOOLTIP_ESTIMATE_HEIGHT < window.innerHeight
-      ? { top: rect.bottom + TOOLTIP_GAP }
-      : rect.top - TOOLTIP_ESTIMATE_HEIGHT > TOOLTIP_MIN_TOP_ESTIMATE
-        ? { top: rect.top - TOOLTIP_ESTIMATE_HEIGHT }
-        // Placing above would land too close to the top to trust a raw
-        // pixel guess — this position is fixed (not inside .screen's
-        // padded box), so it needs its own safe-area clamp rather than
-        // inheriting one from a container.
-        : { top: 'max(16px, calc(env(safe-area-inset-top) + 12px))' }
-    : { top: '50%', transform: 'translateY(-50%)' }
+  // Below the spotlight if the card fits there, above it if not, and clamped
+  // to the screen either way. Measured, not estimated, so the card sits the
+  // same distance from what it is pointing at whatever it says.
+  const tooltipStyle = (() => {
+    if (!rect) return { top: '50%', transform: 'translateY(-50%)' }
+    const viewport = window.innerHeight
+    const height = cardHeight || 160
+
+    const below = rect.bottom + TOOLTIP_GAP
+    if (below + height + TOOLTIP_GAP <= viewport) return { top: below }
+
+    const above = rect.top - TOOLTIP_GAP - height
+    if (above >= TOOLTIP_MIN_TOP) return { top: above }
+
+    // Neither side has room — a spotlight taller than the space around it.
+    // Sit as high as the screen allows rather than sliding off the bottom.
+    return { top: TOOLTIP_MIN_TOP }
+  })()
 
   return (
     <div className="home-tour-backdrop">
@@ -76,11 +120,12 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
         <div className="home-tour-backdrop-dim" />
       )}
 
-      <Card className="home-tour-card" style={tooltipStyle}>
+      <Card ref={cardRef} className="home-tour-card" style={tooltipStyle}>
         {isCompletionStep ? (
           <>
             <p className="home-tour-title">You're all set!</p>
-            <p>You can replay this tour any time from the footer.</p>
+            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026. */}
+            <p>You can replay this tour any time from More.</p>
             <Btn type="button" className="btn-block" onClick={onFinish}>Done</Btn>
           </>
         ) : (

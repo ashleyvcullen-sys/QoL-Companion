@@ -1,10 +1,16 @@
+import { BLOOD_IN_VOMIT_ALERT } from './alertText'
+
 // Sits next to ScoreSlider's built-in "Not sure" button, specifically on the
 // stool/faeces page (see ScoreSlider's `extraOption` prop).
 export const STOOL_NONE_TODAY_OPTION = { value: 'none', label: 'No faeces today' }
 
+// "Constipation" was removed on Ash's instruction, 24 Sep 2026: the faecal
+// score itself asks it — score 1 is hard, dry and crumbly — and a chip
+// repeating the question invited two answers to it on one page. Entries that
+// already carry the chip still show it; the summary prints any value it does
+// not recognise rather than dropping it.
 export const STOOL_SYMPTOM_OPTIONS = [
   'None',
-  'Constipation',
   'Straining',
   'Incontinence',
   'Fresh blood',
@@ -87,7 +93,7 @@ export const HYGIENE_SYMPTOM_OPTIONS = [
 export const VOMITING_EMERGENCY = {
   chips: ['Blood'],
   title: 'This Could Be an Emergency',
-  warning: 'Blood in the vomit needs veterinary attention as soon as possible.',
+  warning: BLOOD_IN_VOMIT_ALERT,
 }
 
 // The urination chips that raise the possible-blockage alert in cats.

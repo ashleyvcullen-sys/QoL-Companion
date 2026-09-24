@@ -21,25 +21,9 @@ import {
 } from './cancerModules'
 import { parametersForGi } from './giConfig'
 
-export const CANCER_KEY = 'cancer'
+// CANCER_KEY was removed on 24 Sep 2026: nothing referenced it.
 
-export const EMPTY_CANCER_CONFIG = {
-  diagnoses: [],
-  otherDiagnosis: '',
-  // Per-diagnosis extra detail, keyed by diagnosis. Today only feline
-  // lymphoma has one: { lymphoma: { type: 'intestinal', other: '' } }.
-  diagnosisDetails: {},
-  // Modules the owner has deliberately turned OFF.
-  //
-  // Needed because active = suggested ∪ manual: without a record of what was
-  // switched off, unticking a suggested module did nothing at all — the
-  // suggestion put it straight back and the chip stayed selected. "Suggested"
-  // has to mean suggested, not compulsory.
-  excludedModules: [],
-  modules: [],
-  treatment: 'none',
-  instances: [],
-}
+// EMPTY_CANCER_CONFIG was removed on 24 Sep 2026: nothing referenced it.
 
 // Tolerant of older shapes. An early build stored a single `preset` string
 // and called instances `masses`; reading those forward costs three lines and
@@ -100,18 +84,7 @@ export function activeModuleKeys(config) {
   return suggested.filter((key) => !c.excludedModules.includes(key))
 }
 
-// Which modules a diagnosis suggested, as opposed to which the owner ticked.
-// The setup screen shows suggestions as already-selected without recording
-// them as manual choices, so changing the diagnosis updates them.
-export function suggestedModuleKeys(config) {
-  const c = normaliseCancerConfig(config)
-  return [
-    ...new Set([
-      ...modulesForDiagnoses(c.diagnoses),
-      ...c.diagnoses.flatMap((key) => modulesForDiagnosisDetail(key, c.diagnosisDetails[key])),
-    ]),
-  ]
-}
+// suggestedModuleKeys was removed on 24 Sep 2026: nothing referenced it.
 
 // One instance's parameters, keyed `<type>:<id>:<measure>`.
 //

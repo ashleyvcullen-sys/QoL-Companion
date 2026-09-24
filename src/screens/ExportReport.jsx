@@ -10,10 +10,10 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import OverviewBars from '../components/OverviewBars'
 import ChartView from '../components/ChartView'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
+import Skeleton from '../components/Skeleton'
 import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { useQolHistory } from '../lib/useQolHistory'
@@ -609,7 +609,7 @@ export default function ExportReport() {
       </Card>
 
       {loading && (
-        <Card><p>Loading…</p></Card>
+        <Card><Skeleton lines={4} /></Card>
       )}
 
       {!loading && (
@@ -785,7 +785,6 @@ export default function ExportReport() {
         ))}
       </div>
 
-      <Footer className="no-print" />
     </div>
   )
 }

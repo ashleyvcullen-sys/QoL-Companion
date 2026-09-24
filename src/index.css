@@ -243,7 +243,15 @@ code {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: max(24px, calc(env(safe-area-inset-top) + 12px)) 20px 40px;
+  /* The inset clears the notch; the 6px is the only actual padding. It was
+     max(24px, inset + 12px), which on a notched phone spent 71px before the
+     first card and on every other screen looked like a margin nobody asked
+     for — Ash's report, 24 Sep 2026. */
+  /* The bottom used to be 40px on top of the tab bar's own 60px spacer and
+     the home indicator — 134px of nothing under the last card. The spacer
+     already reserves the bar; this is the gap between content and it.
+     Ash, 24 Sep 2026. */
+  padding: max(12px, calc(env(safe-area-inset-top) + 6px)) 20px 12px;
   box-sizing: border-box;
 }
 
@@ -251,7 +259,9 @@ code {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 28px 24px;
+  /* 28px top and bottom put a lot of air around short cards, and most cards
+     in this app are short — Ash, 24 Sep 2026. */
+  padding: 22px 20px;
   box-shadow: var(--shadow-card);
   box-sizing: border-box;
 }
@@ -449,17 +459,10 @@ code {
   width: 100%;
 }
 
-.home-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
-}
-
 .pet-switcher {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   overflow-x: auto;
   max-width: 100%;
   padding: 2px 0 6px;
@@ -476,10 +479,14 @@ code {
   flex: 0 0 auto;
   background: var(--surface);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-card);
-  padding: 6px 14px;
+  /* A pill, not a card corner: at this size a 20px radius on a 28px-tall
+     chip is a rounded rectangle pretending to be a button. */
+  border-radius: 999px;
+  padding: 4px 11px;
   font: inherit;
-  font-size: var(--type-meta);
+  /* Ash's instruction 24 Sep 2026 — these are a switch between two or three
+     names, not a heading, and they were taking the height of one. */
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -508,24 +515,6 @@ code {
   padding-left: 2px;
 }
 
-/* Stacked and centred at the foot of the screen, one link per row. Side by
-   side they were two 13px words 20px apart — a pair of targets you aim at
-   rather than tap, and the miss lands on the other one.
-
-   margin-top: auto pushes the pair to the bottom of the flex column when the
-   page is shorter than the viewport. Home normally overflows and this is
-   inert, but it makes "at the bottom" true rather than incidental. */
-.home-secondary-links {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Flush, deliberately. Each link is its own 44px target, so stacking them
-     without a gap means the tappable areas meet instead of leaving dead
-     strips between two things that look adjacent. */
-  gap: 0;
-  margin-top: auto;
-}
-
 /* 44x44pt is Apple's minimum touch target. .subtle-link is a bare 13px line
    with no padding — around 18px tall — so it needs a box of its own here.
    min-height, not height: the text still decides if it ever needs more.
@@ -546,13 +535,14 @@ code {
 .pet-switcher-add {
   display: inline-flex;
   align-items: center;
-  gap: var(--gap-inline);
-  padding: 9px 16px;
-  border-radius: var(--radius-pill);
-  border: 1px dashed var(--border);
+  gap: 4px;
+  /* Sized to match the name chips beside it — Ash, 24 Sep 2026. */
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-strong);
   background: none;
   color: var(--text-muted);
-  font-size: var(--type-support);
+  font-size: var(--type-label);
   text-decoration: none;
   /* This control is an <a> below the pet limit and a <button> at it, so that
      tapping it can open the upgrade prompt instead of navigating. A button
@@ -582,7 +572,8 @@ code {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  /* Tighter, to pay for the bigger photo below — Ash, 24 Sep 2026. */
+  gap: 6px;
   text-align: center;
 }
 
@@ -642,56 +633,6 @@ code {
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
-}
-
-/* The five pillars, collapsed. The whole row is the toggle, so the dots and
-   the finding beside them are one tap target rather than decoration next to
-   a link. */
-.pet-summary-pillars {
-  display: flex;
-  flex-direction: column;
-}
-
-/* The whole heading is the toggle: the words and the chevron are one tap
-   target rather than a label sitting beside a button.
-
-   Centred with the chevron beside the words rather than pushed to the far
-   right — at this size, a chevron alone at the edge of the card reads as
-   belonging to the row above it. */
-.pet-summary-pillars-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--gap-inline);
-  width: 100%;
-  padding: 8px 0;
-  /* Apple's 44pt minimum, the same floor .expandable-note-toggle sets. */
-  min-height: 44px;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  /* A step down from the section headings above it: this names what is behind
-     a fold, and it should not compete with the thing it sits under. */
-  font-size: var(--type-meta);
-  font-weight: 600;
-  color: var(--text);
-  text-align: center;
-}
-
-.pet-summary-pillars-toggle .expandable-note-chevron {
-  display: inline-block;
-  /* Sits on the text's baseline rather than on its own line, so it travels
-     with the last word when the heading wraps. */
-  vertical-align: -3px;
-  margin-left: 4px;
-}
-
-/* The body is laid out with flex, which beats [hidden]'s display:none on
-   specificity — the same trap that left every "More info" note permanently
-   open until it was caught. */
-.pet-summary-pillars-body[hidden] {
-  display: none !important;
 }
 
 .pet-summary-empty {
@@ -777,30 +718,22 @@ code {
   border-top: 1px solid var(--border);
 }
 
-/* --- A condition's fortnight, on the home card --------------------------
-   //
-   One tick per day, oldest left, coloured exactly as the calendar colours
-   the same day. A hollow tick is a day with nothing logged: nothing recorded
-   is not the same as nothing wrong, and a strip that painted those green
-   would tell an owner their pet was fine on days nobody looked. */
-.dx-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
 .dx-strip {
   display: flex;
-  gap: 3px;
+  align-items: center;
+  gap: 4px;
 }
 
-/* A hole, not a grey block: --muted-fill is a solid mauve and reads as a
+/* Dots rather than bars — Ash's instruction 24 Sep 2026. A row of upright
+   ticks reads as a chart with a missing axis; a row of dots reads as a
+   record of days, which is what it is.
+
+   A hollow dot, not a grey one: --muted-fill is a solid mauve and reads as a
    fourth severity rather than as absence. */
 .dx-day {
-  width: 8px;
-  height: 20px;
-  border-radius: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
   background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--border);
 }
@@ -813,54 +746,11 @@ code {
 .dx-day.concern { background: var(--severity-moderate); box-shadow: none; }
 .dx-day.emergency { background: var(--severity-severe); box-shadow: none; }
 
-/* Which end is now. Without it the strip is fourteen ticks with no direction,
+/* Which end is now. Without it the strip is fourteen dots with no direction,
    and a pet getting better looks identical to one getting worse. */
 .dx-day.today {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--text-h);
 }
-
-.dx-scale {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 176px;
-  margin: -4px 0 0;
-  font-size: var(--type-label);
-  color: var(--text-muted);
-}
-
-.dx-trend {
-  margin: 0;
-  font-size: var(--type-meta);
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.dx-trend b { color: var(--text-h); font-weight: 600; }
-.dx-trend .down { color: var(--severity-good); font-weight: 600; }
-.dx-trend .up { color: var(--severity-severe); font-weight: 600; }
-
-.dx-finding {
-  margin: 0;
-  font-size: var(--type-support);
-  color: var(--text-h);
-  text-align: center;
-  text-wrap: pretty;
-}
-
-.dx-finding .when { color: var(--text-muted); }
-
-.dx-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--severity-moderate);
-  margin-right: 6px;
-  vertical-align: 1px;
-}
-
-.dx-dot.emergency { background: var(--severity-severe); }
 
 /* --- A condition, collapsed to one row -------------------------------------
    Ash's instruction 4 Sep 2026, from the mock-up she approved. What used to
@@ -986,20 +876,6 @@ code {
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
-}
-
-/* A pillar's chart, opened by tapping its bar. */
-.trends-pillar-chart {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.trends-pillar-chart > :not(button) {
-  width: 100%;
 }
 
 /* The whole row bar the icon, laid over it rather than around it — the icon
@@ -1157,36 +1033,11 @@ code {
   font-weight: 600;
 }
 
-/* The score at the top of Trends, stacked and centred like the home card's. */
-.trends-score {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--gap-stack-tight);
-  margin-bottom: 18px;
-}
-
-/* The heading needs more room under it than the band needs under the ring. */
-.trends-score > h3 {
-  margin-bottom: 6px;
-}
-
 /* The questionnaire, closed because nothing is due. Its two ways back in. */
 .condition-closed {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-/* A second job inside one card, separated by a rule rather than by a card of
-   its own — the questionnaire and the events recorded alongside it. */
-.card-subsection {
-  margin-top: 28px;
-  padding-top: 24px;
-  padding-bottom: 4px;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
 }
 
 .dx-row-chev {
@@ -1196,12 +1047,12 @@ code {
 
 /* The same fourteen ticks as the full strip, at row scale. Same colours,
    same rules — a hollow tick is still a day nobody logged. */
-.dx-strip.mini { gap: 2px; }
+.dx-strip.mini { gap: 3px; }
 
 .dx-strip.mini .dx-day {
-  width: 5px;
-  height: 12px;
-  border-radius: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   box-shadow: inset 0 0 0 1.2px var(--border);
 }
 
@@ -1216,10 +1067,14 @@ code {
 /* The brand mark, at the top of the card. Sized to what the pet's photo
    occupied before it, so the block above the title keeps its proportions. */
 .pet-summary-logo {
-  width: 72px;
+  /* Smaller than the 72px it was when it sat beside the title: it is above
+     the title now, and the pet's own photo below is the thing worth the size.
+     Ash, 24 Sep 2026. */
+  width: 46px;
   height: auto;
   display: block;
   flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
 .pet-summary-identity {
@@ -1236,7 +1091,7 @@ code {
 .pet-summary-meta {
   font-size: var(--type-meta);
   color: var(--text-muted);
-  margin: 2px 0 0;
+  margin: 1px 0 0;
 }
 
 /* The score, centred under its heading: the ring, the band it falls in, and
@@ -1300,10 +1155,42 @@ code {
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  /* Every tile the same size, whatever its label — Ash's instruction 24 Sep
+     2026. 1fr rows make each ROW as tall as the tallest tile in the grid
+     rather than the tallest in that row, so a two-line label on the last tile
+     does not leave the first four shorter than it. */
+  grid-auto-rows: 1fr;
   gap: 12px;
 }
 
+/* Eight tiles that have to fit one screen together — the End of Life
+   screen, Ash's instruction 24 Sep 2026. Shorter tiles, a smaller badge and
+   a tighter gap; the labels there run to three lines, so the height comes
+   from the content rather than from a floor. */
+.icon-grid.compact {
+  gap: 10px;
+}
+
+.icon-grid.compact .icon-tile {
+  min-height: 0;
+  gap: 7px;
+  padding: 12px 8px;
+}
+
+.icon-grid.compact .icon-badge {
+  width: 34px;
+  height: 34px;
+}
+
+.icon-grid.compact .icon-tile-label {
+  font-size: var(--type-meta);
+  line-height: 128%;
+}
+
 .icon-tile-link {
+  /* Flex, so the card inside can be told to fill the cell. A button and an
+     <a> both shrink-wrap their content otherwise. */
+  display: flex;
   color: inherit;
   text-decoration: none;
   display: block;
@@ -1319,36 +1206,19 @@ code {
 .icon-tile {
   position: relative;
   display: flex;
+  flex: 1;
+  height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
   padding: 20px 12px;
+  /* Two lines of label plus the badge. Below this the short-labelled tiles
+     look like buttons and the long-labelled ones like cards. */
+  min-height: 132px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-/* A premium tile the account cannot use yet.
-   
-   Note what is NOT dimmed: the label. Putting opacity on the tile itself
-   would have been simpler, but opacity creates a stacking context and
-   composites every child at the parent's alpha — there is no way to dim the
-   card and exempt the text inside it. So the muting is applied to the
-   surface and the icon badge only, and the label keeps full contrast. A user
-   has to be able to read what the feature IS; a tile that says merely
-   "something is withheld" is a closed door with no sign on it.
-
-   The visual state is decoration. The fact of being locked reaches assistive
-   technology through the button's aria-label, because opacity reaches
-   VoiceOver not at all. */
-.icon-tile-locked {
-  background: var(--surface-muted, var(--surface));
-  border-style: dashed;
-}
-
-.icon-tile-locked .icon-badge {
-  opacity: 0.5;
 }
 
 /* Lock glyph sitting inside a button label rather than in a tile corner —
@@ -1357,23 +1227,6 @@ code {
 .btn-lock {
   margin-right: 6px;
   vertical-align: -2px;
-}
-
-.icon-tile-lock {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-pill);
-  background: var(--border);
-  /* --text, not --text-muted. A badge sits on --border, the darkest ground
-     muted text lands on anywhere in the app, where even the corrected
-     --text-muted is 4.36:1. This is 5.0:1. */
-  color: var(--text);
 }
 
 .icon-tile:hover {
@@ -1406,10 +1259,13 @@ code {
   line-height: 130%;
 }
 
+/* Tighter throughout, on Ash's instruction 24 Sep 2026: every page of the
+   assessment is one question, and a page that needs scrolling to see its own
+   answers is a page somebody answers without reading. */
 .assessment-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   text-align: left;
 }
 
@@ -2030,7 +1886,6 @@ code {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-
 .concept-label {
   font-size: var(--type-micro);
   color: var(--text-h);
@@ -2072,11 +1927,11 @@ code {
 .symptom-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chip {
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -2115,13 +1970,61 @@ code {
 .swipeable-wizard {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
+}
+
+/* A card whose whole job is to hold one question. Everything in it is
+   tightened — Ash's instruction 24 Sep 2026, "fit the question to the screen
+   to reduce vertical scrolling. there's a lot of blank / dead space".
+   A reading card can afford air around a paragraph; a question competing
+   with a keyboard and a tab bar cannot. */
+.card.wizard-card {
+  padding: 14px 16px;
+}
+
+/* The condition's name above its own questionnaire: smaller badge, no air
+   under it, because the question follows immediately. */
+.condition-heading-compact {
+  margin-bottom: 2px;
+}
+
+.condition-heading-compact .icon-badge {
+  width: 38px;
+  height: 38px;
+}
+
+.wizard-card .swipeable-wizard {
+  gap: 10px;
+}
+
+.wizard-card .assessment-page {
+  gap: 10px;
+}
+
+/* The question's own title sits at the top of the card: nothing above it to
+   be separated from. */
+.wizard-card .assessment-page > .section-title:first-child {
+  margin-top: 0;
+}
+
+.wizard-card .assessment-page > p {
+  margin: 0;
+}
+
+/* The question follows the finger horizontally while the browser keeps the
+   vertical scroll to itself — see SwipeableWizard and lib/swipeNav.js. */
+.swipeable-wizard-page {
+  touch-action: pan-y;
+  will-change: transform;
 }
 
 .swipeable-wizard-progress {
   font-size: var(--type-label);
   color: var(--text-muted);
   text-align: right;
+  /* Sits on the same line the heading starts on rather than above it: it is
+     a counter, not a heading of its own. Ash, 24 Sep 2026. */
+  margin-bottom: -10px;
 }
 
 .swipeable-wizard-nav {
@@ -2144,6 +2047,42 @@ code {
   height: 8px;
   border-radius: 50%;
   background: var(--border);
+  /* A control since 24 Sep 2026, not a read-out: tapping one goes to that
+     question. Bare, because a dot with a border or a pressed state stops
+     reading as a dot. */
+  position: relative;
+  padding: 0;
+  border: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* The dot is 8px; the thing a thumb has to hit is not. An invisible 24px
+   square around each one, which is what stops a row of dots being a row of
+   near-misses. */
+.wizard-dot::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+/* The row under the question, as opposed to the one some wizards draw above
+   it. Smaller and allowed to wrap: seventeen assessment pages at the size
+   above would run off a phone. */
+.swipeable-wizard-dots.under {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+  /* Above the row below it, so the invisible tap square around each dot is
+     not taken by whatever follows — on the last page that is the Save
+     button, and a mis-hit there saves the form. */
+  position: relative;
+  z-index: 1;
+}
+
+.swipeable-wizard-dots.under .wizard-dot {
+  width: 6px;
+  height: 6px;
 }
 
 .wizard-dot.active {
@@ -2306,7 +2245,7 @@ code {
 .severity-option-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .severity-option {
@@ -2315,7 +2254,9 @@ code {
   justify-content: space-between;
   gap: 10px;
   text-align: left;
-  padding: 14px 16px;
+  /* A six-rung scale is six of these: 4px off each one is most of a rung
+     back. Still a 44pt target — the text inside is 2 lines at most. */
+  padding: 11px 14px;
   border-radius: var(--radius-panel);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -3072,7 +3013,6 @@ code {
   text-align: left;
 }
 
-
 /* One rule, not two identical ones. The calendar's legend and the key under a
    line chart are the same object in two places, and they were defined twice —
    which is how .chart-key's gap came to be dead code, overridden wherever it
@@ -3483,75 +3423,13 @@ code {
   vertical-align: 2px;
 }
 
-/* Where an assessment says what it adapts. Quiet: --type-micro, muted, and
-   the last thing in its card — an attribution is a fact the reader can check,
-   not something they need in order to answer the questions above it.
-   Legible rather than hidden, though. --text-muted is 5.28:1 on the page
-   ground since the token was corrected, so the smallest size in the scale is
-   still comfortably readable. */
-.source-note {
-  margin-top: 12px;
-  font-size: var(--type-micro);
-  line-height: 145%;
-  color: var(--text-muted);
-}
-
-.source-note + .source-note {
-  margin-top: 4px;
-}
-
-/* Fallback only. Footer.jsx measures the bar and sets this height inline —
-   see the note there. This value applies for the one frame before that
-   happens, and on a WebView with no ResizeObserver. */
-.app-footer-spacer {
-  height: calc(120px + env(safe-area-inset-bottom));
-  flex-shrink: 0;
-}
-
-.app-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 4px 14px;
-  padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-}
-
-.app-footer .subtle-link {
-  display: inline-block;
-  width: auto;
-  margin: 0;
-  font-size: var(--type-label);
-  white-space: nowrap;
-}
+/* The footer is GONE — Ash's instruction 24 Sep 2026. It had come down to
+   two outward links, both of which are rows on the More screen, and it cost
+   every screen in the app a rule across the bottom and a line of space above
+   it. Nothing was lost; there is one place for those links now. */
 
 .modal-secondary-link {
   margin-top: 4px;
-}
-
-.paywall-package {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.paywall-package-title {
-  font-weight: 600;
-  font-size: var(--type-item);
-  margin: 0 0 2px;
-}
-
-.paywall-package-description {
-  font-size: var(--type-meta);
-  color: var(--text-muted);
-  margin: 0;
 }
 
 .home-link {
@@ -3757,7 +3635,7 @@ code {
    control in the app was also the one piece that wouldn't follow a change to
    the design tokens. */
 .score-slider {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .score-slider-header {
@@ -4368,29 +4246,6 @@ code {
   margin: 0;
 }
 
-/* The medications recorded for a pet, listed under the condition's
-   medication question. */
-.condition-medication-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.condition-medication-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-stack-tight);
-  padding-left: 14px;
-  border-left: 2px solid var(--border);
-}
-
-.condition-medication-name {
-  font-size: var(--type-item);
-  font-weight: 600;
-  color: var(--text-h);
-}
-
 /* An assessment page rendered inside a condition question. Keeps the page's
    internal spacing but drops the outer padding it uses as a standalone
    screen. */
@@ -4562,7 +4417,6 @@ code {
   color: var(--text-h);
 }
 
-
 /* The Apple disclosure, at --type-meta: the role the app gives to dates,
    counts and other fine print, and the size the footer row beside it already
    uses. It was --type-micro, which the token block reserves for badges and
@@ -4595,7 +4449,7 @@ code {
 /* .subtle-link is display:block, width:100%, with margins for standing alone
    in a column. As flex children those three make every link claim a full
    line, so the row was stacking vertically with the dots stranded between.
-   The app already reset this for .app-footer; the same reset, minus its
+   The app already reset this for the old footer bar; the same reset, minus its
    white-space:nowrap — the row must stay free to wrap. */
 .paywall-footer-row .subtle-link {
   display: inline-block;
@@ -4610,4 +4464,1098 @@ code {
   color: var(--text-muted);
   font-size: var(--type-support);
   line-height: 145%;
+}
+
+/* --- Bottom tab bar -------------------------------------------------------
+   Four destinations, fixed to the bottom of every screen the owner can
+   navigate between (see lib/useTabBar for the exceptions). Constrained to
+   the same 480px column #root is, so it sits under the app rather than
+   spanning a desktop window.
+
+   z-index sits above the page and below the modals (100/200) — a tab bar
+   over an open modal would be a second way out of a dialog that has its own. */
+.tab-bar-spacer {
+  /* The bar measures 6px + 44px + 6px ≈ 56px above the home indicator. The
+     spacer is that, not a rounded-up guess with room to spare. */
+  height: calc(56px + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 45;
+  max-width: 480px;
+  margin: 0 auto;
+  display: grid;
+  /* Four on a free account, five with Medications on premium — the component
+     sets the real value inline. */
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+
+.tab-bar-item {
+  /* The Assess and Meds tabs are buttons (they open a sheet) while the rest
+     are links. Without this reset the browser paints them with its own grey
+     button face and font, which is what made Assess look like a different
+     control — Ash's report, 24 Sep 2026. */
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 0 1px;
+  color: var(--text-muted);
+  text-decoration: none;
+  /* The whole tab, not just its glyph, is the target. */
+  min-height: 44px;
+  justify-content: center;
+}
+
+.tab-bar-icon {
+  display: inline-flex;
+  /* Narrow enough that five of these fit across a 375px screen without the
+     pills touching — the bar carries a Medications tab on premium. */
+  padding: 3px 12px;
+  border-radius: 999px;
+  position: relative;
+}
+
+.tab-bar-label {
+  font-size: var(--type-label);
+  font-weight: 600;
+}
+
+.tab-bar-item.is-active {
+  color: var(--accent);
+}
+
+/* The tint pill carries the state as well as the colour does, so the active
+   tab is still readable to someone who cannot tell the two colours apart. */
+.tab-bar-item.is-active .tab-bar-icon {
+  background: var(--accent-tint);
+}
+
+.tab-bar-item:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 12px;
+}
+
+/* --- The More screen ------------------------------------------------------
+   A menu, so a list rather than a grid of tiles. */
+.more-title {
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.more-list {
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.more-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  /* The mailto row is an <a>, and only form controls get border-box from the
+     UA stylesheet — so width:100% plus the padding made that one row wider
+     than every button beside it. */
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font: inherit;
+  font-size: var(--type-item);
+  color: var(--text-h);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.more-row:last-child {
+  border-bottom: none;
+}
+
+.more-row-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent);
+}
+
+.more-row-label {
+  flex: 1;
+}
+
+.more-row-lock {
+  display: inline-flex;
+  flex: none;
+  color: var(--text-muted);
+}
+
+.more-row-chev {
+  flex: none;
+  color: var(--border-strong);
+}
+
+.more-row:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* --- The five pillars, as tiles -------------------------------------------
+   On the home card, under the score. Five equal columns at every width the
+   app runs at: the labels are short and the numbers are three characters, so
+   nothing here needs to wrap or scroll sideways. */
+.pillar-tiles {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.pillar-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  /* Comfortably over the 44pt tap target with the icon and two lines. */
+  padding: 8px 2px 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pillar-tile.is-open {
+  border-color: var(--border-strong);
+  background: var(--accent-wash);
+}
+
+.pillar-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.pillar-tile-value {
+  font-size: var(--type-meta);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.pillar-tile-label {
+  font-size: var(--type-nano);
+  line-height: 1.15;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pillar-tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* --- Back bar -------------------------------------------------------------
+   Sticky, not fixed: it occupies its own row at the top of the column, so no
+   screen has to leave a gap for it, and it stays put while the page scrolls. */
+.back-bar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  background: var(--bg);
+  padding: max(4px, env(safe-area-inset-top)) 12px 4px;
+}
+
+.back-bar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 6px 12px 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.back-bar-button:active {
+  background: var(--accent-tint);
+}
+
+.back-bar-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* A screen whose FIRST child is a sticky bar of its own — the assessment's
+   Exit bar — has the same problem and the same answer. */
+.screen-with-bar {
+  padding-top: 0;
+}
+
+/* A screen under the back bar does not also need its own top inset — the bar
+   has already cleared the notch, and the bar's own bottom padding is the gap.
+//
+   The selector is `~ .route-fade .screen`, not `+ .screen`: the screens moved
+   inside a wrapper when route transitions were added on 23 Sep 2026, and this
+   rule silently stopped matching. Every screen with a back bar was then
+   clearing the notch TWICE — the bar's inset and the screen's — which is the
+   band of empty space Ash reported on 24 Sep 2026. */
+.back-bar ~ .route-fade .screen,
+.back-bar + .screen {
+  padding-top: 0;
+}
+
+/* --- Scroll to top / bottom ----------------------------------------------- */
+.scroll-jump {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 44;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lift);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* Clear of the tab bar, which is 60px plus the home indicator. */
+.scroll-jump.has-tab-bar {
+  bottom: calc(68px + env(safe-area-inset-bottom));
+}
+
+.scroll-jump:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (min-width: 520px) {
+  /* The app column is centred and capped at 480px; without this the buttons
+     drift to the edge of a wide window, a long way from the content. */
+  .scroll-jump {
+    right: calc(50vw - 226px);
+  }
+}
+
+/* --- The Trends picker ----------------------------------------------------
+   Chips rather than a dropdown, in labelled groups, so what can be charted —
+   including every condition being monitored — is visible without opening a
+   control first. */
+.trend-chip-group + .trend-chip-group {
+  margin-top: 14px;
+}
+
+.trend-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 12px 6px 7px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font: inherit;
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.trend-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.trend-chip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.trend-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* The tab bar's "something is waiting" dot. A dot rather than a count: the
+   message is that there is something to do, and a number would ask the owner
+   to work out which of several things it meant. */
+.tab-bar-dot {
+  position: absolute;
+  top: 1px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--severity-moderate);
+  border: 1.5px solid var(--surface);
+}
+
+/* The same fact in a word, on the rows inside the Assess sheet. */
+.more-row-due {
+  flex: none;
+  font-size: var(--type-micro);
+  font-weight: 700;
+  color: var(--severity-moderate);
+  background: rgba(201, 122, 46, 0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* --- Motion ---------------------------------------------------------------
+   Three moments only: the ring filling (driven in ScoreRing, not here), the
+   pillar tiles arriving in order, and the chart line drawing (recharts' own).
+   Anything beyond those starts to read as decoration. */
+@keyframes pillar-tile-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.pillar-tile {
+  opacity: 1;
+}
+
+/* Only on the first Home of the session. Replaying it every time a tab is
+   switched back to turns a welcome into a flicker — Ash's report, 23 Sep
+   2026. PetSummaryCard sets this class once and never again. */
+.pillar-tiles.is-first-paint .pillar-tile {
+  opacity: 0;
+  animation: pillar-tile-in 320ms ease-out forwards;
+}
+
+/* Someone who has asked their phone to stop animating things has asked this
+   too. Everything still arrives — it just arrives already there. */
+@media (prefers-reduced-motion: reduce) {
+  .pillar-tile {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* --- Skeletons ------------------------------------------------------------
+   The shape of what is coming, instead of the word "Loading". */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--border) 25%, var(--accent-tint) 50%, var(--border) 75%);
+  background-size: 300% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -150% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+    background: var(--border);
+  }
+}
+
+/* --- The change since last time, as a chip -------------------------------- */
+.pet-summary-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px auto 0;
+  padding: 3px 11px 3px 9px;
+  border-radius: 999px;
+  font-size: var(--type-label);
+  font-weight: 600;
+  background: var(--accent-wash);
+  color: var(--text-muted);
+}
+
+.pet-summary-change.is-up {
+  background: rgba(61, 130, 89, 0.12);
+  color: var(--severity-good);
+}
+
+.pet-summary-change.is-down {
+  background: rgba(201, 122, 46, 0.12);
+  color: var(--severity-moderate);
+}
+
+/* An empty state that offers the action that ends it. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 6px;
+  text-align: center;
+}
+
+/* --- Dark mode ------------------------------------------------------------
+   Ash's instruction 23 Sep 2026. Owners check this app at night, in a dim
+   room, often sitting with an animal that is not well; a light-only app is a
+   torch in the face at 2am.
+
+   Tokens only. Every colour in this stylesheet already comes from the block
+   at the top of the file — the handful of literal hexes left are #fff on the
+   accent, which is correct in both themes — so the whole theme is this one
+   list of values, twice: once for a phone set to dark, once for someone who
+   has chosen dark inside the app while their phone is light.
+
+   The media query is guarded so an explicit LIGHT choice in the app beats a
+   dark phone, rather than the two fighting. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+  /* Ground and surfaces. Warm near-black rather than grey: the light theme
+     is a rose palette, and a neutral dark under it reads as a different app
+     with the same buttons. */
+  --bg: #171114;
+  --surface: #211A1D;
+  --border: #35272C;
+  --border-strong: #4C373E;
+  --accent: #E39FAE;
+  --accent-tint: #33232A;
+  --accent-wash: rgba(227, 159, 174, 0.10);
+  --accent-wash-strong: rgba(227, 159, 174, 0.18);
+
+  /* Text. Never pure white on near-black — it vibrates at body size. */
+  --text-h: #F4E8EC;
+  --text: #D6C1C8;
+  --text-muted: #B096A0;
+  --muted-fill: #7C646D;
+
+  /* The three severity colours, lifted so they hold their meaning on a dark
+     ground. Same hues, walked lighter — a green that reads as green at 5%
+     lightness against #17 is not the same green as on paper. */
+  --severity-good: #5FAE80;
+  --severity-moderate: #DFA05A;
+  --severity-severe: #E4776A;
+  --severe-wash: rgba(228, 119, 106, 0.14);
+  --severe-line: rgba(228, 119, 106, 0.38);
+
+  --focus-ring: 0 0 0 3px rgba(227, 159, 174, 0.30);
+  --scrim: rgba(0, 0, 0, 0.72);
+  /* Shadows do almost nothing on a dark ground; the borders carry the
+     separation instead, so these stay subtle rather than becoming halos. */
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 4px 16px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  /* Ground and surfaces. Warm near-black rather than grey: the light theme
+     is a rose palette, and a neutral dark under it reads as a different app
+     with the same buttons. */
+  --bg: #171114;
+  --surface: #211A1D;
+  --border: #35272C;
+  --border-strong: #4C373E;
+  --accent: #E39FAE;
+  --accent-tint: #33232A;
+  --accent-wash: rgba(227, 159, 174, 0.10);
+  --accent-wash-strong: rgba(227, 159, 174, 0.18);
+
+  /* Text. Never pure white on near-black — it vibrates at body size. */
+  --text-h: #F4E8EC;
+  --text: #D6C1C8;
+  --text-muted: #B096A0;
+  --muted-fill: #7C646D;
+
+  /* The three severity colours, lifted so they hold their meaning on a dark
+     ground. Same hues, walked lighter — a green that reads as green at 5%
+     lightness against #17 is not the same green as on paper. */
+  --severity-good: #5FAE80;
+  --severity-moderate: #DFA05A;
+  --severity-severe: #E4776A;
+  --severe-wash: rgba(228, 119, 106, 0.14);
+  --severe-line: rgba(228, 119, 106, 0.38);
+
+  --focus-ring: 0 0 0 3px rgba(227, 159, 174, 0.30);
+  --scrim: rgba(0, 0, 0, 0.72);
+  /* Shadows do almost nothing on a dark ground; the borders carry the
+     separation instead, so these stay subtle rather than becoming halos. */
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 4px 16px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+}
+
+/* Recharts paints its grid and axis labels as presentation attributes, which
+   a stylesheet outranks. One rule each, so the charts follow the theme
+   without every chart descriptor carrying a colour for both. */
+.recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+
+.recharts-text {
+  fill: var(--text-muted);
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px;
+  color: var(--text-h);
+}
+
+/* The quick-log link on the assessment intro, and the line that replaces it
+   once the answers have been carried over. */
+.assessment-prefill-link {
+  display: block;
+  margin: 14px auto 0;
+  text-align: center;
+}
+
+.assessment-prefilled {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- The pet's photo ------------------------------------------------------
+   A one-cell grid rather than absolute positioning: the image and the camera
+   badge are stacked in the same cell, so both are centred by the grid itself
+   and neither can drift or be clipped by the circle — which is what the
+   badge was doing, hanging off the bottom-right corner of a container with
+   overflow: hidden. Ash's report, 23 Sep 2026. */
+.pet-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  overflow: hidden;
+  cursor: default;
+}
+
+.pet-avatar.is-editable {
+  cursor: pointer;
+}
+
+.pet-avatar-image {
+  grid-area: 1 / 1;
+  /* Without this the 6px of padding on the fallback logo is ADDED to a 100%
+     width, so the drawing renders larger than the circle and spills out of
+     it — which is what read as "not centred". */
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* The logo is a line drawing with its own margins, so it is fitted inside
+   the circle rather than cropped to it the way a photograph is. */
+.pet-avatar-fallback {
+  object-fit: contain;
+  object-position: center;
+  padding: 6px;
+}
+
+/* In the same cell as the image, sitting at the foot of the circle and
+   centred across it — wholly inside, so the circle cannot clip it. A ring of
+   the card's own colour separates it from whatever is behind. */
+.pet-avatar-badge {
+  grid-area: 1 / 1;
+  align-self: end;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-bottom: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.pet-avatar-error {
+  margin-top: 6px;
+}
+
+/* Reachable by a screen reader, invisible on screen — for the file input the
+   avatar button stands in for. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The switcher is a row of names and nothing else — the photo lives on the
+   card above it. Ash's instruction 24 Sep 2026. */
+.pet-switcher-option {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- The assessment's Exit control ----------------------------------------
+   Sticky rather than scrolling away with the top of the first question. Same
+   treatment as the back bar, and the same reasoning: the way out of a screen
+   should be where it was left. */
+.exit-bar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  margin: 0 -20px;
+  /* The inset is PADDING, not an offset. `top: env(...)` would have left a
+     transparent strip above the bar for the page to scroll through; padding
+     keeps the bar's own background behind the clock and the battery, so the
+     Exit link sits below them instead of sliding up into them — Ash's
+     report, 24 Sep 2026. */
+  padding: max(4px, env(safe-area-inset-top)) 20px 6px;
+  background: var(--bg);
+}
+
+.exit-bar .home-link {
+  margin-bottom: 0;
+  min-height: 32px;
+}
+
+/* --- The zoom transition --------------------------------------------------
+   A plain coloured rectangle that grows from the tapped card to fill the
+   viewport, then fades away over the screen that was already rendered
+   underneath. It is deliberately BELOW the tab bar's z-index: the bar is the
+   one thing that must not move or flicker during a navigation, so it is
+   never covered.
+
+   transform-origin is the top left corner, which is what lets a single
+   translate + scale place a full-viewport element exactly over a card. */
+.zoom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 42;
+  transform-origin: top left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* The app's own reduce-motion switch, alongside the system one. Both answers
+   are stamped on the root element by lib/motion.js, so a stylesheet rule and
+   a JavaScript animation can never disagree about whether to move. */
+:root[data-reduce-motion="true"] .pillar-tile {
+  opacity: 1;
+  animation: none;
+}
+
+:root[data-reduce-motion="true"] .skeleton-line {
+  animation: none;
+  background: var(--border);
+}
+
+/* A label and its switch on one line, for the settings that are a yes or a
+   no rather than a choice of three. */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.setting-row-label {
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.setting-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent);
+}
+
+/* A screen arriving. 140ms of opacity, no movement: enough that a card
+   appearing after its data loads reads as arriving rather than as a stutter,
+   short enough that it never delays a tap. */
+@keyframes route-fade-in {
+  /* From mostly-there, not from nothing — Ash's report 24 Sep 2026 that
+     navigation did not feel immediate. A screen that starts invisible reads
+     as a delay however short it is; this reads as the screen arriving. */
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+/* A real box, not display:contents — an element that generates no box cannot
+   be animated, and #root is a flex column whose screens expect to stretch. */
+.route-fade {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* Holds the page's height while a heavy screen is still fetching. Without
+     it the document collapses to a card and a half, the scrollbar vanishes
+     and returns, and the whole thing reads as a stutter — Ash's report,
+     24 Sep 2026, moving between conditions. */
+  min-height: 70svh;
+  animation: route-fade-in 110ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-fade {
+    animation: none;
+  }
+}
+
+:root[data-reduce-motion="true"] .route-fade {
+  animation: none;
+}
+
+/* --- Medications, on the home card ---------------------------------------- */
+.med-today-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--type-meta);
+  color: var(--text-muted);
+}
+
+.med-today-up_to_date .med-today-state {
+  color: var(--severity-good);
+}
+
+.med-today-due .med-today-state {
+  color: var(--severity-moderate);
+}
+
+.med-today-overdue .med-today-state {
+  color: var(--severity-severe);
+  font-weight: 600;
+}
+
+/* The chart's title, with the chosen measure's icon in front of it. */
+.trends-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- The chart, and what sits above it ------------------------------------
+   The pillar's definition had no space under it, so the sentence and the top
+   of the graph ran together — Ash's report, 23 Sep 2026. The block owns the
+   spacing rather than each part carrying its own margin, so the title, the
+   definition and the chart keep the same rhythm whichever measure is chosen
+   (a condition has no definition line at all). */
+.trend-chart-block {
+  margin-top: 20px;
+}
+
+.trends-chart-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.trend-chart-block .concept-definition {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  line-height: 150%;
+}
+
+.trend-chart-block .recharts-responsive-container {
+  margin-top: 4px;
+}
+
+/* --- Positioning a pet photo ----------------------------------------------
+   A square window with the circle the avatar will show drawn over it, so the
+   crop is judged against the shape it will actually appear in. */
+.cropper-frame {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: var(--accent-wash);
+  touch-action: none;
+  cursor: grab;
+}
+
+.cropper-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* The round window, as a ring of the card's colour rather than a border — it
+   dims what will be cropped away without hiding it, so the owner can see what
+   they are cutting off. */
+.cropper-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(61, 43, 48, 0.45);
+}
+
+.cropper-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.cropper-zoom input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.cropper-hint {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cropper-actions > * {
+  flex: 1;
+}
+
+/* The prompt where the charts go, before anything has been chosen. Centred
+   and given the height a chart would take, so choosing one does not make the
+   card jump. */
+.trend-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  margin: 0;
+  text-align: center;
+}
+
+/* --- The About carousel ---------------------------------------------------
+   One card per panel, swiped sideways. The cards keep their own styling; the
+   scroller only decides how they are laid out and where they stop.
+
+   The negative margins let a card sit flush with the screen's edge while the
+   padding keeps the first and last one inset like everything else — without
+   them the panels stop 20px short and the edge of the next card is never
+   visible, which is what tells a reader there is one. */
+.about-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 2px 20px 8px;
+  /* A pane that fits the screen, rather than four tall cards the page has to
+     scroll past — Ash's instruction 24 Sep 2026. The panels are all the same
+     height, that height fits between the header and the tab bar, and a panel
+     with more to say scrolls inside itself rather than growing.
+     
+     Sized against the screen rather than a fixed number: 100svh minus the
+     back bar, the dots, the legal links, the tab bar and the screen's own
+     padding — so nothing below it is ever pushed off, and no page scroll is
+     needed to read a panel. Ash, 24 Sep 2026. */
+  height: calc(100svh - 260px);
+  min-height: 320px;
+  max-height: 600px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.about-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.about-carousel > .card {
+  flex: 0 0 calc(100% - 28px);
+  scroll-snap-align: center;
+  /* Equal height whatever each panel says, so the cards do not jump as they
+     scroll past one another. */
+  align-self: stretch;
+  /* Tighter than a full-width card: this one is a panel in a pane, not a
+     section of a page. */
+  padding: 20px 18px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.about-carousel > .card::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- Carousel position dots ----------------------------------------------- */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: -4px;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--border-strong);
+  cursor: pointer;
+  /* The dot is 8px; the tap target is not. */
+  box-shadow: 0 0 0 8px transparent;
+}
+
+.carousel-dot.is-active {
+  /* Colour only. A dot that grows pushes the ones after it along, and a row
+     that shuffles as you swipe is worse than no indicator at all. */
+  background: var(--accent);
+}
+
+.carousel-dot:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* --- The pet's face, inside the score ring --------------------------------
+   Ash's instruction 24 Sep 2026. The photo was a 52px circle in the header
+   above a 92px ring, which made the smaller, more personal thing the lesser
+   one. It is now the middle of the ring itself, at 112px, and the number it
+   used to share the middle with sits under the pair. */
+.pet-summary-ring-centre {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The score, under the ring rather than inside it. Larger than the band
+   beneath it, and in the band's own colour, so the number and the words it
+   maps to read as one statement. */
+.pet-summary-percent {
+  margin: 10px 0 0;
+  font-family: var(--heading);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tighter above the ring, now that the ring is the thing worth the room. */
+.pet-summary-score {
+  padding: 0 0 2px;
+}
+
+.pet-summary-band {
+  margin: 4px 0 0;
+}
+
+/* When the score was last taken. Above the direction-of-travel chip, because
+   "3 points lower than last time" means nothing until you know when last
+   time was. */
+.pet-summary-last {
+  margin: 6px 0 0;
+  font-size: var(--type-label);
+  color: var(--text-muted);
+}
+
+/* Inside a carousel panel the text is doing the same job in less room: the
+   panel is a fixed height, so anything that does not fit becomes a scroll
+   inside a card the reader may not realise scrolls. A step down in size and
+   spacing is the cheaper fix — Ash's instruction 24 Sep 2026. */
+.about-carousel .assessment-page {
+  gap: 10px;
+}
+
+.about-carousel p {
+  font-size: var(--type-support);
+  line-height: 145%;
+}
+
+.about-carousel .section-title {
+  margin-bottom: 4px;
+}
+
+.about-carousel .welcome-slide-icon {
+  margin-bottom: -2px;
+}
+
+/* The feature list is the longest panel: eleven rows plus their badges. */
+.about-carousel .welcome-help-list {
+  gap: 8px;
+}
+
+.about-carousel .welcome-help-row {
+  font-size: var(--type-meta);
+}
+
+.about-carousel .welcome-help-row .icon-badge {
+  width: 28px;
+  height: 28px;
 }

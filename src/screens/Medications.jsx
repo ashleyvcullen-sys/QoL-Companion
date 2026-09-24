@@ -6,8 +6,8 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import ReminderDayPicker from '../components/ReminderDayPicker'
+import Skeleton from '../components/Skeleton'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
 import { usePetConditions } from '../lib/conditionsData'
@@ -15,6 +15,8 @@ import { resolveTrackedConditions } from '../lib/charts'
 import {
   createMedication,
   deleteMedication,
+  describeMedicationSchedule,
+  formatMedicationTime,
   frequencySlotKey,
   logDose,
   todayIsoDate,
@@ -88,24 +90,12 @@ function describeReminderPlan(form) {
     : `${chosen} reminders each ${period}, on the days picked below.`
 }
 
-function formatTime(time) {
-  const [hour, minute] = time.split(':').map(Number)
-  const suffix = hour < 12 ? 'am' : 'pm'
-  const display = hour % 12 === 0 ? 12 : hour % 12
-  return `${display}:${String(minute).padStart(2, '0')}${suffix}`
-}
-
-function describeSchedule(medication) {
-  if (medication.scheduleMode === 'as_needed') return 'as needed'
-  if (medication.scheduleMode === 'frequency') {
-    const count = medication.frequencyCount ?? 1
-    const period = medication.frequencyPeriod === 'week' ? 'week'
-      : medication.frequencyPeriod === 'month' ? 'month'
-        : 'day'
-    return `${count}× per ${period}`
-  }
-  return medication.times.map(formatTime).join(', ')
-}
+// formatTime and describeSchedule used to be written out again here. They
+// are formatMedicationTime and describeMedicationSchedule in
+// lib/medicationsData.js, which Home already uses — and the local copy was
+// the weaker of the two: `medication.times.map(...)` with no guard threw on a
+// medication saved with no times, where the shared one says "no times set".
+// Removed 24 Sep 2026.
 
 export default function Medications() {
   const { selectedPet } = usePets()
@@ -437,7 +427,7 @@ export default function Medications() {
               onClick={() => handleToggleSlot(medication, time)}
               aria-pressed={given}
             >
-              {given && <Check size={14} />} {formatTime(time)}
+              {given && <Check size={14} />} {formatMedicationTime(time)}
             </button>
           )
         })}
@@ -484,7 +474,7 @@ export default function Medications() {
 
       <Card>
         <SectionTitle>Today</SectionTitle>
-        {loading && <p>Loading…</p>}
+        {loading && <Skeleton lines={3} />}
         {!loading && active.length === 0 && <p>No medications added yet.</p>}
 
         {!loading && active.map((medication) => (
@@ -558,10 +548,9 @@ export default function Medications() {
                     )
                   })}
                 </div>
-                <p className="assessment-hint">
-                  Choose none and it will show under every condition {pet.name} is
-                  monitored for.
-                </p>
+                {/* The line explaining what choosing none does was removed
+                    on Ash's instruction 24 Sep 2026. The field already says
+                    it is optional. */}
               </div>
             )}
 
@@ -612,10 +601,9 @@ export default function Medications() {
                   </button>
                 )}
               </div>
-              <p className="assessment-hint">
-                Leave this empty while {pet.name} is still taking it. Marking a medication as
-                finished fills it in for you.
-              </p>
+              {/* The line under this field was removed on Ash's instruction
+                  24 Sep 2026. "(optional)" on the label already says an empty
+                  date is fine. */}
             </div>
 
             {/* One question instead of a mode to pick first. Choosing
@@ -834,7 +822,7 @@ export default function Medications() {
                   <span className="med-name">{medication.name}</span>
                   <span className="assessment-hint">
                     {medication.dose ? `${medication.dose} — ` : ''}
-                    {describeSchedule(medication)}
+                    {describeMedicationSchedule(medication)}
                     {medication.active ? '' : ' — stopped'}
                   </span>
                   {medication.notes && <span className="assessment-hint">{medication.notes}</span>}
@@ -864,7 +852,6 @@ export default function Medications() {
         )}
       </Card>
 
-      <Footer />
     </div>
   )
 }

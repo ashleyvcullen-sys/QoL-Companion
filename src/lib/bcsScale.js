@@ -13,17 +13,9 @@
 // Dogs and cats have separate charts with genuinely different criteria, so
 // this is species-keyed like BEAP_SCALES.
 
-export const BCS_CITATION =
-  'Incorporates the WSAVA/Purina 9-point body condition scoring structure (World Small Animal Veterinary Association, in partnership with Purina).'
+// BCS_CITATION was removed on 24 Sep 2026: nothing referenced it.
 
-// Kept separate from BCS_CITATION on purpose. The scale is WSAVA's and is
-// cited as such; the artwork in public/images/bcs is not, so its credit sits
-// next to the images rather than blurring into the scale citation above them.
-//
-// The illustrations are original and AI-generated, informed by the WSAVA
-// chart rather than taken from it.
-export const BCS_IMAGE_CREDIT =
-  'Illustrations informed by the WSAVA Body Condition Score chart.'
+// BCS_IMAGE_CREDIT was removed on 24 Sep 2026: nothing referenced it.
 
 export const BCS_MIN = 1
 export const BCS_MAX = 9

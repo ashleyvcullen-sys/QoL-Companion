@@ -1,15 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FileDown, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
-import ChartView from '../components/ChartView'
-import DayAnswersModal from '../components/DayAnswersModal'
-import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
 import {
@@ -19,7 +15,6 @@ import {
   describeParameterAnswer,
   formParameters,
   standingAnswers,
-  describeConditionDay,
   visibleParameters,
   beapAppetiteFromVcogGrade,
   conditionByKey,
@@ -28,21 +23,22 @@ import {
   vcogGradeFromBeapAppetite,
   WHY_LABEL,
 } from '../lib/conditions'
-import { chartsForCondition, chartByKey } from '../lib/charts'
 import { useQolHistory } from '../lib/useQolHistory'
 import { updateBeapCategory, updateGeneralField, updateGeneralScore } from '../lib/qolData'
-import { describeMedicationSchedule, medicationsForCondition, useMedications } from '../lib/medicationsData'
 import { daysSinceTreatment, isCancerConfigured, parametersFor } from '../lib/cancerConfig'
 import { MONITORING_STATE, elapsedLabel, monitoringStatus } from '../lib/monitoringStatus'
 import { GI_KEY, hasGiFoodAllergySelected, isGiConfigured } from '../lib/giConfig'
+// Only for the calendar's start/stop marks — the list itself lives on the
+// Medications tab, and this screen no longer shows one.
 import { SIGN_MODULE_LIST, treatmentModuleByKey } from '../lib/cancerModules'
 import ConditionParameter from '../components/ConditionParameter'
 import HowTo from '../components/HowTo'
 import ConditionEvents from '../components/ConditionEvents'
 import PetText from '../components/PetText'
 import ReminderDayPicker from '../components/ReminderDayPicker'
-import RangeToggle from '../components/RangeToggle'
+import SwipeableWizard from '../components/SwipeableWizard'
 import { ConditionState, ConditionStrip } from '../components/ConditionStrip'
+import Skeleton from '../components/Skeleton'
 import { conditionHistory } from '../lib/conditionHistory'
 import { monitoredLabels } from '../lib/monitoredList'
 import {
@@ -51,12 +47,12 @@ import {
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition,
+  reminderDayHint,
 } from '../lib/cadence'
 import { scheduleConditionReminder } from '../lib/notifications'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   addPetCondition,
-  saveConditionConfig,
   removePetCondition,
   saveConditionEntry,
   todayIsoDate,
@@ -78,7 +74,6 @@ export default function ConditionMonitoring() {
   // assessment is where that answer lives. Without this the owner would be
   // asked the same thing twice on the same day.
   const { generalEntries, painEntries } = useQolHistory(pet?.id)
-  const { medications } = useMedications(pet?.id)
 
   // Which condition is determined by the URL, so each one is a real page you
   // can navigate back to rather than a tab inside a single screen.
@@ -93,25 +88,13 @@ export default function ConditionMonitoring() {
   // screen threw "Cannot access 'definition' before initialization" on every
   // condition, before drawing anything.
   //
-  // Only what {name} is on NOW: a finished course is history, and listing it
-  // under "is she currently on any medication?" would answer that question
-  // wrongly. And only THIS condition's medications — though anything the
-  // owner has not assigned still shows, because "I have not said what this is
-  // for" is far more common than "this is definitely not for the thing I am
-  // looking at".
-  const activeMedications = medicationsForCondition(
-    medications.filter((medication) => medication.active),
-    definition?.key,
-  )
-
   // The row for THIS condition, which carries the per-pet config. Only a
   // composed condition (cancer) uses it; for everything else it is `{}` and
   // resolving is a no-op.
   const petCondition = conditions.find((entry) => entry.conditionKey === currentKey) ?? null
   const config = petCondition?.config ?? {}
 
-  const { entries, loading: entriesLoading, refresh: refreshEntries } =
-    useConditionEntries(pet?.id, currentKey)
+  const { entries, refresh: refreshEntries } = useConditionEntries(pet?.id, currentKey)
   const { events, loading: eventsLoading, refresh: refreshEvents } =
     useConditionEvents(pet?.id, currentKey)
 
@@ -121,9 +104,6 @@ export default function ConditionMonitoring() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [noteError, setNoteError] = useState('')
-  // Which day's answers are open, as an ISO date. Null is closed.
-  const [openDay, setOpenDay] = useState(null)
   // Whether the standing answers — diagnosis, diet, start date — are open
   // for editing rather than summarised.
   const [editStanding, setEditStanding] = useState(false)
@@ -146,8 +126,8 @@ export default function ConditionMonitoring() {
   // open, and one nobody has touched opens or closes with the schedule.
   const [formOpenOverride, setFormOpenOverride] = useState(null)
 
-  const [range, setRange] = useState('month')
-  const allTime = range === 'all'
+  // The range toggle, the chart descriptors and the day-answers modal were
+  // removed with the charts on 24 Sep 2026 — Trends owns all three.
 
   const [editingCadence, setEditingCadence] = useState(false)
   const [cadenceError, setCadenceError] = useState('')
@@ -387,47 +367,6 @@ export default function ConditionMonitoring() {
   // fact about their treatment, not something that changes between Tuesday and
   // Wednesday, and asking it every day would train people to tap past it.
   //
-  // Cancer is excluded — its treatment module already asks this, and asking
-  // twice on one screen is exactly the duplication we have spent the day
-  // removing.
-  // Skipped for cancer, which asks about treatment in its own setup. GI is
-  // composed too but has no treatment step, so without this a GI owner would
-  // never be asked about medication at all.
-  const asksAboutMedication = Boolean(definition)
-    && (!definition.composed || definition.key === GI_KEY)
-  const onMedication = config?.onMedication ?? null
-
-  async function handleMedicationAnswer(answer) {
-    if (busy) return
-    setBusy(true)
-    setErrorMessage('')
-    try {
-      // Answering is a deliberate act, so it may create the pet_conditions
-      // row. Reading about a condition still leaves no trace, and this does
-      // not mark the condition as tracked — that still takes a saved
-      // assessment (see Conditions.jsx).
-      const id = petCondition?.id
-        ?? (await addPetCondition({ petId: pet.id, conditionKey: definition.key })).id
-      await saveConditionConfig(id, { ...(config ?? {}), onMedication: answer })
-      refresh()
-    } catch (error) {
-      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  function goToMedications() {
-    // Same round trip cancer's setup uses, so the owner lands back here
-    // rather than on the medications list wondering where they were.
-    navigate('/medications', {
-      state: {
-        returnTo: `/conditions/${definition.key}`,
-        returnLabel: `${definition.label} monitoring`,
-      },
-    })
-  }
-
   async function handleRemove(condition) {
     setErrorMessage('')
     setBusy(true)
@@ -544,78 +483,21 @@ export default function ConditionMonitoring() {
     }
   }
 
-  // This condition's summary calendar, and only that — described in
-  // lib/charts.js so the report draws exactly the same thing from exactly the
-  // same descriptor. Lines live in the Overall Quality of Life section now;
-  // see the note above chartsForCondition for why.
-  const charts = chartsForCondition({
-    definition,
-    entries,
-    events,
-    // Only for the calendar's start/stop marks — the medication list itself
-    // lives on its own screen.
-    medications,
-    species: pet?.species,
-    // For templating {name} into the names of flagged questions on the
-    // calendar's day line.
-    pet,
-    config,
-  })
-
-  // The entry behind the day whose answers are open, and the definition as
-  // it was actually asked — cancer resolves its parameters per pet, so the
-  // static list would describe questions this owner was never shown.
-  const openEntry = openDay ? entries.find((entry) => entry.date === openDay) ?? null : null
-  const resolvedForDay = definition
-    ? { ...definition, parameters: parametersFor(definition, config, pet?.species) }
-    : null
-
-  // Clears the note on the day currently open, leaving that day's answers
-  // exactly as they are.
-  //
-  // An upsert of the same values with a null note rather than a delete of the
-  // row: the owner asked to remove what they wrote, not to throw away the
-  // day's readings — and on the calendar those two are very different, one
-  // taking a pencil mark off a day and the other taking the day off the
-  // record entirely.
-  async function handleDeleteNote() {
-    if (!openDay || !openEntry) return
-    setNoteError('')
-    try {
-      await saveConditionEntry({
-        petId: pet.id,
-        conditionKey: definition.key,
-        entryDate: openDay,
-        values: openEntry.values,
-        notes: '',
-      })
-      // Cleared here too, so today's form does not write the note straight
-      // back the next time it is saved.
-      if (openDay === todayIsoDate()) setNotes('')
-      refreshEntries()
-      setOpenDay(null)
-    } catch (error) {
-      // In the modal, beside the button that failed — the form's error banner
-      // is behind it and the owner would never see it.
-      setNoteError(premiumOr(error, 'Could not delete that note.'))
-    }
-  }
-
-
-  const calendarChart = definition ? chartByKey(charts, `${definition.key}:calendar`) : null
-  // The measured numbers that draw a line — at most one per condition today
-  // (heart's RRR, kidney's daily water intake), but written as a list so a
-  // third needs no change here.
-  const parameterCharts = charts.filter((chart) => chart.parameterKey)
-
+  // The charts this condition draws, the day-answers modal and the note
+  // deletion that went with it all lived here until 24 Sep 2026. They live
+  // on Trends now — see the note further down.
 
   return (
     <div className="screen">
       <HomeLink />
 
-      <Link to="/conditions" className="subtle-link">← All Conditions</Link>
-
-      {loading && <Card><p>Loading…</p></Card>}
+      {/* "← All Conditions" was removed on Ash's instruction 24 Sep 2026.
+          The sticky Back bar above the screen already goes there — it is the
+          same journey, one line higher, and two back controls stacked on top
+          of each other cost a line of screen on every condition page. The
+          "Not Found" card keeps its own link, since a condition that does
+          not exist has nothing else on the screen. */}
+      {loading && <Card><Skeleton lines={4} /></Card>}
 
       {!definition && !loading && (
         <Card>
@@ -627,6 +509,13 @@ export default function ConditionMonitoring() {
 
       {definition && (
         <>
+          {/* The condition's own card — its fortnight strip, settings and
+              background reading — is the screen when nothing is being
+              answered, and is in the way when something is. Ash's
+              instruction 24 Sep 2026: during a check-in, "just have the
+              title and the question". The title moves into the questionnaire
+              card below, so it costs no card of its own. */}
+          {!formOpen && (
           <Card>
             <div className="condition-heading">
               {definition.Icon && (
@@ -647,10 +536,18 @@ export default function ConditionMonitoring() {
                 to show and no cadence to change. */}
             {petCondition && cadence && (
               <>
+                {/* The fortnight strip stays while the form is open — it is
+                    one row, and it is the context for the question being
+                    answered. The settings below it do not: "Currently
+                    monitoring" and "Monitoring frequency" are things you
+                    change on the condition's home page, not halfway through
+                    a check-in (Ash's instruction 24 Sep 2026). */}
                 <div className="condition-status">
                   <ConditionStrip history={history} />
                   <ConditionState status={status} />
                 </div>
+                {!formOpen && (
+                <>
 
                 {/* "Monitoring frequency", Ash's wording, 4 Sep 2026 — it
                     replaced "How often", which read as a question the line
@@ -733,33 +630,34 @@ export default function ConditionMonitoring() {
                           max={1}
                           onChange={(days) => changeCadence({ day: days.length ? days[days.length - 1] : null })}
                         />
-                        <p className="assessment-hint">
-                          {cadence.day == null
-                            ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
-                            : 'Tap it again to go back to counting from your last entry.'}
-                        </p>
+                        <p className="assessment-hint">{reminderDayHint(cadence.day)}</p>
                       </div>
                     )}
 
                     {cadenceError && <p className="form-error" role="alert">{cadenceError}</p>}
                   </div>
                 )}
+                </>
+                )}
               </>
             )}
-            {/* Summary first, then intro: what this condition covers, then
-                what monitoring it involves. The summary moved here from the
-                condition list, where it was being read before anyone had
-                chosen anything. */}
-            {definition.summary && (
-              <p className="assessment-hint condition-intro">
-                <PetText template={definition.summary} pet={pet} />
-              </p>
-            )}
+            {/* The summary — what this condition covers — is now the
+                sentence shown before this screen opens, from the home card or
+                the conditions list (ConditionIntroModal). Ash's instruction
+                24 Sep 2026: said once, where the choice is made. What stays
+                here is the intro: what MONITORING it involves, which is only
+                useful once you are here. */}
             {/* A string or a list of them. Cognitive decline needs two: a
                 caution that sends someone to a vet, and separately how to use
                 the section. Run together in one block, the caution reads as
                 preamble to the instructions rather than as the point. */}
-            {(Array.isArray(definition.intro) ? definition.intro : [definition.intro])
+            {/* Reading material, hidden while the questionnaire is open —
+                Ash's instruction 24 Sep 2026, "aim to fit each question of an
+                assessment into the screen". Paged, every one of these
+                paragraphs sat above every question; they belong to the
+                condition's home page, which is what this screen is when
+                nothing is being answered. */}
+            {!formOpen && (Array.isArray(definition.intro) ? definition.intro : [definition.intro])
               .filter(Boolean)
               .map((paragraph, index) => (
                 <p key={index} className="assessment-hint condition-intro">
@@ -781,7 +679,7 @@ export default function ConditionMonitoring() {
                 card sitting off the centre line and the only piece of
                 background material in the app that opened in place rather
                 than in a sheet. */}
-            {definition.why && (
+            {!formOpen && definition.why && (
               <HowTo
                 title={definition.whyLabel ?? WHY_LABEL}
                 body={definition.why}
@@ -790,83 +688,19 @@ export default function ConditionMonitoring() {
               />
             )}
           </Card>
-
-          {asksAboutMedication && (
-            <Card>
-              <SectionTitle>Medication</SectionTitle>
-              <p className="assessment-hint">
-                Is {pet.name} currently on any medication for{' '}
-                <PetText template="{their}" pet={pet} /> {definition.label.toLowerCase()}?
-              </p>
-              {/* A condition may add a line about what counts as medication
-                  for it. Allergies does: an owner asked about "medication"
-                  thinks tablets, and a medicated shampoo is a treatment they
-                  would never think to list — which then makes the record look
-                  like nothing is being done. */}
-              {definition.medicationNote && (
-                <p className="assessment-hint">
-                  <PetText template={definition.medicationNote} pet={pet} />
-                </p>
-              )}
-              <ChoiceButtons
-                options={[
-                  { value: 'yes', label: 'Yes' },
-                  { value: 'no', label: 'No' },
-                ]}
-                value={onMedication}
-                onChange={handleMedicationAnswer}
-              />
-
-              {/* What is actually recorded, shown here rather than only on
-                  the medications screen. Saying "yes" and then being asked to
-                  go and look somewhere else to find out what you said yes to
-                  is a round trip for information the app already has.
-                  Offered, never invented: the app does not know the drug, the
-                  dose or the schedule, so an empty list asks rather than
-                  guesses. */}
-              {onMedication === 'yes' && (
-                <>
-                  {activeMedications.length > 0 ? (
-                    <>
-                      <div className="condition-medication-list">
-                        {activeMedications.map((medication) => (
-                          <div key={medication.id} className="condition-medication-row">
-                            <span className="condition-medication-name">{medication.name}</span>
-                            <span className="assessment-hint">
-                              {[medication.dose, describeMedicationSchedule(medication)]
-                                .filter(Boolean).join(' — ')}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="assessment-hint">
-                        Anything not assigned to a condition is shown here too.
-                      </p>
-                      <button type="button" className="subtle-link" onClick={goToMedications}>
-                        Edit in Medications
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="assessment-hint">
-                        Nothing recorded yet. Would you like to add it to {pet.name}'s
-                        medications, so you can set up reminders and record each dose?
-                      </p>
-                      <Btn
-                        type="button"
-                        variant="outline"
-                        className="btn-block"
-                        onClick={goToMedications}
-                        disabled={busy}
-                      >
-                        Add to Medications
-                      </Btn>
-                    </>
-                  )}
-                </>
-              )}
-            </Card>
           )}
+
+          {/* The Medication card is GONE — Ash's instruction 24 Sep 2026.
+              Medications have a tab of their own now, where every drug is
+              listed with its schedule and every dose is ticked off, and a
+              card here asking "is she on medication for this?" was a second,
+              shallower record of the same thing: it could say yes and then
+              send the owner to the real list anyway.
+
+              `onMedication` is left in the saved config rather than deleted.
+              It is an answer the owner gave, the exported report may still
+              print it, and removing a stored field is not something a
+              screen's layout should decide. Nothing writes it any more. */}
 
           {/* A composed condition with nothing selected has no questions to
               show, so the daily form would be an empty card. Sending the
@@ -887,7 +721,21 @@ export default function ConditionMonitoring() {
           )}
 
           {!needsSetup && (
-          <Card>
+          <Card className={formOpen ? 'wizard-card' : ''}>
+            {/* The condition's name, at the top of its own questionnaire —
+                the one thing from the card above that is still worth saying
+                while a question is on screen. */}
+            {formOpen && (
+              <div className="condition-heading condition-heading-compact">
+                {definition.Icon && (
+                  <span className="icon-badge condition-badge">
+                    <definition.Icon size={26} color="#fff" />
+                  </span>
+                )}
+                <SectionTitle>{definition.label}</SectionTitle>
+              </div>
+            )}
+
             {treatmentDay != null && (
               <p className="condition-flag" role="status">
                 <span>
@@ -971,107 +819,94 @@ export default function ConditionMonitoring() {
               </button>
             )}
 
-            {formOpen && parameters.map((parameter, index) => (
-              <div key={parameter.key}>
-                {/* A heading each time the group changes, so one lump's
-                    questions read as a block rather than three unrelated
-                    questions with the same name repeated in each label. */}
-                {parameter.groupLabel && parameter.groupLabel !== parameters[index - 1]?.groupLabel && (
-                  <h3 className="condition-group-heading">{parameter.groupLabel}</h3>
-                )}
-                {/* Once, above the first instance of its kind — this is the
-                    moment an owner is being asked for a number they may not
-                    be able to give. */}
-                {parameter.instanceType && parameter.instanceType !== parameters[index - 1]?.instanceType && instanceNoteFor(parameter.instanceType) && (
-                  <p className="assessment-hint">
-                    <PetText template={instanceNoteFor(parameter.instanceType)} pet={pet} />
-                  </p>
-                )}                <ConditionParameter
-                  parameter={parameter}
-                  values={values}
-                  pet={pet}
-                  note={
-                    assessmentValueFor(parameter) != null
-                      ? SAME_AS_ASSESSMENT
-                      : null
-                  }
-                  returnTo={`/conditions/${definition.key}`}
-                  returnLabel={`${definition.label} monitoring`}
-                  number={index + 1}
-                  onChange={setDraft}
-                />
-              </div>
-            ))}
+            {/* One question per page, swiped across — Ash's instruction
+                24 Sep 2026, "exactly like in overall qol assessment".
 
-            {/* The standalone "Notes (optional)" box was removed on Ash's
-                instruction 4 Sep 2026: an event carries its own note, and two
-                places to write one about the same day is one too many.
+                It was one long scroll: every question for the condition
+                stacked down a single card, which on cancer or kidney is a
+                screen you have to keep working your way down rather than a
+                set of questions you answer. The same SwipeableWizard the
+                overall assessment uses, so both check-ins are the same
+                gesture, the same progress count and the same Back/Next.
 
-                `notes` is still read when saving — `notes || todaysEntry?.notes`
-                — so a note written before this change is preserved on every
-                later save rather than being blanked by a field that is no
-                longer on screen. Day notes stay readable in the calendar's day
-                view, and deletable there. */}
-
-            {/* Part of the questionnaire, on Ash's instruction 4 Sep 2026 —
-                inside this card rather than in one of its own beneath it.
-
-                It used to sit below the calendar and both sets of charts,
-                which put it a long scroll past the only moment an owner is
-                reliably thinking about it: they have just answered for today,
-                and "she had a flare on Tuesday" or "we started gabapentin" is
-                the thing they came to record alongside it. A separate card
-                directly underneath was closer but still read as a different
-                job; in the same card, under a rule, it is the last part of
-                the same one.
-
-                Inside the !needsSetup guard, so a condition that has not been
-                set up yet does not offer to record events against a question
-                set that does not exist. */}
-            <div className="card-subsection">
-              <SectionTitle>Events</SectionTitle>
-              {/* APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. One word changed from the line approved on
-                  4 Sep 2026:
-                  "above" became "below", because this moved and the calendar
-                  it points at is now underneath it. */}
-              <p className="assessment-hint">
-                Episodes, diagnoses, and medications started or stopped. Anything recorded on a
-                day is marked on the calendar below.
-              </p>
-              <ConditionEvents
-                petId={pet.id}
-                conditionKey={definition.key}
-                events={events}
-                loading={eventsLoading}
-                onChange={refreshEvents}
-              />
-            </div>
-
-            {/* Under the events, on Ash's instruction 4 Sep 2026. Saving is
-                the last thing on the card because recording what happened is
-                part of the same visit as answering for today.
-
-                Only with the form — a Save button under a closed
-                questionnaire would save nothing anyone had just answered. */}
+                The last page is Events / Notes, and the wizard's own Next
+                becomes Save there. */}
             {formOpen && (
-              <>
-                <Btn type="button" className="btn-block" onClick={handleSave} disabled={busy}>
-                  {busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
-                </Btn>
-                {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
-                {!entriesLoading && latestEntry && (
-                  <p className="assessment-hint">
-                    Last recorded {formatDateDDMMYY(latestEntry.date)}.
-                    {status.dueIn != null && (
-                      status.dueIn > 1
-                        ? ` Next one due in ${status.dueIn} days.`
-                        : status.dueIn === 1
-                          ? ' Next one due tomorrow.'
-                          : ' Due now.'
-                    )}
-                  </p>
-                )}
-              </>
+              <SwipeableWizard
+                // Rebuilt when the condition changes, so moving between two
+                // conditions does not land on page four of the new one.
+                key={definition.key}
+                finishLabel={busy ? 'Saving…' : todaysEntry ? 'Update today\'s entry' : 'Save entry'}
+                onComplete={handleSave}
+                // A right swipe on the first page leaves the questionnaire
+                // the same way the back control does, rather than dying
+                // there — the answers so far are held in the draft.
+                onExitFirstPage={() => navigate('/conditions')}
+                /* "Last recorded … Next one due in N days" was here until
+                   Ash removed it on 24 Sep 2026. It is a fact about the
+                   schedule, not about the question on screen, and the
+                   condition's own card says it the moment the form is
+                   closed. Only a save error remains, which belongs beside
+                   the button that failed. */
+                footer={errorMessage
+                  ? <p className="form-error" role="alert">{errorMessage}</p>
+                  : null}
+                pages={[
+                  ...parameters.map((parameter, index) => (
+                    <div key={parameter.key} className="assessment-page">
+                      {/* On every page of the group, not just the first.
+                          Down a scroll, one heading covered the questions
+                          beneath it; paged, each question is alone on the
+                          screen and "which lump is this about?" has to be
+                          answerable without swiping back. */}
+                      {parameter.groupLabel && (
+                        <h3 className="condition-group-heading">{parameter.groupLabel}</h3>
+                      )}
+                      {/* Same reasoning: the note explains the number this
+                          page is asking for, so it belongs on the page that
+                          asks for it. */}
+                      {parameter.instanceType && instanceNoteFor(parameter.instanceType) && (
+                        <p className="assessment-hint">
+                          <PetText template={instanceNoteFor(parameter.instanceType)} pet={pet} />
+                        </p>
+                      )}
+                      <ConditionParameter
+                        parameter={parameter}
+                        values={values}
+                        pet={pet}
+                        note={
+                          assessmentValueFor(parameter) != null
+                            ? SAME_AS_ASSESSMENT
+                            : null
+                        }
+                        returnTo={`/conditions/${definition.key}`}
+                        returnLabel={`${definition.label} monitoring`}
+                        number={index + 1}
+                        onChange={setDraft}
+                      />
+                    </div>
+                  )),
+                  /* Events, at the end of the check-in and nowhere else —
+                     Ash's instruction 24 Sep 2026. Its own page now that the
+                     questions are paged: answer for today, then say what else
+                     happened, then Save. */
+                  <div key="events" className="assessment-page">
+                    {/* Heading only — Ash's instruction 24 Sep 2026. The line
+                        under it ("Episodes, diagnoses, and medications
+                        started or stopped…") is gone: the Add button and the
+                        type chips behind it say the same thing at the moment
+                        it matters. "Events / Notes" is Ash's wording. */}
+                    <SectionTitle>Events / Notes</SectionTitle>
+                    <ConditionEvents
+                      petId={pet.id}
+                      conditionKey={definition.key}
+                      events={events}
+                      loading={eventsLoading}
+                      onChange={refreshEvents}
+                    />
+                  </div>,
+                ]}
+              />
             )}
 
             {/* "Change what you're monitoring" was here from 29 Aug 2026 until
@@ -1088,7 +923,7 @@ export default function ConditionMonitoring() {
               "food sensitivity or allergy" weeks ago never sees that screen
               again, and this section now asks them nothing about it — so
               without this the trial simply looks forgotten. */}
-          {definition.key === GI_KEY && hasGiFoodAllergySelected(config) && (
+          {!formOpen && definition.key === GI_KEY && hasGiFoodAllergySelected(config) && (
             <Card>
               <SectionTitle>Food Sensitivity or Allergy</SectionTitle>
               <p>
@@ -1107,49 +942,18 @@ export default function ConditionMonitoring() {
             </Card>
           )}
 
-          {calendarChart && (
-            <Card>
-              <SectionTitle>{pet.name}'s {definition.label} Summary</SectionTitle>
-              {/* One control for the calendar and every parameter chart under
-                  it — Ash's instruction 4 Sep 2026. It sits on the first card
-                  that has a picture on it, and governs all of them. */}
-              <RangeToggle value={range} onChange={setRange} />
-              <ChartView chart={calendarChart} allTime={allTime} onOpenDay={setOpenDay} />
-            </Card>
-          )}
+          {/* The summary calendar and the parameter lines were removed on
+              Ash's instruction 24 Sep 2026: Trends draws the same calendar
+              and the same lines for every condition, from the same
+              chartsForCondition descriptors, and there is no reason for an
+              owner to meet the identical picture twice. This screen is where
+              a reading is MADE; Trends is where the record is read. Each day
+              on that calendar still opens its answers there, and each
+              condition there still links back here. */}
 
-          {/* Below the calendar, not above it. The calendar is the answer to
-              "how has {name} been?" and this is the answer to a narrower
-              question the owner has to already be asking. */}
-          {parameterCharts.map((chart) => (
-            <Card key={chart.key}>
-              <SectionTitle>{chart.title}</SectionTitle>
-              <ChartView chart={chart} allTime={allTime} />
-            </Card>
-          ))}
-
-          {/* Offered where the record is, not on a menu somewhere else. The
-              moment an owner decides their vet should see this is the moment
-              they are looking at it. */}
-          {charts.length > 0 && (
-            <Card>
-              <SectionTitle>Take This to Your Vet</SectionTitle>
-              <p className="assessment-hint">
-                Export {pet.name}'s {definition.label.toLowerCase()} record as a report.
-                Everything on this page is selected to start with, and you can add {pet.name}'s
-                general quality of life trends on the next screen.
-              </p>
-              <Btn
-                type="button"
-                className="btn-block"
-                onClick={() => navigate('/export-report', {
-                  state: { preselect: charts.map((chart) => chart.key) },
-                })}
-              >
-                <FileDown size={16} /> Export This Record
-              </Btn>
-            </Card>
-          )}
+          {/* "Export This Record" went with them — Ash's instruction
+              24 Sep 2026. The export screen is reached from Trends, where
+              the charts being exported are the ones on the screen. */}
 
           {/* Only once there is something to stop.
               
@@ -1160,7 +964,10 @@ export default function ConditionMonitoring() {
               Tracking" card, told their readings would be deleted, and given
               no button. An empty destructive section is worse than no
               section: it implies something is being tracked. */}
-          {petCondition && (
+          {/* Only on the condition's home page, never under a question —
+              Ash's instruction 24 Sep 2026. A destructive control repeated
+              below every one of nine questions is both noise and a hazard. */}
+          {petCondition && !formOpen && (
             <Card>
               <SectionTitle>Stop Tracking</SectionTitle>
               <p className="assessment-hint">
@@ -1244,23 +1051,6 @@ export default function ConditionMonitoring() {
           lib/references.js for the five modules that adapt a published
           instrument; it is simply no longer repeated on this screen. */}
 
-      {openDay && (
-        <DayAnswersModal
-          title="This Day's Answers"
-          dateLabel={formatDateDDMMYY(openDay)}
-          rows={resolvedForDay
-            ? describeConditionDay(resolvedForDay, openEntry?.values, pet?.species)
-            : []}
-          pet={pet}
-          emptyMessage="Nothing was recorded for this condition on this day."
-          note={openEntry?.notes ?? null}
-          onDeleteNote={openEntry?.notes ? handleDeleteNote : null}
-          noteError={noteError}
-          onClose={() => { setOpenDay(null); setNoteError('') }}
-        />
-      )}
-
-      <Footer />
     </div>
   )
 }

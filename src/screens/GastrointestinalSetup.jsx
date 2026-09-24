@@ -4,9 +4,9 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
+import Skeleton from '../components/Skeleton'
 import { usePets } from '../lib/PetsContext'
-import { usePremiumDenial } from '../lib/premiumErrors'
+import { SAVE_FAILED_MESSAGE, usePremiumDenial } from '../lib/premiumErrors'
 import { conditionByKey } from '../lib/conditions'
 import { giModulesForSpecies } from '../lib/giModules'
 import {
@@ -65,7 +65,7 @@ export default function GastrointestinalSetup() {
       refresh()
       navigate(`/conditions/${GI_KEY}`)
     } catch (error) {
-      setErrorMessage(premiumOr(error, 'Could not save that. Please try again.'))
+      setErrorMessage(premiumOr(error, SAVE_FAILED_MESSAGE))
     } finally {
       setBusy(false)
     }
@@ -75,8 +75,7 @@ export default function GastrointestinalSetup() {
     return (
       <div className="screen">
         <HomeLink />
-        <Card><p>Loading…</p></Card>
-        <Footer />
+        <Card><Skeleton lines={3} /></Card>
       </div>
     )
   }
@@ -196,7 +195,6 @@ export default function GastrointestinalSetup() {
         {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
       </Card>
 
-      <Footer />
     </div>
   )
 }

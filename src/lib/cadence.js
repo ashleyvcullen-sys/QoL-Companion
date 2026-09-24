@@ -70,3 +70,14 @@ export async function saveConditionSchedule({ pet, conditionKey, patch }) {
     .eq('id', pet.id)
   return error ?? null
 }
+
+// The line under the day picker, in both places that draw one: the Schedule
+// screen and a condition's own cadence control. Written out in both until
+// 24 Sep 2026.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM). Her words, moved rather than rewritten.
+export function reminderDayHint(chosenDay) {
+  return chosenDay == null
+    ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
+    : 'Tap it again to go back to counting from your last entry.'
+}

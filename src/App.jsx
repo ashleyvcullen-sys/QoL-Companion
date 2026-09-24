@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { useAuth } from './lib/AuthContext'
@@ -9,6 +9,8 @@ import Login from './screens/Login'
 import Onboarding from './screens/Onboarding'
 import Welcome from './screens/Welcome'
 import Home from './screens/Home'
+import More from './screens/More'
+import Assess from './screens/Assess'
 import QualityOfLifeAssessment from './screens/QualityOfLifeAssessment'
 import Trends from './screens/Trends'
 import Emergencies from './screens/Emergencies'
@@ -32,6 +34,12 @@ import Terms from './screens/Terms'
 import Privacy from './screens/Privacy'
 import Support from './screens/Support'
 import StartupErrorScreen from './components/StartupErrorScreen'
+import TabBar from './components/TabBar'
+import BackBar from './components/BackBar'
+import ScrollManager from './components/ScrollManager'
+import { ZoomProvider } from './components/ZoomTransition'
+import { TourProvider } from './lib/TourContext'
+import ScrollButtons from './components/ScrollButtons'
 import { useReminderRehydration } from './lib/useReminderRehydration'
 import { useHiddenPetReminderSync } from './lib/useHiddenPetReminderSync'
 import { useOrphanReminderSweep } from './lib/useOrphanReminderSweep'
@@ -84,6 +92,7 @@ function RequirePremium({ feature }) {
 
 function App() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { selectPet } = usePets()
 
   // Re-arms medication reminders the OS has lost — after a reinstall,
@@ -141,6 +150,21 @@ function App() {
   }, [navigate, selectPet])
 
   return (
+    <ZoomProvider>
+    <TourProvider>
+    {/* Puts every screen at its top on arrival, and back where it was on the
+        way out. */}
+    <ScrollManager />
+
+    {/* First in the column, so it takes its own space above whichever screen
+        is rendered rather than floating over the top of it. */}
+    <BackBar />
+
+    {/* Keyed by PATH, not by history key: a screen that replaces its own
+        navigation state (Home clearing the tour flag) must not remount
+        itself. The fade covers the moment a newly mounted screen is still
+        fetching, which is what read as a glitch when switching tabs. */}
+    <div className="route-fade" key={location.pathname}>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/support" element={<Support />} />
@@ -150,6 +174,9 @@ function App() {
       <Route path="/welcome" element={<Welcome />} />
       <Route element={<RequireOnboardedPet />}>
         <Route path="/" element={<Home />} />
+        <Route path="/more" element={<More />} />
+        {/* What to record, as a screen rather than a sheet — see Assess.jsx. */}
+        <Route path="/assess" element={<Assess />} />
         <Route path="/assessment" element={<QualityOfLifeAssessment />} />
         <Route path="/trends" element={<Trends />} />
         <Route path="/emergencies" element={<Emergencies />} />
@@ -186,6 +213,16 @@ function App() {
         <Route path="/legal" element={<Legal />} />
       </Route>
     </Routes>
+    </div>
+
+    {/* Outside <Routes> so it survives every navigation rather than being
+        remounted by each screen, and so a screen cannot forget to render it.
+        It decides for itself whether it belongs on the current route — see
+        lib/useTabBar. */}
+    <TabBar />
+    <ScrollButtons />
+    </TourProvider>
+    </ZoomProvider>
   )
 }
 

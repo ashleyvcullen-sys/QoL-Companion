@@ -304,6 +304,9 @@ function overallChart(dailySeries) {
     unit: '%',
     colour: OVERALL_COLOUR,
     height: 200,
+    // Shaded green / amber / red behind the line, on the same thresholds the
+    // ring and the calendar use — Ash's instruction 23 Sep 2026.
+    severityBands: true,
     caption: 'Higher is better. 100% is the best possible day.',
   }
 }
@@ -412,6 +415,7 @@ function pillarCharts(dailySeries) {
     colour: color,
     domain: [0, 100],
     height: 180,
+    severityBands: true,
     // Carried through so Trends can still colour the pillar's icon button and
     // open its definition without re-finding the concept.
     conceptKey: key,

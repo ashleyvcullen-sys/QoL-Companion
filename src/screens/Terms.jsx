@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import { NO_ENDORSEMENT_TEXT, allReferencesText } from '../lib/references'
 
 const SECTIONS = [
@@ -294,7 +293,6 @@ export default function Terms() {
       <Link to="/legal" className="subtle-link">Back to Legal &amp; Privacy</Link>
       <Link to="/privacy" className="subtle-link">Privacy Policy</Link>
 
-      <Footer />
     </div>
   )
 }

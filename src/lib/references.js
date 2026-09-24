@@ -161,17 +161,7 @@ export const REFERENCES = [
   },
 ]
 
-// The references shown at the start of the assessment, for this pet.
-//
-// Species-filtered, because the Feline Grimace Scale is not used on a dog and
-// crediting an instrument the owner will never be shown is noise dressed up
-// as rigour.
-export function assessmentReferences(species) {
-  return REFERENCES.filter((reference) => (
-    reference.where === 'assessment'
-    && (!reference.species || reference.species === species)
-  ))
-}
+// assessmentReferences was removed on 24 Sep 2026: nothing referenced it.
 
 // Every reference, in full, for the attribution section of Terms and Privacy.
 // No filter of any kind: that section exists to be complete.

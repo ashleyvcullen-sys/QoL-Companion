@@ -1,5 +1,10 @@
 const OPTIONS = [
   { value: 'month', label: 'Month' },
+  // The middle step, added 23 Sep 2026 on Ash's instruction. Month to all
+  // time is a big jump for a pet logged daily for a year, and "has the last
+  // season been worse than the one before?" is where most owners' questions
+  // actually sit.
+  { value: 'quarter', label: '3 months' },
   { value: 'all', label: 'All time' },
 ]
 
@@ -14,6 +19,7 @@ const OPTIONS = [
 // opening the app to log an entry should not have to narrow a year first.
 //
 // "Month" and "All time" — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026.
+// "3 months" — APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026.
 export default function RangeToggle({ value, onChange, className = '' }) {
   return (
     <div className={`range-toggle ${className}`.trim()} role="group" aria-label="How much history to show">

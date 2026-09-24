@@ -62,7 +62,10 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'caregiver-burnout',
-    label: 'Caregiver Burnout — Looking After Yourself Too',
+    // Shortened on Ash's instruction, 24 Sep 2026, for the same reason as
+    // the children topic: the tile has two lines, and the qualifier is the
+    // topic's own first point.
+    label: 'Caregiver Burnout',
     Icon: HandHeart,
     content: [
       { type: 'p', text: "Caring for a pet through a chronic or declining illness is real work — medication schedules, mobility support, disrupted sleep, financial pressure, and near-constant watchfulness, often for weeks or months at a stretch. It's normal for that to wear you down, physically and emotionally, even when you'd do it all again without hesitation." },
@@ -73,7 +76,10 @@ export const END_OF_LIFE_TOPICS = [
   },
   {
     key: 'children-grief',
-    label: 'How Children Grieve, and How to Talk to Them About Euthanasia',
+    // Shortened on Ash's instruction, 24 Sep 2026 — the tile it sits on
+    // has two lines, and the rest of the sentence is the first thing the
+    // topic itself says.
+    label: 'How Children Grieve',
     Icon: Heart,
     content: [
       { type: 'p', text: "Children process pet loss very differently depending on age — this is a general guide, not a strict rule, since every child is different." },

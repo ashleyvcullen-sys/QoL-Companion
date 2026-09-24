@@ -197,7 +197,11 @@ export function conditionHistory({ definition, config, entries, species, today, 
     const band = !Number.isFinite(score) || !(parameter?.type === 'scale' || parameter?.type === 'beap')
       ? null
       : parameter.scores
-        ? parameter.bandLabels?.[scaleIndexOf(parameter, score)] ?? null
+        // labelOf, where a scale has one, keeps a retired rung's own number
+        // in the history rather than rounding it to the rung it now reads as.
+        ? parameter.labelOf?.(score, species)
+          ?? (parameter.bandLabelsFor?.(species) ?? parameter.bandLabels)?.[scaleIndexOf(parameter, score, species)]
+          ?? null
         : BEAP_BANDS[Math.min(BEAP_BANDS.length - 1, Math.max(0, Math.ceil(score / 2)))]?.shortLabel ?? null
     finding = {
       ...first,

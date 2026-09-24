@@ -3,7 +3,6 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import { HOME_CARE_TIPS } from '../lib/homeCareTips'
 
@@ -16,10 +15,10 @@ export default function HomeCareTips() {
       <HomeLink />
 
       <Card>
+        {/* The line that used to sit here is now the sentence the More
+            screen shows before opening this one — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <SectionTitle>Home Care Tips</SectionTitle>
-        <p className="home-subtitle">
-          Practical things you can do at home to help your pet's quality of life.
-        </p>
       </Card>
 
       <div className="icon-grid">
@@ -50,7 +49,6 @@ export default function HomeCareTips() {
         </Modal>
       )}
 
-      <Footer />
     </div>
   )
 }

@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Droplet, FileDown, House } from 'lucide-react'
+import { Bell, ChevronLeft, Droplet, FileDown } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
 import Btn from '../components/Btn'
 import Modal from '../components/Modal'
-import Footer from '../components/Footer'
 import SwipeableWizard from '../components/SwipeableWizard'
 import IntroPage from './assessment/IntroPage'
 import SliderWithChipsPage from './assessment/SliderWithChipsPage'
@@ -48,6 +47,7 @@ import { parametersFor } from '../lib/cancerConfig'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
+import { invalidateQuery } from '../lib/queryCache'
 import { scheduleQolReminder } from '../lib/notifications'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
@@ -59,6 +59,7 @@ import EyesIcon from '../components/icons/EyesIcon'
 import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
 import { formatDateDDMMYY } from '../lib/formatDate'
+import { useEntitlements } from '../lib/EntitlementsContext'
 
 // Local rather than shared: three screens format a date this way and each
 // has its own copy. Worth unifying one day; not worth a new module today.
@@ -89,8 +90,11 @@ const INITIAL_ENTRY = {
 // live one through.
 const pageKeyOrder = () => [
   'intro',
-  'stool', 'vomiting', 'urination', 'drinking', 'hygiene', 'vision', 'hearing', 'sleep',
+  // Favourite Things sits first from 24 Sep 2026 — see the note beside the
+  // page in `pages`. This list must match that order or resuming lands on
+  // the wrong question.
   'favourites',
+  'stool', 'vomiting', 'urination', 'drinking', 'hygiene', 'vision', 'hearing', 'sleep',
   ...BEAP_CATEGORIES,
   'review',
 ]
@@ -185,6 +189,19 @@ export default function QualityOfLifeAssessment() {
   const { selectedPet, refresh: refreshPets } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
+  const { hasPremium } = useEntitlements()
+
+  // Out of the assessment and back to wherever it was started from — the
+  // Assess screen, for an account that has one. Ash's instruction 24 Sep
+  // 2026: the back button, the first-page swipe and crossing out of the
+  // "already completed" pop-up all land here, and none of them go Home any
+  // more. Nothing is lost by leaving: every answer is kept as a draft and
+  // the wizard resumes on the page it was left on.
+  const leaveAssessment = useCallback(() => {
+    const index = window.history.state?.idx
+    if (typeof index === 'number' && index > 0) navigate(-1)
+    else navigate(hasPremium ? '/assess' : '/')
+  }, [navigate, hasPremium])
 
   // Loads lazily and defaults to the normal intro copy until it resolves —
   // for a returning user that's already correct, and for a first-timer the
@@ -310,6 +327,10 @@ export default function QualityOfLifeAssessment() {
   // is a round trip that can only introduce a delay or a discrepancy.
   const [completed, setCompleted] = useState(null)
 
+  // Whether this entry was started from the last one — see IntroPage. Held
+  // only so the intro can say so; nothing about the saved row differs.
+  const [startedFromLast, setStartedFromLast] = useState(false)
+
   // Counts the assessment and, occasionally, asks for a review. Deliberately
   // on the SAVED screen rather than mid-assessment: the owner has finished,
   // they have their number, and nothing is interrupted. maybeAskForReview
@@ -325,7 +346,6 @@ export default function QualityOfLifeAssessment() {
   const [entry, setEntry] = useState(INITIAL_ENTRY)
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [showExistingTodayChoice, setShowExistingTodayChoice] = useState(false)
   const [readyToPersist, setReadyToPersist] = useState(false)
   const [initialPageIndex, setInitialPageIndex] = useState(0)
@@ -613,6 +633,11 @@ export default function QualityOfLifeAssessment() {
       )
     }
 
+    // Saved. Whatever is cached for this pet's history is now yesterday's
+    // answer — the home card reads it the moment the owner lands back there.
+    invalidateQuery(`qol-history:${pet.id}`)
+    invalidateQuery(`condition-entries:${pet.id}`)
+
     // The favourite-things list lives on the pet, so it carries to the next
     // assessment. Written only when the owner changed it here. A failure is
     // not fatal: today's answers are already saved with the assessment.
@@ -669,7 +694,36 @@ export default function QualityOfLifeAssessment() {
   const pageFooters = [null]
 
   const pages = [
-    <IntroPage key="intro" petName={pet.name} isFirstAssessment={isFirstAssessment} />,
+    <IntroPage
+      key="intro"
+      petName={pet.name}
+      isFirstAssessment={isFirstAssessment}
+      startedFromLast={startedFromLast}
+      onStartFromLast={() => {
+        const lastGeneral = generalEntries[generalEntries.length - 1] ?? null
+        if (!lastGeneral) return
+        const lastPain = painEntries.find((row) => row.date === lastGeneral.date) ?? null
+        // Everything except the note, which belongs to the day it was
+        // written about.
+        setEntry({ ...entryFromServerRows(lastGeneral, lastPain), notes: '' })
+        setStartedFromLast(true)
+      }}
+    />,
+    /* First, straight after the intro — Ash's instruction 24 Sep 2026. It is
+       the one question on the whole assessment that is about this animal
+       rather than about animals: the three things THEY love. Asking it first
+       sets what the rest of the check-in is for, and it is the easiest
+       question here to answer on a bad day.
+
+       A plain block comment: this is an array of elements, and a JSX
+       expression container here would be an item in it rather than a note. */
+    <FavouriteThingsPage
+      key="favourites"
+      pet={pet}
+      value={entry.favouriteThings}
+      savedThings={pet.favourite_things}
+      onChange={(v) => updateField('favouriteThings', v)}
+    />,
     <FaecalScorePage
       key="stool"
       pet={pet}
@@ -755,13 +809,6 @@ export default function QualityOfLifeAssessment() {
           ? prefilledFrom(`${scoresFromConditions.sleep.conditionLabel} assessment`)
           : null
       }
-    />,
-    <FavouriteThingsPage
-      key="favourites"
-      pet={pet}
-      value={entry.favouriteThings}
-      savedThings={pet.favourite_things}
-      onChange={(v) => updateField('favouriteThings', v)}
     />,
     ...BEAP_CATEGORIES.map((category) =>
       category === 'eyes' && pet.species === 'cat' ? (
@@ -859,50 +906,57 @@ export default function QualityOfLifeAssessment() {
             Back to Home
           </button>
         </Card>
-        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="screen">
-      <button type="button" className="home-link" onClick={() => setShowExitConfirm(true)}>
-        <House size={14} />
-        Exit
-      </button>
+    /* `screen-with-bar`: the Exit bar below clears the notch itself, so the
+       screen must not clear it a second time — that double inset is the band
+       of empty space above the card in Ash's screenshot, 24 Sep 2026. */
+    <div className="screen screen-with-bar">
+      {/* Sticky, so it is reachable from anywhere in a long question rather
+          than only from the top of it — Ash's instruction 23 Sep 2026.
+          
+          "Back", to the Assess screen, rather than "Exit" to Home — Ash's
+          instruction 24 Sep 2026. It is the same control every other screen
+          has, in the same corner, doing the same thing. The wizard's own
+          Back button, at the foot of the page, is the one that moves a
+          question at a time. */}
+      <div className="exit-bar">
+        <button type="button" className="home-link" onClick={leaveAssessment}>
+          <ChevronLeft size={16} />
+          Back
+        </button>
+      </div>
 
-      <Card>
+      {/* `wizard-card`: tighter padding than a reading card, so a question
+          and its answers fit the screen without scrolling — Ash, 24 Sep
+          2026. */}
+      <Card className="wizard-card">
         <SwipeableWizard
           key={wizardKey}
           pages={pages}
           initialPageIndex={initialPageIndex}
           onPageChange={handlePageChange}
           finishLabel={saving ? 'Saving…' : 'Save'}
+          // A right swipe on the first page does what the Back control
+          // above does — Ash's instruction 24 Sep 2026. It used to raise a
+          // confirmation; there is nothing to confirm, since the draft is
+          // kept and one tap comes straight back.
+          onExitFirstPage={leaveAssessment}
           onComplete={handleComplete}
           pageFooters={pageFooters}
-          footer={<Footer />}
         />
       </Card>
 
-      {showExitConfirm && (
-        <Modal title="Exit Assessment?" onClose={() => setShowExitConfirm(false)}>
-          <p>
-            Your answers are saved as a draft. Nothing is recorded until you finish and
-            save.
-          </p>
-          <div className="modal-actions">
-            <Btn type="button" variant="outline" onClick={() => setShowExitConfirm(false)}>
-              Cancel
-            </Btn>
-            <Btn type="button" variant="danger" onClick={() => navigate('/')}>
-              Exit
-            </Btn>
-          </div>
-        </Modal>
-      )}
-
+      {/* Crossing out leaves the assessment rather than starting a new one
+          — Ash's instruction 24 Sep 2026. Closing this used to mean "start
+          again and overwrite today", which is a decision, not a dismissal:
+          the X is how you say "neither", and neither means going back to
+          the screen you came from. */}
       {showExistingTodayChoice && (
-        <Modal title="Already Completed Today" onClose={handleStartNewToday}>
+        <Modal title="Already Completed Today" onClose={leaveAssessment}>
           <p>
             Today's assessment is already saved. Edit it, or start again and overwrite it?
           </p>

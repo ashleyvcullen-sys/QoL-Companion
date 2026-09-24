@@ -1,17 +1,10 @@
 import { useState } from 'react'
 import Card from '../components/Card'
-import SectionTitle from '../components/SectionTitle'
 import Modal from '../components/Modal'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import AgeBracketPicker from './endOfLife/AgeBracketPicker'
 import { END_OF_LIFE_TOPICS } from '../lib/endOfLifeTopics'
 import { usePets } from '../lib/PetsContext'
-import { useLatestGeneralQol } from '../lib/useLatestGeneralQol'
-import { computeGeneralQolResult } from '../lib/scoring'
-import { diseaseDaysByDate, diseaseEmergenciesOn } from '../lib/diseaseDays'
-import { useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
-import { formatDateDDMMYY } from '../lib/formatDate'
 
 // Splits on **bold** markers and renders the matched segments as <strong>,
 // so topic content can carry simple inline emphasis from a plain data file.
@@ -26,51 +19,27 @@ function renderInlineText(text) {
 export default function EndOfLife() {
   const { selectedPet } = usePets()
   const pet = selectedPet
-  const { entry: latestEntry, beap: latestBeap, loading } = useLatestGeneralQol(pet?.id)
   const [activeTopicKey, setActiveTopicKey] = useState(null)
 
   const activeTopic = END_OF_LIFE_TOPICS.find((topic) => topic.key === activeTopicKey)
-  const { conditions } = usePetConditions(pet?.id)
-  const { byCondition } = useAllConditionEntries(pet?.id)
-  const latestResult = latestEntry
-    ? computeGeneralQolResult(
-      latestEntry, latestBeap, pet?.species,
-      diseaseEmergenciesOn(
-        diseaseDaysByDate({ petConditions: conditions, entriesByCondition: byCondition, species: pet?.species }),
-        latestEntry.date,
-      ),
-    )
-    : null
 
   return (
     <div className="screen">
       <HomeLink />
 
-      <Card>
-        <SectionTitle>End of Life</SectionTitle>
-        <p>
-          A gentle, practical reference for one of the hardest parts of caring for an
-          animal — written to be read whenever it's useful, not just at the end.
-        </p>
-      </Card>
+      {/* A heading, not a card. The card held one line of text and cost
+          nearly sixty pixels of the one screen this has to fit into — Ash's
+          instruction 24 Sep 2026, "fit end of life into one screen so user
+          doesn't need to scroll". The sentence that used to sit under it is
+          the one the More screen shows before opening this, and the Most
+          Recent QoL Score card went on 24 Sep 2026 too: this is the screen
+          an owner opens when they are weighing something a number cannot
+          answer. */}
+      <h2 className="section-title">End of Life</h2>
 
-      <Card>
-        <SectionTitle>Most Recent QoL Score</SectionTitle>
-        {loading && <p>Loading…</p>}
-        {!loading && !latestResult && <p>No assessments logged yet.</p>}
-        {!loading && latestResult && (
-          <div className="review-summary-row">
-            {/* Percent, like Trends, the assessment's own finish screen and
-                the report. A raw total out of a maximum was the only place in
-                the app that scored it that way, and it read as a different
-                measurement. */}
-            <span>{latestResult.percent}% — {latestResult.band}</span>
-            <span className="assessment-hint">{formatDateDDMMYY(latestEntry.date)}</span>
-          </div>
-        )}
-      </Card>
-
-      <div className="icon-grid">
+      {/* Eight tiles, all of them on screen at once. `compact` is what makes
+          that possible — see index.css. */}
+      <div className="icon-grid compact">
         {END_OF_LIFE_TOPICS.map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -107,7 +76,6 @@ export default function EndOfLife() {
         </Modal>
       )}
 
-      <Footer />
     </div>
   )
 }

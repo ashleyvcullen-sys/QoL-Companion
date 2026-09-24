@@ -31,6 +31,9 @@ export default function PetSwitcher() {
           aria-pressed={pet.id === selectedPetId}
           onClick={() => selectPet(pet.id)}
         >
+          {/* No photo here — Ash's instruction 24 Sep 2026. The pet's face
+              is on the card above, where it is big enough to recognise; in a
+              chip it was a smudge that made the chip taller for nothing. */}
           {pet.name}
         </button>
       ))}

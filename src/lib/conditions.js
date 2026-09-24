@@ -57,6 +57,7 @@ import {
 } from '../components/icons/OrganIcon'
 import { BEAP_SCALES, SLEEP_SCALE } from './beapScales'
 import { SLEEP_NOTES } from './assessmentOptions'
+import { BLOOD_IN_VOMIT_ALERT, SEEK_VET_ASAP } from './alertText'
 import { referenceText } from './references'
 import { formatDateDDMMYY, isIsoDate } from './formatDate'
 import {
@@ -64,8 +65,16 @@ import {
   FAECAL_CONCERN_SCORES,
   FAECAL_LEVELS,
   FAECAL_SCORES,
+  faecalIndexOf,
+  faecalLabelOf,
   FAECAL_TO_TEN,
   faecalColourForIndex,
+  faecalScoresFor,
+  faecalBandLabelsFor,
+  faecalColourForIndexFor,
+  faecalTextOf,
+  FAECAL_OUTSIDE_ADVICE,
+  FAECAL_EMERGENCY_ADVICE,
 } from './faecalScore'
 
 export const SEVERITY = { OK: 'ok', CONCERN: 'concern', EMERGENCY: 'emergency' }
@@ -379,12 +388,10 @@ export function visibleParameters(parameters = [], values = {}) {
 //
 // Declared HERE, above the shared parameter blocks, and that placement is
 // load-bearing: `breathing_effort` below is built at module load, so a
-// definition further down the file threw "Cannot access 'SEEK_VET_ASAP'
-// before initialization" the moment anything imported this file.
-//
-// APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Phrased to match the aspiration alert in the GI
-// section rather than inventing a second way to say it.
-export const SEEK_VET_ASAP = 'Seek veterinary attention as soon as possible.'
+// Re-exported rather than defined here since 24 Sep 2026: the sentence now
+// lives in lib/alertText.js with the other lines that appear beside more than
+// one question. Everything that imported it from here still can.
+export { SEEK_VET_ASAP }
 
 // The one alert both seizure escalations raise — over five minutes, and more
 // than one in 24 hours. Ash's instruction 3 Sep 2026, reversing the split she
@@ -555,7 +562,7 @@ export const SHARED_PARAMETERS = {
     },
   },
 
-  // The faecal score, 1-5 in half steps — lib/faecalScore.js. A `scale` with
+  // The faecal score, 1-5 — lib/faecalScore.js. A `scale` with
   // its own `scores` rather than the default 0/2/4/6/8/10, so every place that
   // turns a scale answer into a rung has to go through scaleIndexOf().
   //
@@ -566,12 +573,27 @@ export const SHARED_PARAMETERS = {
     type: 'scale',
     covers: 'stool',
     relationship: RELATIONSHIP.DISTINCT,
+    // The dog set, as the fallback for a caller with no species to hand.
     scores: FAECAL_SCORES,
     bandLabels: FAECAL_BAND_LABELS,
     colorForIndex: faecalColourForIndex,
+    // The rungs the Royal Canin chart draws for THIS species — the cat chart
+    // has no 3.5 or 4.5 (lib/faecalScore.js). Anywhere the species is known,
+    // these win over the three above.
+    scoresFor: faecalScoresFor,
+    bandLabelsFor: faecalBandLabelsFor,
+    colorForIndexFor: faecalColourForIndexFor,
+    // All three of these accept a retired half step as well as a current
+    // rung, so a day saved on one still reads back in words.
+    indexOf: faecalIndexOf,
+    labelOf: faecalLabelOf,
+    levelOf: faecalTextOf,
     concernAt: FAECAL_CONCERN_SCORES,
+    // What a red rung that is not an emergency tells the owner to do — see
+    // lib/faecalScore.js.
+    concernMessage: FAECAL_OUTSIDE_ADVICE,
     scoreTen: FAECAL_TO_TEN,
-    emergencyMessage: 'Watery diarrhoea can lead to dehydration quickly in pets. Contact your vet promptly for assessment.',
+    emergencyMessage: FAECAL_EMERGENCY_ADVICE,
     levels: FAECAL_LEVELS,
   },
 
@@ -593,7 +615,7 @@ export const SHARED_PARAMETERS = {
     relationship: RELATIONSHIP.SUPERSEDES,
     // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. Overridden per condition where there is
     // something more specific to say.
-    emergencyMessage: 'Blood in the vomit needs veterinary attention as soon as possible.',
+    emergencyMessage: BLOOD_IN_VOMIT_ALERT,
   },
 }
 
@@ -2833,8 +2855,7 @@ export const CONDITIONS = {
         concernMessage:
           'Worth mentioning to your vet. Vomiting secondary to kidney disease can often be relieved with certain medications.',
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-        emergencyMessage:
-          'Blood in the vomit needs veterinary attention as soon as possible.',
+        emergencyMessage: BLOOD_IN_VOMIT_ALERT,
       },
 
       // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. The levels and the threshold. Uraemic signs in the mouth are
@@ -2912,8 +2933,9 @@ export function conditionByKey(key) {
 // misgraded by anyone counting at home. Each grade instead carries an
 // owner-facing description; the owner picks the description, the app stores
 // and charts the grade.
-export const VCOG_MIN_GRADE = 0
-export const VCOG_MAX_GRADE = 4
+//
+// VCOG_MIN_GRADE and VCOG_MAX_GRADE were removed on 24 Sep 2026 — nothing
+// read them; VCOG_SCORES below carries the same range.
 export const VCOG_SCORES = [0, 1, 2, 3, 4]
 
 export const VCOG_GRADE_LABELS = ['Grade 0', 'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4']
@@ -3062,9 +3084,16 @@ export const beapLevelsFor = levelsFor
 
 // Which rung a scale answer is. The default scale stores 0/2/4/6/8/10, so the
 // rung is the score halved; a scale with its own `scores` (the faecal score,
-// 1-5 in half steps) is looked up instead.
-export function scaleIndexOf(parameter, score) {
-  if (Array.isArray(parameter?.scores)) return parameter.scores.indexOf(Number(score))
+// 1-5) is looked up instead.
+//
+// `indexOf` lets a scale answer that question itself. The faecal score needs
+// it because four of its rungs were retired on 24 Sep 2026 and entries saved
+// on them must still resolve to a rung — a plain indexOf would return -1 and
+// draw them as if they had never been answered.
+export function scaleIndexOf(parameter, score, species) {
+  if (typeof parameter?.indexOf === 'function') return parameter.indexOf(score, species)
+  const scores = parameter?.scoresFor?.(species) ?? parameter?.scores
+  if (Array.isArray(scores)) return scores.indexOf(Number(score))
   return Number(score) / 2
 }
 
@@ -3216,7 +3245,8 @@ export function evaluateParameter(parameter, value, species) {
     // app can't tell an owner a finding is an emergency and then colour the
     // day green, which is what happened before: these answers were recorded
     // and then contributed nothing to the summary.
-    const level = levelsFor(parameter, species)[scaleIndexOf(parameter, score)]
+    const level = parameter.levelOf?.(score, species)
+      ?? levelsFor(parameter, species)[scaleIndexOf(parameter, score, species)]
     if (typeof level === 'string' && level.includes('(emergency)')) {
       return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
@@ -3361,14 +3391,16 @@ export function describeParameterAnswer(parameter, value, species) {
   if (parameter.type === 'beap' || parameter.type === 'scale') {
     const score = Number(value)
     if (!Number.isFinite(score)) return null
-    const index = scaleIndexOf(parameter, score)
-    const level = levelsFor(parameter, species)[index]
+    const index = scaleIndexOf(parameter, score, species)
+    const level = parameter.levelOf?.(score, species) ?? levelsFor(parameter, species)[index]
     const text = level ? stripEmergencyMarker(level) : String(score)
     // A scale with its own scores names the rung too ("Score 3.5 — …"): the
     // number is what a vet reads, the words are what the owner chose.
-    return parameter.scores && parameter.bandLabels?.[index]
-      ? `${parameter.bandLabels[index]} — ${text}`
-      : text
+    // labelOf, where a scale has one, names a retired rung by its own number
+    // rather than falling silent on it.
+    const bandLabels = parameter.bandLabelsFor?.(species) ?? parameter.bandLabels
+    const band = parameter.labelOf?.(score, species) ?? bandLabels?.[index]
+    return parameter.scores && band ? `${band} — ${text}` : text
   }
 
   return String(value)

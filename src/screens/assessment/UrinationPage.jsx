@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
-import IconLabelHeader from '../../components/IconLabelHeader'
 import ChoiceButtons from '../../components/ChoiceButtons'
 import SymptomChips from '../../components/SymptomChips'
 import PetText from '../../components/PetText'
@@ -15,7 +14,7 @@ import { URINARY_BLOCKAGE_SYMPTOMS, URINATION_STATUS_OPTIONS, URINATION_SYMPTOM_
 // owner notices — a cat calling out in the tray — and is easily read as
 // constipation or distress rather than as an obstruction.
 
-export default function UrinationPage({ value, onChange, icon, species, pet }) {
+export default function UrinationPage({ value, onChange, species, pet }) {
   const { status, symptoms } = value
   const [showEmergencyModal, setShowEmergencyModal] = useState(false)
 
@@ -49,7 +48,6 @@ export default function UrinationPage({ value, onChange, icon, species, pet }) {
   return (
     <div className="assessment-page">
       <SectionTitle>Urination</SectionTitle>
-      <IconLabelHeader icon={icon} label="Urination" />
       <p><PetText template="How has {name}'s urination been?" pet={pet} /></p>
       <ChoiceButtons
         options={URINATION_STATUS_OPTIONS}

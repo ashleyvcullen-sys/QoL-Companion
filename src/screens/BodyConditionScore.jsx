@@ -5,7 +5,6 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import SeverityOptionList from '../components/SeverityOptionList'
 import ChartView from '../components/ChartView'
 import RangeToggle from '../components/RangeToggle'
@@ -99,12 +98,10 @@ export default function BodyConditionScore() {
       <HomeLink />
 
       <Card className="bcs-intro">
+        {/* The line that used to sit here is the sentence shown before this
+            screen opens, from the Assess list — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <SectionTitle>Body Condition / Weight</SectionTitle>
-        <p>
-          A 9-point scale for how much body fat {pet.name} is carrying. Feel the ribs, look
-          from above for a waist, and look from the side for an abdominal tuck — then pick
-          the description that fits best. 4–5 is ideal.
-        </p>
         <p className="assessment-hint">
           Each illustration is the view from above (left) and from the side (right).
         </p>
@@ -216,7 +213,6 @@ export default function BodyConditionScore() {
           and lib/bcsScale.js, so removing them from here did not remove them
           from the app. */}
 
-      <Footer />
     </div>
   )
 }

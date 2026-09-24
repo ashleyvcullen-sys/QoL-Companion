@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import SectionTitle from '../../components/SectionTitle'
-import IconLabelHeader from '../../components/IconLabelHeader'
 import ChoiceButtons from '../../components/ChoiceButtons'
 import SymptomChips from '../../components/SymptomChips'
 import PetText from '../../components/PetText'
@@ -24,7 +23,7 @@ const FREQUENCY_QUALIFIER_VALUES = VOMITING_FREQUENCY_QUALIFIER_OPTIONS.map((o) 
 // already has a numbered label above it, and a second heading saying
 // "Vomiting" underneath the one that says "3. Vomiting" reads as a mistake.
 export default function VomitingPage({
-  value, onChange, icon, species, pet, embedded = false,
+  value, onChange, species, pet, embedded = false,
   // Shown when this answer arrived from a disease form filled in earlier the
   // same day, so the owner knows why the question is already answered rather
   // than wondering whether the app has guessed.
@@ -72,7 +71,6 @@ export default function VomitingPage({
       {!embedded && (
         <>
           <SectionTitle>Vomiting</SectionTitle>
-          <IconLabelHeader icon={icon} label="Vomiting" />
         </>
       )}
       {prefilledNote && <p className="assessment-hint">{prefilledNote}</p>}

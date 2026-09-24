@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Lock, LogOut, Trash2, TriangleAlert } from 'lucide-react'
+import { Bell, Check, ChevronRight, Lock, LogOut, Trash2, TriangleAlert } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import Modal from '../components/Modal'
 import Btn from '../components/Btn'
+import Skeleton from '../components/Skeleton'
+import ChoiceButtons from '../components/ChoiceButtons'
 import { usePets } from '../lib/PetsContext'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { supabase } from '../lib/supabase'
 import { cancelAllReminders, cancelRemindersForPet } from '../lib/notifications'
 import { fetchMedications } from '../lib/medicationsData'
 import { fetchPetConditions } from '../lib/conditionsData'
+import { readThemePreference, setThemePreference } from '../lib/theme'
+import { readReduceMotion, setReduceMotion, systemReducedMotion } from '../lib/motion'
 import {
   CANCELLATION_KEEPS_RECORDS,
   FREE_FEATURE_LIST,
@@ -69,8 +72,19 @@ function openManageSubscription() {
 // easy to hit by accident and hard to find on purpose. Home is the screen
 // somebody opens every day to record an assessment; the irreversible things
 // do not belong on it.
+// Automatic follows the phone, including its own sunset switch.
+const THEME_CHOICES = [
+  { value: 'system', label: 'Automatic' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+]
+
 export default function Settings() {
   const { visiblePets, hiddenPetCount, refresh, selectedPet, selectPet } = usePets()
+  // Read once: the switch itself lives on the document element, and this is
+  // only what the buttons show as chosen.
+  const [theme, setTheme] = useState(readThemePreference)
+  const [lessMotion, setLessMotion] = useState(readReduceMotion)
   const { hasPremium, loading: entitlementsLoading } = useEntitlements()
   const pet = selectedPet
   const petName = pet?.name || 'your pet'
@@ -196,9 +210,64 @@ export default function Settings() {
           something a user has to recognise on arrival. Every other screen in
           the app titles itself this way. */}
       <Card>
-        <SectionTitle>Account Management</SectionTitle>
+        {/* The line that used to sit here is now the sentence the More
+            screen shows before opening this one — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
+        <SectionTitle>Account Management and Settings</SectionTitle>
+      </Card>
+
+      {/* Reminders live here now — Ash's instruction 24 Sep 2026. How often
+          the app asks the owner for something is a setting, and it belonged
+          with the rest of them rather than on the More menu beside the
+          screens it schedules.
+
+          A row through to the existing screen rather than the screen folded
+          into this one: reminders carry their own per-condition schedules and
+          the notification permission state, which is a page of its own, not a
+          section of somebody else's.
+
+          "Check-in Reminders" — APPROVED — Dr Ash Cullen (BSc, DVM),
+          24 Sep 2026. */}
+      <Card>
+        <SectionTitle>Reminders &amp; Notifications</SectionTitle>
+        <div className="more-list">
+          <button type="button" className="more-row" onClick={() => navigate('/schedule')}>
+            <span className="more-row-icon" aria-hidden="true"><Bell size={18} /></span>
+            <span className="more-row-label">Check-in Reminders</span>
+            <ChevronRight className="more-row-chev" size={18} aria-hidden="true" />
+          </button>
+        </div>
+      </Card>
+
+      {/* APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026. This section's title and the line under it. */}
+      <Card>
+        <SectionTitle>Appearance</SectionTitle>
         <p className="assessment-hint">
-          Your plan, and the controls for your account and your pets' records.
+          Dark mode is easier on the eyes at night. Leave it on Automatic to follow your phone.
+        </p>
+        <ChoiceButtons
+          options={THEME_CHOICES}
+          value={theme}
+          onChange={(value) => { setTheme(value); setThemePreference(value) }}
+        />
+
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 23 Sep 2026. This label and the line under it. */}
+        <div className="setting-row">
+          <label className="setting-row-label" htmlFor="reduce-motion">Reduce motion</label>
+          <input
+            id="reduce-motion"
+            type="checkbox"
+            checked={lessMotion || systemReducedMotion()}
+            // The phone's own setting wins on its own and cannot be turned
+            // off from in here — unticking it would be a lie.
+            disabled={systemReducedMotion()}
+            onChange={(event) => { setLessMotion(event.target.checked); setReduceMotion(event.target.checked) }}
+          />
+        </div>
+        <p className="assessment-hint">
+          {systemReducedMotion()
+            ? 'Your phone is set to reduce motion, so the app already does.'
+            : 'Turns off the screen transitions and the small animations.'}
         </p>
       </Card>
 
@@ -216,7 +285,7 @@ export default function Settings() {
             guessing. Defaulting to the unsubscribed name for the half-second
             it takes would tell a paying subscriber they are not one. */}
         {entitlementsLoading ? (
-          <p>Loading…</p>
+          <Skeleton lines={2} />
         ) : (
           <p className="settings-plan-name">
             {hasPremium ? 'QoL Companion Premium' : 'QoL Companion Basic'}
@@ -435,7 +504,6 @@ export default function Settings() {
         </Modal>
       )}
 
-      <Footer />
     </div>
   )
 }

@@ -10,11 +10,10 @@ import {
 } from './assessmentOptions'
 import { BEAP_SCALES, SLEEP_SCALE, beapCategoryDisplayName } from './beapScales'
 import {
-  FAECAL_BAND_LABELS,
   FAECAL_CONCERN_SCORES,
   FAECAL_EMERGENCY_FROM,
-  faecalIndexOf,
-  faecalLevelsFor,
+  faecalLabelOf,
+  faecalTextOf,
 } from './faecalScore'
 import {
   BEAP_CATEGORIES,
@@ -66,13 +65,16 @@ export function describeAssessmentDay(generalEntry, painEntry, species) {
   // loose, or when a symptom chip takes the item to 4 or below.
   // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. The bands.
   const faecal = scores.faecal
-  const faecalIndex = faecal != null ? faecalIndexOf(faecal) : -1
+  // By score rather than by rung: the cat chart lost 3.5 and 4.5 on 24 Sep
+  // 2026 (lib/faecalScore.js), and a day already saved on one of them has no
+  // rung for this species but still has words.
+  const faecalText = faecal != null ? faecalTextOf(faecal, species) : null
   const stoolSymptomFlag = atOrBelow(scoreStoolOrHygiene(scores.stool, generalEntry?.stoolSymptoms ?? []), 4)
   const stoolChips = chipList(generalEntry?.stoolSymptoms, [...STOOL_SYMPTOM_OPTIONS, STOOL_NONE_TODAY_OPTION])
-  if (faecalIndex >= 0) {
-    const text = String(faecalLevelsFor(species)[faecalIndex] ?? '').replace(/\s*\(emergency\)\s*/g, ' ').trim()
+  if (faecalText) {
+    const text = String(faecalText).replace(/\s*\(emergency\)\s*/g, ' ').trim()
     const bandFlag = FAECAL_CONCERN_SCORES.includes(faecal) || faecal >= FAECAL_EMERGENCY_FROM
-    add('Faecal score', `${FAECAL_BAND_LABELS[faecalIndex]} — ${text}`, stoolChips,
+    add('Faecal score', `${faecalLabelOf(faecal, species)} — ${text}`, stoolChips,
       bandFlag ? 'concern' : stoolSymptomFlag)
   } else {
     add('Faeces', scores.stool === 'none' ? 'No faeces today' : sliderAnswer(scores.stool, 'Watery / diarrhoea', 'Well formed'),

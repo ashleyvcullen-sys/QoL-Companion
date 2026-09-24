@@ -5,8 +5,8 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import MediaLightbox from '../components/MediaLightbox'
+import Skeleton from '../components/Skeleton'
 import { usePets } from '../lib/PetsContext'
 import { usePremiumDenial } from '../lib/premiumErrors'
 import { formatDateDDMMYY } from '../lib/formatDate'
@@ -16,6 +16,7 @@ import {
   mediaTypeFor,
   uploadMedia,
   usePetMedia,
+  UNSUPPORTED_FILE_MESSAGE,
 } from '../lib/mediaData'
 
 function todayIsoDate() {
@@ -58,7 +59,7 @@ export default function PetMedia() {
     if (!file) return
 
     if (!mediaTypeFor(file)) {
-      setErrorMessage('That file type is not supported — photos and videos only.')
+      setErrorMessage(UNSUPPORTED_FILE_MESSAGE)
       return
     }
 
@@ -108,11 +109,10 @@ export default function PetMedia() {
       )}
 
       <Card className="bcs-intro">
+        {/* The line that used to sit here is the sentence shown before this
+            screen opens, from the Assess list — Ash's instruction 24 Sep
+            2026. Said once, where the choice is made. */}
         <SectionTitle>Photos &amp; Videos</SectionTitle>
-        <p>
-          Keep a visual record of how {pet.name} is doing. A photo of a wound, a rash or their
-          posture — or a short clip of how they're walking or breathing.
-        </p>
         <p className="assessment-hint">
           A vet can often see more than you can describe — video especially, for gait,
           breathing effort, tremors or seizures.
@@ -183,7 +183,7 @@ export default function PetMedia() {
 
       <Card>
         <SectionTitle>Gallery</SectionTitle>
-        {loading && <p>Loading…</p>}
+        {loading && <Skeleton lines={3} />}
         {!loading && items.length === 0 && <p>Nothing added yet.</p>}
 
         <div className="media-grid">
@@ -238,7 +238,6 @@ export default function PetMedia() {
         />
       )}
 
-      <Footer />
     </div>
   )
 }

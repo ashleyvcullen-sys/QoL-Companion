@@ -1,11 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Check, Lock } from 'lucide-react'
 import Card from '../components/Card'
+import ConditionIntroModal from '../components/ConditionIntroModal'
 import SectionTitle from '../components/SectionTitle'
 import HomeLink from '../components/HomeLink'
-import Footer from '../components/Footer'
 import { usePets } from '../lib/PetsContext'
-import PetText from '../components/PetText'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { CONDITION_LIST, MONITORING_DISCLAIMER } from '../lib/conditions'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
@@ -54,6 +54,8 @@ export default function Conditions() {
   const { selectedPet } = usePets()
   const pet = selectedPet
   const navigate = useNavigate()
+  // Which condition the owner has tapped but not yet said yes to.
+  const [offering, setOffering] = useState(null)
   // Only the loading flag: which conditions have a row is deliberately not
   // what this screen reads. "Tracking" means readings have been logged, and
   // that comes from byCondition below.
@@ -84,7 +86,12 @@ export default function Conditions() {
     // asked for. The condition page IS the start: it introduces cancer and
     // offers the diagnosis button, and setup sits one level below it where
     // back means back.
-    navigate(`/conditions/${condition.key}`)
+    // Every condition says what it covers before it opens — Ash's
+    // instruction 24 Sep 2026. It used to ask only for a condition with
+    // nothing logged yet; the summary is worth reading whether or not this is
+    // the first visit, and an owner scanning the list should not land inside
+    // a form they did not choose either way.
+    setOffering(condition)
   }
 
   return (
@@ -93,10 +100,10 @@ export default function Conditions() {
 
       <Card className="bcs-intro">
         <SectionTitle>Disease-Specific Monitoring</SectionTitle>
-        <p>
-          Track the things that matter for a condition {pet.name} has been diagnosed with,
-          alongside <PetText template="{their}" pet={pet} /> Overall Quality of Life Assessments.
-        </p>
+        {/* The sentence that used to sit here now opens the confirmation
+            pop-up on the Assess screen, where the choice is made — Ash's
+            instruction 24 Sep 2026. Only the disclaimer stays: it has to be
+            on the screen it applies to, not on the way in to it. */}
         <p className="assessment-hint">{MONITORING_DISCLAIMER}</p>
       </Card>
 
@@ -170,7 +177,17 @@ export default function Conditions() {
         })}
       </div>
 
-      <Footer />
+      <ConditionIntroModal
+        definition={offering}
+        pet={pet}
+        onClose={() => setOffering(null)}
+        onProceed={() => {
+          const key = offering.key
+          setOffering(null)
+          navigate(`/conditions/${key}`)
+        }}
+      />
+
     </div>
   )
 }

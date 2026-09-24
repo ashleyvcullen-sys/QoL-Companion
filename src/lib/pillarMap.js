@@ -4,8 +4,13 @@
 //   Comfort     arthritis, pain, pruritus, hygiene, skin and coat, ears,
 //               breathing and breathing effort, coughing, ascites,
 //               fainting/collapse, exercise tolerance, seizures
-//   Appetite    vomiting, nausea, stool quality, urination, reflux
+//   Appetite    vomiting, nausea, stool quality, drinking, reflux
 //               (plus cognitive toileting / litter habits, her addition)
+//
+// URINATION MOVED TO COMFORT on Ash's instruction, 24 Sep 2026 — passing
+// urine is a question about physical ease rather than about intake and
+// digestion, and straining, blood or an inability to pass it are pain. Water
+// intake stays with Appetite, which is where drinking belongs.
 //   Sleep       anything about sleep
 //   Curiosity   anything about curiosity (plus vision and hearing, hers)
 //   Connection  attitude, engagement with family and others
@@ -50,7 +55,7 @@ const BY_CONDITION = {
     exercise_tolerance: C, syncope: C, mucous_membranes: C, abdominal_distension: C,
   },
   kidney: {
-    water_intake: A, water_intake_ml: A, urination: A, nausea: A, mouth: A,
+    water_intake: A, water_intake_ml: A, urination: C, nausea: A, mouth: A,
   },
   seizures: {
     had_seizure: C, seizure_count: C, seizure_duration: C, consciousness: C, recovery: C,
@@ -58,7 +63,7 @@ const BY_CONDITION = {
   cancer: {
     ...GI,
     nausea: A, in_himself: CO, coughing: C, respiratory_effort: C, mucous_membranes: C,
-    weight_bearing: C, unable_to_pass_urine: A, straining_to_urinate: A, blood_in_urine: A,
+    weight_bearing: C, unable_to_pass_urine: C, straining_to_urinate: C, blood_in_urine: C,
     vomiting: A, diarrhoea: A, black_tarry_stool: A, collapse_episode: C, swollen_abdomen: C,
     nasal_discharge: C, facial_swelling: C, noisy_breathing: C, dropping_food: A,
     avoiding_hard_food: A, oral_bleeding: A, drooling: A, lethargy: CU,

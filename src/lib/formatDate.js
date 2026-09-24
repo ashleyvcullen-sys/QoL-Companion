@@ -56,3 +56,18 @@ function isoParts(dateStr) {
   const match = ISO_DATE.exec(dateStr)
   return match ? { year: match[1], month: match[2], day: match[3] } : null
 }
+
+// The ISO date `days` days before today, built from LOCAL components.
+//
+// Not via toISOString(): that converts local midnight to UTC, which in
+// Australia lands on the previous day — the same trap the assessment's own
+// dates fell into. Used to narrow a chart to the last quarter, where being a
+// day out would silently drop or add a day at the boundary.
+export function isoDaysAgo(days) {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() - days)
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}

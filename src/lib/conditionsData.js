@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { invalidateQuery, useCachedQuery } from './queryCache'
+
+// Same rule as qolData: a write clears what it makes stale, here rather than
+// in whichever screen happened to do it.
+function forgetConditionData(petId) {
+  if (!petId) return
+  invalidateQuery(`pet-conditions:${petId}`)
+  invalidateQuery(`condition-entries:${petId}`)
+  invalidateQuery(`condition-events:${petId}`)
+}
 
 export function todayIsoDate() {
   const now = new Date()
@@ -43,6 +53,7 @@ export async function fetchPetConditions(petId) {
 }
 
 export async function addPetCondition({ petId, conditionKey, diagnosedOn, notes }) {
+  forgetConditionData(petId)
   const { data, error } = await supabase
     .from('pet_conditions')
     .upsert(
@@ -73,10 +84,7 @@ export async function saveConditionConfig(conditionId, config) {
   if (error) throw error
 }
 
-export async function setConditionActive(conditionId, active) {
-  const { error } = await supabase.from('pet_conditions').update({ active }).eq('id', conditionId)
-  if (error) throw error
-}
+// setConditionActive was removed on 24 Sep 2026: nothing referenced it.
 
 // Stopping monitoring deletes the readings and events too.
 //
@@ -93,6 +101,7 @@ export async function setConditionActive(conditionId, active) {
 // whereas the other order would leave orphaned readings with nothing in the
 // interface pointing at them.
 export async function removePetCondition(condition) {
+  forgetConditionData(condition?.petId)
   const id = condition?.id
   const petId = condition?.petId
   const conditionKey = condition?.conditionKey
@@ -134,6 +143,7 @@ export async function fetchConditionEntries(petId, conditionKey) {
 // One entry per condition per day. A second save on the same date replaces
 // the first, matching every other log in the app.
 export async function saveConditionEntry({ petId, conditionKey, values, notes, entryDate }) {
+  forgetConditionData(petId)
   const { error } = await supabase
     .from('condition_entries')
     .upsert(
@@ -150,35 +160,20 @@ export async function saveConditionEntry({ petId, conditionKey, values, notes, e
   if (error) throw error
 }
 
+const EMPTY_LIST = []
+const EMPTY_MAP = {}
+
+// Served from the session cache — see lib/queryCache.js. These three are the
+// queries every screen re-ran on mount, which is what made moving around the
+// app feel slow: the answer was already known and was being asked for again
+// with a skeleton over it.
 export function usePetConditions(petId) {
-  const [conditions, setConditions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [reloadToken, setReloadToken] = useState(0)
-
-  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
-
-  useEffect(() => {
-    if (!petId) {
-      setConditions([])
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    fetchPetConditions(petId)
-      .then((result) => { if (!cancelled) setConditions(result) })
-      .catch((error) => {
-        console.error('Failed to load conditions:', error.message)
-        if (!cancelled) setConditions([])
-      })
-      .finally(() => { if (!cancelled) setLoading(false) })
-
-    return () => { cancelled = true }
-  }, [petId, reloadToken])
-
-  return { conditions, loading, refresh }
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `pet-conditions:${petId}` : null,
+    () => fetchPetConditions(petId),
+    { empty: EMPTY_LIST },
+  )
+  return { conditions: data ?? EMPTY_LIST, loading, refresh }
 }
 
 export function useConditionEntries(petId, conditionKey) {
@@ -281,6 +276,7 @@ export async function fetchConditionEvents(petId, conditionKey) {
 }
 
 export async function addConditionEvent({ petId, conditionKey, type, title, notes, eventDate }) {
+  forgetConditionData(petId)
   const { data, error } = await supabase
     .from('condition_events')
     .insert({
@@ -341,44 +337,25 @@ export function useConditionEvents(petId, conditionKey) {
 // with the data. One fetch, grouped client-side, is also fewer round trips
 // than one request per condition.
 export function useAllConditionEntries(petId) {
-  const [byCondition, setByCondition] = useState({})
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!petId) {
-      setByCondition({})
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    supabase
-      .from('condition_entries')
-      .select('*')
-      .eq('pet_id', petId)
-      .order('entry_date', { ascending: true })
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) {
-          console.error('Failed to load condition entries:', error.message)
-          setByCondition({})
-        } else {
-          const grouped = {}
-          for (const row of data ?? []) {
-            const entry = mapEntryRow(row)
-            ;(grouped[entry.conditionKey] ??= []).push(entry)
-          }
-          setByCondition(grouped)
-        }
-        setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [petId])
-
-  return { byCondition, loading }
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `condition-entries:${petId}` : null,
+    async () => {
+      const { data: rows, error } = await supabase
+        .from('condition_entries')
+        .select('*')
+        .eq('pet_id', petId)
+        .order('entry_date', { ascending: true })
+      if (error) throw error
+      const grouped = {}
+      for (const row of rows ?? []) {
+        const entry = mapEntryRow(row)
+        ;(grouped[entry.conditionKey] ??= []).push(entry)
+      }
+      return grouped
+    },
+    { empty: EMPTY_MAP },
+  )
+  return { byCondition: data ?? EMPTY_MAP, loading, refresh }
 }
 
 // Every event for a pet, grouped by condition — the events counterpart to
@@ -386,42 +363,23 @@ export function useAllConditionEntries(petId) {
 // parameter charts lose the event markers the on-screen ones carry, which is
 // exactly the divergence lib/charts.js exists to prevent.
 export function useAllConditionEvents(petId) {
-  const [byCondition, setByCondition] = useState({})
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!petId) {
-      setByCondition({})
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    supabase
-      .from('condition_events')
-      .select('*')
-      .eq('pet_id', petId)
-      .order('event_date', { ascending: true })
-      .then(({ data, error }) => {
-        if (cancelled) return
-        if (error) {
-          console.error('Failed to load condition events:', error.message)
-          setByCondition({})
-        } else {
-          const grouped = {}
-          for (const row of data ?? []) {
-            const event = mapEventRow(row)
-            ;(grouped[event.conditionKey] ??= []).push(event)
-          }
-          setByCondition(grouped)
-        }
-        setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [petId])
-
-  return { byCondition, loading }
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `condition-events:${petId}` : null,
+    async () => {
+      const { data: rows, error } = await supabase
+        .from('condition_events')
+        .select('*')
+        .eq('pet_id', petId)
+        .order('event_date', { ascending: true })
+      if (error) throw error
+      const grouped = {}
+      for (const row of rows ?? []) {
+        const event = mapEventRow(row)
+        ;(grouped[event.conditionKey] ??= []).push(event)
+      }
+      return grouped
+    },
+    { empty: EMPTY_MAP },
+  )
+  return { byCondition: data ?? EMPTY_MAP, loading, refresh }
 }
