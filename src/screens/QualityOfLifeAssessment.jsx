@@ -51,7 +51,7 @@ import { invalidateQuery } from '../lib/queryCache'
 import { scheduleQolReminder } from '../lib/notifications'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
-import { diseaseDaysByDate, diseaseEmergenciesOn } from '../lib/diseaseDays'
+import { diseaseDaysByDate } from '../lib/diseaseDays'
 import DiseaseTodayList from '../components/DiseaseTodayList'
 import PooIcon from '../components/icons/PooIcon'
 import SoapIcon from '../components/icons/SoapIcon'
@@ -60,6 +60,8 @@ import PuddleIcon from '../components/icons/PuddleIcon'
 import DropletsIcon from '../components/icons/DropletsIcon'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import { useEntitlements } from '../lib/EntitlementsContext'
+import { useBcsHistory } from '../lib/bcsData'
+import { qolInfluencesOn } from '../lib/qolInfluences'
 
 // Local rather than shared: three screens format a date this way and each
 // has its own copy. Worth unifying one day; not worth a new module today.
@@ -319,7 +321,14 @@ export default function QualityOfLifeAssessment() {
     [petConditions, conditionEntriesByCondition, pet.species],
   )
   const diseaseToday = diseaseDays.get(todayStr) ?? []
-  const diseaseEmergenciesToday = diseaseEmergenciesOn(diseaseDays, todayStr)
+  // Disease monitoring and body condition count towards the score since
+  // 24 Sep 2026 — see lib/qolInfluences.js. The number this screen shows at
+  // the end has to be the number the home card shows a moment later.
+  const { entries: bcsEntries } = useBcsHistory(hasPremium ? pet?.id : null)
+  const influencesToday = qolInfluencesOn({
+    diseaseByDate: diseaseDays, bcsEntries, pet, date: todayStr,
+  })
+  const diseaseEmergenciesToday = influencesToday.diseaseEmergencies
 
   // Set once the assessment is saved. Holds what was just recorded so the
   // finish screen can show it without re-reading the database — the row was
@@ -669,15 +678,21 @@ export default function QualityOfLifeAssessment() {
     const previousPain = painEntries.find((row) => row.date === previousGeneral?.date) ?? null
 
     setCompleted({
-      result: computeGeneralQolResult(entry, entry.beap, pet.species, diseaseEmergenciesToday),
+      result: computeGeneralQolResult(
+        entry, entry.beap, pet.species, diseaseEmergenciesToday, influencesToday,
+      ),
       diseaseToday,
       previous: previousGeneral
         ? {
             date: previousGeneral.date,
-            result: computeGeneralQolResult(
-              previousGeneral, previousPain?.beap, pet.species,
-              diseaseEmergenciesOn(diseaseDays, previousGeneral.date),
-            ),
+            result: (() => {
+              const then = qolInfluencesOn({
+                diseaseByDate: diseaseDays, bcsEntries, pet, date: previousGeneral.date,
+              })
+              return computeGeneralQolResult(
+                previousGeneral, previousPain?.beap, pet.species, then.diseaseEmergencies, then,
+              )
+            })(),
           }
         : null,
     })
@@ -842,6 +857,7 @@ export default function QualityOfLifeAssessment() {
       species={pet.species}
       pet={pet}
       diseaseEmergencies={diseaseEmergenciesToday}
+      influences={influencesToday}
       diseaseToday={diseaseToday}
     />,
   ]

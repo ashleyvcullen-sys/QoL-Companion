@@ -32,7 +32,7 @@ import { resolveDefinition } from './cancerConfig'
 import { missedCheckIns } from './monitoringStatus'
 import { scheduleForCondition } from './cadence'
 import { computeGeneralQolResult } from './scoring'
-import { diseaseEmergenciesOn } from './diseaseDays'
+import { qolInfluencesOn } from './qolInfluences'
 import { fillPetText } from './petText'
 import { BCS_MIN, BCS_MAX, BCS_IDEAL_MIN, BCS_IDEAL_MAX } from './bcsScale'
 
@@ -331,7 +331,7 @@ function rangeOf(...maps) {
   return from && to ? { from, to } : null
 }
 
-function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map(), pet = null, diseaseByDate = null) {
+function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = new Map(), pet = null, diseaseByDate = null, bcsEntries = []) {
   const medicationDays = medicationDayLabels(medications)
   if (!generalEntries.length && medicationDays.size === 0 && noteDays.size === 0) return null
 
@@ -343,10 +343,15 @@ function goodBadDaysChart(generalEntries, painEntries, medications, noteDays = n
   const resultByDate = new Map(
     generalEntries.map((entry) => [
       entry.date,
-      computeGeneralQolResult(
-        entry, beapByDate.get(entry.date), pet?.species,
-        diseaseEmergenciesOn(diseaseByDate, entry.date),
-      ),
+      (() => {
+        // The same influences the ring and the report use, so one day cannot
+        // be green here and amber there — see lib/qolInfluences.js.
+        const influences = qolInfluencesOn({ diseaseByDate, bcsEntries, pet, date: entry.date })
+        return computeGeneralQolResult(
+          entry, beapByDate.get(entry.date), pet?.species,
+          influences.diseaseEmergencies, influences,
+        )
+      })(),
     ]),
   )
 
@@ -805,7 +810,7 @@ export function buildChartRegistry({
 
   const charts = [
     overallChart(dailySeries),
-    goodBadDaysChart(generalEntries, painEntries, medications, noteDays, pet, diseaseByDate),
+    goodBadDaysChart(generalEntries, painEntries, medications, noteDays, pet, diseaseByDate, bcsEntries),
     ...pillarCharts(dailySeries),
     ...bodyCharts(bcsEntries),
   ].filter(Boolean)

@@ -16,9 +16,16 @@ function formatList(items) {
 }
 
 export default function ReviewPage({
+  influences = {},
   entry, onNotesChange, errorMessage, species, pet, diseaseEmergencies = [], diseaseToday = [],
 }) {
-  const generalResult = computeGeneralQolResult(entry, entry.beap, species, diseaseEmergencies)
+  // `influences` carries the disease findings in force and the pet's most
+  // recent body condition — see lib/qolInfluences.js. Passed in rather than
+  // assembled here so the provisional score on this page is the same
+  // arithmetic as the saved one.
+  const generalResult = computeGeneralQolResult(
+    entry, entry.beap, species, diseaseEmergencies, influences,
+  )
   const hasAllBeapAnswers = BEAP_CATEGORIES.every((category) => entry.beap?.[category] != null)
 
   // Only present when the worst single finding forced the band below what

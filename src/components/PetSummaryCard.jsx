@@ -11,11 +11,21 @@ import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useEntitlements } from '../lib/EntitlementsContext'
 import { MEDICATION_STATE, formatMedicationTime, medicationStatusToday, useMedications } from '../lib/medicationsData'
+import { useBcsHistory } from '../lib/bcsData'
+import { bodyConditionOn, qolInfluencesOn } from '../lib/qolInfluences'
+import { scoringChangeNoticeVisible } from '../lib/scoringChangeNotice'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
-import { computeGeneralQolResult, computeOverviewBreakdown, computeOverviewCategories, severityColorFromPercent } from '../lib/scoring'
-import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
+import {
+  BCS_MAX_AGE_DAYS,
+  bodyConditionInfluence,
+  computeGeneralQolResult,
+  computeOverviewBreakdown,
+  computeOverviewCategories,
+  severityColorFromPercent,
+} from '../lib/scoring'
+import { diseaseDaysByDate } from '../lib/diseaseDays'
 import PillarBreakdownModal from './PillarBreakdownModal'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
@@ -60,6 +70,10 @@ export default function PetSummaryCard() {
   const { medications, doses } = useMedications(hasPremium ? pet?.id : null)
   const medicationStatus = medicationStatusToday(medications, doses)
   const { generalEntries, painEntries, loading } = useQolHistory(pet?.id)
+  // Body condition counts towards the score since 24 Sep 2026. Premium-only,
+  // like the screen that records it — a free account has none, and asking for
+  // them would be a query that can only ever come back empty.
+  const { entries: bcsEntries } = useBcsHistory(hasPremium ? pet?.id : null)
   const { conditions } = usePetConditions(pet?.id)
   const { byCondition } = useAllConditionEntries(pet?.id)
   const diseaseByDate = useMemo(
@@ -81,14 +95,31 @@ export default function PetSummaryCard() {
     if (!entry) return null
     try {
       const pain = painEntries.find((row) => row.date === entry.date) ?? null
+      // Disease monitoring and body condition count towards the score since
+      // 24 Sep 2026 — see lib/qolInfluences.js.
+      const influences = qolInfluencesOn({ diseaseByDate, bcsEntries, pet, date: entry.date })
       return computeGeneralQolResult(
-        entry, pain?.beap, pet?.species, diseaseEmergenciesOn(diseaseByDate, entry.date),
+        entry, pain?.beap, pet?.species, influences.diseaseEmergencies, influences,
       )
     } catch (error) {
       console.error('Could not score that assessment:', error.message)
       return null
     }
   }
+  // The week-long note explaining why old days moved — see
+  // lib/scoringChangeNotice.js.
+  const [showScoringChange] = useState(scoringChangeNoticeVisible)
+
+  // A body condition reading that has aged out of the score, where the last
+  // one said something worth saying. Null when it is recent, ideal, or there
+  // is none.
+  const staleBodyCondition = useMemo(() => {
+    const reading = bodyConditionOn(bcsEntries, todayIsoDate())
+    if (!reading || reading.daysAgo <= BCS_MAX_AGE_DAYS) return null
+    const wouldHaveCounted = bodyConditionInfluence({ ...reading, daysAgo: 0 })
+    return wouldHaveCounted?.bandFloorIndex > 0 ? reading : null
+  }, [bcsEntries])
+
   const latest = resultFor(latestGeneral)
   const previous = resultFor(previousGeneral)
   const change = latest && previous ? latest.percent - previous.percent : null
@@ -111,7 +142,10 @@ export default function PetSummaryCard() {
     const pain = painEntries.find((row) => row.date === latestGeneral.date) ?? null
     try {
       const items = computeOverviewBreakdown(
-        latestGeneral, pain, pillarAnswersOn(diseaseByDate, latestGeneral.date), pet?.species,
+        latestGeneral,
+        pain,
+        qolInfluencesOn({ diseaseByDate, bcsEntries, pet, date: latestGeneral.date }).pillarAnswers,
+        pet?.species,
       )
       // The answer as the owner gave it — the same wording the day's summary
       // shows — in place of the bare band name.
@@ -136,7 +170,10 @@ export default function PetSummaryCard() {
     const pain = painEntries.find((row) => row.date === latestGeneral.date) ?? null
     try {
       return computeOverviewCategories(
-        latestGeneral, pain, pillarAnswersOn(diseaseByDate, latestGeneral.date), pet?.species,
+        latestGeneral,
+        pain,
+        qolInfluencesOn({ diseaseByDate, bcsEntries, pet, date: latestGeneral.date }).pillarAnswers,
+        pet?.species,
       )
     } catch (error) {
       console.error('Could not build the pillar overview:', error.message)
@@ -292,6 +329,46 @@ export default function PetSummaryCard() {
             <p className="pet-summary-band" style={{ color: latest.color }}>
               {latest.band}
             </p>
+
+            {/* WHY the number is what it is, when something held it down.
+                APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026.
+                
+                Since 24 Sep 2026 a day can be capped by a disease finding or
+                by body condition as well as by the assessment's own severe
+                answers, which means a score of 74 has several possible
+                causes and an owner reading it has no way to tell them apart.
+                A vet reading it over their shoulder has none either. The
+                reason is one line, in the muted type the rest of the stack
+                uses, and it only appears when a cap actually fired. */}
+            {latest.capReason && (
+              <p className="pet-summary-cap-reason">
+                Held at {latest.percent}% by {latest.capReason}
+              </p>
+            )}
+
+            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. The same week-long note Trends
+                carries, here as well: plenty of owners never open Trends, and
+                this is the screen where the number they are being asked to
+                trust actually lives. */}
+            {showScoringChange && (
+              <p className="pet-summary-cap-reason">
+                The score now takes disease monitoring and body condition into account too,
+                so earlier days may read lower than before.
+              </p>
+            )}
+
+            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. A body condition score stops
+                counting after thirty days, and the score quietly RISES when
+                it does. An owner could read that as improvement, which is the
+                opposite of what it means, so the app asks for a new reading
+                instead of saying nothing. Only where the last one was
+                flagged: a pet that has always weighed well needs no prompt. */}
+            {staleBodyCondition && (
+              <p className="pet-summary-cap-reason">
+                Body condition last measured {staleBodyCondition.daysAgo} days ago, at
+                {' '}{staleBodyCondition.score} of 9. Worth weighing {pet?.name ?? 'them'} again.
+              </p>
+            )}
 
             {/* The direction of travel. A percentage on its own says how
                 {name} is today; this is the only thing on the card that says

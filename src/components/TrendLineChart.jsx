@@ -34,16 +34,34 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
     ? (props) => {
         const value = props.payload?.[dataKey]
         if (value == null) return null
+        // A day that was HELD at this number — by a disease finding, by body
+        // condition, by a severe answer — gets a ring around it, so the chart
+        // says the same thing the home card does. Without it a day capped at
+        // 74 and a day that genuinely averaged 74 are the same dot, and the
+        // one you would ask about in a consult is invisible.
+        const capped = Boolean(props.payload?.capReason)
         return (
-          <circle
-            key={`${props.payload.date}-dot`}
-            cx={props.cx}
-            cy={props.cy}
-            r={3}
-            fill={severityColorFromPercent(value)}
-            stroke="#fff"
-            strokeWidth={1}
-          />
+          <g key={`${props.payload.date}-dot`}>
+            {capped && (
+              <circle
+                cx={props.cx}
+                cy={props.cy}
+                r={6}
+                fill="none"
+                stroke={severityColorFromPercent(value)}
+                strokeWidth={1.5}
+                opacity={0.55}
+              />
+            )}
+            <circle
+              cx={props.cx}
+              cy={props.cy}
+              r={3}
+              fill={severityColorFromPercent(value)}
+              stroke="#fff"
+              strokeWidth={1}
+            />
+          </g>
         )
       }
     : false

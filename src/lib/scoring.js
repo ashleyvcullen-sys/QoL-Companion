@@ -70,6 +70,71 @@ const GENERAL_QOL_BANDS = [
 ]
 
 const BAND_INDEX_SEVERE_IMPACT = 3
+// "Moderately reduced": caps the headline number at 74.
+const BAND_INDEX_MODERATE_IMPACT = 2
+// "Mildly reduced": caps it at 89.
+const BAND_INDEX_MILD_IMPACT = 1
+
+// --- Body condition, inside the score --------------------------------------
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Body condition and
+// disease monitoring both count towards the overall score from this date;
+// until then the score was the seventeen assessment items alone.
+//
+// The bands are deliberately ASYMMETRIC. Losing condition is the finding that
+// matters at the end of a life — a 2 is a different animal from an 8 — while
+// carrying too much is a mobility and comfort problem rather than an acute
+// one, so it sits a band lower for the same distance from ideal.
+//
+//   4-5      ideal, no effect
+//   3        only when it is a FALL from the previous reading — a whippet, a
+//            greyhound, a fit working collie lives at 3, and capping those
+//            animals every time they are weighed would read as the app being
+//            wrong. A 3 that used to be a 4 or 5 is a different fact.
+//   6, 7     amber: floors the band to Moderately reduced (caps at 74)
+//   1, 2, 8, 9  red: floors to Severely reduced (caps at 49)
+//
+// And it only counts while it is RECENT. A body condition score is taken
+// weekly or monthly, not daily; one bad month must not hold a score down for
+// ever, so a reading older than this stops counting until it is taken again.
+export const BCS_MAX_AGE_DAYS = 30
+
+// The floor a body condition score imposes, and the score it contributes to
+// the Appetite pillar — Ash's instruction 24 Sep 2026, Appetite because body
+// condition is the visible outcome of what an animal eats.
+export function bodyConditionInfluence(bodyCondition) {
+  const score = Number(bodyCondition?.score)
+  const daysAgo = Number(bodyCondition?.daysAgo)
+  if (!Number.isFinite(score)) return null
+  if (Number.isFinite(daysAgo) && daysAgo > BCS_MAX_AGE_DAYS) return null
+  if (score >= 4 && score <= 5) return { bandFloorIndex: 0, pillarScore: 100, red: false }
+  if (score === 3) {
+    const previous = Number(bodyCondition?.previousScore)
+    const fallen = Number.isFinite(previous) && previous > score
+    return fallen
+      ? { bandFloorIndex: BAND_INDEX_MODERATE_IMPACT, pillarScore: 50, red: false, fallen: true }
+      : { bandFloorIndex: 0, pillarScore: 75, red: false }
+  }
+  if (score === 6 || score === 7) {
+    return { bandFloorIndex: BAND_INDEX_MODERATE_IMPACT, pillarScore: 50, red: false }
+  }
+  return { bandFloorIndex: BAND_INDEX_SEVERE_IMPACT, pillarScore: 0, red: true }
+}
+
+// The same answer as a pillar item, for computeOverviewCategories — which
+// takes [{ pillar, score, red, label }] and averages them into the five
+// pillars. Null where there is nothing recent to say.
+export function bodyConditionPillarAnswer(bodyCondition) {
+  const influence = bodyConditionInfluence(bodyCondition)
+  if (!influence) return null
+  return {
+    pillar: 'appetite',
+    score: influence.pillarScore,
+    red: influence.red,
+    label: 'Body condition',
+    detail: `Body condition score ${bodyCondition.score} of 9`,
+  }
+}
 
 // The highest percentage each band can show: one below the minimum of the
 // band above it. Used to cap the headline number when a floor has pulled the
@@ -253,7 +318,18 @@ function scoreBeapCategory(value) {
 // assessment isn't penalised for what it doesn't contain.
 // `diseaseEmergencies` is the same day's red disease findings, from
 // diseaseEmergenciesOn() in lib/diseaseDays.js — any one floors the band.
-export function computeGeneralQolResult(entry, beap, species = null, diseaseEmergencies = []) {
+// `influences` is everything OUTSIDE the seventeen assessment items that the
+// score now answers to — Ash's instruction 24 Sep 2026:
+//
+//   diseaseConcerns   amber findings in force from disease monitoring
+//   bodyCondition     { score, daysAgo }, the most recent weighing
+//
+// Both work as FLOORS on the band, the mechanism already used by the worst
+// BEAAAAPP category and by the emergency answers: the average is untouched,
+// and the band (and with it the headline number) can only be pulled down.
+// Disease findings additionally pull their own pillar down, which they have
+// done since 21 Sep 2026 — see pillarAnswersFor in lib/diseaseDays.js.
+export function computeGeneralQolResult(entry, beap, species = null, diseaseEmergencies = [], influences = {}) {
   const functionScores = [
     scoreStoolOrHygiene(entry.scores.stool, entry.stoolSymptoms, { symptomPenalty: 5 }),
     scoreStoolOrHygiene(entry.scores.hygiene, entry.hygieneSymptoms, { symptomPenalty: 5 }),
@@ -277,12 +353,47 @@ export function computeGeneralQolResult(entry, beap, species = null, diseaseEmer
   // floor imposed by the single worst BEAAAAPP finding, or the floor imposed
   // by an emergency pop-up answer.
   const averageBandIndex = generalQolBandIndexFromPercent(averagePercent)
-  const bandIndex = Math.max(
-    averageBandIndex,
-    beapBandFloorIndex(beap),
-    emergencyBandFloorIndex(entry, species),
-    (diseaseEmergencies?.length ?? 0) > 0 ? BAND_INDEX_SEVERE_IMPACT : 0,
-  )
+  const bodyCondition = influences.bodyCondition
+  const bodyConditionInfluenceNow = bodyConditionInfluence(bodyCondition)
+  const concerns = influences.diseaseConcerns ?? []
+  const emergencies = diseaseEmergencies ?? []
+
+  // One amber finding caps at 89; two or more at 74 — Ash's instruction
+  // 24 Sep 2026. A single "worth mentioning" finding on a chronic condition
+  // is the normal state of the animals this app is for, and capping every one
+  // of their days at 74 both mislabels a comfortable dog and flattens the
+  // scale the score is supposed to move on. Several at once is a different
+  // picture, and reads as one.
+  const concernFloor = concerns.length >= 2 ? BAND_INDEX_MODERATE_IMPACT
+    : concerns.length === 1 ? BAND_INDEX_MILD_IMPACT
+      : 0
+
+  // Every floor, with what to call it — so the screen can say WHY a day was
+  // capped rather than showing a number nobody can account for.
+  const floors = [
+    { index: beapBandFloorIndex(beap), reason: 'a severe finding in the assessment' },
+    { index: emergencyBandFloorIndex(entry, species), reason: 'an emergency answer in the assessment' },
+    {
+      index: emergencies.length > 0 ? BAND_INDEX_SEVERE_IMPACT : 0,
+      reason: emergencies.length === 1 && emergencies[0]?.conditionLabel
+        ? `an urgent finding in ${emergencies[0].conditionLabel} monitoring`
+        : 'urgent findings in disease monitoring',
+    },
+    {
+      index: concernFloor,
+      reason: concerns.length === 1 && concerns[0]?.conditionLabel
+        ? `a finding in ${concerns[0].conditionLabel} monitoring`
+        : `findings in ${concerns.length} conditions being monitored`,
+    },
+    {
+      index: bodyConditionInfluenceNow?.bandFloorIndex ?? 0,
+      reason: bodyConditionInfluenceNow?.fallen
+        ? `body condition falling to ${bodyCondition?.score} of 9`
+        : `body condition ${bodyCondition?.score} of 9`,
+    },
+  ].filter((floor) => floor.index > 0)
+
+  const bandIndex = Math.max(averageBandIndex, ...floors.map((floor) => floor.index), 0)
   const band = GENERAL_QOL_BANDS[bandIndex]
 
   // The headline number is capped to the band, so the two always agree. When
@@ -296,10 +407,13 @@ export function computeGeneralQolResult(entry, beap, species = null, diseaseEmer
     averagePercent,
     band: band.label,
     color: SEVERITY_COLORS[band.severity],
-    // True when the worst BEAAAAPP finding or an emergency answer pulled the
-    // band (and so the percentage) below what the average alone would have
-    // given — lets the UI explain why.
+    // True when something pulled the band (and so the percentage) below what
+    // the average alone would have given, and the wording for why — the
+    // worst floor that actually fired. PENDING ASH on the phrasing.
     bandFlooredBySeverity: bandIndex > averageBandIndex,
+    capReason: bandIndex > averageBandIndex
+      ? floors.filter((floor) => floor.index === bandIndex)[0]?.reason ?? null
+      : null,
   }
 }
 

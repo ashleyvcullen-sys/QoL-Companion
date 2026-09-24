@@ -19,8 +19,9 @@ import { useEntitlements } from '../lib/EntitlementsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { buildDailySeries } from '../lib/qolData'
 import { useBcsHistory } from '../lib/bcsData'
+import { qolInfluencesOn } from '../lib/qolInfluences'
 import { computeGeneralQolResult, computeOverviewCategories } from '../lib/scoring'
-import { diseaseDaysByDate, diseaseEmergenciesOn, pillarAnswersOn } from '../lib/diseaseDays'
+import { diseaseDaysByDate } from '../lib/diseaseDays'
 import { conditionByKey } from '../lib/conditions'
 import {
   CHART_GROUPS,
@@ -162,6 +163,21 @@ async function buildReportPdf({
   if (includeOverall) {
     addSectionHeader('Latest scores')
     addLine(`Overall QoL: ${generalResult ? `${generalResult.percent}% — ${generalResult.band}` : 'Not yet assessed'}`)
+    // What held the number down, where something did — the same sentence the
+    // home screen shows. A vet reading "74%" has no way to tell an average
+    // from a cap, and the difference changes what the number means.
+    if (generalResult?.capReason) {
+      addLine(`Held at ${generalResult.percent}% by ${generalResult.capReason}.`)
+    }
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Dated because a report exported before this
+    // date shows different numbers for the same days: the score began
+    // counting disease monitoring and body condition on 24 September 2026,
+    // and two documents that disagree without saying why are worse than one.
+    addLine(
+      'Scores from 24 September 2026 include disease-specific monitoring and body '
+      + 'condition as well as the quality of life assessment. Earlier reports may show '
+      + 'different figures for the same dates.',
+    )
     addSpacer()
   }
 
@@ -362,18 +378,28 @@ export default function ExportReport() {
   const painForLatestGeneral = latestGeneralEntry
     ? painEntries.find((p) => p.date === latestGeneralEntry.date) ?? null
     : null
+  // Disease monitoring and body condition count towards the score since
+  // 24 Sep 2026 — see lib/qolInfluences.js. The report has to agree with the
+  // home screen to the point.
+  const latestInfluences = qolInfluencesOn({
+    diseaseByDate,
+    bcsEntries,
+    pet,
+    date: latestGeneralEntry?.date ?? latestPainEntry?.date,
+  })
   const generalResult = latestGeneralEntry
     ? computeGeneralQolResult(
       latestGeneralEntry, painForLatestGeneral?.beap, pet?.species,
-      diseaseEmergenciesOn(diseaseByDate, latestGeneralEntry.date),
+      latestInfluences.diseaseEmergencies, latestInfluences,
     )
     : null
   const overview = computeOverviewCategories(
-    latestGeneralEntry, latestPainEntry,
-    pillarAnswersOn(diseaseByDate, latestGeneralEntry?.date ?? latestPainEntry?.date),
-    pet?.species,
+    latestGeneralEntry, latestPainEntry, latestInfluences.pillarAnswers, pet?.species,
   )
-  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species, diseaseByDate)
+  const dailySeries = buildDailySeries(generalEntries, painEntries, pet?.species, diseaseByDate, {
+    bcsEntries,
+    pet,
+  })
   const recent = dailySeries.slice(-10).reverse()
   // Every note the app holds, from wherever it was written, newest first.
   // Assessment notes and condition notes answer different questions and a

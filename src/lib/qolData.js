@@ -13,7 +13,7 @@ import {
   computeGeneralQolResult,
   computeOverviewCategories,
 } from './scoring'
-import { diseaseEmergenciesOn, pillarAnswersOn } from './diseaseDays'
+import { qolInfluencesOn } from './qolInfluences'
 
 function mapGeneralQolRow(row) {
   return {
@@ -268,7 +268,10 @@ export async function fetchPainLogEntries(petId) {
 
 // buildMeasureSeries was removed on 24 Sep 2026: nothing referenced it.
 
-export function buildDailySeries(generalEntries, painEntries, species = null, diseaseByDate = null) {
+// `influences` — { bcsEntries, pet } — is what disease monitoring and body
+// condition need to count towards each day's score (Ash's instruction 24 Sep
+// 2026). Optional, so a caller that has neither still gets the old numbers.
+export function buildDailySeries(generalEntries, painEntries, species = null, diseaseByDate = null, influences = {}) {
   const generalByDate = new Map(generalEntries.map((entry) => [entry.date, entry]))
   const painByDate = new Map(painEntries.map((entry) => [entry.date, entry]))
   const allDates = Array.from(new Set([...generalByDate.keys(), ...painByDate.keys()])).sort()
@@ -277,17 +280,28 @@ export function buildDailySeries(generalEntries, painEntries, species = null, di
     const generalEntry = generalByDate.get(date) ?? null
     const painEntry = painByDate.get(date) ?? null
     // Same-date pain entry feeds the BEAAAAPP half of the overall score.
+    const dayInfluences = qolInfluencesOn({
+      diseaseByDate,
+      bcsEntries: influences.bcsEntries ?? [],
+      pet: influences.pet ?? null,
+      date,
+    })
     const generalResult = generalEntry
-      ? computeGeneralQolResult(generalEntry, painEntry?.beap, species, diseaseEmergenciesOn(diseaseByDate, date))
+      ? computeGeneralQolResult(
+        generalEntry, painEntry?.beap, species, dayInfluences.diseaseEmergencies, dayInfluences,
+      )
       : null
     const categories = computeOverviewCategories(
-      generalEntry, painEntry, pillarAnswersOn(diseaseByDate, date), species,
+      generalEntry, painEntry, dayInfluences.pillarAnswers, species,
     )
 
     return {
       date,
       generalTotal: generalResult ? generalResult.total : null,
       generalPercent: generalResult ? generalResult.percent : null,
+      // Why this day was held at that number, where it was — drawn as a ring
+      // on the chart and printed in the day view.
+      capReason: generalResult?.capReason ?? null,
       ...categories,
     }
   })

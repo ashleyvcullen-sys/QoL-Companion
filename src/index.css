@@ -5671,6 +5671,17 @@ code {
 /* When the score was last taken. Above the direction-of-travel chip, because
    "3 points lower than last time" means nothing until you know when last
    time was. */
+/* The line that says what capped the score. Quiet — it explains the number
+   above it rather than competing with it — but not so quiet it reads as a
+   footnote nobody is meant to act on. */
+.pet-summary-cap-reason {
+  margin: 2px 0 0;
+  font-size: var(--type-meta);
+  line-height: 135%;
+  color: var(--severity-moderate-text);
+  text-wrap: pretty;
+}
+
 .pet-summary-last {
   margin: 6px 0 0;
   font-size: var(--type-label);

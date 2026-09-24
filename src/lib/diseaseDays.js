@@ -131,3 +131,55 @@ export function diseaseEmergenciesFrom(dayList) {
 export function diseaseEmergenciesOn(byDate, date) {
   return diseaseEmergenciesFrom(byDate?.get(date))
 }
+
+// --- What is IN FORCE on a given day ---------------------------------------
+//
+// Ash's instruction 24 Sep 2026: a disease finding counts from the day it is
+// recorded until the next check-in for that condition falls due.
+//
+// The alternative — same day only — means a pet monitored weekly has six days
+// in seven where their arthritis counts for nothing, which is not what the
+// owner is being asked to believe when the app tells them their pet is having
+// a good week.
+//
+// `cadenceDaysFor(conditionKey)` answers how often that condition is checked
+// for this pet (Schedule's own number, via scheduleForCondition). Anything it
+// cannot answer falls back to one day, which is the old behaviour.
+export function diseaseDaysInForceOn(byDate, date, cadenceDaysFor = () => 1) {
+  if (!byDate || !date) return []
+  const asMs = Date.parse(`${date}T00:00:00Z`)
+  if (!Number.isFinite(asMs)) return []
+
+  // The most recent entry per condition, on or before this date.
+  const latest = new Map()
+  for (const [entryDate, list] of byDate) {
+    const entryMs = Date.parse(`${entryDate}T00:00:00Z`)
+    if (!Number.isFinite(entryMs) || entryMs > asMs) continue
+    for (const day of list) {
+      const held = latest.get(day.conditionKey)
+      if (!held || entryMs > held.ms) latest.set(day.conditionKey, { ms: entryMs, day })
+    }
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000
+  const out = []
+  for (const [conditionKey, { ms, day }] of latest) {
+    const cadence = Math.max(1, Number(cadenceDaysFor(conditionKey)) || 1)
+    const age = Math.round((asMs - ms) / dayMs)
+    // Still inside the window this reading speaks for.
+    if (age < cadence) out.push(day)
+  }
+  return out
+}
+
+// The amber findings in force — the ones that floor the band to Moderately
+// reduced. Emergencies are counted separately (diseaseEmergenciesFrom) and
+// floor it further, so a day with both is severe, not moderate.
+export function diseaseConcernsFrom(dayList) {
+  return (dayList ?? [])
+    .filter((day) => day.severity === SEVERITY.CONCERN)
+    .map((day) => ({
+      conditionLabel: day.conditionLabel,
+      finding: day.flagged.find((flag) => flag.severity === SEVERITY.CONCERN)?.label ?? null,
+    }))
+}
