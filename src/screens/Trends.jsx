@@ -133,10 +133,12 @@ export default function Trends() {
 
   const [range, setRange] = useState('month')
   // 'month' keeps the single-month calendar and the fortnight of points;
-  // 'quarter' and 'all' both open the full-span view, the first of them
-  // narrowed to ninety days.
+  // 'all' opens the full-span view. The ninety-day middle step went on Ash's
+  // instruction 24 Sep 2026 — `windowDays` stays in the chart components,
+  // where it is the mechanism for narrowing a span, and simply has nothing
+  // asking for it here.
   const allTime = range !== 'month'
-  const windowDays = range === 'quarter' ? 90 : null
+  const windowDays = null
 
 
   // The two halves of one day's assessment, for the day whose answers are
