@@ -400,12 +400,12 @@ export default function Trends() {
             </Btn>
           </div>
         ) : shown.length === 0 ? (
-          /* Nothing chosen yet. There IS something to draw — the chips above
-             say so — so this is a prompt, not an empty state, and it must not
-             read as "you have no data".
-
-             APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. */
-          <p className="assessment-hint trend-empty">Choose one or more above to see how they have changed.</p>
+          /* Nothing chosen yet. The line that used to sit here ("Choose one
+             or more above to see how they have changed") was removed on Ash's
+             instruction 24 Sep 2026 — the chips are directly above and the
+             question above them already asks. Nothing is drawn until one is
+             chosen. */
+          null
         ) : (
           <>
             {shown.map((option) => (

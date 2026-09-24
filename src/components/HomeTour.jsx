@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Lock } from 'lucide-react'
 import Card from './Card'
 import Btn from './Btn'
@@ -12,6 +12,7 @@ const TOOLTIP_MIN_TOP = 56
 
 export default function HomeTour({ steps, targetRefs, onFinish }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState(null)
   // The card's real height, measured after it renders. It used to be guessed
@@ -28,10 +29,34 @@ export default function HomeTour({ steps, targetRefs, onFinish }) {
   // Each step shows the screen it is describing. Done before the target is
   // measured, so the spotlight lands on the tab of a screen that is already
   // on show rather than on the one the owner just left.
+  //
+  // Three things here are deliberate, all of them from Ash's report 24 Sep
+  // 2026 that logging in died with "replaceState() more than 100 times per
+  // 10 seconds":
+  //
+  //   The dependency is the PATH, a string, not the step object. The steps
+  //   array was rebuilt on every render, so this effect ran on every render.
+  //   Asked for once per step and per landing place.
+  //
+  //   The current path comes from the router, not from
+  //   window.location.pathname, which is not where a router keeps its
+  //   position in every configuration.
+  //
+  //   `replace`, and only once per destination: if something else on the
+  //   screen disagrees about where the app should be — a route guard, say —
+  //   the two must not be able to push each other back and forth for ever.
+  const askedFor = useRef(null)
   useLayoutEffect(() => {
-    if (isCompletionStep || !step?.show) return
-    if (window.location.pathname !== step.show) navigate(step.show)
-  }, [isCompletionStep, step, navigate])
+    const show = isCompletionStep ? null : step?.show
+    if (!show) return
+    if (pathname === show) {
+      askedFor.current = null
+      return
+    }
+    if (askedFor.current === show) return
+    askedFor.current = show
+    navigate(show, { replace: true })
+  }, [isCompletionStep, step?.show, pathname, navigate])
 
   useLayoutEffect(() => {
     if (isCompletionStep) {

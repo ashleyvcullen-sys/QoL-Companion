@@ -1,8 +1,17 @@
-// Seeds the App Store demo account with believable history, and clears it
-// again.
+// Seeds a demo account with believable history, and clears it again.
 //
-//   node scripts/seed-demo.mjs           seed
-//   node scripts/seed-demo.mjs --clear   remove everything this seeded
+//   node scripts/seed-demo.mjs                        seed the review account
+//   node scripts/seed-demo.mjs --clear                empty it again
+//   node scripts/seed-demo.mjs --account=screenshots  seed the screenshot account
+//   node scripts/seed-demo.mjs --account=screenshots --clear
+//
+// TWO ACCOUNTS, two jobs. `review` is the address given to App Review and has
+// to stay on the FREE tier, because half of what it demonstrates is the
+// locked state — the locked rows under More, the pet limit, the hidden second
+// pet. `screenshots` is the account the App Store screenshots are taken on,
+// where premium is expected to be on so the paid screens can actually be
+// photographed. Anything else is refused: --clear deletes real rows, and that
+// should not be one typo away from a customer's pets.
 //
 // Needs a SECRET key, because it writes rows for another user's pets and RLS
 // would (correctly) refuse the publishable one:
@@ -35,11 +44,28 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
+// Imported rather than re-typed: if the 1-5 scale is ever re-pointed, seeded
+// history has to move with it or the demo shows scores the app cannot produce.
+import { FAECAL_TO_TEN, faecalScoresFor } from '../src/lib/faecalScore.js'
 
-const DEMO_EMAIL = 'qolcompanion@gmail.com'
+// The only two addresses this script will touch.
+const ACCOUNTS = {
+  review: 'qolcompanion@gmail.com',
+  screenshots: 'ashley@petwellness.com.au',
+}
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CLEARING = process.argv.includes('--clear')
+
+const accountArg = process.argv.find((a) => a.startsWith('--account='))?.split('=')[1] ?? 'review'
+if (!ACCOUNTS[accountArg]) {
+  console.error(`Unknown account "${accountArg}". Use one of: ${Object.keys(ACCOUNTS).join(', ')}.`)
+  process.exit(1)
+}
+const ACCOUNT = accountArg
+const DEMO_EMAIL = ACCOUNTS[ACCOUNT]
+// The screenshot account is allowed to hold premium; the review account is not.
+const PREMIUM_EXPECTED = ACCOUNT === 'screenshots'
 
 // --- connection ------------------------------------------------------------
 
@@ -142,6 +168,49 @@ function toBeapStep(n) {
   return clamp(Math.round(n / 2) * 2, 0, 10)
 }
 
+// Faecal score, on the 1-5 scale the app uses (2.5 optimal, 2 and 3
+// acceptable). Driven by the same badness curve as everything else, so a
+// flare shows up here as looser stools for a few days rather than as an
+// unrelated squiggle.
+//
+// Per species since 24 Sep 2026, when the rungs became the ones each Royal
+// Canin chart actually draws: the cat chart has no 3.5, so seeding one put a
+// score in the demo history that a cat owner cannot choose — and a
+// screenshot of an option the app does not offer is exactly the kind of
+// thing that makes a reviewer look twice. `nearest` keeps the shape of the
+// curve while only ever producing a rung this species has.
+function faecalFor(badness, seed, species = 'dog') {
+  const scores = faecalScoresFor(species)
+  // On a tie the WORSE rung wins — 3.5 on a cat becomes 4, not 3. A flare
+  // day in the demo history should read as a flare, and "acceptable" is not
+  // what a flare looks like.
+  const nearest = (wanted) => scores.reduce((best, score) => {
+    const gap = Math.abs(score - wanted)
+    const bestGap = Math.abs(best - wanted)
+    if (gap < bestGap) return score
+    if (gap === bestGap) return Math.abs(score - 2.5) > Math.abs(best - 2.5) ? score : best
+    return best
+  }, scores[0])
+  const r = deterministicRandom(seed)
+  if (badness > 0.6) return nearest(r < 0.45 ? 4 : 3.5)
+  if (badness > 0.35) return nearest(r < 0.5 ? 3.5 : 3)
+  return nearest(r < 0.55 ? 2.5 : r < 0.85 ? 2 : 3)
+}
+
+// The three activities the owner named, answered for the day. "no_chance"
+// appears occasionally on good days only — it means the chance did not come
+// up, which is a rainy Tuesday, not a lost interest.
+function favouriteAnswersFor(things, badness, seed) {
+  return things.map((thing, i) => {
+    const r = deterministicRandom(`${seed}fav${i}`)
+    let answer
+    if (badness > 0.6) answer = r < 0.45 ? 'none' : 'less'
+    else if (badness > 0.3) answer = r < 0.6 ? 'less' : 'usual'
+    else answer = r < 0.1 ? 'no_chance' : r < 0.25 ? 'less' : 'usual'
+    return { thing, answer }
+  })
+}
+
 // --- the shape of the story ------------------------------------------------
 //
 // Pet 1 is the one on screen. The brief: mostly good, a dip around days 15-22
@@ -215,12 +284,17 @@ const CAT_NOTES = {
   6: 'Off his food again this evening, otherwise himself.',
 }
 
-function generalRowFor(petId, day, daysAgo, badness, notes) {
+function generalRowFor(petId, day, daysAgo, badness, notes, favourites = [], species = 'dog') {
+  // `faecal` is the 1-5 score the owner picked; `stool` is that score on the
+  // 0-10 scale the scoring reads, exactly as FaecalScorePage writes both.
+  const faecal = faecalFor(badness, `fa${daysAgo}${petId}`, species)
   return {
     pet_id: petId,
     entry_date: isoDate(day),
+    favourite_things: favouriteAnswersFor(favourites, badness, `${daysAgo}${petId}`),
     scores: {
-      stool: sliderFor(badness * 0.5, `st${daysAgo}${petId}`),
+      faecal,
+      stool: FAECAL_TO_TEN[faecal] ?? 'unsure',
       hygiene: sliderFor(badness * 0.6, `hy${daysAgo}${petId}`),
       vision: clamp(9 + jitter(`vi${daysAgo}${petId}`, 1), 0, 10),
       hearing: clamp(8 + jitter(`he${daysAgo}${petId}`, 1), 0, 10),
@@ -344,7 +418,7 @@ function onePixelPng(rgb) {
   return png
 }
 
-async function seedPet({ userId, name, species, sex, ageLabel, weightRangeKey, days, badnessFor, notes, emphasis, schedule }) {
+async function seedPet({ userId, name, species, sex, ageLabel, weightRangeKey, days, badnessFor, notes, emphasis, schedule, favourites = [] }) {
   console.log(`\nSeeding ${name} (${species}, ${days} days)`)
 
   const { data: pet, error } = await db
@@ -359,6 +433,9 @@ async function seedPet({ userId, name, species, sex, ageLabel, weightRangeKey, d
       has_seen_welcome: true,
       has_seen_app_tour: true,
       schedule,
+      // The list lives on the pet and carries from one assessment to the
+      // next; each entry stores the day's answers against the same words.
+      favourite_things: favourites,
       created_at: stampOn(dayOffset(days), 9, 0),
     })
     .select()
@@ -371,7 +448,7 @@ async function seedPet({ userId, name, species, sex, ageLabel, weightRangeKey, d
     const day = dayOffset(daysAgo)
     const badness = badnessFor(daysAgo)
     const note = notes[daysAgo] ?? null
-    generalRows.push(generalRowFor(pet.id, day, daysAgo, badness, note))
+    generalRows.push(generalRowFor(pet.id, day, daysAgo, badness, note, favourites, species))
     painRows.push(painRowFor(pet.id, day, daysAgo, badness, note, emphasis).row)
   }
 
@@ -409,6 +486,7 @@ async function seed(userId) {
     badnessFor: dogBadness,
     notes: DOG_NOTES,
     emphasis: 1.1,
+    favourites: ['Walks to the park', 'Fetch in the back yard', 'Belly rubs on the couch'],
     // { days, day } per condition, not a bare number — that is the shape
     // Schedule.jsx writes and scheduleForCondition reads.
     //
@@ -582,13 +660,21 @@ async function seed(userId) {
     badnessFor: catBadness,
     notes: CAT_NOTES,
     emphasis: 0.8,
+    favourites: ['The sunny windowsill', 'The feather toy', 'Lap time in the evening'],
     schedule: { qol: 1, qolDay: null, conditions: {} },
   })
 
   console.log('\nDone.')
-  console.log('The cat is the SECOND pet, so on the free tier it is hidden and')
-  console.log('Settings shows "1 pet hidden on the free plan". That is the state')
-  console.log('to screenshot. Grant premium temporarily to show both.')
+  if (PREMIUM_EXPECTED) {
+    console.log('Both pets are seeded. With premium on, both are visible and every')
+    console.log('screen has history behind it: 45 days on Maggie, 30 on Pepper,')
+    console.log('arthritis monitoring, medications and doses, weight, and photos.')
+    console.log('Sign out and back in on the device so the app reloads the account.')
+  } else {
+    console.log('The cat is the SECOND pet, so on the free tier it is hidden and')
+    console.log('Settings shows "1 pet hidden on the free plan". That is the state')
+    console.log('to screenshot. Grant premium temporarily to show both.')
+  }
 }
 
 // --- main ------------------------------------------------------------------
@@ -621,14 +707,26 @@ const { data: entitlement } = await db
   .eq('user_id', demoUser.id)
   .maybeSingle()
 
-if (entitlement && !CLEARING) {
+if (entitlement && !CLEARING && !PREMIUM_EXPECTED) {
   console.error('\nThis account HAS a user_entitlements row:', entitlement)
-  console.error('The demo is meant to show the free tier — the locked tiles, the pet')
-  console.error('limit and the hidden-pet line. Delete that row first, or the second')
-  console.error('pet will simply be visible and there is no locked state to film.')
-  console.error('This script will not delete it for you: an entitlement row is the')
+  console.error('The review demo is meant to show the free tier — the locked rows under')
+  console.error('More, the pet limit and the hidden-pet line. Delete that row first, or')
+  console.error('the second pet will simply be visible and there is no locked state to')
+  console.error('film. This script will not delete it for you: an entitlement row is the')
   console.error('kind of thing that is deliberate when it exists.')
   process.exit(1)
+}
+
+// The screenshot account is the opposite case: the paid screens are the ones
+// being photographed, so premium missing is the problem worth saying out loud.
+if (PREMIUM_EXPECTED && !CLEARING) {
+  if (entitlement) {
+    console.log(`Premium is on (${entitlement.tier}) — the paid screens will be reachable.`)
+  } else {
+    console.log('NOTE: this account has no user_entitlements row, so disease monitoring,')
+    console.log('medications, body condition and photos will be LOCKED. Seeding anyway —')
+    console.log('grant premium on the account before taking the screenshots.')
+  }
 }
 
 if (CLEARING) await clearFor(demoUser.id)

@@ -48,6 +48,24 @@
   --severity-moderate: #C97A2E;
   --severity-severe: #A33A2E;
 
+  /* --- The same three colours, and the accent, as TEXT -------------------
+     
+     Audited 24 Sep 2026 against WCAG AA (4.5:1 for text under 18px). The
+     fill values above are chosen to look right as a disc, a bar or a chart
+     line, and three of them are too light to read as words on this app's
+     grounds: the accent is 2.99:1 on the page and 3.14:1 on a card (every
+     link, the Back control and the active tab label), amber 3.18 / 3.33
+     (every "worth mentioning" line), green 4.42 on the page.
+     
+     So the fills keep their values and text takes these. Same hues, walked
+     darker until they pass on the page, the card and the accent tint.
+     Nothing that carries white glyphs or draws a shape changes. */
+  --accent-text: #B54B62;
+  --severity-good-text: #3A7B55;
+  --severity-moderate-text: #9D5F24;
+  /* Already 6.56:1 on a card and 6.26:1 on the page. */
+  --severity-severe-text: var(--severity-severe);
+
   /* Translucent washes and lines, as tokens rather than as re-typed rgba().
      There were seven strengths of the accent wash in this file — 6%, 8%, 10%,
      12%, 14%, 20% — which is six ways of drawing one tinted panel. Two now:
@@ -82,21 +100,26 @@
        support  explanation under a heading       (.assessment-hint)
        meta     dates, credits, counts, legends
        label    uppercase group dividers            */
-  --type-heading: 20px;
-  --type-item: 15px;
-  --type-tile: 13px;
-  --type-support: 14px;
-  --type-meta: 13px;
-  --type-label: 12px;
+  /* Every size below is the design value times --type-scale, which
+     lib/typeScale.js sets from the phone's own Dynamic Type setting (1 by
+     default, 1.3 at most). One number moves the whole scale and keeps every
+     relationship in it — Ash's instruction 24 Sep 2026. */
+  --type-scale: 1;
+  --type-heading: calc(20px * var(--type-scale));
+  --type-item: calc(15px * var(--type-scale));
+  --type-tile: calc(13px * var(--type-scale));
+  --type-support: calc(14px * var(--type-scale));
+  --type-meta: calc(13px * var(--type-scale));
+  --type-label: calc(12px * var(--type-scale));
   /* Below the label size. These were hardcoded in eight places — badges,
      calendar cells, weekday initials, chart labels — which is exactly how a
      scale stops being a scale. */
-  --type-micro: 11px;
-  --type-nano: 9px;
+  --type-micro: calc(11px * var(--type-scale));
+  --type-nano: calc(9px * var(--type-scale));
   /* One step above `item`, one below `heading`. Text on a button, and a
      heading inside a long-form document where the card-heading size would
      shout. It was written as a bare 16px in both places. */
-  --type-action: 16px;
+  --type-action: calc(16px * var(--type-scale));
 
   /* Corner radius scale. Eleven different radii were in use, several of them
      one or two apart, which is the kind of difference nobody can name but
@@ -130,7 +153,7 @@
      not, so the two moved. */
   --gap-stack-tight: 2px;
 
-  font: 18px/145% var(--sans);
+  font: calc(18px * var(--type-scale))/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
@@ -141,8 +164,8 @@
   -moz-osx-font-smoothing: grayscale;
 
   @media (max-width: 1024px) {
-    font-size: 16px;
-    --type-heading: 18px;
+    font-size: calc(16px * var(--type-scale));
+    --type-heading: calc(18px * var(--type-scale));
   }
 }
 
@@ -414,7 +437,7 @@ code {
 }
 
 .form-error {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   font-size: var(--type-support);
   text-align: left;
 }
@@ -447,7 +470,7 @@ code {
 .btn-outline {
   background: transparent;
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .btn-danger {
@@ -656,7 +679,7 @@ code {
   margin: 0;
   font-size: var(--type-meta);
   font-weight: 600;
-  color: var(--severity-moderate);
+  color: var(--severity-moderate-text);
   text-align: center;
 }
 
@@ -666,7 +689,7 @@ code {
 }
 
 .pet-summary-duenote.late {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
 }
 
 /* --- Notifications, at the top of Reminders ------------------------------
@@ -682,15 +705,15 @@ code {
   margin: 0;
   font-size: var(--type-support);
   font-weight: 600;
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 .notif-state svg {
   flex-shrink: 0;
 }
 
-.notif-state.off { color: var(--severity-severe); }
-.notif-state.warn { color: var(--severity-moderate); }
+.notif-state.off { color: var(--severity-severe-text); }
+.notif-state.warn { color: var(--severity-moderate-text); }
 
 .notif-sub {
   margin: 6px 0 0;
@@ -745,6 +768,41 @@ code {
 .dx-day.ok { background: var(--severity-good); box-shadow: none; }
 .dx-day.concern { background: var(--severity-moderate); box-shadow: none; }
 .dx-day.emergency { background: var(--severity-severe); box-shadow: none; }
+
+/* --- Shape as well as colour ----------------------------------------------
+   
+   Ash's instruction 24 Sep 2026. On the three grids where a day is nothing
+   but a coloured square — this strip, the month calendar and the all-time
+   calendar — the colour is the whole message, and to a red-green colourblind
+   owner the three colours are three shades of one. A concern is hatched and
+   an emergency cross-hatched, so the grids can be read without seeing hue at
+   all. A good day stays plain: it is the one that should recede.
+   
+   White at low opacity rather than a second colour, so it works on all three
+   fills and in both themes. */
+/* The small marks stay SOLID — Ash's instruction 24 Sep 2026: a hatched
+   amber dot at 12px reads as a line drawn through the circle, not as a
+   texture, and the all-time calendar's cells are smaller still. The shape
+   cue lives on the month calendar alone, where a cell is big enough to
+   carry it legibly. */
+
+/* A month cell is thirty times the area of a strip dot and carries a number
+   on it, so the same hatch reads as noise and fights the date. Wider apart
+   and fainter: enough to tell the three states apart with the colour taken
+   away, quiet enough that the number is still the first thing you see. */
+.calendar-cell.sev-concern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.22) 0 2px,
+    transparent 2px 13px
+  );
+}
+
+.calendar-cell.sev-emergency {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.22) 0 2px, transparent 2px 13px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.22) 0 2px, transparent 2px 13px);
+}
 
 /* Which end is now. Without it the strip is fourteen dots with no direction,
    and a pet getting better looks identical to one getting worse. */
@@ -817,9 +875,9 @@ code {
   line-height: 1;
 }
 
-.dx-row-state.ok { color: var(--severity-good); }
-.dx-row-state.due { color: var(--severity-moderate); }
-.dx-row-state.late { color: var(--severity-severe); }
+.dx-row-state.ok { color: var(--severity-good-text); }
+.dx-row-state.due { color: var(--severity-moderate-text); }
+.dx-row-state.late { color: var(--severity-severe-text); }
 /* A reminder the owner turned off is not a warning — it is a setting. Muted,
    so it does not sit in the row claiming attention it hasn't earned. */
 .dx-row-state.off { color: var(--text-muted); }
@@ -860,7 +918,7 @@ code {
   padding: 0;
   font: inherit;
   font-size: var(--type-meta);
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -897,7 +955,7 @@ code {
 }
 
 .overview-bar-row.is-open .overview-bar-label {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .report-chart-title {
@@ -1149,7 +1207,7 @@ code {
   margin: 0;
   font-size: var(--type-meta);
   font-weight: 600;
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 .icon-grid {
@@ -1363,7 +1421,7 @@ code {
   padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: var(--accent-wash-strong);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--type-micro);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1408,7 +1466,7 @@ code {
 .plan-compare-list svg {
   flex-shrink: 0;
   margin-top: 3px;
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 /* Space above the plan actions, which follow the comparison. */
@@ -1438,7 +1496,7 @@ code {
   gap: var(--gap-inline);
   font-size: var(--type-support);
   line-height: 145%;
-  color: var(--severity-moderate);
+  color: var(--severity-moderate-text);
 }
 
 /* Emergencies get a filled block rather than coloured text. A white gum or a
@@ -1452,7 +1510,7 @@ code {
   border-radius: var(--radius-control);
   background: var(--severe-wash);
   border: 1px solid var(--severity-severe);
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   font-size: var(--type-support);
   font-weight: 600;
   line-height: 145%;
@@ -1490,7 +1548,7 @@ code {
 .condition-parameter-number {
   flex-shrink: 0;
   min-width: 18px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* The measurement field is the point of the whole screen — it's the one
@@ -1524,7 +1582,7 @@ code {
   right: 18px;
   font-size: var(--type-item);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .condition-parameter textarea,
@@ -1705,7 +1763,7 @@ code {
 }
 
 .condition-tile-status.tracking {
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 /* Two lines of status, stacked, at the right-hand end of the tile.
@@ -1727,12 +1785,12 @@ code {
    muted grey, which meant the same two states wore different colours on two
    screens an owner moves between. */
 .condition-tile-status.due {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   font-weight: 600;
 }
 
 .condition-tile-status.on-track {
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 .event-list {
@@ -1817,7 +1875,7 @@ code {
   height: 22px;
   border-radius: var(--radius-tiny);
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 
@@ -1879,7 +1937,7 @@ code {
   height: 40px;
   border-radius: 50%;
   background: var(--accent-wash-strong);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1971,6 +2029,10 @@ code {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Belt as well as braces for the clip on .wizard-card: the Welcome
+     walkthrough's wizard sits in an ordinary card, and its slides should
+     stop at the card too. */
+  overflow: hidden;
 }
 
 /* A card whose whole job is to hold one question. Everything in it is
@@ -1978,8 +2040,36 @@ code {
    to reduce vertical scrolling. there's a lot of blank / dead space".
    A reading card can afford air around a paragraph; a question competing
    with a keyboard and a tab bar cannot. */
+/* The one destructive control on the screen, kept quiet: a single line at
+   the foot rather than a card with a heading. Ash's instruction 24 Sep
+   2026. Danger colour, but no fill — nothing about it should invite a
+   thumb on the way past. */
+.stop-tracking-card {
+  padding: 10px 16px;
+}
+
+.stop-tracking-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-inline);
+  width: 100%;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: var(--type-meta);
+  color: var(--severity-severe-text);
+  cursor: pointer;
+}
+
 .card.wizard-card {
   padding: 14px 16px;
+  /* The page slides to the card's own edge and stops. Without this it slid
+     out across the screen behind the card, which is what a swipe should
+     never look like. `position: fixed` is not clipped by overflow, so the
+     modals an assessment page can raise are unaffected. */
+  overflow: hidden;
 }
 
 /* The condition's name above its own questionnaire: smaller badge, no air
@@ -2012,10 +2102,47 @@ code {
 }
 
 /* The question follows the finger horizontally while the browser keeps the
-   vertical scroll to itself — see SwipeableWizard and lib/swipeNav.js. */
+   vertical scroll to itself — see SwipeableWizard and lib/swipeNav.js.
+   
+   Deliberately NO will-change: transform. It promotes the element for the
+   whole of its life, and a promoted element becomes the containing block for
+   anything `position: fixed` inside it — which here is every modal an
+   assessment page can raise, including the emergency alerts. They would be
+   trapped inside the card. The transform itself only exists while the page
+   is actually moving, and translate3d gets the same layer for that time. */
 .swipeable-wizard-page {
   touch-action: pan-y;
-  will-change: transform;
+  /* The ground the neighbours are positioned against. */
+  position: relative;
+}
+
+/* The neighbours: one page-width plus the gutter to either side, out of
+   flow so they add nothing to the card's height. They ride along with the
+   middle one because the transform is on their shared parent. */
+.wizard-neighbour {
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.wizard-neighbour.is-prev {
+  right: calc(100% + 24px);
+}
+
+.wizard-neighbour.is-next {
+  left: calc(100% + 24px);
+}
+
+/* The shadow that used to be painted here while the page moved has gone —
+   Ash's report 24 Sep 2026 that the carousel was not smooth. A large blurred
+   shadow has to be re-rasterised on every frame of a drag, on an element
+   three screens wide, which is the most expensive thing that was happening
+   during the gesture and the one worth the least. */
+
+/* Each neighbour's layout and painting is its own business, so a change
+   inside one cannot make the browser re-do the others. */
+.wizard-neighbour {
+  contain: layout paint style;
 }
 
 .swipeable-wizard-progress {
@@ -2045,8 +2172,11 @@ code {
 .wizard-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--border);
+  /* The dot you are on stretches into a short bar rather than just changing
+     colour, so the row reads as a position along a track. */
+  transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1), background-color 220ms ease;
   /* A control since 24 Sep 2026, not a read-out: tapping one goes to that
      question. Bare, because a dot with a border or a pressed state stops
      reading as a dot. */
@@ -2085,8 +2215,24 @@ code {
   height: 6px;
 }
 
+.swipeable-wizard-dots.under .wizard-dot.active {
+  width: 16px;
+}
+
 .wizard-dot.active {
   background: var(--accent);
+  width: 20px;
+}
+
+/* Both switches: no stretching, no fading — just the colour change. */
+:root[data-reduce-motion="true"] .wizard-dot {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wizard-dot {
+    transition: none;
+  }
 }
 
 .welcome-slide {
@@ -2213,7 +2359,7 @@ code {
   border: 1px solid var(--severe-line);
   border-radius: var(--radius-panel);
   padding: 16px;
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
 }
 
 .warning-banner svg {
@@ -2291,7 +2437,7 @@ code {
    keeps it off the band label. */
 .severity-option-emergency-icon {
   flex-shrink: 0;
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   vertical-align: -3px;
   margin-right: 6px;
 }
@@ -3253,7 +3399,7 @@ code {
   display: inline-block;
   margin-top: 4px;
   font-size: var(--type-label);
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
@@ -3444,7 +3590,7 @@ code {
 }
 
 .home-link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media print {
@@ -3550,7 +3696,7 @@ code {
 }
 
 .destructive-link:hover {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
 }
 
 /* The account one: smaller, quieter, and set below a rule rather than in a
@@ -3562,7 +3708,7 @@ code {
 }
 
 .destructive-link.severe {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   font-size: var(--type-label);
   min-height: 32px;
 }
@@ -3659,7 +3805,7 @@ code {
   height: 22px;
   border-radius: var(--radius-tiny);
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--accent-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4107,7 +4253,7 @@ code {
   font: inherit;
   font-size: var(--type-support);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-align: left;
   cursor: pointer;
 }
@@ -4339,7 +4485,7 @@ code {
 .paywall-features svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 /* 12px, the gap Home uses between the pressable cards in .icon-grid — which
@@ -4403,7 +4549,7 @@ code {
   padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--accent-wash-strong);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* 600 and --text-h, as every other heading-sized line in the app. As a
@@ -4534,7 +4680,7 @@ code {
 }
 
 .tab-bar-item.is-active {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* The tint pill carries the state as well as the colour does, so the active
@@ -4593,7 +4739,7 @@ code {
 .more-row-icon {
   display: inline-flex;
   flex: none;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .more-row-label {
@@ -4698,7 +4844,7 @@ code {
   font: inherit;
   font-size: var(--type-support);
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
 }
 
@@ -4745,7 +4891,7 @@ code {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   box-shadow: var(--shadow-lift);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
 }
 
@@ -4838,7 +4984,7 @@ code {
   flex: none;
   font-size: var(--type-micro);
   font-weight: 700;
-  color: var(--severity-moderate);
+  color: var(--severity-moderate-text);
   background: rgba(201, 122, 46, 0.12);
   border-radius: 999px;
   padding: 2px 8px;
@@ -4919,12 +5065,12 @@ code {
 
 .pet-summary-change.is-up {
   background: rgba(61, 130, 89, 0.12);
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 .pet-summary-change.is-down {
   background: rgba(201, 122, 46, 0.12);
-  color: var(--severity-moderate);
+  color: var(--severity-moderate-text);
 }
 
 /* An empty state that offers the action that ends it. */
@@ -4975,6 +5121,13 @@ code {
      lightness against #17 is not the same green as on paper. */
   --severity-good: #5FAE80;
   --severity-moderate: #DFA05A;
+  /* On a dark ground these are already 5.8:1 to 8.3:1 as text, so the text
+     tokens are simply the fills again — the light theme's darker variants
+     would be unreadable here. */
+  --accent-text: var(--accent);
+  --severity-good-text: var(--severity-good);
+  --severity-moderate-text: var(--severity-moderate);
+  --severity-severe-text: var(--severity-severe);
   --severity-severe: #E4776A;
   --severe-wash: rgba(228, 119, 106, 0.14);
   --severe-line: rgba(228, 119, 106, 0.38);
@@ -5014,6 +5167,13 @@ code {
      lightness against #17 is not the same green as on paper. */
   --severity-good: #5FAE80;
   --severity-moderate: #DFA05A;
+  /* On a dark ground these are already 5.8:1 to 8.3:1 as text, so the text
+     tokens are simply the fills again — the light theme's darker variants
+     would be unreadable here. */
+  --accent-text: var(--accent);
+  --severity-good-text: var(--severity-good);
+  --severity-moderate-text: var(--severity-moderate);
+  --severity-severe-text: var(--severity-severe);
   --severity-severe: #E4776A;
   --severe-wash: rgba(228, 119, 106, 0.14);
   --severe-line: rgba(228, 119, 106, 0.38);
@@ -5057,7 +5217,7 @@ code {
 .assessment-prefilled {
   margin-top: 14px;
   text-align: center;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -5277,15 +5437,15 @@ code {
 }
 
 .med-today-up_to_date .med-today-state {
-  color: var(--severity-good);
+  color: var(--severity-good-text);
 }
 
 .med-today-due .med-today-state {
-  color: var(--severity-moderate);
+  color: var(--severity-moderate-text);
 }
 
 .med-today-overdue .med-today-state {
-  color: var(--severity-severe);
+  color: var(--severity-severe-text);
   font-weight: 600;
 }
 
@@ -5387,17 +5547,6 @@ code {
   flex: 1;
 }
 
-/* The prompt where the charts go, before anything has been chosen. Centred
-   and given the height a chart would take, so choosing one does not make the
-   card jump. */
-.trend-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px;
-  margin: 0;
-  text-align: center;
-}
 
 /* --- The About carousel ---------------------------------------------------
    One card per panel, swiped sideways. The cards keep their own styling; the

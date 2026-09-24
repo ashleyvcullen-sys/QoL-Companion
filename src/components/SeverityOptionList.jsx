@@ -90,7 +90,19 @@ export default function SeverityOptionList({
             type="button"
             className={className}
             aria-label={showDescription ? undefined : `${resolvedLabels[i]}: ${cleanText}`}
-            onClick={() => onChange(score)}
+            onClick={(event) => {
+              onChange(score)
+              // Tells a wizard above that a question has just been answered,
+              // so it can move on by itself where the page has asked for that
+              // — see SwipeableWizard, Ash's instruction 24 Sep 2026. A DOM
+              // event rather than a prop because the pages are built by the
+              // screen, not by the wizard, and threading a callback through
+              // every one of them to reach a component three levels down is
+              // how a small behaviour becomes a large refactor.
+              event.currentTarget.dispatchEvent(
+                new CustomEvent('wizard-answered', { bubbles: true }),
+              )
+            }}
           >
             <span className="severity-option-content">
               {imageSrc && (

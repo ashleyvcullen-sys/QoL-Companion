@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import HomeTour from '../components/HomeTour'
 import { HOME_TOUR_MESSAGES } from './homeTourContent'
 import { fillPetText } from './petText'
@@ -36,26 +36,47 @@ export function useTour() {
 // navigated away from Home.
 export function TourProvider({ children }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { selectedPet: pet, refresh } = usePets()
   const [active, setActive] = useState(false)
   const autoShownRef = useRef(false)
 
   const startTour = useCallback(() => setActive(true), [])
 
-  // A pet that has never seen it gets it once, automatically.
+  // A pet that has never seen it gets it once, automatically — but only once
+  // the app proper is on screen.
+  //
+  // Ash's report 24 Sep 2026: logging in on the simulator died with "Attempt
+  // to use history.replaceState() more than 100 times per 10 seconds". This
+  // was one half of it. A pet that has not seen the WELCOME walkthrough is
+  // held on /welcome by the route guard; the tour, which lives above the
+  // routes, started anyway and its first step tried to show '/'. The guard
+  // sent it back, the tour asked again, and the two bounced off each other
+  // as fast as the browser would let them.
+  //
+  // So: not before the welcome is done, and not on the screens that come
+  // before the app.
+  const beforeTheApp = ['/login', '/onboarding', '/welcome']
+    .some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  const canRun = Boolean(pet?.has_seen_welcome) && !beforeTheApp
+
   useEffect(() => {
+    if (!canRun) return
     if (pet && !pet.has_seen_app_tour && !autoShownRef.current) {
       autoShownRef.current = true
       setActive(true)
     }
-  }, [pet])
+  }, [pet, canRun])
 
-  const steps = TOUR_STEPS.map((step) => ({
+  // Memoised. Rebuilt on every render, this array gave HomeTour a new `step`
+  // object each time, which re-ran the effect that moves between screens —
+  // the other half of the same loop.
+  const steps = useMemo(() => TOUR_STEPS.map((step) => ({
     ...step,
     // Filled here rather than in HomeTour: this is where the pet is, and the
     // tour component stays a renderer that takes finished strings.
     message: fillPetText(HOME_TOUR_MESSAGES[step.target], pet),
-  }))
+  })), [pet])
 
   async function finish() {
     setActive(false)
@@ -81,7 +102,7 @@ export function TourProvider({ children }) {
   return (
     <TourContext.Provider value={{ startTour }}>
       {children}
-      {active && pet && <HomeTour steps={steps} onFinish={finish} />}
+      {active && pet && canRun && <HomeTour steps={steps} onFinish={finish} />}
     </TourContext.Provider>
   )
 }

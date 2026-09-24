@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Flag, Pencil, Pill, Stethoscope } from 'lucide-react'
+import { severityToneClass } from '../lib/severityShape'
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
@@ -120,8 +121,11 @@ export default function MonthCalendar({ dayFor, onOpenDay, missedDays }) {
             <button
               key={day}
               type="button"
-              className={`calendar-cell ${isSelected ? 'selected' : ''} ${!colour && !isMissed ? 'calendar-cell-quiet' : ''} ${isMissed ? 'calendar-cell-missed' : ''}`.replace(/\s+/g, ' ').trim()}
-              style={colour ? { background: colour, color: '#fff' } : undefined}
+              className={`calendar-cell ${severityToneClass(colour)} ${isSelected ? 'selected' : ''} ${!colour && !isMissed ? 'calendar-cell-quiet' : ''} ${isMissed ? 'calendar-cell-missed' : ''}`.replace(/\s+/g, ' ').trim()}
+              /* backgroundColor, not background: the shorthand would wipe
+                 the hatch the severity class paints on a concern or an
+                 emergency day — see lib/severityShape.js. */
+              style={colour ? { backgroundColor: colour, color: '#fff' } : undefined}
               title={title}
               aria-label={`${day} ${monthLabel}: ${title}`}
               onClick={() => setSelectedDay(isSelected ? null : day)}

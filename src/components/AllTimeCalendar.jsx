@@ -69,7 +69,9 @@ export default function AllTimeCalendar({ dayFor, range, missedDays }) {
               <span
                 key={index}
                 className={`at-day at-day-${cell.kind}`}
-                style={cell.colour ? { background: cell.colour } : undefined}
+                /* backgroundColor rather than the shorthand, which would
+                   wipe the severity hatch — see lib/severityShape.js. */
+                style={cell.colour ? { backgroundColor: cell.colour } : undefined}
               />
             ))}
           </div>

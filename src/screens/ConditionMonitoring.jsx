@@ -94,7 +94,8 @@ export default function ConditionMonitoring() {
   const petCondition = conditions.find((entry) => entry.conditionKey === currentKey) ?? null
   const config = petCondition?.config ?? {}
 
-  const { entries, refresh: refreshEntries } = useConditionEntries(pet?.id, currentKey)
+  const { entries, loading: entriesLoading, refresh: refreshEntries } =
+    useConditionEntries(pet?.id, currentKey)
   const { events, loading: eventsLoading, refresh: refreshEvents } =
     useConditionEvents(pet?.id, currentKey)
 
@@ -165,6 +166,20 @@ export default function ConditionMonitoring() {
   // not exist is a dead end.
   const nothingOwed = status?.state === MONITORING_STATE.OK && latestEntry != null
   const formOpen = formOpenOverride ?? !nothingOwed
+
+  // Nothing is drawn until the readings are in — Ash's report 24 Sep 2026
+  // that opening a condition glitches before it loads.
+  //
+  // It was not a rendering problem, it was an ANSWER problem: with no
+  // entries yet, "when was this last recorded?" is null, so the screen
+  // concluded a check-in was owed and opened the questionnaire. A moment
+  // later the entries arrived, most conditions turned out to be up to date,
+  // and the form was replaced by the card that says so. The flash was the
+  // screen changing its mind in public.
+  //
+  // A cached condition (one visited already this session) has its entries
+  // immediately and shows no skeleton at all.
+  const ready = !loading && !entriesLoading
 
   // What a composed condition is currently set to watch — Ash's instruction
   // 5 Sep 2026. Empty for everything else: a condition with a fixed question
@@ -497,7 +512,7 @@ export default function ConditionMonitoring() {
           of each other cost a line of screen on every condition page. The
           "Not Found" card keeps its own link, since a condition that does
           not exist has nothing else on the screen. */}
-      {loading && <Card><Skeleton lines={4} /></Card>}
+      {!ready && <Card><Skeleton lines={4} /></Card>}
 
       {!definition && !loading && (
         <Card>
@@ -507,7 +522,7 @@ export default function ConditionMonitoring() {
         </Card>
       )}
 
-      {definition && (
+      {definition && ready && (
         <>
           {/* The condition's own card — its fortnight strip, settings and
               background reading — is the screen when nothing is being
@@ -968,20 +983,20 @@ export default function ConditionMonitoring() {
               Ash's instruction 24 Sep 2026. A destructive control repeated
               below every one of nine questions is both noise and a hazard. */}
           {petCondition && !formOpen && (
-            <Card>
-              <SectionTitle>Stop Tracking</SectionTitle>
-              <p className="assessment-hint">
-                Removing {definition.label} deletes the readings and events recorded for it. Your
-                general quality of life history isn't affected.
-              </p>
-              <Btn
+            <Card className="stop-tracking-card">
+              {/* Smaller, on Ash's instruction 24 Sep 2026. It was a full
+                  card — heading, two lines of warning, a full-width danger
+                  button — for something almost nobody does, sitting at the
+                  foot of a screen people visit daily. One line and one
+                  button now; the confirmation that follows still spells out
+                  what is deleted, which is where that warning belongs. */}
+              <button
                 type="button"
-                variant="danger"
-                className="btn-block"
+                className="stop-tracking-link"
                 onClick={() => setConfirmRemove(petCondition)}
               >
-                <Trash2 size={16} /> Stop Tracking {definition.label}
-              </Btn>
+                <Trash2 size={14} /> Stop tracking {definition.label.toLowerCase()}
+              </button>
             </Card>
           )}
 

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import { applyTheme, readThemePreference } from './lib/theme'
 import { applyReduceMotion, readReduceMotion } from './lib/motion'
+import { watchTypeScale } from './lib/typeScale'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/AuthContext'
@@ -15,6 +16,10 @@ import { RevenueCatProvider } from './lib/RevenueCatContext'
 // launch.
 applyTheme(readThemePreference())
 applyReduceMotion(readReduceMotion())
+// Text follows the phone's own Dynamic Type setting — see lib/typeScale.js.
+// Measured again whenever the app comes back to the foreground, since that
+// setting is usually changed in the middle of trying to read something here.
+watchTypeScale()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

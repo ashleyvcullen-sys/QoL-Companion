@@ -24,7 +24,12 @@ export default function BeapCategoryPage({ species, categoryKey, value, note, on
     && score >= category.emergencyFrom
 
   return (
-    <div className="assessment-page">
+    /* `data-auto-advance`: one question, one list of answers, nothing
+       underneath to fill in — so picking a level is the whole page and the
+       wizard moves on by itself (Ash's instruction 24 Sep 2026). It holds
+       back when the answer raises an alert, which is the one case where
+       there IS something to read. See SwipeableWizard. */
+    <div className="assessment-page" data-auto-advance>
       <SectionTitle>{category.label}</SectionTitle>
       {/* Where this answer came from, when it came from a condition form.
           Same class as every other explanatory line in the assessment. */}
