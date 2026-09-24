@@ -32,7 +32,6 @@ import {
 import { describeConditionDay } from '../lib/conditions'
 import { parametersFor } from '../lib/cancerConfig'
 import { useEntitlements } from '../lib/EntitlementsContext'
-import { scoringChangeNoticeVisible } from '../lib/scoringChangeNotice'
 import { useMedications } from '../lib/medicationsData'
 import { useBcsHistory } from '../lib/bcsData'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
@@ -325,10 +324,6 @@ export default function Trends() {
       }
     : null
 
-  // Whether the "the score has changed" line still has a week to run.
-  // Read once per mount: it writes the start date the first time it is asked.
-  const [showScoringChange] = useState(scoringChangeNoticeVisible)
-
   const notesHistory = [...generalEntries]
     .reverse()
     .filter((entry) => entry.notes && entry.notes.trim())
@@ -343,20 +338,6 @@ export default function Trends() {
           Visual trends make gradual change easier to spot than single numbers — and are
           useful to bring to a vet visit.
         </p>
-        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Shown for the first week after this
-            build is opened, then never again (lib/scoringChangeNotice.js).
-            Every score in the app is worked out from the saved answers each
-            time it is drawn, so bringing disease monitoring and body
-            condition into it changes the whole history at once: without a
-            line saying so, an owner sees a fortnight move down and nothing
-            to explain it. */}
-        {showScoringChange && (
-          <p className="assessment-hint">
-            The overall score now takes disease monitoring and body condition into account
-            as well as the assessment, so days before today may read lower than they did.
-            Nothing about {pet?.name ?? 'your pet'} has changed.
-          </p>
-        )}
         {/* Lives here rather than as its own home-screen tile: exporting is
             something you do TO this data, so it belongs beside it. A full
             button rather than a quiet link, because taking a report to a vet

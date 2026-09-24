@@ -13,7 +13,6 @@ import { useEntitlements } from '../lib/EntitlementsContext'
 import { MEDICATION_STATE, formatMedicationTime, medicationStatusToday, useMedications } from '../lib/medicationsData'
 import { useBcsHistory } from '../lib/bcsData'
 import { bodyConditionOn, qolInfluencesOn } from '../lib/qolInfluences'
-import { scoringChangeNoticeVisible } from '../lib/scoringChangeNotice'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
 import { CONDITION_LIST } from '../lib/conditions'
 import { configsByCondition } from '../lib/charts'
@@ -106,10 +105,6 @@ export default function PetSummaryCard() {
       return null
     }
   }
-  // The week-long note explaining why old days moved — see
-  // lib/scoringChangeNotice.js.
-  const [showScoringChange] = useState(scoringChangeNoticeVisible)
-
   // A body condition reading that has aged out of the score, where the last
   // one said something worth saying. Null when it is recent, ideal, or there
   // is none.
@@ -343,17 +338,6 @@ export default function PetSummaryCard() {
             {latest.capReason && (
               <p className="pet-summary-cap-reason">
                 Held at {latest.percent}% by {latest.capReason}
-              </p>
-            )}
-
-            {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. The same week-long note Trends
-                carries, here as well: plenty of owners never open Trends, and
-                this is the screen where the number they are being asked to
-                trust actually lives. */}
-            {showScoringChange && (
-              <p className="pet-summary-cap-reason">
-                The score now takes disease monitoring and body condition into account too,
-                so earlier days may read lower than before.
               </p>
             )}
 
