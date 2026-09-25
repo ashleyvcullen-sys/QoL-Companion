@@ -1,5 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './supabase'
+import { invalidateQueryPrefix, useCachedQuery } from './queryCache'
+
+const MEDIA_EMPTY = []
+const MEDIA_KEY_PREFIX = 'pet-media:'
+
+// Cleared at the write, like every other table's cache. Deleting takes an
+// item rather than a pet, so the family goes — see invalidateQueryPrefix.
+function forgetMedia() {
+  invalidateQueryPrefix(MEDIA_KEY_PREFIX)
+}
 
 // Said by the upload itself and by the screen that checks before calling it.
 export const UNSUPPORTED_FILE_MESSAGE = 'That file type is not supported — photos and videos only.'
@@ -119,6 +129,7 @@ export async function signMediaUrls(items) {
 }
 
 export async function uploadMedia({ petId, file, caption, takenOn }) {
+  forgetMedia()
   const mediaType = mediaTypeFor(file)
   if (!mediaType) throw new Error(UNSUPPORTED_FILE_MESSAGE)
 
@@ -164,6 +175,7 @@ export async function uploadMedia({ petId, file, caption, takenOn }) {
 }
 
 export async function deleteMedia(item) {
+  forgetMedia()
   // Storage first: a failed row delete leaves a file the app still lists and
   // can retry on, whereas the reverse leaves a file nothing references.
   const { error: storageError } = await supabase.storage.from(MEDIA_BUCKET).remove([item.storagePath])
@@ -174,45 +186,39 @@ export async function deleteMedia(item) {
 }
 
 export function usePetMedia(petId) {
-  const [items, setItems] = useState([])
+  // The list comes from the session cache, so a second visit to Photos &
+  // Videos paints the grid immediately instead of showing a skeleton over
+  // rows that have not changed.
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `${MEDIA_KEY_PREFIX}${petId}` : null,
+    () => fetchMedia(petId),
+    { empty: MEDIA_EMPTY },
+  )
+  const items = data ?? MEDIA_EMPTY
   const [urls, setUrls] = useState({})
-  const [loading, setLoading] = useState(true)
-  const [reloadToken, setReloadToken] = useState(0)
 
-  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
-
+  // The signatures are NOT cached with the list. They last an hour and a
+  // session can outlast that, and a thumbnail that quietly 403s is worse than
+  // one that appears a moment after the grid it sits in. So the list is what
+  // makes the screen immediate; the pictures fill in behind it.
   useEffect(() => {
-    if (!petId) {
-      setItems([])
+    if (items.length === 0) {
       setUrls({})
-      setLoading(false)
-      return
+      return undefined
     }
 
     let cancelled = false
-    setLoading(true)
-
-    fetchMedia(petId)
-      .then(async (result) => {
-        if (cancelled) return
-        setItems(result)
-        const signed = await signMediaUrls(result).catch(() => ({}))
-        if (!cancelled) setUrls(signed)
-      })
-      .catch((error) => {
-        console.error('Failed to load media:', error.message)
-        if (cancelled) return
-        setItems([])
-        setUrls({})
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+    signMediaUrls(items)
+      .then((signed) => { if (!cancelled) setUrls(signed) })
+      .catch((error) => { console.error('Failed to sign media URLs:', error.message) })
 
     return () => { cancelled = true }
-  }, [petId, reloadToken])
+  }, [items])
 
-  return { items, urls, loading, refresh }
+  return useMemo(
+    () => ({ items, urls, loading, refresh }),
+    [items, urls, loading, refresh],
+  )
 }
 
 // --- The pet's profile photo -----------------------------------------------

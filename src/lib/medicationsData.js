@@ -1,5 +1,19 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { supabase } from './supabase'
+import { invalidateQueryPrefix, useCachedQuery } from './queryCache'
+
+// Read twice over on every screen — the tab bar's dose dot is mounted app-wide
+// and the Medications screen asks for the same two tables again on arrival —
+// so both go through the session cache. Before that the Meds tab showed a
+// skeleton on every visit while re-fetching rows the bar had just read.
+const MEDICATIONS_EMPTY = { medications: [], doses: [] }
+const MEDICATIONS_KEY_PREFIX = 'medications:'
+
+// Writes here carry a medication id, not a pet id, so the family is cleared
+// rather than one key — see invalidateQueryPrefix.
+function forgetMedications() {
+  invalidateQueryPrefix(MEDICATIONS_KEY_PREFIX)
+}
 
 function mapMedicationRow(row) {
   return {
@@ -108,6 +122,7 @@ export async function createMedication({
   petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod,
   remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
+  forgetMedications()
   const { data, error } = await supabase
     .from('medications')
     .insert({
@@ -143,6 +158,7 @@ export async function updateMedication(medicationId, {
   name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod,
   remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
+  forgetMedications()
   const patch = {}
   if (name !== undefined) patch.name = name
   if (dose !== undefined) patch.dose = dose || null
@@ -189,6 +205,7 @@ export async function updateMedication(medicationId, {
 }
 
 export async function deleteMedication(medicationId) {
+  forgetMedications()
   const { error } = await supabase.from('medications').delete().eq('id', medicationId)
   if (error) throw error
 }
@@ -198,6 +215,7 @@ export async function deleteMedication(medicationId) {
 // is the point — the partial unique index in the migration allows exactly
 // that.
 export async function logDose({ medicationId, time, date }) {
+  forgetMedications()
   const payload = {
     medication_id: medicationId,
     dose_date: date ?? todayIsoDate(),
@@ -214,6 +232,7 @@ export async function logDose({ medicationId, time, date }) {
 }
 
 export async function unlogDose({ medicationId, time, date }) {
+  forgetMedications()
   const { error } = await supabase
     .from('medication_doses')
     .delete()
@@ -225,49 +244,25 @@ export async function unlogDose({ medicationId, time, date }) {
 }
 
 export function useMedications(petId) {
-  const [medications, setMedications] = useState([])
-  const [doses, setDoses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [reloadToken, setReloadToken] = useState(0)
+  const { data, loading, refresh } = useCachedQuery(
+    petId ? `${MEDICATIONS_KEY_PREFIX}${petId}` : null,
+    () => {
+      // The earliest date any medication could still be counting from. A week
+      // can start in the previous month — Wednesday the 1st — so this is the
+      // earlier of the two rather than simply the month start.
+      const earliestStart = [weekStartIsoDate(), monthStartIsoDate()].sort()[0]
+      return Promise.all([fetchMedications(petId), fetchDosesSince(petId, earliestStart)])
+        .then(([medications, doses]) => ({ medications, doses }))
+    },
+    { empty: MEDICATIONS_EMPTY },
+  )
 
-  const refresh = useCallback(() => setReloadToken((n) => n + 1), [])
-
-  useEffect(() => {
-    if (!petId) {
-      setMedications([])
-      setDoses([])
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    // The earliest date any medication could still be counting from. A week
-    // can start in the previous month — Wednesday the 1st — so this is the
-    // earlier of the two rather than simply the month start.
-    const earliestStart = [weekStartIsoDate(), monthStartIsoDate()].sort()[0]
-
-    Promise.all([fetchMedications(petId), fetchDosesSince(petId, earliestStart)])
-      .then(([meds, todaysDoses]) => {
-        if (cancelled) return
-        setMedications(meds)
-        setDoses(todaysDoses)
-      })
-      .catch((error) => {
-        console.error('Failed to load medications:', error.message)
-        if (cancelled) return
-        setMedications([])
-        setDoses([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [petId, reloadToken])
-
-  return { medications, doses, loading, refresh }
+  return useMemo(() => ({
+    medications: data?.medications ?? MEDICATIONS_EMPTY.medications,
+    doses: data?.doses ?? MEDICATIONS_EMPTY.doses,
+    loading,
+    refresh,
+  }), [data, loading, refresh])
 }
 
 // "2× per day", "as needed", "8:00am, 8:00pm" — one medication's schedule in

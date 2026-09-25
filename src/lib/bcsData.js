@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { supabase } from './supabase'
+import { invalidateQuery, useCachedQuery } from './queryCache'
+
+// Read back by three screens at once — the home card's cap reason, the weight
+// chart in Trends, and the Body Condition screen itself — so it is served
+// from the session cache rather than re-queried on every arrival. Same reason
+// as the assessment history: see lib/queryCache.js.
+const BCS_EMPTY = []
+
+function bcsKey(petId) {
+  return petId ? `bcs-entries:${petId}` : null
+}
 
 function mapBcsRow(row) {
   return {
@@ -34,6 +45,9 @@ function localIsoDate() {
 }
 
 export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate }) {
+  // Cleared here rather than in whichever screen happened to save, following
+  // the same convention as qolData and conditionsData.
+  if (petId) invalidateQuery(bcsKey(petId))
   const { error } = await supabase
     .from('bcs_entries')
     .upsert(
@@ -52,34 +66,14 @@ export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate })
 }
 
 export function useBcsHistory(petId) {
-  const [entries, setEntries] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [reloadToken, setReloadToken] = useState(0)
+  const { data, loading, refresh } = useCachedQuery(
+    bcsKey(petId),
+    () => fetchBcsEntries(petId),
+    { empty: BCS_EMPTY },
+  )
 
-  useEffect(() => {
-    if (!petId) {
-      setEntries([])
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    fetchBcsEntries(petId)
-      .then((result) => {
-        if (!cancelled) setEntries(result)
-      })
-      .catch((error) => {
-        console.error('Failed to load BCS history:', error.message)
-        if (!cancelled) setEntries([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => { cancelled = true }
-  }, [petId, reloadToken])
-
-  return { entries, loading, refresh: () => setReloadToken((n) => n + 1) }
+  return useMemo(
+    () => ({ entries: data ?? BCS_EMPTY, loading, refresh }),
+    [data, loading, refresh],
+  )
 }
