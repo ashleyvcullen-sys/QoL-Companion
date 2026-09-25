@@ -5736,3 +5736,39 @@ code {
   width: 28px;
   height: 28px;
 }
+
+/* --- The graph's own scroller ---------------------------------------------
+   
+   Ash's instruction 25 Sep 2026: moving along a graph was fiddly. The brush
+   is 40px tall now (it was 24) and its handles 16px wide (they were 8), and
+   these rules give them something to grab: a filled handle with a grip line
+   down it, and a window that reads as a window.
+   
+   Recharts draws all of this as SVG, so it is styled here rather than
+   passed as props — there is no prop for "put a grip on the traveller". */
+.recharts-brush > rect:first-of-type {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+
+.recharts-brush-slide {
+  fill: var(--accent);
+  fill-opacity: 0.1;
+}
+
+.recharts-brush-traveller rect {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  rx: 4;
+}
+
+.recharts-brush-traveller line {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.recharts-brush-texts text {
+  font-size: var(--type-nano);
+  fill: var(--text-muted);
+}

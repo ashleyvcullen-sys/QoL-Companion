@@ -8,7 +8,12 @@ import { isoDaysAgo } from '../lib/formatDate'
 // called DEFAULT_VISIBLE_DAYS until 5 Sep 2026, which described neither what
 // it counts nor what it does; the behaviour is unchanged.
 const DEFAULT_VISIBLE_POINTS = 14
-const BRUSH_HEIGHT = 24
+// Tall enough to be dragged with a thumb — Ash's instruction 25 Sep 2026
+// that scrolling along a graph was awkward. It was 24px, which is under half
+// Apple's 44pt minimum, and the two handles were 8px wide: a control you had
+// to aim at rather than grab.
+const BRUSH_HEIGHT = 40
+const BRUSH_TRAVELLER_WIDTH = 16
 
 export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, severityBands = null, markers = [], isAnimationActive = true, brush = false, allTime = false, windowDays = null }) {
   const containerHeight = brush ? height + BRUSH_HEIGHT + 10 : height
@@ -34,34 +39,21 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
     ? (props) => {
         const value = props.payload?.[dataKey]
         if (value == null) return null
-        // A day that was HELD at this number — by a disease finding, by body
-        // condition, by a severe answer — gets a ring around it, so the chart
-        // says the same thing the home card does. Without it a day capped at
-        // 74 and a day that genuinely averaged 74 are the same dot, and the
-        // one you would ask about in a consult is invisible.
-        const capped = Boolean(props.payload?.capReason)
+        // A plain dot. Capped days briefly wore a ring around them — Ash had
+        // it removed on 25 Sep 2026: on a line with twenty points the rings
+        // read as a second, competing series rather than as an annotation.
+        // The reason a day was capped is on the home card and in the report,
+        // where there is room to say it in words.
         return (
-          <g key={`${props.payload.date}-dot`}>
-            {capped && (
-              <circle
-                cx={props.cx}
-                cy={props.cy}
-                r={6}
-                fill="none"
-                stroke={severityColorFromPercent(value)}
-                strokeWidth={1.5}
-                opacity={0.55}
-              />
-            )}
-            <circle
-              cx={props.cx}
-              cy={props.cy}
-              r={3}
-              fill={severityColorFromPercent(value)}
-              stroke="#fff"
-              strokeWidth={1}
-            />
-          </g>
+          <circle
+            key={`${props.payload.date}-dot`}
+            cx={props.cx}
+            cy={props.cy}
+            r={3}
+            fill={severityColorFromPercent(value)}
+            stroke="#fff"
+            strokeWidth={1}
+          />
         )
       }
     : false
@@ -157,7 +149,11 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             dataKey="date"
             height={BRUSH_HEIGHT}
             stroke={color}
-            travellerWidth={8}
+            travellerWidth={BRUSH_TRAVELLER_WIDTH}
+            // The dates under the window, so dragging it says where you are
+            // rather than only how far along. Same short format the axis
+            // uses.
+            tickFormatter={formatDateDDMM}
             // All time opens the window on the whole series — Ash's
             // instruction 4 Sep 2026. The default fortnight is right for the
             // question an owner asks daily and wrong for the one they ask
