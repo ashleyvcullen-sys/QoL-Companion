@@ -67,13 +67,6 @@ export default function SwipeableWizard({
   }, [pageIndex])
   const isLastPage = pageIndex === pages.length - 1
 
-  // Per-page scroll offsets, captured whenever a page is left. Forward
-  // navigation always lands at the top of the new page; only Back restores
-  // where that specific page was scrolled to before the user moved on from
-  // it — same mental model as a browser's own back button.
-  const scrollPositions = useRef({})
-  const nextScrollMode = useRef('top')
-
   // The element the questions live in. Moved directly, not through state: a
   // drag redraws on every touchmove, and re-rendering a whole assessment page
   // sixty times a second to move it 4px is how a swipe ends up feeling worse
@@ -88,6 +81,39 @@ export default function SwipeableWizard({
   // on from there. That continuity is the difference between a page that
   // slides and a page that blinks.
   const dragX = useRef(0)
+
+  // Every question opens at its top, and the trip up there is never shown.
+  //
+  // Ash's report 25 Sep 2026: moving between questions "jolts to the top each
+  // time". The scroll reset was correct and its TIMING was wrong — it landed
+  // at the end of the sideways slide, so the eye saw the page move across and
+  // then the whole document snap upwards.
+  //
+  // What fixes it is not scrolling later or less, but putting the incoming
+  // question where it is going to end up BEFORE it is visible. A neighbour is
+  // absolutely positioned inside the track at top: 0, which is the top of the
+  // question you are currently reading — so when the document is scrolled down
+  // 300px, the neighbour that slides in is showing its middle. Offsetting it
+  // by exactly the scroll position puts its top under the viewport's top
+  // instead. It slides in already at the top; the reset that follows the swap
+  // then moves nothing on screen, because the page is already there.
+  //
+  // Per-page scroll offsets were kept here until now, so Back returned each
+  // question to where it had been left. That is gone on the same instruction:
+  // every page opens at the top, whichever way it was reached.
+  //
+  // The one thing this cannot do is lengthen the card while it borrows the
+  // offset, so on a question TALLER than the one it replaces the last of it
+  // can be clipped for the length of the slide. Deliberate: questions are
+  // built to fit the screen, which is the case where the offset is zero and
+  // none of this happens at all.
+  const setNeighbourOffset = useCallback((y) => {
+    const track = trackRef.current
+    if (!track) return
+    for (const neighbour of track.querySelectorAll('.wizard-neighbour')) {
+      neighbour.style.top = y ? `${y}px` : ''
+    }
+  }, [])
 
   const still = reduceMotion()
 
@@ -151,11 +177,11 @@ export default function SwipeableWizard({
   }, [])
 
   useLayoutEffect(() => {
-    if (nextScrollMode.current === 'restore') {
-      window.scrollTo(0, scrollPositions.current[pageIndex] ?? 0)
-    } else {
-      window.scrollTo(0, 0)
-    }
+    // Both in the same frame, before the browser paints: the page that has
+    // just become the middle one sits at the top of the track, and the
+    // document goes to the top to match. Nothing appears to move.
+    window.scrollTo(0, 0)
+    setNeighbourOffset(0)
 
     // The page that was the neighbour is now the middle one, so the track
     // goes back to zero with no animation: it has already travelled.
@@ -172,7 +198,7 @@ export default function SwipeableWizard({
     if (trackRef.current) trackRef.current.style.height = ''
     writeTrack(0, 0)
     setLifted(false)
-  }, [pageIndex, writeTrack, cancelPendingWrite, setLifted])
+  }, [pageIndex, writeTrack, cancelPendingWrite, setLifted, setNeighbourOffset])
 
   // One move, however it was asked for. The track finishes the slide to
   // where the neighbour already is, and only then does the index change —
@@ -205,13 +231,15 @@ export default function SwipeableWizard({
     if (done) done()
   }
 
-  function moveTo(index, { restoreScroll }) {
+  function moveTo(index) {
     if (index === pageIndex || index < 0 || index > pages.length - 1) return
     // A move asked for while one is still running: finish that one first, so
     // two swipes in quick succession queue up rather than fight.
     finishSettle()
-    scrollPositions.current[pageIndex] = window.scrollY
-    nextScrollMode.current = restoreScroll ? 'restore' : 'top'
+    // Before the slide starts, so the question that arrives is already at its
+    // top — see setNeighbourOffset. A tap on Next needs this as much as a
+    // swipe does: the jolt was never about which control asked.
+    setNeighbourOffset(window.scrollY)
     const track = trackRef.current
     const neighbouring = Math.abs(index - pageIndex) === 1
     if (still || !neighbouring || !track) {
@@ -273,18 +301,16 @@ export default function SwipeableWizard({
       onComplete?.()
       return
     }
-    moveTo(pageIndex + 1, { restoreScroll: false })
+    moveTo(pageIndex + 1)
   }
 
   function goBack() {
-    moveTo(pageIndex - 1, { restoreScroll: true })
+    moveTo(pageIndex - 1)
   }
 
-  // Straight to a page, from its dot. Back and Next were removed on Ash's
-  // instruction 24 Sep 2026 — the swipe is the way through, and the dots are
-  // both the map and the control.
+  // Straight to a page, from its dot.
   function goTo(index) {
-    moveTo(index, { restoreScroll: index < pageIndex })
+    moveTo(index)
   }
 
   // Moving on by itself, where the page has asked for it with
@@ -336,7 +362,13 @@ export default function SwipeableWizard({
       const atStart = dx > 0 && pageIndex === 0
       const atEnd = dx < 0 && isLastPage
       const blocked = atStart || atEnd
-      if (dragX.current === 0 && !blocked) setLifted(true)
+      if (dragX.current === 0 && !blocked) {
+        setLifted(true)
+        // The neighbour is about to come into view, so it needs its offset
+        // now rather than at the end of the gesture — the whole point is that
+        // it is never SEEN anywhere but at its top.
+        setNeighbourOffset(window.scrollY)
+      }
       dragX.current = blocked ? 0 : dx
       setTrack(blocked ? dx * EDGE_RESISTANCE : dx, 0)
     },
@@ -347,7 +379,12 @@ export default function SwipeableWizard({
       if (!committed) {
         dragX.current = 0
         setTrack(0, SPRING_MS)
-        window.setTimeout(() => setLifted(false), SPRING_MS)
+        window.setTimeout(() => {
+          setLifted(false)
+          // Nothing changed page, so the borrowed offset goes back: the next
+          // gesture takes the scroll position as it is then.
+          setNeighbourOffset(0)
+        }, SPRING_MS)
       }
     },
   })
@@ -409,15 +446,26 @@ export default function SwipeableWizard({
           ))}
         </div>
       )}
-      {/* Only the one button that is not navigation. Back and Next went on
-          Ash's instruction 24 Sep 2026 — swiping moves between questions and
-          the dots say where you are — but finishing is a decision, and a
-          decision needs something to press. */}
-      {isLastPage && (
-        <div className="swipeable-wizard-nav">
-          <Btn type="button" className="btn-block" onClick={goNext}>{finishLabel}</Btn>
-        </div>
-      )}
+      {/* Back and Next, restored on Ash's instruction 25 Sep 2026.
+          
+          They were removed on 24 Sep in favour of the swipe and the dots. The
+          swipe stays and is still the quick way through — but a gesture is
+          only discoverable once you have made it, and the dots say where you
+          are rather than offering a way on. So the buttons are back, doing
+          exactly what the swipe does, and landing at the top of the question
+          as a tap should.
+          
+          Back is absent on the first page rather than disabled: on the
+          assessment a backwards move from page one is Exit, which is the
+          wizard's own confirmation and does not belong on a Next row. */}
+      <div className="swipeable-wizard-nav">
+        {pageIndex > 0 && (
+          <Btn type="button" variant="outline" onClick={() => goBack()}>Back</Btn>
+        )}
+        <Btn type="button" onClick={() => goNext()}>
+          {isLastPage ? finishLabel : 'Next'}
+        </Btn>
+      </div>
       {pageFooters[pageIndex] ?? null}
       {footer}
     </div>

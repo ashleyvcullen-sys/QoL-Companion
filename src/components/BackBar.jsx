@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, House } from 'lucide-react'
-import { useBackNavVisible, useTabSwipeTargets } from '../lib/useTabBar'
+import { useBackNavVisible, useOnTabRoot } from '../lib/useTabBar'
 import { useHorizontalSwipe } from '../lib/swipeNav'
 import { useZoom } from './ZoomTransition'
 
@@ -14,18 +14,17 @@ import { useZoom } from './ZoomTransition'
 // gesture and the button are never available in different places.
 //
 // The gesture itself lives in lib/swipeNav.js, which the assessment wizard
-// shares — anywhere on the screen, on every screen, with one guard list.
+// shares — anywhere on the screen, with one guard list. It is off on the tab
+// roots; see useOnTabRoot for why.
 //
 // Sticky rather than fixed: it takes its own space at the top of the column
 // instead of floating over the first card, and still never scrolls away.
 export default function BackBar() {
   const navigate = useNavigate()
   const visible = useBackNavVisible()
-  // On a tab root the swipe is a pager: left for the next tab, right for the
-  // previous one — Ash's instruction 24 Sep 2026. Null anywhere else, where a
-  // right swipe means back and a left one means forward.
-  const tabs = useTabSwipeTargets()
-  const onTabRoot = Boolean(tabs)
+  // A tab root has no back of its own, and since 25 Sep 2026 no swipe either
+  // — see useOnTabRoot.
+  const onTabRoot = useOnTabRoot()
   const { zoomBack } = useZoom()
 
   // Forward, for a screen the owner has already swiped back out of — Ash's
@@ -58,28 +57,21 @@ export default function BackBar() {
     pop()
   }, [navigate, zoomBack])
 
-  // Right goes back, left goes forward — and on a tab root the same swipe
-  // pages between tabs instead. Ash's instruction 24 Sep 2026: "forward /
-  // back in the app, not just across the tabs", from anywhere on the screen.
+  // Right goes back, left goes forward, on the screens that have a back
+  // control to agree with.
+  //
+  // NOT on the tab roots. The same gesture paged between tabs there until
+  // 25 Sep 2026, when Ash had it removed: the bar is five taps wide at the
+  // bottom of the screen, and a swipe that changed tab was mostly met by
+  // accident while trying to scroll something. History would have done the
+  // same thing by another route — Trends back to Assess is a tab change
+  // whatever it is called — so the gesture is off there outright rather than
+  // narrowed.
   useHorizontalSwipe({
-    enabled: visible || onTabRoot,
+    enabled: visible && !onTabRoot,
     standDownForOwnPager: true,
-    onLeft: () => {
-      // The ends of the row do nothing rather than wrapping: a pager that
-      // loops turns "keep swiping" into a way of getting lost.
-      if (onTabRoot) {
-        if (tabs.next) navigate(tabs.next)
-        return
-      }
-      goForward()
-    },
-    onRight: () => {
-      if (onTabRoot) {
-        if (tabs.previous) navigate(tabs.previous)
-        return
-      }
-      goBack()
-    },
+    onLeft: goForward,
+    onRight: goBack,
   })
 
   if (!visible) return null

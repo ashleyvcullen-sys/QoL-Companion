@@ -11,7 +11,8 @@ import { useEffect, useRef } from 'react'
 // accident of which element is under the finger.
 //
 // Both users are here: the assessment wizard (previous / next question) and
-// the back bar (back / forward, and paging between tabs).
+// the back bar (back / forward). The back bar used to page between the main
+// tabs too; removed on Ash's instruction 25 Sep 2026 — see useOnTabRoot.
 
 // Things that move sideways under a finger themselves.
 //
@@ -29,7 +30,9 @@ export const BLOCKING_LAYERS = '.modal-overlay, .home-tour-backdrop, .media-ligh
 // A screen that pages itself. Where one of these is on screen it owns the
 // horizontal swipe outright, so the back bar stands down rather than both
 // answering the same gesture — which on a free account, where /assessment is
-// a tab root, moved the question AND changed tab.
+// a tab root, moved the question AND changed tab. The tab pager has since
+// gone, but the stand-down stays: an assessment reached from anywhere else
+// still has a back bar behind it.
 export const OWN_PAGER = '.swipeable-wizard'
 
 const TRAVEL_PX = 60

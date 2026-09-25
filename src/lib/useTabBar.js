@@ -26,38 +26,35 @@ export function isTabBarPath(pathname) {
   )
 }
 
-// The tab order itself, so the pager and the bar cannot disagree about what
-// comes after what. Medications is premium-only and sits where the bar puts
-// it, between Assess and Trends.
+// The paths the bottom bar itself leads to. Medications is premium-only and
+// sits where the bar puts it, between Assess and Trends.
 export function tabOrderFor(hasPremium) {
   return hasPremium
     ? ['/', '/assess', '/medications', '/trends', '/more']
     : ['/', '/assessment', '/trends', '/more']
 }
 
-// Swiping between tabs — Ash's instruction 24 Sep 2026. Left goes one tab
-// right, right goes one tab left, and the ends do nothing rather than
-// wrapping around: a pager that loops turns "keep swiping" into a way of
-// getting lost.
+// Standing on a tab root.
 //
-// Returns the path to go to, or null. Only on the tab roots themselves —
-// inside a condition or a settings screen a right swipe still means back.
-export function useTabSwipeTargets() {
+// Two things turn on it: the back control says "Home" rather than "Back",
+// because a tab has no history of its own to pop; and the horizontal swipe is
+// off entirely.
+//
+// The swipe used to PAGE between tabs here — left for the next tab, right for
+// the previous. Removed on Ash's instruction 25 Sep 2026: a tab bar is
+// already five taps wide at the bottom of the screen, and a gesture that
+// changes tab is mostly encountered by accident, while trying to scroll a
+// chart or a list. It stays where it is genuinely the way through: inside an
+// assessment, between questions.
+export function useOnTabRoot() {
   const { pathname } = useLocation()
   const { user, loading: authLoading } = useAuth()
   const { pets, loading: petsLoading } = usePets()
   const { hasPremium } = useEntitlements()
 
-  if (authLoading || petsLoading || !user || pets.length === 0) return null
+  if (authLoading || petsLoading || !user || pets.length === 0) return false
 
-  const order = tabOrderFor(hasPremium)
-  const index = order.indexOf(pathname)
-  if (index === -1) return null
-
-  return {
-    next: index < order.length - 1 ? order[index + 1] : null,
-    previous: index > 0 ? order[index - 1] : null,
-  }
+  return tabOrderFor(hasPremium).includes(pathname)
 }
 
 // True when the bar should be on screen. Used by TabBar to draw it and by
@@ -67,12 +64,9 @@ export function useTabSwipeTargets() {
 // Gated on there being an account with a pet in it, because /terms,
 // /privacy and /support are reachable signed out, where every tab would
 // bounce straight to the login screen.
-// Whether this screen gets the back bar and the edge-swipe that goes with
-// it. Deliberately the same answer for both, so the button and the gesture
-// can never disagree about whether going back is a thing here.
-// Whether this screen gets the back bar and the edge-swipe that goes with
-// it. Deliberately the same answer for both, so the button and the gesture
-// can never disagree about whether going back is a thing here.
+// Whether this screen gets the back bar, and the swipe that goes with it.
+// Deliberately the same answer for both, so the button and the gesture can
+// never disagree about whether going back is a thing here.
 //
 // Every screen but Home has one — Ash's instruction 23 Sep 2026. On the
 // other tab roots the button goes Home rather than back, because a tab has
