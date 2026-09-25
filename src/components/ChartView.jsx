@@ -105,6 +105,9 @@ export default function ChartView({
         height={chart.height}
         domain={chart.domain}
         unit={chart.unit}
+        // What the number IS, for the tooltip's sentence. Most charts are named
+        // after their measure and can say so; the overall one is a score.
+        valueLabel={chart.tooltipLabel ?? chart.label}
         referenceValue={chart.threshold}
         referenceLabel={chart.thresholdLabel}
         band={chart.band}

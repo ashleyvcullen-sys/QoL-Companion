@@ -5224,6 +5224,21 @@ code {
   color: var(--text-h);
 }
 
+/* The tapped day, in one sentence — see DayValueTooltip. A custom tooltip
+   replaces Recharts' own box as well as its contents, so the box is here. */
+.chart-tooltip {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lift);
+  color: var(--text-h);
+  font-size: var(--type-meta);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* The quick-log link on the assessment intro, and the line that replaces it
    once the answers have been carried over. */
 .assessment-prefill-link {

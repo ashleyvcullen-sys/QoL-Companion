@@ -15,7 +15,27 @@ const DEFAULT_VISIBLE_POINTS = 14
 const BRUSH_HEIGHT = 40
 const BRUSH_TRAVELLER_WIDTH = 16
 
-export default function TrendLineChart({ data, dataKey, color, height, domain, unit, referenceValue, referenceLabel, band = null, severityBands = null, markers = [], isAnimationActive = true, brush = false, allTime = false, windowDays = null }) {
+// One line, in words: "Score for 25/09/26: 84%".
+//
+// Ash's report 25 Sep 2026: tapping a day on a graph said "generalPercent",
+// which is the name of a column in a table nobody using the app can see.
+// Recharts' default tooltip labels a series by its dataKey unless it is given
+// something better, and stacks the date above it as a second line — so the
+// one thing an owner wants from a tap (what was the score that day?) arrived
+// as two lines of jargon. This is the whole sentence instead.
+function DayValueTooltip({ active, payload, label, valueLabel, unit }) {
+  if (!active || !payload?.length) return null
+  const value = payload[0]?.value
+  if (value == null) return null
+
+  return (
+    <div className="chart-tooltip">
+      {valueLabel} for {formatDateDDMMYY(label)}: {value}{unit ?? ''}
+    </div>
+  )
+}
+
+export default function TrendLineChart({ data, dataKey, color, height, domain, unit, valueLabel = 'Value', referenceValue, referenceLabel, band = null, severityBands = null, markers = [], isAnimationActive = true, brush = false, allTime = false, windowDays = null }) {
   const containerHeight = brush ? height + BRUSH_HEIGHT + 10 : height
 
   // Where the brush opens. The series is one row per logged day, so a window
@@ -69,7 +89,7 @@ export default function TrendLineChart({ data, dataKey, color, height, domain, u
             tooltip gives the full date for whichever point is tapped. */}
         <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={formatDateDDMM} />
         <YAxis domain={domain} tick={{ fontSize: 11 }} />
-        <Tooltip labelFormatter={formatDateDDMMYY} />
+        <Tooltip content={<DayValueTooltip valueLabel={valueLabel} unit={unit} />} />
         {/* A healthy band, drawn behind everything else.
             
             A threshold line answers "am I above the line?". A band answers

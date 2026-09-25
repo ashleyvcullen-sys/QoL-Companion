@@ -290,6 +290,9 @@ function overallChart(dailySeries) {
     group: CHART_GROUPS.OVERALL,
     groupLabel: 'Overall',
     label: 'Overall QoL',
+    // "Score for 25/09/26: 84%" reads better on a tap than the chart's own
+    // name does — Ash's wording, 25 Sep 2026.
+    tooltipLabel: 'Score',
     title: 'Overall QoL Over Time',
     kind: 'line',
     data: dailySeries,
