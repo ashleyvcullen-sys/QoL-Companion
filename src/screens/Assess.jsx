@@ -95,12 +95,16 @@ export default function Assess() {
             is the middle clause: an owner who has not spotted a slow decline
             has not failed at anything, and a screen asking them to record
             more should say so before it asks. The rest is the same point —
-            small impressions, gathered, become something a vet can use. */}
+            small impressions, gathered, become something a vet can use.
+
+            Last clause widened on Ash's instruction 25 Sep 2026: the record is
+            not a handover. The owner is the one who keeps it and the one who
+            reads it back, so the sentence names them first. */}
         <p>
           Seeing {selectedPet?.name ?? 'your pet'} every day is exactly what makes a slow
           change so hard to notice — it isn&rsquo;t something you&rsquo;ve missed. Checking in
           regularly gathers those small moments into a picture you can look back on, and one
-          your vet can work from.
+          you and your vet can work from.
         </p>
       </Card>
 
