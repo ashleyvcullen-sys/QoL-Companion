@@ -5560,6 +5560,37 @@ code {
    Sized and coloured like the hint it replaced so the row does not gain a
    second loud element, but with the accent and the underline that say the
    words do something. */
+/* Reminders on or off, on each row of All Medications. A pill that states
+   which way it is set rather than a bare switch: a switch on a list row is
+   ambiguous about whether the label describes the state or the action. */
+.med-reminder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.med-reminder-toggle.is-on {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+
+.med-reminder-toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .med-reminders-off {
   display: inline-flex;
   align-items: center;

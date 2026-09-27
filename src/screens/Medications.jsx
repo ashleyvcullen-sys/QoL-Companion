@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BellOff, Check, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Bell, BellOff, Check, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
@@ -255,21 +255,29 @@ export default function Medications() {
     })
   }
 
-  // Turning reminders back on from the row itself.
+  // Reminders on or off, without opening the edit form.
   //
-  // Ash's instruction 27 Sep 2026. "reminders off" was a statement of fact
-  // with no way to act on it: the setting lives inside the edit form, so an
-  // owner who noticed the line had to work out that Edit was where it lived.
-  // The place you read that something is off is the place to turn it on.
-  async function handleEnableReminders(medication) {
+  // Ash's instruction 27 Sep 2026. The setting lived only inside Edit, so
+  // "reminders off" on the Today row was a statement of fact with no way to
+  // act on it, and turning them off again meant a round trip through a form
+  // built for changing doses and times.
+  //
+  // As-needed medications are deliberately not offered this: they answer to
+  // signs rather than to a clock, and `remindersEnabled` is forced false for
+  // them on save. A toggle that silently un-set itself would be worse than no
+  // toggle at all.
+  async function handleToggleReminders(medication) {
+    const next = !medication.remindersEnabled
     setBusy(true)
     setErrorMessage('')
     try {
-      const saved = await updateMedication(medication.id, { remindersEnabled: true })
+      const saved = await updateMedication(medication.id, { remindersEnabled: next })
+      // Arms them, or cancels what was queued — scheduleMedicationReminders
+      // reads remindersEnabled and does the right thing either way.
       await syncReminders(saved)
-      // Same permission dance as saving: the reminder is armed either way, and
-      // asking only once it is actually needed keeps the prompt meaningful.
-      if (isNative && notifStatus !== 'granted') {
+      // Only ask for permission when turning them ON, and only once it is
+      // actually needed. Asking while switching them off would be absurd.
+      if (next && isNative && notifStatus !== 'granted') {
         const display = await requestNotificationPermission()
         setNotifStatus(display)
         if (display === 'granted') await syncReminders(saved)
@@ -463,7 +471,7 @@ export default function Medications() {
           <button
             type="button"
             className="med-reminders-off"
-            onClick={() => handleEnableReminders(medication)}
+            onClick={() => handleToggleReminders(medication)}
             disabled={busy}
           >
             <BellOff size={13} aria-hidden="true" />
@@ -862,6 +870,25 @@ export default function Medications() {
                     {medication.active ? '' : ' — stopped'}
                   </span>
                   {medication.notes && <span className="assessment-hint">{medication.notes}</span>}
+                  {/* Here rather than on the Today row: Today is where you
+                      notice reminders are off, this is where medications are
+                      managed. The Today row keeps its one-tap way to switch
+                      them back on, which is the case worth interrupting for. */}
+                  {medication.active && medication.scheduleMode !== 'as_needed' && (
+                    <button
+                      type="button"
+                      className={`med-reminder-toggle ${medication.remindersEnabled ? 'is-on' : ''}`.trim()}
+                      onClick={() => handleToggleReminders(medication)}
+                      aria-pressed={medication.remindersEnabled}
+                      aria-label={`Reminders for ${medication.name}`}
+                      disabled={busy}
+                    >
+                      {medication.remindersEnabled
+                        ? <Bell size={13} aria-hidden="true" />
+                        : <BellOff size={13} aria-hidden="true" />}
+                      {medication.remindersEnabled ? 'Reminders on' : 'Reminders off'}
+                    </button>
+                  )}
                 </div>
                 <div className="med-list-actions">
                   <button type="button" aria-label={`Edit ${medication.name}`} onClick={() => startEdit(medication)}>
