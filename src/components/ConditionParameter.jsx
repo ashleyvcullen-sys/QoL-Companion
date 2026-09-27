@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Camera } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Camera } from 'lucide-react'
 import ChoiceButtons from './ChoiceButtons'
 import ExpandableNote from './ExpandableNote'
 import HowTo from './HowTo'
@@ -234,17 +234,37 @@ export default function ConditionParameter({
 
       {parameter.type === 'date' && (
         <>
-          <input
-            type="date"
-            value={isBlanked ? '' : value}
-            disabled={isBlanked}
-            // No future dates. Every date this type asks for is something that
-            // has already happened — the day a diet trial started, the day a
-            // protein was introduced — and a trial that begins next Thursday
-            // would quietly produce a negative number of weeks below.
-            max={todayIsoDate()}
-            onChange={(e) => set(parameter.key, e.target.value)}
-          />
+          {/* An empty date input is the least obvious control on iOS: with the
+              native appearance stripped (so it matches every other field's
+              box) it draws as a bare grey bar with nothing in it, and Ash
+              reported on 27 Sep 2026 that nothing says it opens a calendar.
+              
+              So an empty one wears a dashed accent border — the same "there is
+              something to do here" language as Add a Pet — and a prompt that
+              says what tapping does. The prompt is pointer-events: none and
+              aria-hidden, so it is purely a picture: the tap lands on the real
+              input underneath and the screen reader still hears the field's
+              own label rather than a second, competing one. */}
+          <span className={`date-field ${!isBlanked && !value ? 'is-empty' : ''}`.trim()}>
+            <input
+              type="date"
+              value={isBlanked ? '' : value}
+              disabled={isBlanked}
+              // No future dates. Every date this type asks for is something
+              // that has already happened — the day a diet trial started, the
+              // day a protein was introduced — and a trial that begins next
+              // Thursday would quietly produce a negative number of weeks
+              // below.
+              max={todayIsoDate()}
+              onChange={(e) => set(parameter.key, e.target.value)}
+            />
+            {!isBlanked && !value && (
+              <span className="date-field-prompt" aria-hidden="true">
+                <CalendarDays size={16} aria-hidden="true" />
+                Tap to choose a date
+              </span>
+            )}
+          </span>
           {/* How long ago, worked out for them.
               
               The whole reason to ask for the date rather than "how many weeks

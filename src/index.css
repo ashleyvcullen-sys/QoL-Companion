@@ -346,6 +346,41 @@ code {
    medication form's date row out of line. Pinned to the same box as every
    other input, with a minimum height so the native control has somewhere to
    draw itself rather than clipping its own digits. */
+/* An empty date field, made to look like something you press.
+   
+   Ash's report 27 Sep 2026: the elimination diet's start date "comes up as a
+   grey bar" with nothing to say a calendar is behind it. The dashed accent
+   border borrows the Add a Pet treatment — the app's existing way of saying
+   "this is empty and wants filling" — and the prompt sits over the top until
+   there is a real date to show. */
+.date-field {
+  position: relative;
+  display: block;
+}
+
+.date-field.is-empty input[type="date"] {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.date-field-prompt {
+  /* Inset by the border's width so the dashed edge stays visible around it. */
+  position: absolute;
+  inset: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--type-support);
+  font-weight: 600;
+  /* The tap belongs to the input underneath — this is a picture, not a
+     control. */
+  pointer-events: none;
+}
+
 .field input[type="date"],
 .field input[type="time"],
 .med-date-row input[type="date"],
