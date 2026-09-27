@@ -549,10 +549,16 @@ export default function Trends() {
               changed when urination moved between them — APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. */}
           <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin, itch and passing urine; Appetite covers eating, drinking and digestion; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is capped at 49% or below.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more), your pet's favourite things, and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
-          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Updated to match the floor rules: any
-              Severe pain answer, blood in the vomit and a cat's possible
-              urinary blockage now set the rating AND cap the score. */}
-          <p>Because an average can hide a single serious problem, some findings hold the overall rating down on their own: a Severe or Very severe answer in the pain assessment, blood in the vomit, or signs of a urinary blockage in a cat. Any of these records the day as Severely reduced, with the score capped at 49% — so a pet with one urgent issue won't be shown as doing well just because everything else looks fine.</p>
+          {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. Her wording.
+              
+              The three worked examples that used to be named here — a Severe
+              pain answer, blood in the vomit, a cat's possible urinary
+              blockage — are gone on her instruction. They were a partial list
+              of a set that keeps growing, and a list that is out of date is
+              worse than no list: an owner who reads three examples reasonably
+              takes them for the whole rule. The principle is the part that
+              stays true. */}
+          <p>Because an average can hide a single serious problem, some findings hold the overall rating down on their own — so an urgent issue in an otherwise normal assessment won't be overlooked.</p>
           <p>Together, these give you a fuller picture than either could alone. The scoring rules themselves are fixed and transparent — built using adaptations of these clinical frameworks alongside veterinary clinical expertise, not judged case-by-case or influenced by AI.</p>
         </Modal>
       )}
