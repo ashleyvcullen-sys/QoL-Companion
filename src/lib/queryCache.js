@@ -20,12 +20,33 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const cache = new Map()
 const inFlight = new Map()
 
+// Everyone currently reading a key.
+//
+// Ash's report 27 Sep 2026: the dose dot on the Meds tab did not clear when
+// the last dose was ticked off. The tab bar and the Medications screen each
+// run their own useMedications, so the screen invalidated the key and
+// refetched ITS copy while the bar went on showing the value it already held
+// — and the bar never unmounts, so nothing ever corrected it.
+//
+// A cache that hands the same key to several readers has to tell all of them
+// when that key goes stale, otherwise "one source of truth" is only true for
+// whichever component did the writing.
+const subscribers = new Map()
+
+function notify(key) {
+  const listeners = subscribers.get(key)
+  if (!listeners) return
+  // Copied, because a listener may unsubscribe while being called.
+  for (const listener of [...listeners]) listener()
+}
+
 // Cleared when a pet's data is written, so the next read is honest. Callers
 // use the `refresh` their hook already returns; this is the shared plumbing
 // under it.
 export function invalidateQuery(key) {
   cache.delete(key)
   inFlight.delete(key)
+  notify(key)
 }
 
 // Every key under a prefix.
@@ -43,6 +64,11 @@ export function invalidateQueryPrefix(prefix) {
   for (const key of [...inFlight.keys()]) {
     if (key.startsWith(prefix)) inFlight.delete(key)
   }
+  // Readers are told even where nothing was cached under their key yet: a
+  // component mid-fetch still needs to know its answer is already out of date.
+  for (const key of [...subscribers.keys()]) {
+    if (key.startsWith(prefix)) notify(key)
+  }
 }
 
 export function useCachedQuery(key, fetcher, { empty = null } = {}) {
@@ -57,6 +83,24 @@ export function useCachedQuery(key, fetcher, { empty = null } = {}) {
   const refresh = useCallback(() => {
     if (key) invalidateQuery(key)
     setReloadToken((n) => n + 1)
+  }, [key])
+
+  // Re-read when anyone invalidates this key, not only when this component
+  // asked for it. One request still goes out however many readers there are:
+  // they all land on the same `inFlight` promise below.
+  useEffect(() => {
+    if (!key) return undefined
+    const listener = () => setReloadToken((n) => n + 1)
+    let listeners = subscribers.get(key)
+    if (!listeners) {
+      listeners = new Set()
+      subscribers.set(key, listeners)
+    }
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+      if (listeners.size === 0) subscribers.delete(key)
+    }
   }, [key])
 
   useEffect(() => {
