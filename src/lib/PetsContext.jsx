@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { signPetPhoto } from './mediaData'
 import { supabase } from './supabase'
 import { useAuth } from './AuthContext'
@@ -14,6 +14,19 @@ export function PetsProvider({ children }) {
   const [pets, setPets] = useState([])
   const [loading, setLoading] = useState(true)
   const [petsError, setPetsError] = useState(null)
+
+  // Whether a real fetch has ever landed.
+  //
+  // `loading` is what App's RequireOnboardedPet returns the whole loading
+  // screen for, so setting it true on a REFRESH replaced the entire app for
+  // one round trip and rebuilt it — every time anything saved. Ash reported
+  // it as the reminder toggles glitching, 27 Sep 2026; it was every control
+  // on every screen that writes to the pet, the cadence pickers included.
+  //
+  // A first load has nothing to show and should say so. A re-read has the
+  // previous answer on screen and should leave it there until the new one
+  // arrives.
+  const hasLoadedRef = useRef(false)
 
   // Which user the current `pets` array was actually fetched for.
   //
@@ -58,7 +71,7 @@ export function PetsProvider({ children }) {
       return
     }
 
-    setLoading(true)
+    if (!hasLoadedRef.current) setLoading(true)
     setPetsError(null)
 
     try {
@@ -76,6 +89,7 @@ export function PetsProvider({ children }) {
 
       if (error) throw error
       setPets(data ?? [])
+      hasLoadedRef.current = true
 
       // Start signing the photos the moment the pets are known, rather than
       // when the avatar mounts a render or two later — Ash's report 24 Sep
