@@ -2642,6 +2642,33 @@ code {
   color: #fff;
 }
 
+/* The round tick box — Ash's instruction 27 Sep 2026.
+   
+   It is always drawn, empty or ticked, which is the whole point: an empty
+   circle says "this is waiting for you" in a way that an absent tick cannot.
+   Before this, a dose not yet given carried no mark at all, so the row read
+   as a set of labels rather than as a checklist. */
+.med-slot-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--severity-good);
+}
+
+/* On a given dose the chip is already green, so the circle goes white and
+   the tick takes the chip's colour — the same mark, inverted, rather than a
+   second green on green. */
+.med-slot.given .med-slot-tick {
+  border-color: #fff;
+  background: #fff;
+}
+
 .med-list-row {
   display: flex;
   align-items: flex-start;

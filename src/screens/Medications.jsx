@@ -468,7 +468,10 @@ export default function Medications() {
                   onClick={() => handleToggleSlot(medication, slot)}
                   aria-pressed={given}
                 >
-                  {given && <Check size={14} />} Dose {index + 1}
+                  <span className="med-slot-tick" aria-hidden="true">
+                    {given && <Check size={12} strokeWidth={3} />}
+                  </span>
+                  Dose {index + 1}
                 </button>
               )
             })}
@@ -491,7 +494,14 @@ export default function Medications() {
               onClick={() => handleToggleSlot(medication, time)}
               aria-pressed={given}
             >
-              {given && <Check size={14} />} {formatMedicationTime(time)}
+              {/* A round tick box, empty until the dose is given — Ash's
+                  instruction 27 Sep 2026. The tick used to appear in place of
+                  nothing, so an untaken dose had no mark of its own and the
+                  row read as a set of labels rather than as a checklist. */}
+              <span className="med-slot-tick" aria-hidden="true">
+                {given && <Check size={12} strokeWidth={3} />}
+              </span>
+              {formatMedicationTime(time)}
             </button>
           )
         })}
@@ -536,6 +546,10 @@ export default function Medications() {
 
       <Card>
         <SectionTitle>Today</SectionTitle>
+        {/* PENDING ASH on the wording. */}
+        <p className="screen-intro">
+          Tick each dose off once you've given it.
+        </p>
         {loading && <Skeleton lines={3} />}
         {!loading && active.length === 0 && <p>No medications added yet.</p>}
 
