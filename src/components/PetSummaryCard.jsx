@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, ChevronRight, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Check, ChevronRight, HelpCircle, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
 import ScoreRing from './ScoreRing'
@@ -338,19 +338,29 @@ export default function PetSummaryCard() {
                 A vet reading it over their shoulder has none either. The
                 reason is one line, in the muted type the rest of the stack
                 uses, and it only appears when a cap actually fired. */}
-            {/* Tappable since 27 Sep 2026, on Ash's instruction. The line
-                names WHAT capped the day; an owner seeing 49% under a pet who
-                ate and walked normally also wants to know why one answer is
-                allowed to do that, and the only place that was explained was
-                a modal three taps away on Trends. */}
+            {/* The explanation is one tap away since 27 Sep 2026, on Ash's
+                instruction. The line names WHAT capped the day; an owner
+                seeing 49% under a pet who ate and walked normally also wants
+                to know why one answer is allowed to do that, and the only
+                place that was explained was a modal three taps away on
+                Trends.
+                
+                A question mark beside the line rather than the whole line
+                underlined — Ash, 27 Sep 2026. The sentence is a statement
+                about today, not a link, and underlining all of it made the
+                fact look like the action. */}
             {latest.capReason && (
-              <button
-                type="button"
-                className="pet-summary-cap-reason"
-                onClick={() => setShowCapReason(true)}
-              >
+              <p className="pet-summary-cap-reason">
                 Capped at {latest.percent}% by {latest.capReason}
-              </button>
+                <button
+                  type="button"
+                  className="cap-reason-help"
+                  onClick={() => setShowCapReason(true)}
+                  aria-label="Why is this score capped?"
+                >
+                  <HelpCircle size={14} aria-hidden="true" />
+                </button>
+              </p>
             )}
 
             {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. A body condition score stops

@@ -5569,7 +5569,7 @@ code {
   gap: 6px;
   align-self: flex-start;
   margin-top: 6px;
-  padding: 7px 12px;
+  padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -5587,28 +5587,6 @@ code {
 }
 
 .med-reminder-toggle:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.med-reminders-off {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 2px;
-  /* A 44pt-tall tap target without a 44pt-tall box pushing the row apart. */
-  min-height: 44px;
-  background: none;
-  border: 0;
-  font: inherit;
-  font-size: var(--type-meta);
-  color: var(--accent-text);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.med-reminders-off:disabled {
   opacity: 0.5;
   cursor: default;
 }
@@ -5867,21 +5845,31 @@ code {
   text-wrap: pretty;
 }
 
-/* The cap reason is a button since 27 Sep 2026; the stale body-condition
-   line beside it still is not. Scoped to the element, so only the one you can
-   press sheds the button chrome and takes the underline. */
-button.pet-summary-cap-reason {
-  display: block;
-  width: 100%;
-  padding: 4px 0;
+/* The question mark beside the cap line — Ash, 27 Sep 2026, replacing an
+   underline across the whole sentence. The line states a fact about today;
+   only the mark is the thing to press. */
+.cap-reason-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  vertical-align: -5px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
   background: none;
-  border: 0;
-  font: inherit;
-  font-size: var(--type-meta);
-  color: var(--severity-moderate-text);
+  color: inherit;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+/* A full-size tap target without a 44px box wedged into a line of prose. */
+.cap-reason-help::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
 }
 
 .pet-summary-last {
