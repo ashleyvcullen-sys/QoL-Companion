@@ -756,6 +756,33 @@ export default function ConditionMonitoring() {
               </div>
             )}
 
+            {/* The way back to the condition's own page.
+                
+                Ash's report 27 Sep 2026: a condition with a check-in owed had
+                no option to stop tracking it. The cause was reachability, not
+                a missing control — `formOpen` defaults to true whenever
+                something is owed and nothing ever set it back, so for exactly
+                the conditions being monitored actively the page holding the
+                fortnight strip, the cadence, "Currently monitoring" and Stop
+                Tracking could not be opened at all. The Back control leaves
+                for the conditions list rather than landing there.
+                
+                On the first page only, the same rule as the standing facts
+                above: this is a decision you make before starting, not one to
+                offer under every question. Nothing is lost by closing —
+                answers so far are already in the draft, and "Record an Entry
+                Now" comes straight back to them. */}
+            {formOpen && wizardPage === 0 && (
+              <button
+                type="button"
+                className="subtle-link condition-close-form"
+                onClick={() => setFormOpenOverride(false)}
+              >
+                {/* PENDING ASH on the wording. */}
+                Not now — go to {definition.label.toLowerCase()} overview
+              </button>
+            )}
+
             {treatmentDay != null && (
               <p className="condition-flag" role="status">
                 <span>

@@ -2078,6 +2078,15 @@ code {
    the foot rather than a card with a heading. Ash's instruction 24 Sep
    2026. Danger colour, but no fill — nothing about it should invite a
    thumb on the way past. */
+/* The way out of an open check-in, back to the condition's own page — see
+   ConditionMonitoring. Centred and quiet: it is an escape hatch, not a
+   competing call to action beside the question. */
+.condition-close-form {
+  display: block;
+  margin: 0 auto 4px;
+  text-align: center;
+}
+
 .stop-tracking-card {
   padding: 10px 16px;
 }
@@ -5521,6 +5530,32 @@ code {
 }
 
 /* --- Medications, on the home card ---------------------------------------- */
+/* "Reminders off" as something you can press — Ash's instruction 27 Sep 2026.
+   Sized and coloured like the hint it replaced so the row does not gain a
+   second loud element, but with the accent and the underline that say the
+   words do something. */
+.med-reminders-off {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px;
+  /* A 44pt-tall tap target without a 44pt-tall box pushing the row apart. */
+  min-height: 44px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-meta);
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.med-reminders-off:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .med-today-state {
   display: inline-flex;
   align-items: center;
@@ -5768,6 +5803,10 @@ code {
   font-size: var(--type-meta);
   line-height: 135%;
   color: var(--severity-moderate-text);
+  /* Centred under the score it explains — Ash, 27 Sep 2026. Everything else
+     in that stack is centred, so left-aligned it read as a stray note rather
+     than as part of the number above it. */
+  text-align: center;
   text-wrap: pretty;
 }
 
