@@ -336,7 +336,7 @@ export default function Trends() {
       <HomeLink />
       <Card>
         <SectionTitle>Trends</SectionTitle>
-        <p>
+        <p className="screen-intro">
           Visual trends make gradual change easier to spot than single numbers — and are
           useful to bring to a vet visit.
         </p>
@@ -547,7 +547,7 @@ export default function Trends() {
           {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Rewritten for the new pillar mapping.
               The two clauses naming what Comfort and Appetite cover were
               changed when urination moved between them — APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. */}
-          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin, itch and passing urine; Appetite covers eating, drinking and digestion; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is held at 49% or below.</p>
+          <p>The 5 Overview pillars (Comfort, Appetite, Sleep, Curiosity, Connection) each bring together the answers that belong to them — from the Overall Quality of Life Assessment and from any disease monitoring recorded the same day. Comfort covers pain, mobility, breathing, skin, itch and passing urine; Appetite covers eating, drinking and digestion; Sleep covers rest; Curiosity covers activity, senses and favourite things; and Connection covers attitude and engagement with you. Pain questions are adapted from the BEAAAAPP pain assessment and, for cats, the Feline Grimace Scale. If any answer in a pillar is urgent, that pillar is capped at 49% or below.</p>
           <p>Your overall QoL score is a single average across everything you record — the everyday-function questions (appetite, hydration, hygiene, senses, and more), your pet's favourite things, and every category of the BEAAAAPP pain assessment, each counting equally. Anything you mark "Not sure," or haven't answered yet, is left out of the average rather than counted against your pet.</p>
           {/* APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Updated to match the floor rules: any
               Severe pain answer, blood in the vomit and a cat's possible

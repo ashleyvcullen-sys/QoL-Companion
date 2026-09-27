@@ -100,7 +100,7 @@ export default function Assess() {
             Last clause widened on Ash's instruction 25 Sep 2026: the record is
             not a handover. The owner is the one who keeps it and the one who
             reads it back, so the sentence names them first. */}
-        <p>
+        <p className="screen-intro">
           Seeing {selectedPet?.name ?? 'your pet'} every day is exactly what makes a slow
           change so hard to notice — it isn&rsquo;t something you&rsquo;ve missed. Checking in
           regularly gathers those small moments into a picture you can look back on, and one

@@ -1279,6 +1279,12 @@ code {
   line-height: 128%;
 }
 
+/* The frequency question now shares a card with the Reminders heading, so it
+   needs the gap the card boundary used to provide — see Schedule.jsx. */
+.schedule-frequency-help {
+  margin-top: 12px;
+}
+
 .icon-tile-link {
   /* Flex, so the card inside can be told to fill the cell. A button and an
      <a> both shrink-wrap their content otherwise. */
@@ -1365,6 +1371,20 @@ code {
    different name (kept for the screens already using it), and the paywall's
    subhead is the same thing again, so all three share a definition rather
    than drifting apart. */
+/* The line under a tab screen's heading that says what the screen is for.
+   
+   Ash's instruction 27 Sep 2026: smaller, and the same size on every one.
+   They were plain paragraphs inheriting the 16px body size while the
+   supporting lines beside them were 14px — so Medications carried two
+   different sizes in one intro, and Assess, Trends and Medications each
+   opened at a different weight to the hints below them. Sized with the
+   hints; the colour stays, so the intro still reads as the screen's own
+   sentence rather than as a footnote. */
+.screen-intro {
+  font-size: var(--type-support);
+  line-height: 145%;
+}
+
 .assessment-hint,
 .home-subtitle,
 .paywall-subhead {
@@ -3303,6 +3323,12 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* A row whose card supplies the heading — the badge is all that is left, so
+   it centres under the title instead of hugging the left edge. */
+.schedule-row-header.is-untitled {
+  justify-content: center;
 }
 
 .schedule-row-label {

@@ -255,6 +255,33 @@ export default function Medications() {
     })
   }
 
+  // Turning reminders back on from the row itself.
+  //
+  // Ash's instruction 27 Sep 2026. "reminders off" was a statement of fact
+  // with no way to act on it: the setting lives inside the edit form, so an
+  // owner who noticed the line had to work out that Edit was where it lived.
+  // The place you read that something is off is the place to turn it on.
+  async function handleEnableReminders(medication) {
+    setBusy(true)
+    setErrorMessage('')
+    try {
+      const saved = await updateMedication(medication.id, { remindersEnabled: true })
+      await syncReminders(saved)
+      // Same permission dance as saving: the reminder is armed either way, and
+      // asking only once it is actually needed keeps the prompt meaningful.
+      if (isNative && notifStatus !== 'granted') {
+        const display = await requestNotificationPermission()
+        setNotifStatus(display)
+        if (display === 'granted') await syncReminders(saved)
+      }
+      refresh()
+    } catch (error) {
+      setErrorMessage(error.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleSave() {
     const name = form.name.trim()
     if (!name) {
@@ -431,8 +458,17 @@ export default function Medications() {
             </button>
           )
         })}
+        {/* PENDING ASH on the wording. */}
         {!medication.remindersEnabled && (
-          <span className="assessment-hint"><BellOff size={13} /> reminders off</span>
+          <button
+            type="button"
+            className="med-reminders-off"
+            onClick={() => handleEnableReminders(medication)}
+            disabled={busy}
+          >
+            <BellOff size={13} aria-hidden="true" />
+            Reminders off — turn on
+          </button>
         )}
       </div>
     )
@@ -450,7 +486,7 @@ export default function Medications() {
 
       <Card className="bcs-intro">
         <SectionTitle>Medications</SectionTitle>
-        <p>
+        <p className="screen-intro">
           Keep {pet.name}'s medications in one place, and tick each dose off as you give it.
         </p>
         <p className="assessment-hint">
