@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, ChevronRight, HelpCircle, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Check, ChevronRight, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
 import ScoreRing from './ScoreRing'
@@ -23,7 +23,7 @@ import {
   computeGeneralQolResult,
   computeOverviewBreakdown,
   computeOverviewCategories,
-  describePointChange,
+  describePercentChange,
   severityColorFromPercent,
 } from '../lib/scoring'
 import { diseaseDaysByDate } from '../lib/diseaseDays'
@@ -350,17 +350,28 @@ export default function PetSummaryCard() {
                 about today, not a link, and underlining all of it made the
                 fact look like the action. */}
             {latest.capReason && (
-              <p className="pet-summary-cap-reason">
-                Capped at {latest.percent}% by {latest.capReason}
+              <>
+                <p className="pet-summary-cap-reason">
+                  Capped at {latest.percent}% by {latest.capReason}
+                </p>
+                {/* On its own line under the statement — Ash, 27 Sep 2026.
+                    Beside it, the button landed wherever the sentence happened
+                    to wrap, sometimes alone on a second line anyway.
+                    
+                    The mark is a plain question mark rather than lucide's
+                    HelpCircle, which draws its own circle and came out as two
+                    rings inside a round button.
+                    
+                    APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. Her wording. */}
                 <button
                   type="button"
                   className="cap-reason-help"
                   onClick={() => setShowCapReason(true)}
-                  aria-label="Why is this score capped?"
                 >
-                  <HelpCircle size={14} aria-hidden="true" />
+                  <span className="cap-reason-help-mark" aria-hidden="true">?</span>
+                  Why is the score capped?
                 </button>
-              </p>
+              </>
             )}
 
             {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. A body condition score stops
@@ -411,7 +422,7 @@ export default function PetSummaryCard() {
                 ? formatDateDDMMYY(latestGeneral.date)
                 : change === 0
                   ? 'Unchanged since last time'
-                  : describePointChange(change)}
+                  : describePercentChange(change)}
             </p>
           </div>
         ) : (

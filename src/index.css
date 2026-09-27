@@ -5875,28 +5875,41 @@ code {
 /* The question mark beside the cap line — Ash, 27 Sep 2026, replacing an
    underline across the whole sentence. The line states a fact about today;
    only the mark is the thing to press. */
+/* "Why is the score capped?" — its own line under the statement it explains,
+   Ash 27 Sep 2026. A real row means a real tap target, so this needs none of
+   the tricks the inline version did. */
 .cap-reason-help {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 6px;
-  vertical-align: -5px;
-  padding: 0;
-  border: 1px solid currentColor;
-  border-radius: 50%;
+  gap: 7px;
+  margin: 6px auto 0;
+  padding: 8px 4px;
+  min-height: 44px;
+  border: 0;
   background: none;
-  color: inherit;
+  font: inherit;
+  font-size: var(--type-meta);
+  font-weight: 600;
+  color: var(--accent-text);
   cursor: pointer;
 }
 
-/* A full-size tap target without a 44px box wedged into a line of prose. */
-.cap-reason-help::after {
-  content: '';
-  position: absolute;
-  inset: -12px;
+/* Filled rather than outlined, for something that reads as a control at a
+   glance. */
+.cap-reason-help-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: var(--type-label);
+  font-weight: 700;
+  line-height: 1;
 }
 
 .pet-summary-last {
