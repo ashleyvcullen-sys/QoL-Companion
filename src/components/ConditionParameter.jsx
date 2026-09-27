@@ -17,7 +17,7 @@ import {
   VCOG_GRADE_LABELS,
   VCOG_SCORES,
   evaluateParameter,
-  beapEmergencyFromFor,
+  emergencyFromFor,
   levelsFor,
   vcogColourForIndex,
   selectedValues,
@@ -431,12 +431,12 @@ export default function ConditionParameter({
             // with its own wording has no matching imagery.
             species={parameter.type === 'beap' && !parameter.hideImages ? species : undefined}
             categoryKey={parameter.type === 'beap' && !parameter.hideImages ? parameter.beapKey : undefined}
-            // A `scale` carries its own "(emergency)" marker in the level
-            // text, which SeverityOptionList finds for itself. A `beap` keeps
-            // that band in beapScales.js instead, so it has to be handed over
-            // — otherwise the hazard triangle is missing from exactly the
-            // rungs evaluateParameter is calling an emergency.
-            emergencyFrom={beapEmergencyFromFor(parameter, species)}
+            // The same threshold evaluateParameter uses, for both kinds of
+            // scale — a `beap` takes its band from beapScales.js, a plain
+            // scale from SCALE_EMERGENCY_FROM. Handed over rather than
+            // re-derived here, so the hazard triangle cannot appear on
+            // different rungs to the ones being scored as emergencies.
+            emergencyFrom={emergencyFromFor(parameter, species)}
             // A scale with its own scores (the faecal score) brings its own
             // rung labels and colours; every other scale takes the defaults.
             // Where those rungs differ by species — the cat faecal chart has

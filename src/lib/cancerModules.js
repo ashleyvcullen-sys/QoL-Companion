@@ -61,13 +61,17 @@ export const CORE_PARAMETERS = [
     // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 4. "Not eating at all"
     // is red in the assessment (Appetite 10) and in Kidney Disease, and was
     // only amber here.
-    emergencyFromGrade: 4,
+    //
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. Red from grade 3. Eating
+    // very little for more than a day despite coaxing is a patient who needs
+    // to be seen, and the day should say so rather than reading amber.
+    emergencyFromGrade: 3,
     emergencyMessage: SEEK_VET_ASAP,
     grades: [
       { grade: 0, owner: 'Eating normally.' },
       { grade: 1, owner: 'Eating a little less than usual, but still eating meals.' },
       { grade: 2, owner: 'Eating noticeably less. Needs coaxing, or only eats favourites.' },
-      { grade: 3, owner: 'Eating very little for more than a day, despite coaxing.' },
+      { grade: 3, owner: 'Eating very little for more than a day, despite coaxing. (emergency)' },
       { grade: 4, owner: 'Not eating at all. (emergency)' },
     ],
   },
@@ -79,13 +83,18 @@ export const CORE_PARAMETERS = [
     concernFromGrade: 3, // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
     // APPROVED — Dr Ash Cullen (BSc, DVM), 21 Sep 2026. Red from grade 4, where the rung already
     // carried the hazard triangle.
-    emergencyFromGrade: 4,
+    //
+    // APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. Red from grade 3, and the
+    // marker added to that rung to match: nauseous for over a day and not
+    // eating because of it is the same patient grade 3 appetite describes,
+    // and the two should not grade the day differently.
+    emergencyFromGrade: 3,
     emergencyMessage: SEEK_VET_ASAP,
     grades: [
       { grade: 0, owner: 'No sign of nausea.' },
       { grade: 1, owner: 'Occasional lip-licking or drooling, but eating normally.' },
       { grade: 2, owner: 'Lip-licking, drooling or gulping, and turning away from food.' },
-      { grade: 3, owner: 'Obviously nauseous for more than a day, and not eating because of it.' },
+      { grade: 3, owner: 'Obviously nauseous for more than a day, and not eating because of it. (emergency)' },
       { grade: 4, owner: 'Constantly nauseous and unable to keep anything down. (emergency)' },
     ],
   },

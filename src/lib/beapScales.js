@@ -167,7 +167,7 @@ export const BEAP_SCALES = {
       "Hunched, tucked tail, odd position. Can't seem to get comfortable.",
       "Rigid and trembling/shaking, can't seem to get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Response to Touch", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "palpation", letter: "P", label: "Response to Touch", concernFrom: 6, emergencyFrom: 10, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",
@@ -233,7 +233,7 @@ export const BEAP_SCALES = {
       "Tightly hunched, tucked in, won't move from position.",
       "Rigid, trembling, can't get comfortable.",
     ] },
-    { key: "palpation", letter: "P", label: "Response to Touch", concernFrom: 6, emergencyFrom: 8, levels: [
+    { key: "palpation", letter: "P", label: "Response to Touch", concernFrom: 6, emergencyFrom: 10, levels: [
       "Enjoys touch, no tension.",
       "Comfortable, mild tension in one area.",
       "Some sensitivity or mild flinching.",
