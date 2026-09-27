@@ -22,6 +22,7 @@ import {
   computeGeneralQolResult,
   computeOverviewBreakdown,
   computeOverviewCategories,
+  describePointChange,
   severityColorFromPercent,
 } from '../lib/scoring'
 import { diseaseDaysByDate } from '../lib/diseaseDays'
@@ -389,7 +390,7 @@ export default function PetSummaryCard() {
                 ? formatDateDDMMYY(latestGeneral.date)
                 : change === 0
                   ? 'Unchanged since last time'
-                  : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'} than last time`}
+                  : describePointChange(change)}
             </p>
           </div>
         ) : (

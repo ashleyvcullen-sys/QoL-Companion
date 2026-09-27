@@ -729,3 +729,14 @@ export function computeOverviewCategories(latestGeneralEntry, latestPainEntry, p
     connection: pillar(items.connection),
   }
 }
+
+// "1 point higher", "4 points lower" — one phrase, two callers.
+//
+// Ash, 27 Sep 2026: a one-point move read "1 points higher". Both the
+// assessment's closing line and the home card built the sentence themselves
+// with the plural hard-coded, so the same bug existed twice and would have had
+// to be found twice.
+export function describePointChange(change) {
+  const points = Math.abs(change)
+  return `${points} ${points === 1 ? 'point' : 'points'} ${change > 0 ? 'higher' : 'lower'} than last time`
+}

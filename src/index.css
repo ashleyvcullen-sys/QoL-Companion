@@ -5460,6 +5460,31 @@ code {
   animation: none;
 }
 
+/* The app's first screen, before there is anything to show.
+   
+   Ash's report 27 Sep 2026: "Loading" sat too far up and too far left to read
+   in full. It was a bare paragraph with no screen wrapper, so it inherited no
+   gutter and, more to the point, no safe-area inset — on a notched phone the
+   status bar was over the top of it. Centred in whatever space it has, and
+   clear of the insets on all four sides. */
+.loading-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60svh;
+  padding: calc(env(safe-area-inset-top) + 24px)
+           max(16px, env(safe-area-inset-right))
+           calc(env(safe-area-inset-bottom) + 24px)
+           max(16px, env(safe-area-inset-left));
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.loading-screen p {
+  margin: 0;
+}
+
 /* --- Medications, on the home card ---------------------------------------- */
 .med-today-state {
   display: inline-flex;

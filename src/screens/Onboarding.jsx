@@ -10,6 +10,7 @@ import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import StartupErrorScreen from '../components/StartupErrorScreen'
 import PetLimitModal from '../components/PetLimitModal'
+import LoadingScreen from '../components/LoadingScreen'
 
 const SPECIES_OPTIONS = [
   { value: 'dog', label: 'Dog' },
@@ -81,12 +82,12 @@ export default function Onboarding() {
   if (authError) {
     return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
   }
-  if (authLoading) return <p>Loading…</p>
+  if (authLoading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (petsError) {
     return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={refresh} />
   }
-  if (petsLoading) return <p>Loading…</p>
+  if (petsLoading) return <LoadingScreen />
 
   // Whether this account has a pet the app can actually show.
   //

@@ -126,6 +126,11 @@ export default function ConditionMonitoring() {
   // due-ness until the owner says otherwise — a form opened by hand stays
   // open, and one nobody has touched opens or closes with the schedule.
   const [formOpenOverride, setFormOpenOverride] = useState(null)
+  // Which question is on screen, so the standing facts above the form can be
+  // shown once rather than over every one of them — Ash's instruction
+  // 27 Sep 2026, from the allergies form: the diagnosis, the diet trial and
+  // the way back into them belong on the first page, not on all fourteen.
+  const [wizardPage, setWizardPage] = useState(0)
 
   // The range toggle, the chart descriptors and the day-answers modal were
   // removed with the charts on 24 Sep 2026 — Trends owns all three.
@@ -808,7 +813,7 @@ export default function ConditionMonitoring() {
                 can see the app has not lost the answer, and a trial start date
                 is the number they most want on screen ("am I at 8 weeks
                 yet?"). The Change button puts the questions back. */}
-            {standing.length > 0 && !editStanding && (
+            {standing.length > 0 && !editStanding && (!formOpen || wizardPage === 0) && (
               <div className="standing-answers">
                 {standing.map(({ parameter, value, detail }) => (
                   <p key={parameter.key} className="assessment-hint">
@@ -828,7 +833,7 @@ export default function ConditionMonitoring() {
                 </button>
               </div>
             )}
-            {editStanding && (
+            {editStanding && (!formOpen || wizardPage === 0) && (
               <button type="button" className="subtle-link" onClick={() => setEditStanding(false)}>
                 Done Changing
               </button>
@@ -857,6 +862,7 @@ export default function ConditionMonitoring() {
                 // the same way the back control does, rather than dying
                 // there — the answers so far are held in the draft.
                 onExitFirstPage={() => navigate('/conditions')}
+                onPageChange={setWizardPage}
                 /* "Last recorded … Next one due in N days" was here until
                    Ash removed it on 24 Sep 2026. It is a fact about the
                    schedule, not about the question on screen, and the

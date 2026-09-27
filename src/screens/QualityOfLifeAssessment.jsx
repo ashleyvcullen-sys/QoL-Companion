@@ -28,7 +28,7 @@ import {
   SLEEP_NOTES,
 } from '../lib/assessmentOptions'
 import { FELINE_GRIMACE_ACTION_UNITS } from '../lib/felineGrimaceScale'
-import { BEAP_CATEGORIES, computeBeapWorst, computeGeneralQolResult } from '../lib/scoring'
+import { BEAP_CATEGORIES, computeBeapWorst, computeGeneralQolResult, describePointChange } from '../lib/scoring'
 import {
   beapAppetiteFromVcogGrade,
   prefilledFrom,
@@ -899,7 +899,7 @@ export default function QualityOfLifeAssessment() {
             <p className="assessment-hint">
               {change === 0
                 ? 'The same as last time.'
-                : `${Math.abs(change)} points ${change > 0 ? 'higher' : 'lower'} than last time. A single comparison is not a trend — the charts show whether it holds.`}
+                : `${describePointChange(change)}. A single comparison is not a trend — the charts show whether it holds.`}
             </p>
           )}
 

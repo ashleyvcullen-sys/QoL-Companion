@@ -11,6 +11,7 @@ import WelcomeSlide2 from './welcome/WelcomeSlide2'
 import WelcomeSlide3 from './welcome/WelcomeSlide3'
 import WelcomeSlide4 from './welcome/WelcomeSlide4'
 import WelcomeSlide5 from './welcome/WelcomeSlide5'
+import LoadingScreen from '../components/LoadingScreen'
 
 export default function Welcome() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
@@ -22,12 +23,12 @@ export default function Welcome() {
   if (authError) {
     return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
   }
-  if (authLoading) return <p>Loading…</p>
+  if (authLoading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (petsError) {
     return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={refresh} />
   }
-  if (petsLoading) return <p>Loading…</p>
+  if (petsLoading) return <LoadingScreen />
   if (pets.length === 0) return <Navigate to="/onboarding" replace />
 
   const pet = selectedPet

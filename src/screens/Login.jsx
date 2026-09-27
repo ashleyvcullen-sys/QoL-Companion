@@ -7,6 +7,7 @@ import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
 import StartupErrorScreen from '../components/StartupErrorScreen'
+import LoadingScreen from '../components/LoadingScreen'
 
 export default function Login() {
   const { user, loading, authError, retryAuth } = useAuth()
@@ -20,7 +21,7 @@ export default function Login() {
   if (authError) {
     return <StartupErrorScreen message="We couldn't check your login status." detail={authError} onRetry={retryAuth} />
   }
-  if (loading) return <p>Loading…</p>
+  if (loading) return <LoadingScreen />
   if (user) return <Navigate to="/" replace />
 
   async function handleSubmit(e) {

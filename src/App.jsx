@@ -43,6 +43,7 @@ import ScrollButtons from './components/ScrollButtons'
 import { useReminderRehydration } from './lib/useReminderRehydration'
 import { useHiddenPetReminderSync } from './lib/useHiddenPetReminderSync'
 import { useOrphanReminderSweep } from './lib/useOrphanReminderSweep'
+import LoadingScreen from './components/LoadingScreen'
 
 function RequireOnboardedPet() {
   const { user, loading: authLoading, authError, retryAuth } = useAuth()
@@ -54,12 +55,12 @@ function RequireOnboardedPet() {
   if (authError) {
     return <StartupErrorScreen message="We couldn't verify your login." detail={authError} onRetry={retryAuth} />
   }
-  if (authLoading) return <p>Loading…</p>
+  if (authLoading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   if (petsError) {
     return <StartupErrorScreen message="We couldn't load your pet's data." detail={petsError} onRetry={retryPets} />
   }
-  if (petsLoading) return <p>Loading…</p>
+  if (petsLoading) return <LoadingScreen />
   if (pets.length === 0) return <Navigate to="/onboarding" replace />
   // Scoped to the selected pet, not pets[0]. Pets added *after* the first
   // are created with has_seen_welcome already true (see Onboarding), so
@@ -84,7 +85,7 @@ function RequirePremium({ feature }) {
 
   // Never decide while the entitlement is still loading: a subscriber would
   // be bounced to the paywall on every cold start.
-  if (loading) return <p>Loading…</p>
+  if (loading) return <LoadingScreen />
   if (!hasPremium) return <Navigate to="/paywall" replace state={{ feature }} />
 
   return <Outlet />
