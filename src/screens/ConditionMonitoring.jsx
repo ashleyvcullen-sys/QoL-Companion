@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
+import { Bell, BellOff, Trash2 } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import Btn from '../components/Btn'
@@ -605,18 +605,42 @@ export default function ConditionMonitoring() {
                   </p>
                 )}
 
-                <p className="condition-cadence">
-                  Monitoring frequency: <b>{cadenceLabel(cadence.days)}</b>
-                  <button
-                    type="button"
-                    className="condition-cadence-change"
-                    onClick={() => setEditingCadence((open) => !open)}
-                  >
-                    {editingCadence ? 'Done' : 'Change'}
-                  </button>
-                </p>
+                {/* The same on/off control the Reminders and Medications
+                    screens use — Ash's instruction 27 Sep 2026. "No reminder"
+                    left the frequency list on the same day, so without this
+                    the condition's own screen would have no way to silence it.
+                    Stored as a cadence of 0, restored to the condition's own
+                    default when switched back on. */}
+                <button
+                  type="button"
+                  className={`med-reminder-toggle ${cadence.off ? '' : 'is-on'}`.trim()}
+                  onClick={() => changeCadence({
+                    days: cadence.off ? (definition.cadence?.days ?? 7) : 0,
+                    day: cadence.off ? cadence.day : null,
+                  })}
+                  aria-pressed={!cadence.off}
+                  aria-label={`Reminders for ${definition.label}`}
+                >
+                  {cadence.off
+                    ? <BellOff size={13} aria-hidden="true" />
+                    : <Bell size={13} aria-hidden="true" />}
+                  {cadence.off ? 'Reminders off' : 'Reminders on'}
+                </button>
 
-                {editingCadence && (
+                {!cadence.off && (
+                  <p className="condition-cadence">
+                    Monitoring frequency: <b>{cadenceLabel(cadence.days)}</b>
+                    <button
+                      type="button"
+                      className="condition-cadence-change"
+                      onClick={() => setEditingCadence((open) => !open)}
+                    >
+                      {editingCadence ? 'Done' : 'Change'}
+                    </button>
+                  </p>
+                )}
+
+                {!cadence.off && editingCadence && (
                   <div className="condition-cadence-edit">
                     <div className="field">
                       <label htmlFor="condition-cadence">Repeat</label>

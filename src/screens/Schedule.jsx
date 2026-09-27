@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BellOff, HelpCircle } from 'lucide-react'
+import { Bell, BellOff, HelpCircle } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { NativeSettings, AndroidSettings, IOSSettings } from 'capacitor-native-settings'
 import { supabase } from '../lib/supabase'
@@ -102,6 +102,7 @@ function ScheduleRow({
   onDayChange,
   options = CADENCE_OPTIONS,
   reminderOff = false,
+  onRemindersChange = null,
 }) {
   // Nothing is overdue when there is no schedule to be overdue against.
   //
@@ -130,20 +131,48 @@ function ScheduleRow({
       <p className="assessment-hint">
         Last logged: {lastDate ? formatDateDDMMYY(lastDate) : 'never'}
       </p>
-      <div className="field">
-        <label>Repeat</label>
-        <select value={cadenceDays} onChange={(e) => onCadenceChange(Number(e.target.value))}>
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-      </div>
+
+      {/* The same toggle the Medications screen uses, and the same reasoning
+          — Ash's instruction 27 Sep 2026. Turning a reminder off was an option
+          buried at the bottom of the "Repeat" list, which asks an owner to
+          look for "off" inside a control labelled "how often": the state and
+          the frequency are two different questions and now have two different
+          controls. "No reminder" has left the list accordingly, so there is
+          one place this is set rather than two that can disagree. */}
+      {onRemindersChange && (
+        <button
+          type="button"
+          className={`med-reminder-toggle ${reminderOff ? '' : 'is-on'}`.trim()}
+          onClick={() => onRemindersChange(reminderOff)}
+          aria-pressed={!reminderOff}
+          aria-label={label ? `Reminders for ${label}` : 'Reminders'}
+        >
+          {reminderOff
+            ? <BellOff size={13} aria-hidden="true" />
+            : <Bell size={13} aria-hidden="true" />}
+          {reminderOff ? 'Reminders off' : 'Reminders on'}
+        </button>
+      )}
+
+      {/* Hidden while reminders are off: how often to be reminded is not a
+          question worth answering when the answer is "never". It comes back
+          holding the cadence it had, which is what turning them on restores. */}
+      {!reminderOff && (
+        <div className="field">
+          <label>Repeat</label>
+          <select value={cadenceDays} onChange={(e) => onCadenceChange(Number(e.target.value))}>
+            {options.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Which day, once "how often" leaves a choice. A cadence says how
           often; it cannot say when, and "weekly" measured from whichever
           Tuesday the last entry happened to fall on is not a day anyone
           picked. */}
-      {dayMode && onDayChange && (
+      {!reminderOff && dayMode && onDayChange && (
         <div className="field">
           <label>{dayMode === 'week' ? 'Which day?' : 'Which date?'}</label>
           <ReminderDayPicker
@@ -350,6 +379,13 @@ export default function Schedule() {
             cadenceDay={cadenceDay}
             onCadenceChange={updateCadence}
             onDayChange={updateCadenceDay}
+            // The assessment can be turned off too — Ash's instruction
+            // 27 Sep 2026, "any reminder". It is stored the same way a
+            // condition's is, as a cadence of 0, which monitoringStatus
+            // already reads as OFF: the tab's due dot clears with it and no
+            // notification is armed.
+            reminderOff={cadenceDays === 0}
+            onRemindersChange={(turnOn) => updateCadence(turnOn ? 7 : 0)}
           />
         )}
       </Card>
@@ -383,6 +419,14 @@ export default function Schedule() {
                 cadenceDay={day}
                 options={CONDITION_CADENCE_OPTIONS}
                 reminderOff={off}
+                // Off is stored as a cadence of 0. Turning reminders back on
+                // restores the cadence the condition was set up with rather
+                // than guessing at one — `days` is 0 while they are off, so
+                // there is nothing else to go back to.
+                onRemindersChange={(turnOn) => updateConditionSchedule(definition.key, {
+                  days: turnOn ? (definition.cadence?.days ?? 7) : 0,
+                  day: turnOn ? day : null,
+                })}
                 onCadenceChange={(next) => updateConditionSchedule(definition.key, {
                   days: next,
                   // Same reasoning as the assessment above: a weekday and a

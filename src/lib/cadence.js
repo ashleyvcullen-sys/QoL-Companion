@@ -16,14 +16,20 @@ export const CADENCE_OPTIONS = [
   { value: 30, label: 'Monthly' },
 ]
 
-// Conditions get one more option than the quality of life assessment does.
-// Someone monitoring four things does not necessarily want four reminders,
-// and the alternative — deleting the condition to stop being nudged about
-// it — would take the history with it.
-export const CONDITION_CADENCE_OPTIONS = [
-  ...CADENCE_OPTIONS,
-  { value: 0, label: 'No reminder' },
-]
+// Conditions can also have no reminder at all. Someone monitoring four things
+// does not necessarily want four reminders, and the alternative — deleting the
+// condition to stop being nudged about it — would take the history with it.
+//
+// That state is still stored as a cadence of 0, but it is no longer OFFERED
+// here: since 27 Sep 2026 it is a toggle of its own on the Reminders screen,
+// on Ash's instruction, matching the Medications screen. Asking someone to
+// find "off" at the bottom of a list labelled "how often" was conflating two
+// questions in one control.
+//
+// The list is kept identical to CADENCE_OPTIONS rather than merged into it,
+// because the two are free to diverge again and the condition screens import
+// this name.
+export const CONDITION_CADENCE_OPTIONS = [...CADENCE_OPTIONS]
 
 // Which day the reminder lands on, and therefore which picker to show. A
 // daily cadence has no day to choose; a fortnightly one still lands on a
@@ -49,6 +55,9 @@ export function scheduleForCondition(pet, definition) {
 
 // The label as the owner set it, for reading back rather than choosing.
 export function cadenceLabel(days) {
+  // 0 left the options list on 27 Sep 2026 when "off" became a toggle, so it
+  // has to be named here or this reads back "Every 0 days".
+  if (!days) return 'No reminder'
   return CONDITION_CADENCE_OPTIONS.find((option) => option.value === days)?.label ?? `Every ${days} days`
 }
 

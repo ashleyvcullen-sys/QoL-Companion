@@ -155,6 +155,17 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, cadence
   await cancelLegacySharedReminder()
   await cancelQolReminder(petId)
 
+  // A cadence of 0 means the owner turned this reminder off — Ash's
+  // instruction 27 Sep 2026, which gave the assessment an off switch it never
+  // had. Cancelled above and nothing re-armed, the same shape as
+  // scheduleConditionReminder.
+  //
+  // It has to be handled rather than left to fall through: 0 puts the next
+  // reminder at `fromDate` exactly, which is in the past, which trips the
+  // guard below and fires one in sixty seconds. Turning reminders off would
+  // have produced a notification a minute later.
+  if (!cadenceDays) return
+
   let nextDate = new Date(fromDate)
   nextDate.setDate(nextDate.getDate() + cadenceDays)
   // The chosen weekday or date, applied before the in-the-past check so a
