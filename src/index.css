@@ -2117,6 +2117,9 @@ code {
   justify-content: center;
   gap: var(--gap-inline);
   width: 100%;
+  /* 31px before this, on a destructive control — under Apple's 44pt minimum
+     and the smallest thing on the screen it can do the most damage from. */
+  min-height: 44px;
   padding: 4px 0;
   background: none;
   border: none;

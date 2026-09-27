@@ -1047,7 +1047,21 @@ export default function ConditionMonitoring() {
                 className="stop-tracking-link"
                 onClick={() => setConfirmRemove(petCondition)}
               >
-                <Trash2 size={14} /> Stop tracking {definition.label.toLowerCase()}
+                {/* The condition is NOT named here — Ash's instruction
+                    27 Sep 2026 that these buttons should all be one size.
+                    
+                    They were identical at default text size and diverged the
+                    moment Dynamic Type was turned up: "stop tracking arthritis
+                    and mobility issues" wraps to two lines where "stop tracking
+                    cancer" does not, so four of the eight conditions grew a
+                    card half again as tall. Naming the condition on a screen
+                    that is already titled with it was the least useful place
+                    for it, and the confirmation that follows still asks "Stop
+                    tracking Arthritis and Mobility Issues?" — which is where
+                    the name actually matters.
+                    
+                    PENDING ASH on the wording. */}
+                <Trash2 size={14} /> Stop tracking this condition
               </button>
             </Card>
           )}
