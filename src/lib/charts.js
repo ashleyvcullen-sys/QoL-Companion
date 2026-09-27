@@ -422,6 +422,15 @@ function pillarCharts(dailySeries) {
     dataKey: key,
     colour: color,
     domain: [0, 100],
+    // Percentages, and now labelled as such — Ash's instruction 27 Sep 2026.
+    // A pillar has always BEEN a percentage: it is the average of the items
+    // feeding it, on the same 0-100 scale as the headline score and coloured
+    // by the same bands. Only the unit was missing, so the tooltip said
+    // "Comfort for 25/09: 90" where the overall chart said "90%", and the
+    // same number read as two different kinds of thing on two charts an inch
+    // apart. The caption is the overall chart's, for the same reason.
+    unit: '%',
+    caption: 'Higher is better. 100% is the best possible day.',
     height: 180,
     severityBands: true,
     // Carried through so Trends can still colour the pillar's icon button and
