@@ -15,10 +15,18 @@ export default function HomeCareTips() {
       <HomeLink />
 
       <Card>
-        {/* The line that used to sit here is now the sentence the More
-            screen shows before opening this one — Ash's instruction 24 Sep
-            2026. Said once, where the choice is made. */}
+        {/* A line was removed from here on 24 Sep 2026 because it repeated the
+            sentence More already shows before opening this screen. One is back
+            on Ash's instruction 27 Sep 2026 — but saying something different:
+            More says what the screen is for, this says how to use it, which is
+            the thing an owner looking at five unlabelled tiles needs.
+            
+            PENDING ASH on the wording. */}
         <SectionTitle>Home Care Tips</SectionTitle>
+        <p className="screen-intro">
+          Grouped by the five pillars of quality of life — comfort, appetite, sleep, curiosity
+          and connection. Tap one for things you can try at home.
+        </p>
       </Card>
 
       <div className="icon-grid">

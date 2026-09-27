@@ -115,8 +115,12 @@ function ScheduleRow({
 
   return (
     <div className="schedule-row">
-      <div className="schedule-row-header">
-        <span className="schedule-row-label">{label}</span>
+      {/* Without a label the header holds only the badge, and centring it
+          keeps it under the card's own heading rather than stranded against
+          the left edge — see the assessment card, which titles itself with a
+          SectionTitle like every other section on this screen. */}
+      <div className={`schedule-row-header ${label ? '' : 'is-untitled'}`.trim()}>
+        {label && <span className="schedule-row-label">{label}</span>}
         {!reminderOff && (
           <span className={`schedule-badge ${isOverdue ? 'overdue' : 'ok'}`}>
             {isOverdue ? 'Overdue' : 'On track'}
@@ -298,21 +302,29 @@ export default function Schedule() {
         onOpenSettings={openNotificationSettings}
       />
 
-      <Card>
-        {/* The line that used to sit here is now the sentence the More
-            screen shows before opening this one — Ash's instruction 24 Sep
-            2026. Said once, where the choice is made. */}
-        <SectionTitle>Reminders</SectionTitle>
-      </Card>
-
-      {/* Above the cadence control, not below it. Someone who does not know
-          how often to assess needs the answer BEFORE they are asked to pick a
-          number, not after they have already guessed at one. It sat at the
-          foot of the screen originally, then directly under the control; this
-          is the third position and the first one that comes before the
+      {/* The heading and the question that comes before the decision, in one
+          card — Ash's instruction 27 Sep 2026. They were two, which put a
+          card boundary between a title and the only thing under it and made
+          the question read as a separate feature rather than as part of
+          setting the schedule up.
+          
+          The line that used to sit under the heading is now the sentence the
+          More screen shows before opening this one — Ash's instruction 24 Sep
+          2026. Said once, where the choice is made.
+          
+          Still ABOVE the cadence control, not below it. Someone who does not
+          know how often to assess needs the answer BEFORE they are asked to
+          pick a number, not after they have already guessed at one. It sat at
+          the foot of the screen originally, then directly under the control;
+          this is the third position and the first one that comes before the
           decision it informs. */}
       <Card>
-        <button type="button" className="icon-tile-link" onClick={() => setShowFrequencyInfo(true)}>
+        <SectionTitle>Reminders</SectionTitle>
+        <button
+          type="button"
+          className="icon-tile-link schedule-frequency-help"
+          onClick={() => setShowFrequencyInfo(true)}
+        >
           <div className="welcome-help-row">
             <span className="icon-badge">
               <HelpCircle size={20} color="#fff" />
@@ -323,11 +335,16 @@ export default function Schedule() {
       </Card>
 
       <Card>
+        {/* Titled the same way Disease Monitoring and Medications are — Ash's
+            instruction 27 Sep 2026. It was the row's own label, which is the
+            right treatment for one condition inside a list and the wrong one
+            for the heading of a section: smaller, left-aligned, and in the
+            body face while the two cards below it were centred headings. */}
+        <SectionTitle>Overall Quality of Life Assessment</SectionTitle>
         {loading ? (
           <Skeleton lines={3} />
         ) : (
           <ScheduleRow
-            label="Overall Quality of Life Assessment"
             lastDate={latestGeneralDate}
             cadenceDays={cadenceDays}
             cadenceDay={cadenceDay}
