@@ -21,7 +21,7 @@ export default function HomeCareTips() {
             More says what the screen is for, this says how to use it, which is
             the thing an owner looking at five unlabelled tiles needs.
             
-            PENDING ASH on the wording. */}
+            APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The wording. */}
         <SectionTitle>Home Care Tips</SectionTitle>
         <p className="screen-intro">
           Grouped by the five pillars of quality of life — comfort, appetite, sleep, curiosity

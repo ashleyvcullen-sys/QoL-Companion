@@ -5867,6 +5867,23 @@ code {
   text-wrap: pretty;
 }
 
+/* The cap reason is a button since 27 Sep 2026; the stale body-condition
+   line beside it still is not. Scoped to the element, so only the one you can
+   press sheds the button chrome and takes the underline. */
+button.pet-summary-cap-reason {
+  display: block;
+  width: 100%;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--type-meta);
+  color: var(--severity-moderate-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .pet-summary-last {
   margin: 6px 0 0;
   font-size: var(--type-label);

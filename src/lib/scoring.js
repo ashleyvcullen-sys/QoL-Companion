@@ -1,6 +1,7 @@
 // Reference: QoLCompanion_Developer_Handoff.md, Section 4.
 
 import { URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
+import { beapCategoryDisplayName } from './beapScales'
 
 export const SEVERITY = {
   GOOD: 'good',
@@ -164,6 +165,38 @@ function generalQolBandIndexFromPercent(percent) {
 // left untouched so the average stayed comparable over time, but a ring
 // reading 94% beside "Severely reduced" confused owners more than it helped.
 // The uncapped average is still returned as `averagePercent`.
+// The answers behind a floor, named.
+//
+// Ash's instruction 27 Sep 2026: the cap line says WHAT KIND of thing capped
+// the day ("a severe finding in the assessment"), which tells an owner the
+// category and not the answer. On a seventeen-item assessment that still
+// leaves them hunting. These build the list the home card's modal shows, so
+// the explanation names the finding the owner actually gave.
+//
+// APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The two assessment-emergency phrasings below.
+const ASSESSMENT_EMERGENCY_LABELS = {
+  vomiting: 'Blood in the vomit',
+  urination: 'Signs of a urinary blockage',
+}
+
+function beapSevereFindings(beap, species) {
+  if (!beap) return []
+  return BEAP_CATEGORIES
+    .filter((category) => (beap[category] ?? -1) >= 8)
+    .map((category) => {
+      const band = BEAP_BANDS[beapBandIndexForScore(beap[category])]
+      return `${beapCategoryDisplayName(species, category)} — ${band?.shortLabel ?? ''}`.trim()
+    })
+}
+
+// "Cancer · Nausea", or just the condition where the finding has no label of
+// its own.
+function diseaseFindingLabels(list) {
+  return (list ?? []).map((item) => (item?.finding
+    ? `${item.conditionLabel} · ${item.finding}`
+    : item?.conditionLabel)).filter(Boolean)
+}
+
 function beapBandFloorIndex(beap) {
   if (!beap) return 0
 
@@ -371,25 +404,40 @@ export function computeGeneralQolResult(entry, beap, species = null, diseaseEmer
   // Every floor, with what to call it — so the screen can say WHY a day was
   // capped rather than showing a number nobody can account for.
   const floors = [
-    { index: beapBandFloorIndex(beap), reason: 'a severe finding in the assessment' },
-    { index: emergencyBandFloorIndex(entry, species), reason: 'an emergency answer in the assessment' },
+    {
+      index: beapBandFloorIndex(beap),
+      reason: 'a severe finding in the assessment',
+      findings: beapSevereFindings(beap, species),
+    },
+    {
+      index: emergencyBandFloorIndex(entry, species),
+      reason: 'an emergency answer in the assessment',
+      findings: assessmentEmergencies(entry, species)
+        .map((key) => ASSESSMENT_EMERGENCY_LABELS[key])
+        .filter(Boolean),
+    },
     {
       index: emergencies.length > 0 ? BAND_INDEX_SEVERE_IMPACT : 0,
       reason: emergencies.length === 1 && emergencies[0]?.conditionLabel
         ? `an urgent finding in ${emergencies[0].conditionLabel} monitoring`
         : 'urgent findings in disease monitoring',
+      findings: diseaseFindingLabels(emergencies),
     },
     {
       index: concernFloor,
       reason: concerns.length === 1 && concerns[0]?.conditionLabel
         ? `a finding in ${concerns[0].conditionLabel} monitoring`
         : `findings in ${concerns.length} conditions being monitored`,
+      findings: diseaseFindingLabels(concerns),
     },
     {
       index: bodyConditionInfluenceNow?.bandFloorIndex ?? 0,
       reason: bodyConditionInfluenceNow?.fallen
         ? `body condition falling to ${bodyCondition?.score} of 9`
         : `body condition ${bodyCondition?.score} of 9`,
+      findings: bodyCondition?.score != null
+        ? [`Body condition ${bodyCondition.score} of 9`]
+        : [],
     },
   ].filter((floor) => floor.index > 0)
 
@@ -414,6 +462,11 @@ export function computeGeneralQolResult(entry, beap, species = null, diseaseEmer
     capReason: bandIndex > averageBandIndex
       ? floors.filter((floor) => floor.index === bandIndex)[0]?.reason ?? null
       : null,
+    // Every answer behind the cap, not only the first floor's — two things can
+    // land on the same band, and an owner asking why deserves both.
+    capFindings: bandIndex > averageBandIndex
+      ? [...new Set(floors.filter((floor) => floor.index === bandIndex).flatMap((floor) => floor.findings ?? []))]
+      : [],
   }
 }
 

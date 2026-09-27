@@ -466,7 +466,7 @@ export default function Medications() {
             </button>
           )
         })}
-        {/* PENDING ASH on the wording. */}
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. "Reminders off — turn on". */}
         {!medication.remindersEnabled && (
           <button
             type="button"

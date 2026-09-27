@@ -167,7 +167,7 @@ async function buildReportPdf({
     // home screen shows. A vet reading "74%" has no way to tell an average
     // from a cap, and the difference changes what the number means.
     if (generalResult?.capReason) {
-      addLine(`Held at ${generalResult.percent}% by ${generalResult.capReason}.`)
+      addLine(`Capped at ${generalResult.percent}% by ${generalResult.capReason}.`)
     }
     // APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Dated because a report exported before this
     // date shows different numbers for the same days: the score began

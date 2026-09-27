@@ -778,7 +778,7 @@ export default function ConditionMonitoring() {
                 className="subtle-link condition-close-form"
                 onClick={() => setFormOpenOverride(false)}
               >
-                {/* PENDING ASH on the wording. */}
+                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. "Not now — go to … overview". */}
                 Not now — go to {definition.label.toLowerCase()} overview
               </button>
             )}

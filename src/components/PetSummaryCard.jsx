@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, ChevronRight, Heart, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, Check, ChevronRight, Minus, Pill, Stethoscope, TrendingDown, TrendingUp } from 'lucide-react'
 import Btn from './Btn'
 import Card from './Card'
 import ScoreRing from './ScoreRing'
 import PetSwitcher from './PetSwitcher'
 import PetAvatar from './PetAvatar'
 import ConditionIntroModal from './ConditionIntroModal'
+import Modal from './Modal'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useEntitlements } from '../lib/EntitlementsContext'
@@ -63,6 +64,8 @@ export default function PetSummaryCard() {
   const { selectedPet: pet } = usePets()
   // The condition a tap is asking about, if any — see ConditionIntroModal.
   const [askingCondition, setAskingCondition] = useState(null)
+  // Whether the owner has asked why today's score was capped.
+  const [showCapReason, setShowCapReason] = useState(false)
   const navigate = useNavigate()
   const { hasPremium } = useEntitlements()
   // Doses, for the line below the conditions. Only for an account that can
@@ -292,12 +295,11 @@ export default function PetSummaryCard() {
                 The ring's aria-label keeps the words in full — a screen
                 reader says "Q O L", which is not what an owner would hear a
                 vet say. */}
-            {/* The same heart the home screen's assessment tile carries, so
-                the two are recognisably the same thing. */}
+            {/* The heart that sat here — matching the assessment tile's —
+                went on Ash's instruction 27 Sep 2026. The score ring directly
+                below is already the thing the eye lands on, and a badge on the
+                heading was decoration competing with it. */}
             <h3 className="pet-summary-section-title">
-              <span className="pet-summary-section-icon" aria-hidden="true">
-                <Heart size={16} />
-              </span>
               Overall QoL
             </h3>
           </div>
@@ -336,10 +338,19 @@ export default function PetSummaryCard() {
                 A vet reading it over their shoulder has none either. The
                 reason is one line, in the muted type the rest of the stack
                 uses, and it only appears when a cap actually fired. */}
+            {/* Tappable since 27 Sep 2026, on Ash's instruction. The line
+                names WHAT capped the day; an owner seeing 49% under a pet who
+                ate and walked normally also wants to know why one answer is
+                allowed to do that, and the only place that was explained was
+                a modal three taps away on Trends. */}
             {latest.capReason && (
-              <p className="pet-summary-cap-reason">
-                Held at {latest.percent}% by {latest.capReason}
-              </p>
+              <button
+                type="button"
+                className="pet-summary-cap-reason"
+                onClick={() => setShowCapReason(true)}
+              >
+                Capped at {latest.percent}% by {latest.capReason}
+              </button>
             )}
 
             {/* APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. A body condition score stops
@@ -547,6 +558,32 @@ export default function PetSummaryCard() {
 
           <ChevronRight className="dx-row-chev" size={18} aria-hidden="true" />
         </button>
+      )}
+
+      {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The whole modal. The second paragraph is her approved
+          sentence from the Trends explainer, said again where the number it
+          explains is actually being read. */}
+      {showCapReason && (
+        <Modal title="Why Is This Score Capped?" onClose={() => setShowCapReason(false)}>
+          <p>
+            Today's score is capped at {latest?.percent}% because of {latest?.capReason}.
+          </p>
+          {/* The answers themselves. On a seventeen-item assessment plus
+              whatever is being monitored, naming the category and stopping
+              leaves the owner hunting for which answer did it. */}
+          {latest?.capFindings?.length > 0 && (
+            <ul className="emergency-list">
+              {latest.capFindings.map((finding) => (
+                <li key={finding}>{finding}</li>
+              ))}
+            </ul>
+          )}
+          <p>
+            Because an average can hide a single serious problem, some findings hold the overall
+            rating down on their own — so an urgent issue in an otherwise normal assessment won't
+            be overlooked.
+          </p>
+        </Modal>
       )}
 
       <ConditionIntroModal
