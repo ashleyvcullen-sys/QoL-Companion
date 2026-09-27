@@ -3108,6 +3108,47 @@ export function beapEmergencyFromFor(parameter, species) {
   return scale.find((entry) => entry.key === parameter.beapKey)?.emergencyFrom ?? null
 }
 
+// Where red starts on a plain scale.
+//
+// Ash's instruction 27 Sep 2026: severe and very severe should come up red
+// and cap quality of life at Severely reduced. The six rungs score 0, 2, 4,
+// 6, 8, 10 and the BEAAAAPP bands put Severe at 7-8 and Very severe at 9-10,
+// so 8 is the cut.
+//
+// Before this, a plain scale had exactly one red rung — whichever one had
+// "(emergency)" typed into its prose, almost always the top. Everything from
+// the concern threshold up to it scored identically, so a 4/10 itch and an
+// 8/10 itch were the same finding. A parameter can still override with its
+// own `emergencyFrom` where that is wrong for it.
+export const SCALE_EMERGENCY_FROM = 8
+
+// One answer for both the hazard icon and the severity, so the two can never
+// disagree — which they could while the list read the level text and
+// evaluateParameter read a number.
+//
+// A plain scale goes red only where there is an emergency message to show.
+// Ash's decision 27 Sep 2026, and it uses a line she had already drawn: she
+// wrote SEEK_VET_ASAP on the parameters where a severe answer means act now,
+// and left it off the ones where it does not. If the app has nothing to tell
+// an owner to do about a finding, calling it an emergency is a claim it
+// cannot back.
+//
+// What this protects is the trend. In advanced dementia the severe rungs ARE
+// the steady state, so capping on them would hold that patient at 49% every
+// day for the last eighteen months of their life — a flat line where the
+// whole point of the record is to show change. Those parameters fall back to
+// amber instead, and several at once still reach Moderately reduced, which
+// moves.
+//
+// scripts/check-severity.mjs pins which scales cap and which do not, so a new
+// parameter cannot join the second group by someone forgetting a message.
+export function emergencyFromFor(parameter, species) {
+  if (parameter?.type === 'beap') return beapEmergencyFromFor(parameter, species)
+  if (parameter?.type !== 'scale') return null
+  if (parameter.emergencyFrom != null) return parameter.emergencyFrom
+  return parameter.emergencyMessage ? SCALE_EMERGENCY_FROM : null
+}
+
 // Any owner-facing string may be a plain string, or keyed by species where
 // part of what it says is only true for one of them.
 //
@@ -3255,8 +3296,8 @@ export function evaluateParameter(parameter, value, species) {
     // rather than in the level text. Same source lib/assessmentSummary.js and
     // the scoring read, so the form, the calendar and the export cannot
     // disagree about which rungs are emergencies.
-    const beapEmergencyFrom = beapEmergencyFromFor(parameter, species)
-    if (beapEmergencyFrom != null && score >= beapEmergencyFrom) {
+    const emergencyFrom = emergencyFromFor(parameter, species)
+    if (emergencyFrom != null && score >= emergencyFrom) {
       return { severity: SEVERITY.EMERGENCY, message: messageFor(parameter.emergencyMessage, species) }
     }
 
