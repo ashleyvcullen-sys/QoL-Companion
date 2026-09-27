@@ -2763,13 +2763,19 @@ export const CONDITIONS = {
           // The top rung folds in complete anuria, the same way the cat list
           // below does — which is what made the separate "Passing No Urine At
           // All" question redundant.
+          //
+          // "(end-stage kidney failure)" removed from the top rung of both
+          // lists on Ash's instruction 27 Sep 2026: it names a diagnosis, and
+          // an owner ticking a box about what they can see should not be
+          // handed a conclusion about what it means. The rung still describes
+          // the finding and still raises the emergency.
           dog: [
             'No changes in urination patterns noted.',
             'Urinating slightly more than usual, or asking to go out more frequently.',
             'Urinating more often and larger amounts. Asking to go out more frequently, including at night time.',
             'Urinating frequently throughout the day and night. Occasional accidents inside.',
             'Urinating or trying to urinate constantly. Frequent accidents inside or incontinence.',
-            'Constantly trying to urinate but only passing small amounts, or not passing anything at all (end-stage kidney failure). (emergency)',
+            'Constantly trying to urinate but only passing small amounts, or not passing anything at all. (emergency)',
           ],
           // APPROVED — Dr Ash Cullen (BSc, DVM), 29 Aug 2026. Her six levels, with
           // sentence capitals and full stops added.
@@ -2791,7 +2797,7 @@ export const CONDITIONS = {
             'Urinating more often than usual and larger amounts.',
             'Urinating frequently, often large amounts at a time and sometimes outside of the litter tray.',
             'Urinating constantly, often outside of the litter tray. May be incontinent. (emergency)',
-            'Constant dribbling of urine/incontinence OR urinating less / complete lack of urination (end-stage kidney failure). (emergency)',
+            'Constant dribbling of urine/incontinence OR urinating less / complete lack of urination. (emergency)',
           ],
         },
       },
