@@ -326,6 +326,9 @@ export default function SwipeableWizard({
     if (!track) return undefined
     let timer = null
     function onAnswered(event) {
+      // Same rule as the swipe: answering the last question must not save the
+      // form. Auto-advance turns a page; it does not press Save.
+      if (isLastPage) return
       if (!event.target?.closest?.('[data-auto-advance]')) return
       clearTimeout(timer)
       timer = setTimeout(() => {
@@ -343,8 +346,14 @@ export default function SwipeableWizard({
   }, [pageIndex, pages.length, isLastPage])
 
   // Horizontal swipe navigation, alongside (not instead of) the Back/Next
-  // buttons below — the same goNext()/goBack(), so both do the same thing,
-  // Finish-on-swipe on the last page included.
+  // buttons below — the same goNext()/goBack() for every page turn.
+  //
+  // With ONE deliberate exception: a swipe never finishes the questionnaire.
+  // Ash's instruction 27 Sep 2026. Saving is a decision and a decision has to
+  // be pressed — a gesture made to see what is on the next page should not be
+  // able to commit a check-in, and on the last page there is no next page to
+  // be looking for. The drag still resists and springs back there, so the
+  // gesture reads as the end of the wizard rather than as one that failed.
   //
   // On the window rather than on this element — Ash's report 24 Sep 2026
   // that it "still doesn't work unless it's done in the textbox". The
@@ -352,7 +361,11 @@ export default function SwipeableWizard({
   // screen's padding, beside the card or below the buttons began on nothing
   // at all. lib/swipeNav.js holds the one gesture the whole app uses.
   useHorizontalSwipe({
-    onLeft: () => goNext(),
+    onLeft: () => {
+      // Never Finish. See the note above.
+      if (isLastPage) return
+      goNext()
+    },
     onRight: () => (pageIndex === 0 ? onExitFirstPage?.() : goBack()),
     // The page under the finger. Resistance at either end, so a swipe with
     // nowhere to go feels like the edge of the wizard rather than a swipe
@@ -376,6 +389,17 @@ export default function SwipeableWizard({
     // page takes over from the layout effect above. Not committed: spring
     // back to where it was.
     onDragEnd: still ? undefined : (committed) => {
+      // A drag that was RESISTED changes no page, so the track has to be put
+      // back whether or not it travelled far enough to count as committed.
+      // dragX stays at 0 through such a drag (see onDragMove), which is what
+      // distinguishes it from one that genuinely moved the page. Before the
+      // last page stopped finishing on a swipe this could not happen: the
+      // committed case always navigated away and took the offset with it.
+      if (dragX.current === 0) {
+        setTrack(0, SPRING_MS)
+        window.setTimeout(() => setLifted(false), SPRING_MS)
+        return
+      }
       if (!committed) {
         dragX.current = 0
         setTrack(0, SPRING_MS)
