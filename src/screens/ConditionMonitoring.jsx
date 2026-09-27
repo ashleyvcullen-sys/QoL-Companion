@@ -778,8 +778,9 @@ export default function ConditionMonitoring() {
                 className="subtle-link condition-close-form"
                 onClick={() => setFormOpenOverride(false)}
               >
-                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. "Not now — go to … overview". */}
-                Not now — go to {definition.label.toLowerCase()} overview
+                {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. Her wording,
+                    shortened from "Not now — go to … overview" the same day. */}
+                Go to {definition.label.toLowerCase()} overview
               </button>
             )}
 
@@ -805,10 +806,28 @@ export default function ConditionMonitoring() {
                 All four strings here — APPROVED — Dr Ash Cullen (BSc, DVM), 5 Sep 2026. */}
             {!formOpen && (
               <div className="condition-closed">
+                {/* Two states became reachable on 27 Sep 2026, when the open
+                    form gained a way back to this page: a condition with a
+                    check-in DUE, and one with no entries at all. The second
+                    crashed — `latestEntry.date` on a null — because until then
+                    you could only see this card when nothing was owed, which
+                    guaranteed a previous entry existed. Ash hit it on a newly
+                    set up gastrointestinal record.
+                    
+                    The wording has to follow: "Nothing is due yet" was true
+                    when that was the only way to be here and is a lie now.
+                    
+                    APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The two new
+                    strings: "Nothing recorded yet." and "Last recorded {date}."
+                    without the due clause. */}
                 <p className="assessment-hint">
                   {todaysEntry
                     ? `Today's ${definition.label.toLowerCase()} entry is saved.`
-                    : `Last recorded ${formatDateDDMMYY(latestEntry.date)}. Nothing is due yet.`}
+                    : !latestEntry
+                      ? 'Nothing recorded yet.'
+                      : nothingOwed
+                        ? `Last recorded ${formatDateDDMMYY(latestEntry.date)}. Nothing is due yet.`
+                        : `Last recorded ${formatDateDDMMYY(latestEntry.date)}.`}
                 </p>
                 {todaysEntry ? (
                   <>
