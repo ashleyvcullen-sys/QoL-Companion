@@ -97,6 +97,40 @@ function describeReminderPlan(form) {
 // medication saved with no times, where the shared one says "no times set".
 // Removed 24 Sep 2026.
 
+// One control, wherever reminders are shown.
+//
+// Ash's instruction 27 Sep 2026. It was a one-way "turn on" link on the Today
+// row and a separate pill in the list; both are this now, so the control that
+// tells you the state is the control that changes it and the two can never
+// drift apart.
+//
+// Defined HERE rather than inside Medications — Ash's report 27 Sep 2026 that
+// the button glitched. A component declared in another component's body is a
+// brand new component type on every render, so React threw this button away
+// and built a fresh one each time anything on the screen changed: the press
+// state flickered and focus was dropped mid-tap.
+//
+// Not offered for as-needed medications: they answer to signs rather than to
+// a clock, and `remindersEnabled` is forced false for them on save, so a
+// toggle would silently un-set itself.
+function RemindersToggle({ medication, busy, onToggle }) {
+  if (medication.scheduleMode === 'as_needed' || !medication.active) return null
+  const on = medication.remindersEnabled
+  return (
+    <button
+      type="button"
+      className={`med-reminder-toggle ${on ? 'is-on' : ''}`.trim()}
+      onClick={() => onToggle(medication)}
+      aria-pressed={on}
+      aria-label={`Reminders for ${medication.name}`}
+      disabled={busy}
+    >
+      {on ? <Bell size={13} aria-hidden="true" /> : <BellOff size={13} aria-hidden="true" />}
+      {on ? 'Reminders on' : 'Reminders off'}
+    </button>
+  )
+}
+
 export default function Medications() {
   const { selectedPet } = usePets()
   // Turns an RLS refusal into the paywall rather than a Postgres string.
@@ -290,34 +324,6 @@ export default function Medications() {
     }
   }
 
-  // One control, wherever reminders are shown.
-  //
-  // Ash's instruction 27 Sep 2026. It was a one-way "turn on" link on the
-  // Today row and a separate pill in the list; both are this now, so the
-  // control that tells you the state is the control that changes it and the
-  // two can never drift apart.
-  //
-  // Not offered for as-needed medications: they answer to signs rather than
-  // to a clock, and `remindersEnabled` is forced false for them on save, so a
-  // toggle would silently un-set itself.
-  function RemindersToggle({ medication }) {
-    if (medication.scheduleMode === 'as_needed' || !medication.active) return null
-    const on = medication.remindersEnabled
-    return (
-      <button
-        type="button"
-        className={`med-reminder-toggle ${on ? 'is-on' : ''}`.trim()}
-        onClick={() => handleToggleReminders(medication)}
-        aria-pressed={on}
-        aria-label={`Reminders for ${medication.name}`}
-        disabled={busy}
-      >
-        {on ? <Bell size={13} aria-hidden="true" /> : <BellOff size={13} aria-hidden="true" />}
-        {on ? 'Reminders on' : 'Reminders off'}
-      </button>
-    )
-  }
-
   async function handleSave() {
     const name = form.name.trim()
     if (!name) {
@@ -477,7 +483,7 @@ export default function Medications() {
             })}
           </div>
           <span className="assessment-hint">{taken} of {total} {period}</span>
-          <RemindersToggle medication={medication} />
+          <RemindersToggle medication={medication} busy={busy} onToggle={handleToggleReminders} />
         </>
       )
     }
@@ -505,7 +511,7 @@ export default function Medications() {
             </button>
           )
         })}
-        <RemindersToggle medication={medication} />
+        <RemindersToggle medication={medication} busy={busy} onToggle={handleToggleReminders} />
       </div>
     )
   }
@@ -906,7 +912,7 @@ export default function Medications() {
                       notice reminders are off, this is where medications are
                       managed. The Today row keeps its one-tap way to switch
                       them back on, which is the case worth interrupting for. */}
-                  <RemindersToggle medication={medication} />
+                  <RemindersToggle medication={medication} busy={busy} onToggle={handleToggleReminders} />
                 </div>
                 <div className="med-list-actions">
                   <button type="button" aria-label={`Edit ${medication.name}`} onClick={() => startEdit(medication)}>

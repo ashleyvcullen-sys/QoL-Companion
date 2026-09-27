@@ -79,6 +79,10 @@ export function useCachedQuery(key, fetcher, { empty = null } = {}) {
   const [reloadToken, setReloadToken] = useState(0)
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
+  // Whether this reader has ever had an answer. Not the same question as
+  // "is the key cached": a refresh clears the cache and then re-fetches, and
+  // in between there is still perfectly good data on the screen.
+  const hasDataRef = useRef(Boolean(key) && cache.has(key))
 
   const refresh = useCallback(() => {
     if (key) invalidateQuery(key)
@@ -115,7 +119,15 @@ export function useCachedQuery(key, fetcher, { empty = null } = {}) {
     if (cached !== undefined) {
       setData(cached)
       setLoading(false)
-    } else {
+      hasDataRef.current = true
+    } else if (!hasDataRef.current) {
+      // Only where there is genuinely nothing to show. Ash's report
+      // 27 Sep 2026 that toggling reminders "glitched": every write clears
+      // the key, so the re-read found an empty cache and flipped this reader
+      // back to loading — and the Medications screen swapped its list for a
+      // skeleton for one round trip on every tap. Stale-while-revalidate is
+      // the whole point of this cache; a refresh should show the old answer
+      // until the new one lands, not a hole.
       setLoading(true)
     }
 
@@ -134,6 +146,7 @@ export function useCachedQuery(key, fetcher, { empty = null } = {}) {
         if (!cancelled) {
           setData(result)
           setLoading(false)
+          hasDataRef.current = true
         }
       })
       .catch((error) => {
