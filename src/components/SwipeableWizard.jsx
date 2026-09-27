@@ -19,9 +19,6 @@ const SPRING_MS = 240
 const SETTLE_MS = 260
 // The floor for a slide that only has a little way left to go.
 const MIN_SETTLE_MS = 140
-// Long enough to see the answer register and the alert (if any) appear,
-// short enough that it does not feel like waiting.
-const AUTO_ADVANCE_MS = 340
 // The gap between one question and the next while they are both on screen.
 const GUTTER_PX = 24
 // A drag with nowhere to go — back from the first page, on a wizard with no
@@ -313,37 +310,17 @@ export default function SwipeableWizard({
     moveTo(index)
   }
 
-  // Moving on by itself, where the page has asked for it with
-  // `data-auto-advance` — Ash's instruction 24 Sep 2026. Seventeen questions
-  // took seventeen taps AND seventeen swipes; a question whose whole content
-  // is one list of answers can turn its own page.
+  // Auto-advance lived here from 24 Sep to 27 Sep 2026: a page marked
+  // `data-auto-advance` turned itself as soon as an answer was tapped, after
+  // a 340ms pause and with a guard for alerts and modals.
   //
-  // It holds back in the one case where there is something to read after
-  // answering: an alert or a flag raised by the answer just given, or a
-  // modal over the top. Those exist precisely to be read.
-  useEffect(() => {
-    const track = trackRef.current
-    if (!track) return undefined
-    let timer = null
-    function onAnswered(event) {
-      // Same rule as the swipe: answering the last question must not save the
-      // form. Auto-advance turns a page; it does not press Save.
-      if (isLastPage) return
-      if (!event.target?.closest?.('[data-auto-advance]')) return
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        if (document.querySelector('.modal-overlay')) return
-        if (track.querySelector('.condition-emergency, .condition-flag, .warning-banner')) return
-        goNext()
-      }, AUTO_ADVANCE_MS)
-    }
-    track.addEventListener('wizard-answered', onAnswered)
-    return () => {
-      track.removeEventListener('wizard-answered', onAnswered)
-      clearTimeout(timer)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIndex, pages.length, isLastPage])
+  // Removed on Ash's instruction. It was added to save taps on seventeen
+  // questions, and Back and Next returning on 27 Sep solved that better: the
+  // page now moves when the owner says so, whichever control they use. An
+  // assessment that turns its own page also takes the answer away before it
+  // can be reconsidered, which on questions about a sick animal is the wrong
+  // trade — and on the BEAAAAPP pages, where the options carry illustrations,
+  // it moved on before the picture had been looked at.
 
   // Horizontal swipe navigation, alongside (not instead of) the Back/Next
   // buttons below — the same goNext()/goBack() for every page turn.
