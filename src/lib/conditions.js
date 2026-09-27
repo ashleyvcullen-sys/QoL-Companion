@@ -2399,7 +2399,19 @@ export const CONDITIONS = {
         label: 'Has {name} Had Anything Other Than The Trial Food Today?',
         type: 'yesno',
         dependsOn: { key: 'on_diet_trial', equals: 'yes' },
-        concernWhen: 'yes',
+        // Recorded, never judged — Ash's instruction 27 Sep 2026: "it's just
+        // info". It carried concernWhen: 'yes' until then, which coloured the
+        // day amber and pulled quality of life down to Mildly reduced.
+        //
+        // A dropped dental chew says something about the TRIAL's result and
+        // nothing about how the dog feels, and an owner honest enough to
+        // record the slip should not watch their pet's score fall for it —
+        // which is also the quickest way to teach them to stop recording it.
+        //
+        // The answer is still stored, still charted, still exported, and the
+        // milestone below still marks the day on the calendar; milestones read
+        // the answers directly and never went through severity.
+        informational: true,
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording. This is the one Ash named: the calendar used
         // to quote the question back ("Has Bailey Had Anything Other Than The
         // Trial Food Today?") on the very day the answer was the point.
@@ -2414,9 +2426,15 @@ export const CONDITIONS = {
         // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
         why:
           'Treats, chews, flavoured medication, toothpaste, someone else\'s bowl, something picked up on a walk. A single slip can restart the clock on the whole trial, so it is worth recording honestly rather than tidily.',
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording.
-        concernMessage:
-          'Worth writing down. One slip does not usually ruin a trial, but your vet needs to know about it when they judge the result.',
+        // The concernMessage that sat here — "Worth writing down. One slip
+        // does not usually ruin a trial, but your vet needs to know about it
+        // when they judge the result." (APPROVED 3 Sep 2026) — went with the
+        // concern on 27 Sep 2026: an informational parameter reaches no
+        // verdict, so nothing would ever have shown it. Its substance is in
+        // `why` above, which is on screen as the question is answered rather
+        // than after it.
+        //
+        // APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The message stays retired and `why` is unchanged.
         // Marked on the calendar, every time — not just the first. Two breaks
         // in a trial is a different result to one.
         //

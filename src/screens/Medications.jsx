@@ -552,7 +552,7 @@ export default function Medications() {
 
       <Card>
         <SectionTitle>Today</SectionTitle>
-        {/* PENDING ASH on the wording. */}
+        {/* APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. "Tick each dose off once you've given it." */}
         <p className="screen-intro">
           Tick each dose off once you've given it.
         </p>
