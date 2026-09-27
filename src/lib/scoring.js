@@ -783,13 +783,17 @@ export function computeOverviewCategories(latestGeneralEntry, latestPainEntry, p
   }
 }
 
-// "1 point higher", "4 points lower" — one phrase, two callers.
+// "2% higher than last time", "1% lower than last time" — one phrase, two
+// callers.
 //
-// Ash, 27 Sep 2026: a one-point move read "1 points higher". Both the
-// assessment's closing line and the home card built the sentence themselves
-// with the plural hard-coded, so the same bug existed twice and would have had
-// to be found twice.
-export function describePointChange(change) {
-  const points = Math.abs(change)
-  return `${points} ${points === 1 ? 'point' : 'points'} ${change > 0 ? 'higher' : 'lower'} than last time`
+// Said as a percentage on Ash's instruction 27 Sep 2026. The score IS a
+// percentage, so "2 points" was asking an owner to hold a second unit in their
+// head for no gain — and it read as a different quantity to the number
+// directly above it.
+//
+// It also retires the bug that put this helper here: the wording used to be
+// built inline in both places with the plural hard-coded, so a one-point move
+// read "1 points higher" in two files at once. A percentage has no plural.
+export function describePercentChange(change) {
+  return `${Math.abs(change)}% ${change > 0 ? 'higher' : 'lower'} than last time`
 }
