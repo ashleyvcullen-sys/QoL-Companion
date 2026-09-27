@@ -8,6 +8,7 @@ import PetSwitcher from './PetSwitcher'
 import PetAvatar from './PetAvatar'
 import ConditionIntroModal from './ConditionIntroModal'
 import Modal from './Modal'
+import PetText from './PetText'
 import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { useEntitlements } from '../lib/EntitlementsContext'
@@ -592,10 +593,13 @@ export default function PetSummaryCard() {
           {/* The answers themselves. On a seventeen-item assessment plus
               whatever is being monitored, naming the category and stopping
               leaves the owner hunting for which answer did it. */}
+          {/* Through PetText, because a finding carries this pet's pronouns
+              as {they}/{are} tokens — rendered raw they would appear on screen
+              as literal braces. */}
           {latest?.capFindings?.length > 0 && (
             <ul className="emergency-list">
               {latest.capFindings.map((finding) => (
-                <li key={finding}>{finding}</li>
+                <li key={finding}><PetText template={finding} pet={pet} /></li>
               ))}
             </ul>
           )}

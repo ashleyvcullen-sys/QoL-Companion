@@ -3,6 +3,18 @@
 // that are useful as headings but unreadable mid-sentence, so those are
 // stripped. Names without a parenthetical (e.g. cat "Eyes / Face") are
 // already short and pass through unchanged.
+// The words the owner actually picked, for a given category and score.
+//
+// The six rungs score 0, 2, 4, 6, 8, 10, so the index is the score halved.
+// Returned with its {they}/{are} tokens intact: the caller renders it through
+// PetText, which is what turns them into this pet's pronouns.
+export function beapLevelTextFor(species, key, score) {
+  const category = (BEAP_SCALES[species] ?? BEAP_SCALES.dog)?.find((c) => c.key === key)
+  const value = Number(score)
+  if (!category || !Number.isFinite(value)) return null
+  return category.levels?.[value / 2] ?? null
+}
+
 export function beapCategoryDisplayName(species, key) {
   const category = BEAP_SCALES[species]?.find((c) => c.key === key)
   if (!category) return key

@@ -1,7 +1,7 @@
 // Reference: QoLCompanion_Developer_Handoff.md, Section 4.
 
 import { URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
-import { beapCategoryDisplayName } from './beapScales'
+import { beapCategoryDisplayName, beapLevelTextFor } from './beapScales'
 
 export const SEVERITY = {
   GOOD: 'good',
@@ -184,8 +184,17 @@ function beapSevereFindings(beap, species) {
   return BEAP_CATEGORIES
     .filter((category) => (beap[category] ?? -1) >= 8)
     .map((category) => {
+      // The answer itself, not the band it falls in — Ash's instruction
+      // 27 Sep 2026. "Mobility — Severe" tells an owner a grade; "Mobility —
+      // Will not stand, or needs carrying" tells them what they said, which
+      // is the thing they can recognise and act on. The band name is kept
+      // after it so the grade is still there to read.
       const band = BEAP_BANDS[beapBandIndexForScore(beap[category])]
-      return `${beapCategoryDisplayName(species, category)} — ${band?.shortLabel ?? ''}`.trim()
+      const level = beapLevelTextFor(species, category, beap[category])
+      const name = beapCategoryDisplayName(species, category)
+      return level
+        ? `${name} — ${level} (${band?.shortLabel ?? ''})`.replace(' ()', '')
+        : `${name} — ${band?.shortLabel ?? ''}`.trim()
     })
 }
 
