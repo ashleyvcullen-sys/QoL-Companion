@@ -129,7 +129,6 @@ export async function signMediaUrls(items) {
 }
 
 export async function uploadMedia({ petId, file, caption, takenOn }) {
-  forgetMedia()
   const mediaType = mediaTypeFor(file)
   if (!mediaType) throw new Error(UNSUPPORTED_FILE_MESSAGE)
 
@@ -172,10 +171,13 @@ export async function uploadMedia({ petId, file, caption, takenOn }) {
     await supabase.storage.from(MEDIA_BUCKET).remove([path]).catch(() => {})
     throw error
   }
+
+  // Cleared AFTER the write lands, never before — see the note in
+  // conditionsData.js.
+  forgetMedia()
 }
 
 export async function deleteMedia(item) {
-  forgetMedia()
   // Storage first: a failed row delete leaves a file the app still lists and
   // can retry on, whereas the reverse leaves a file nothing references.
   const { error: storageError } = await supabase.storage.from(MEDIA_BUCKET).remove([item.storagePath])
@@ -183,6 +185,7 @@ export async function deleteMedia(item) {
 
   const { error } = await supabase.from('pet_media').delete().eq('id', item.id)
   if (error) throw error
+  forgetMedia()
 }
 
 export function usePetMedia(petId) {

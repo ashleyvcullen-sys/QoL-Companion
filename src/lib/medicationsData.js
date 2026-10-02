@@ -122,7 +122,6 @@ export async function createMedication({
   petId, name, dose, times, notes, scheduleMode, frequencyCount, frequencyPeriod,
   remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
-  forgetMedications()
   const { data, error } = await supabase
     .from('medications')
     .insert({
@@ -151,6 +150,7 @@ export async function createMedication({
     .single()
 
   if (error) throw error
+  forgetMedications()
   return mapMedicationRow(data)
 }
 
@@ -158,7 +158,6 @@ export async function updateMedication(medicationId, {
   name, dose, times, notes, active, scheduleMode, frequencyCount, frequencyPeriod,
   remindersEnabled, startedOn, endedOn, reminderTime, reminderDays, conditionKeys,
 }) {
-  forgetMedications()
   const patch = {}
   if (name !== undefined) patch.name = name
   if (dose !== undefined) patch.dose = dose || null
@@ -201,13 +200,14 @@ export async function updateMedication(medicationId, {
     .single()
 
   if (error) throw error
+  forgetMedications()
   return mapMedicationRow(data)
 }
 
 export async function deleteMedication(medicationId) {
-  forgetMedications()
   const { error } = await supabase.from('medications').delete().eq('id', medicationId)
   if (error) throw error
+  forgetMedications()
 }
 
 // Scheduled doses upsert on (medication, date, slot) so double-tapping can't
@@ -215,7 +215,6 @@ export async function deleteMedication(medicationId) {
 // is the point — the partial unique index in the migration allows exactly
 // that.
 export async function logDose({ medicationId, time, date }) {
-  forgetMedications()
   const payload = {
     medication_id: medicationId,
     dose_date: date ?? todayIsoDate(),
@@ -229,10 +228,10 @@ export async function logDose({ medicationId, time, date }) {
 
   const { error } = await query
   if (error) throw error
+  forgetMedications()
 }
 
 export async function unlogDose({ medicationId, time, date }) {
-  forgetMedications()
   const { error } = await supabase
     .from('medication_doses')
     .delete()
@@ -241,6 +240,7 @@ export async function unlogDose({ medicationId, time, date }) {
     .eq('dose_time', time)
 
   if (error) throw error
+  forgetMedications()
 }
 
 export function useMedications(petId) {

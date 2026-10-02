@@ -1757,14 +1757,34 @@ export const CONDITIONS = {
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
         type: 'choice',
+        // Recorded, never judged — Ash's instruction 28 Sep 2026: jumping must
+        // not cap Overall QoL. It carried SEVERITY.CONCERN on every answer
+        // below "gets in and out of the car without hesitating", which made
+        // the arthritis day amber, scored 50 of 100 into the Comfort pillar,
+        // and floored the whole day's Overall QoL at Mildly reduced.
+        //
+        // The animals this condition is for do not get their jump back. A dog
+        // who needs a ramp needs it every day, so that floor was not reporting
+        // a change — it was a permanent ceiling of 89% that no amount of good
+        // management could lift, which makes the score useless as a way of
+        // telling a good week from a bad one.
+        //
+        // The answer is still stored, still charted and still exported, which
+        // is where it earns its keep: the TREND from "hesitates" to "only
+        // lower things" over months is the finding, not any single day's
+        // answer. The severities below are left in place as the clinical
+        // grading of the rungs; nothing reads them while this flag is set.
+        informational: true,
         options: [
           { value: 'as_before', label: 'Gets in and out of the car and onto furniture without hesitating', severity: SEVERITY.OK },
           { value: 'hesitates', label: 'Still manages, but hesitates or takes a run-up first', severity: SEVERITY.CONCERN },
           { value: 'lower_only', label: 'Only manages lower things, or needs a hand up or a ramp', severity: SEVERITY.CONCERN },
           { value: 'stopped', label: 'Has stopped jumping up altogether', severity: SEVERITY.CONCERN },
         ],
-        concernMessage:
-          'Worth mentioning to your vet, particularly if this is a change from a few months ago.',
+        // The concernMessage that sat here — "Worth mentioning to your vet,
+        // particularly if this is a change from a few months ago." — is
+        // retired with the flag above: an informational answer never produces
+        // a verdict, so it had nothing left to attach to.
       },
       {
         key: 'cold_or_damp',
@@ -1787,17 +1807,34 @@ export const CONDITIONS = {
         // who has quietly stopped using the windowsill still walks normally.
         covers: 'ambulation',
         relationship: RELATIONSHIP.DISTINCT,
+        // Recorded, never judged — Ash's instruction 28 Sep 2026: jumping must
+        // not cap Overall QoL. It carried SEVERITY.CONCERN on every answer
+        // below "gets to all the usual places", which made the arthritis day
+        // amber, scored 50 of 100 into the Comfort pillar, and floored the
+        // whole day's Overall QoL at Mildly reduced.
+        //
+        // The animals this condition is for do not get their jump back. A cat
+        // who has come down to the sofa is not going back up to the
+        // windowsill, so that floor was not reporting a change — it was a
+        // permanent ceiling of 89% that no amount of good management could
+        // lift, which makes the score useless as a way of telling a good week
+        // from a bad one.
+        //
+        // The answer is still stored, still charted and still exported, which
+        // is where it earns its keep: the TREND from "hesitates" to "only
+        // lower things" over months is the finding, not any single day's
+        // answer. The severities below are left in place as the clinical
+        // grading of the rungs; nothing reads them while this flag is set.
+        informational: true,
         options: [
           { value: 'as_before', label: 'Gets to all the usual places', severity: SEVERITY.OK },
           { value: 'hesitates', label: 'Gets there, but hesitates first', severity: SEVERITY.CONCERN },
           { value: 'lower_only', label: 'Only jumps to lower places now', severity: SEVERITY.CONCERN },
           { value: 'stopped', label: 'Has stopped jumping up', severity: SEVERITY.CONCERN },
         ],
-        // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. This one WAS the literal string 'PENDING ASH',
-        // which an owner picking anything below "gets to all the usual places"
-        // would have read as their alert.
-        concernMessage:
-          'Worth mentioning to your vet, particularly if this is a change from a few months ago.',
+        // The concernMessage that sat here — "Worth mentioning to your vet,
+        // particularly if this is a change from a few months ago." — is
+        // retired with the flag above, for the same reason as the dog entry.
         why:
           'Choosing a lower windowsill, or taking the sofa in two steps instead of one, is often the first sign of sore joints.', // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026.
       },

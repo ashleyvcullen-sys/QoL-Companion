@@ -4,6 +4,7 @@ import HomeTour from '../components/HomeTour'
 import { HOME_TOUR_MESSAGES } from './homeTourContent'
 import { fillPetText } from './petText'
 import { usePets } from './PetsContext'
+import { useEntitlements } from './EntitlementsContext'
 import { supabase } from './supabase'
 
 // The tour, and the screens it walks through.
@@ -21,6 +22,18 @@ const TOUR_STEPS = [
   // feed it.
   { target: '/', show: '/' },
   { target: '/assessment', show: '/' },
+  // Medications, between Assess and Trends, which is where the tab bar puts
+  // it — a tour that walks the bar in a different order than the bar does
+  // teaches the wrong map of the app.
+  //
+  // `showWhenLocked` is the whole subtlety. The Meds tab is on screen for
+  // both tiers (TabBar: a locked tab is how a paid feature is found), so the
+  // spotlight always has something to land on. The SCREEN does not exist for
+  // a free account: /medications is behind RequirePremium, so showing it
+  // would bounce them to the paywall in the middle of the tour. A free
+  // account therefore keeps the screen it is on and is shown the tab alone,
+  // the same compromise the assessment step makes for a different reason.
+  { target: '/medications', show: '/medications', showWhenLocked: '/', premium: true },
   { target: '/trends', show: '/trends' },
   { target: '/more', show: '/more' },
 ]
@@ -38,6 +51,7 @@ export function TourProvider({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { selectedPet: pet, refresh } = usePets()
+  const { hasPremium } = useEntitlements()
   const [active, setActive] = useState(false)
   const autoShownRef = useRef(false)
 
@@ -73,10 +87,18 @@ export function TourProvider({ children }) {
   // the other half of the same loop.
   const steps = useMemo(() => TOUR_STEPS.map((step) => ({
     ...step,
+    // Resolved here, not in HomeTour, for the same reason the message is:
+    // this is where the pet and the entitlement are, and the tour component
+    // stays a renderer that takes finished values.
+    show: !hasPremium && step.showWhenLocked ? step.showWhenLocked : step.show,
+    // The Premium tag is for somebody who does not have it yet. A subscriber
+    // already has the feature and does not need telling — the same condition
+    // the locked tiles use.
+    premium: Boolean(step.premium) && !hasPremium,
     // Filled here rather than in HomeTour: this is where the pet is, and the
     // tour component stays a renderer that takes finished strings.
     message: fillPetText(HOME_TOUR_MESSAGES[step.target], pet),
-  })), [pet])
+  })), [pet, hasPremium])
 
   async function finish() {
     setActive(false)

@@ -49,6 +49,15 @@ const BY_CONDITION = {
   cognitive: {
     disorientation: CU, activity_changes: CU, interactions: CO, anxiety: CO,
     house_soiling: A,
+    // Ash's instruction 1 Oct 2026: the cognitive sleep question feeds Sleep.
+    //
+    // It is the exception to the rule above, and safe to be one. The question
+    // SUPERSEDES the assessment's own sleep score — same scale, same six
+    // levels — and writes its answer into it, so on a day with an assessment
+    // the two items hold the identical number and averaging them changes
+    // nothing. On a day WITHOUT one there is nothing to write into, and
+    // without this line the answer reached no pillar at all.
+    sleep_wake: S,
   },
   cardiac: {
     resting_respiratory_rate: C, respiratory_effort: C, coughing: C,

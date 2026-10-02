@@ -4,6 +4,17 @@ import { invalidateQuery, useCachedQuery } from './queryCache'
 
 // Same rule as qolData: a write clears what it makes stale, here rather than
 // in whichever screen happened to do it.
+//
+// Ash's report 1 Oct 2026: finishing an overdue disease check-in left the dot
+// on the Assess tab. Every write in this file cleared the cache BEFORE
+// sending its write. Clearing notifies every reader, which re-fetches at
+// once — and that read raced the write that had not been sent yet, so the
+// cache was refilled with the rows as they were a moment earlier and nothing
+// invalidated it again. The tab bar reads condition-entries through
+// useAllConditionEntries, so it kept showing yesterday's answer.
+//
+// Clearing AFTER the write is the whole fix: nothing can refill the cache
+// from before a write that has already landed.
 function forgetConditionData(petId) {
   if (!petId) return
   invalidateQuery(`pet-conditions:${petId}`)
@@ -53,7 +64,6 @@ export async function fetchPetConditions(petId) {
 }
 
 export async function addPetCondition({ petId, conditionKey, diagnosedOn, notes }) {
-  forgetConditionData(petId)
   const { data, error } = await supabase
     .from('pet_conditions')
     .upsert(
@@ -70,6 +80,7 @@ export async function addPetCondition({ petId, conditionKey, diagnosedOn, notes 
     .single()
 
   if (error) throw error
+  forgetConditionData(petId)
   return mapConditionRow(data)
 }
 
@@ -101,7 +112,6 @@ export async function saveConditionConfig(conditionId, config) {
 // whereas the other order would leave orphaned readings with nothing in the
 // interface pointing at them.
 export async function removePetCondition(condition) {
-  forgetConditionData(condition?.petId)
   const id = condition?.id
   const petId = condition?.petId
   const conditionKey = condition?.conditionKey
@@ -126,6 +136,7 @@ export async function removePetCondition(condition) {
 
   const { error } = await supabase.from('pet_conditions').delete().eq('id', id)
   if (error) throw error
+  forgetConditionData(petId)
 }
 
 export async function fetchConditionEntries(petId, conditionKey) {
@@ -143,7 +154,6 @@ export async function fetchConditionEntries(petId, conditionKey) {
 // One entry per condition per day. A second save on the same date replaces
 // the first, matching every other log in the app.
 export async function saveConditionEntry({ petId, conditionKey, values, notes, entryDate }) {
-  forgetConditionData(petId)
   const { error } = await supabase
     .from('condition_entries')
     .upsert(
@@ -158,6 +168,7 @@ export async function saveConditionEntry({ petId, conditionKey, values, notes, e
     )
 
   if (error) throw error
+  forgetConditionData(petId)
 }
 
 const EMPTY_LIST = []
@@ -276,7 +287,6 @@ export async function fetchConditionEvents(petId, conditionKey) {
 }
 
 export async function addConditionEvent({ petId, conditionKey, type, title, notes, eventDate }) {
-  forgetConditionData(petId)
   const { data, error } = await supabase
     .from('condition_events')
     .insert({
@@ -291,6 +301,7 @@ export async function addConditionEvent({ petId, conditionKey, type, title, note
     .single()
 
   if (error) throw error
+  forgetConditionData(petId)
   return mapEventRow(data)
 }
 

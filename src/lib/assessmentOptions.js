@@ -28,6 +28,18 @@ export const STOOL_SYMPTOM_OPTIONS = [
 // raises the same interruption the male-cat urinary blockage does.
 //
 // APPROVED — Dr Ash Cullen (BSc, DVM), 3 Sep 2026. Wording drafted by me, not reviewed.
+// Blood in the faeces, fresh or digested.
+//
+// Ash's instruction 1 Oct 2026: blood in the faeces floors Overall QoL at
+// Moderately reduced, as blood in the vomit now does. Both chips count —
+// fresh blood is bleeding low in the gut, black and tarry is bleeding higher
+// up — so neither is "the" blood chip and the floor reads both.
+//
+// Black/tarry additionally raises the interruption below. The alert and the
+// floor are separate judgements and always have been: one says stop and ring
+// us, the other says today's number should not read better than this.
+export const STOOL_BLOOD_SYMPTOMS = ['Fresh blood', 'Black/tarry']
+
 export const STOOL_EMERGENCY = {
   chips: ['Black/tarry'],
   title: 'This Could Be an Emergency',
@@ -101,6 +113,16 @@ export const VOMITING_EMERGENCY = {
 // floor in scoring.js read one list and cannot disagree. Contents unchanged —
 // Ash's instruction 3 Sep 2026 added Vocalisation.
 export const URINARY_BLOCKAGE_SYMPTOMS = ['Straining', 'Not urinating at all', 'Vocalisation']
+
+// The obstructed picture, as opposed to a possible sign of one — Ash's
+// instruction 1 Oct 2026. BOTH chips, not either: a cat straining and passing
+// nothing is the classic obstruction, where straining alone is as likely to
+// be cystitis and vocalising alone could be almost anything.
+//
+// This list changes the FLOOR only. The alert is raised by
+// URINARY_BLOCKAGE_SYMPTOMS above and is unconditional either way: one chip
+// is enough to stop the owner and send them to a vet.
+export const URINARY_OBSTRUCTION_SYMPTOMS = ['Straining', 'Not urinating at all']
 
 export const VOMITING_CHARACTER_OPTIONS = ['Bile', 'Foamy', 'Undigested food', 'Blood', 'Other']
 // Cats only — inserted before 'Other' by VomitingPage so 'Other' stays last.

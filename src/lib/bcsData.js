@@ -46,8 +46,8 @@ function localIsoDate() {
 
 export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate }) {
   // Cleared here rather than in whichever screen happened to save, following
-  // the same convention as qolData and conditionsData.
-  if (petId) invalidateQuery(bcsKey(petId))
+  // the same convention as qolData and conditionsData — and AFTER the write,
+  // never before, for the reason set out there.
   const { error } = await supabase
     .from('bcs_entries')
     .upsert(
@@ -63,6 +63,7 @@ export async function saveBcsEntry({ petId, score, weightKg, notes, entryDate })
     )
 
   if (error) throw error
+  if (petId) invalidateQuery(bcsKey(petId))
 }
 
 export function useBcsHistory(petId) {

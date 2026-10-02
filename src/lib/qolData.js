@@ -5,6 +5,10 @@ import { invalidateQuery } from './queryCache'
 // than in each caller is the point: a screen that saves an assessment and
 // forgets to refresh would leave the home card showing yesterday's number,
 // and that is the kind of bug nobody notices until an owner does.
+// Cleared AFTER the write lands, never before — see the note in
+// conditionsData.js. Clearing first notifies every reader, which re-fetches
+// immediately and races the write that has not been sent yet, refilling the
+// cache from before the change.
 function forgetQolHistory(petId) {
   if (petId) invalidateQuery(`qol-history:${petId}`)
 }
@@ -94,7 +98,6 @@ export async function fetchLatestPainLogEntry(petId) {
 // beap_worst is recomputed rather than patched, because it is a derived value
 // and the whole point of this function is that derived values stay true.
 export async function updateBeapCategory({ petId, date, category, value }) {
-  forgetQolHistory(petId)
   const { data, error } = await supabase
     .from('pain_log_entries')
     .select('*')
@@ -114,6 +117,7 @@ export async function updateBeapCategory({ petId, date, category, value }) {
     .eq('id', data.id)
 
   if (updateError) throw updateError
+  forgetQolHistory(petId)
   return mapPainLogRow({ ...data, beap, beap_worst: beapWorst })
 }
 
@@ -128,7 +132,6 @@ export async function updateBeapCategory({ petId, date, category, value }) {
 // the owner never assessed, and the overall percentage would be computed from
 // one question.
 export async function updateGeneralScore({ petId, date, key, value }) {
-  forgetQolHistory(petId)
   const { data, error } = await supabase
     .from('general_qol_entries')
     .select('*')
@@ -146,6 +149,7 @@ export async function updateGeneralScore({ petId, date, key, value }) {
     .eq('id', data.id)
 
   if (updateError) throw updateError
+  forgetQolHistory(petId)
   return mapGeneralQolRow({ ...data, scores })
 }
 
@@ -166,7 +170,6 @@ const GENERAL_FIELD_COLUMNS = {
 }
 
 export async function updateGeneralField({ petId, date, field, value }) {
-  forgetQolHistory(petId)
   const column = GENERAL_FIELD_COLUMNS[field]
   if (!column) return null
 
@@ -186,6 +189,7 @@ export async function updateGeneralField({ petId, date, field, value }) {
     .eq('id', data.id)
 
   if (updateError) throw updateError
+  forgetQolHistory(petId)
   return mapGeneralQolRow({ ...data, [column]: value })
 }
 
@@ -202,7 +206,6 @@ export async function updateGeneralField({ petId, date, field, value }) {
 // different — one takes a pencil mark off a day, the other takes the day out
 // of the record.
 export async function clearAssessmentNote({ petId, date }) {
-  forgetQolHistory(petId)
   // An EMPTY STRING, not null.
   //
   // general_qol_entries.notes is `not null`, so writing null is rejected
@@ -241,6 +244,7 @@ export async function clearAssessmentNote({ petId, date }) {
     throw new Error('That note could not be found to delete. Please try again.')
   }
 
+  forgetQolHistory(petId)
   return updated
 }
 

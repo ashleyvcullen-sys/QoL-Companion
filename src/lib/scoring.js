@@ -1,6 +1,8 @@
 // Reference: QoLCompanion_Developer_Handoff.md, Section 4.
 
-import { URINARY_BLOCKAGE_SYMPTOMS, VOMITING_EMERGENCY } from './assessmentOptions'
+import {
+  STOOL_BLOOD_SYMPTOMS, URINARY_BLOCKAGE_SYMPTOMS, URINARY_OBSTRUCTION_SYMPTOMS, VOMITING_EMERGENCY,
+} from './assessmentOptions'
 import { beapCategoryDisplayName, beapLevelTextFor } from './beapScales'
 
 export const SEVERITY = {
@@ -176,7 +178,9 @@ function generalQolBandIndexFromPercent(percent) {
 // APPROVED — Dr Ash Cullen (BSc, DVM), 27 Sep 2026. The two assessment-emergency phrasings below.
 const ASSESSMENT_EMERGENCY_LABELS = {
   vomiting: 'Blood in the vomit',
+  stool: 'Blood in the faeces',
   urination: 'Signs of a urinary blockage',
+  urination_obstructed: 'Straining and not passing any urine',
 }
 
 function beapSevereFindings(beap, species) {
@@ -247,17 +251,56 @@ export function assessmentEmergencies(entry, species = null) {
     && (entry.vomiting.character ?? []).some((chip) => VOMITING_EMERGENCY.chips.includes(chip))) {
     found.push('vomiting')
   }
-  if (species === 'cat'
-    && entry.urination?.status === 'abnormal'
-    && (entry.urination.symptoms ?? []).some((chip) => URINARY_BLOCKAGE_SYMPTOMS.includes(chip))) {
-    found.push('urination')
+  // Blood in the faeces, fresh or digested — Ash's instruction 1 Oct 2026.
+  // Until then no stool chip floored the band at all: black and tarry raised
+  // its alert and then scored like any other chip, a flat 5 points off one
+  // item of seventeen, so an owner could be told to ring the vet today beside
+  // a ring still reading Good.
+  if ((entry.stoolSymptoms ?? []).some((chip) => STOOL_BLOOD_SYMPTOMS.includes(chip))) {
+    found.push('stool')
+  }
+  // Two levels, not one — Ash's instruction 1 Oct 2026. Straining AND passing
+  // nothing is the obstructed picture and floors at Severely reduced; any one
+  // of the three signs on its own is a possible sign and floors at Moderately
+  // reduced. Only ever one of the two keys, so the cap explanation names the
+  // finding once.
+  if (species === 'cat' && entry.urination?.status === 'abnormal') {
+    const symptoms = entry.urination.symptoms ?? []
+    if (URINARY_OBSTRUCTION_SYMPTOMS.every((chip) => symptoms.includes(chip))) {
+      found.push('urination_obstructed')
+    } else if (symptoms.some((chip) => URINARY_BLOCKAGE_SYMPTOMS.includes(chip))) {
+      found.push('urination')
+    }
   }
   return found
 }
 
+// All three floor at MODERATELY reduced (capped at 74%) — Ash's instruction
+// 1 Oct 2026. Blood in the vomit and faeces first, then the suspected urinary
+// blockage; until then each of these capped the day at 49%.
+//
+// Ash's reasoning, on the urinary one: "it's not a confirmed urinary
+// blockage — just possible symptoms of one". That is the general case here.
+// None of these three answers is a diagnosis: they are things an owner has
+// NOTICED, and the app has no way to tell a blocked cat from a cat with
+// cystitis, or one streak of blood from a bleed.
+//
+// So an ALERT and a FLOOR answer different questions. Each of these three
+// still stops the owner on the page that asks and tells them to contact their
+// vet — that is what carries the urgency, it is deliberately unconditional,
+// and it is unchanged. The floor is only about what the day's NUMBER may
+// read, and a possible sign is not grounds to call the whole day severe.
+//
+// Kept as a map rather than one constant: these are three separate clinical
+// judgements that happen to agree today, and the next one to change should
+// change on its own.
 const EMERGENCY_FLOOR_BAND = {
-  vomiting: BAND_INDEX_SEVERE_IMPACT,
-  urination: BAND_INDEX_SEVERE_IMPACT,
+  vomiting: BAND_INDEX_MODERATE_IMPACT,
+  stool: BAND_INDEX_MODERATE_IMPACT,
+  urination: BAND_INDEX_MODERATE_IMPACT,
+  // The exception, and the reason the map is a map: straining AND passing
+  // nothing is not a possible sign, it is the picture itself.
+  urination_obstructed: BAND_INDEX_SEVERE_IMPACT,
 }
 
 function emergencyBandFloorIndex(entry, species) {
