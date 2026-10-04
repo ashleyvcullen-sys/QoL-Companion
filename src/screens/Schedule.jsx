@@ -33,7 +33,7 @@ import {
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition as scheduleForConditionOf,
-  reminderDayHint,
+  reminderTimeOf,
 } from '../lib/cadence'
 
 // The options, the day-mode rule and the per-condition defaults now live in
@@ -181,7 +181,6 @@ function ScheduleRow({
             max={1}
             onChange={(days) => onDayChange(days.length ? days[days.length - 1] : null)}
           />
-          <p className="assessment-hint">{reminderDayHint(cadenceDay)}</p>
         </div>
       )}
     </div>
@@ -220,6 +219,10 @@ export default function Schedule() {
   // last entry", which is what every existing pet has been doing, so nothing
   // changes for anyone who never opens this.
   const cadenceDay = pet.schedule.qolDay ?? null
+  // One time of day for this pet's check-in reminders — Ash's instruction
+  // 4 Oct 2026. Null keeps the old behaviour, which is to land at whatever
+  // time the last entry was saved at.
+  const reminderTime = reminderTimeOf(pet)
 
   // Per-condition cadence, stored under the same `schedule` object as the
   // assessment's. A condition with no entry here falls back to the cadence
@@ -253,9 +256,10 @@ export default function Schedule() {
       petName: pet.name,
       cadenceDays,
       cadenceDay,
+      reminderTime,
       fromDate: latestGeneralDate ?? new Date(),
     })
-  }, [notifStatus, loading, cadenceDays, cadenceDay, latestGeneralDate, pet.id, pet.name])
+  }, [notifStatus, loading, cadenceDays, cadenceDay, reminderTime, latestGeneralDate, pet.id, pet.name])
 
   // The same self-healing pass for every condition being monitored. Keyed on
   // a serialised copy of the schedule rather than the object itself, which is
@@ -274,11 +278,12 @@ export default function Schedule() {
         conditionLabel: definition.label,
         cadenceDays: days,
         cadenceDay: day,
+        reminderTime,
         fromDate: localDateFromIso(entries[entries.length - 1]?.date) ?? new Date(),
       })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifStatus, conditionsLoading, conditionScheduleKey, trackedKey, pet.id, pet.name])
+  }, [notifStatus, conditionsLoading, conditionScheduleKey, trackedKey, reminderTime, pet.id, pet.name])
 
   async function saveSchedule(nextSchedule) {
     const { error } = await supabase.from('pets').update({ schedule: nextSchedule }).eq('id', pet.id)
@@ -299,6 +304,12 @@ export default function Schedule() {
 
   async function updateCadenceDay(day) {
     await saveSchedule({ ...pet.schedule, qolDay: day })
+  }
+
+  // Empty clears it, which is how an owner goes back to "whenever I last
+  // assessed". Every reminder reschedules itself off the effects above.
+  async function updateReminderTime(time) {
+    await saveSchedule({ ...pet.schedule, reminderTime: time || null })
   }
 
   async function updateConditionSchedule(conditionKey, patch) {
@@ -361,6 +372,32 @@ export default function Schedule() {
             <span>How often should I be assessing my pet's quality of life?</span>
           </div>
         </button>
+
+        {/* One time of day for every check-in reminder — Ash's instruction
+            4 Oct 2026. Without it a reminder lands at whatever time the last
+            entry was saved at, which is how an owner who assessed once at
+            11pm ends up being asked at 11pm from then on.
+
+            Here rather than on each section: it is the same answer for all of
+            them, and asking it once is the point. Medication reminders are
+            not affected — those already fire at times the owner set dose by
+            dose.
+
+            APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+        <div className="field schedule-reminder-time">
+          <label htmlFor="reminder-time">What time should reminders arrive?</label>
+          <input
+            id="reminder-time"
+            type="time"
+            value={reminderTime ?? ''}
+            onChange={(event) => updateReminderTime(event.target.value)}
+          />
+          <p className="assessment-hint">
+            {reminderTime
+              ? 'Every check-in reminder arrives at this time.'
+              : 'Leave this empty and reminders arrive at the time of day you last assessed.'}
+          </p>
+        </div>
       </Card>
 
       <Card>

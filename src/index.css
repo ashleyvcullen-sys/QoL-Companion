@@ -697,6 +697,9 @@ code {
   margin: 0;
   font-size: var(--type-support);
   color: var(--text-muted);
+  /* Under the empty ring since 4 Oct 2026, not alone on the left. */
+  text-align: center;
+  max-width: 34ch;
 }
 
 /* Due, on the assessment side, where there is no row to hang it on. Amber on
@@ -1242,6 +1245,13 @@ code {
   font-size: var(--type-meta);
   font-weight: 600;
   color: var(--severity-good-text);
+}
+
+/* The way back into the last check-in's answers, inside the summary card.
+   The shared .subtle-link carries a 24px tail sized for the foot of a
+   screen, which here would open a gap above the button below it. */
+.pet-summary-answers-link {
+  margin: 10px 0 0;
 }
 
 .icon-grid {

@@ -120,6 +120,31 @@ export async function requestExactAlarmPermission() {
   return exact_alarm
 }
 
+// The time of day a reminder lands at.
+//
+// Without one, a check-in reminder falls at whatever time the LAST entry was
+// saved: an owner who assessed at 11pm once is reminded at 11pm from then on.
+// Ash's instruction 4 Oct 2026 — let the owner set the time instead.
+//
+// 'HH:MM', or null to keep the old behaviour of counting from the entry's own
+// time. Medication reminders are untouched: those already fire at times the
+// owner chose dose by dose, and one time for all of them would be wrong.
+export function atChosenTime(date, time, cadenceDays = 1) {
+  if (typeof time !== 'string' || !/^\d{1,2}:\d{2}/.test(time)) return date
+  const [hour, minute] = time.split(':').map(Number)
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return date
+  const at = new Date(date)
+  at.setHours(hour, minute, 0, 0)
+  // Setting the clock can move the reminder BACKWARDS by up to a day — 9am on
+  // a day whose entry was saved at 6pm. Step it on by whole cadences until it
+  // is in the future, which keeps a chosen weekday on that weekday.
+  const step = Math.max(1, Number(cadenceDays) || 1)
+  for (let guard = 0; guard < 40 && at.getTime() <= Date.now(); guard += 1) {
+    at.setDate(at.getDate() + step)
+  }
+  return at
+}
+
 // Cancels just this pet's reminder — every other pet's stays scheduled.
 export async function cancelQolReminder(petId) {
   if (!petId) return
@@ -146,7 +171,9 @@ async function cancelLegacySharedReminder() {
 // schedule — a fixed native repeat has no idea when the user actually did
 // the assessment, so it would drift out of sync with real completions
 // instead of counting fresh from each one.
-export async function scheduleQolReminder({ petId, petName, cadenceDays, cadenceDay = null, fromDate }) {
+export async function scheduleQolReminder({
+  petId, petName, cadenceDays, cadenceDay = null, fromDate, reminderTime = null,
+}) {
   if (!petId) return
 
   const display = await checkNotificationPermission()
@@ -171,6 +198,8 @@ export async function scheduleQolReminder({ petId, petName, cadenceDays, cadence
   // The chosen weekday or date, applied before the in-the-past check so a
   // day that slides the reminder backwards can never be scheduled.
   nextDate = advanceToChosenDay(nextDate, cadenceDays, cadenceDay)
+  // The owner's chosen time of day, if they have set one.
+  nextDate = atChosenTime(nextDate, reminderTime, cadenceDays)
   if (nextDate.getTime() <= Date.now()) {
     // Cadence was shortened past an already-elapsed date — fire soon
     // rather than scheduling something in the past.
@@ -215,6 +244,7 @@ export async function cancelConditionReminder(petId, conditionKey) {
 // rather than leaving the last one to fire.
 export async function scheduleConditionReminder({
   petId, petName, conditionKey, conditionLabel, cadenceDays, cadenceDay = null, fromDate,
+  reminderTime = null,
 }) {
   if (!petId || !conditionKey) return
 
@@ -228,6 +258,7 @@ export async function scheduleConditionReminder({
   let nextDate = new Date(fromDate ?? Date.now())
   nextDate.setDate(nextDate.getDate() + cadenceDays)
   nextDate = advanceToChosenDay(nextDate, cadenceDays, cadenceDay)
+  nextDate = atChosenTime(nextDate, reminderTime, cadenceDays)
   if (nextDate.getTime() <= Date.now()) {
     nextDate = new Date(Date.now() + 60 * 1000)
   }

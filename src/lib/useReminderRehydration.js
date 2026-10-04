@@ -12,6 +12,7 @@ import {
 import { fetchMedications } from './medicationsData'
 import { fetchPetConditions } from './conditionsData'
 import { conditionByKey } from './conditions'
+import { reminderTimeOf } from './cadence'
 
 // Medication reminders are scheduled with the OS, not stored in our
 // database — so they do not survive a reinstall, a restore from backup, or a
@@ -88,6 +89,7 @@ export function useReminderRehydration() {
             conditionLabel: definition.label,
             cadenceDays,
             cadenceDay: saved?.day ?? null,
+            reminderTime: reminderTimeOf(pet),
             fromDate: new Date(),
           }).catch((error) => {
             console.error('Could not restore reminder for', definition.label, error.message)

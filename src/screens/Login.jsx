@@ -53,12 +53,27 @@ export default function Login() {
               person emails to say the link never arrived, they have usually
               already decided the app does not work.
               //
-              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. */}
+              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. The clause
+              recommending they add us to their contacts was dropped on her
+              instruction 4 Oct 2026; the rest is her wording, untouched. */}
           <p className="assessment-hint">
             It should arrive within a minute. If you can't see it, check your junk
-            or spam folder — and add us to your contacts so the next one reaches
-            your inbox.
+            or spam folder.
           </p>
+          {/* A way back to the email field — Ash's instruction 4 Oct 2026.
+              Without one, a typo in the address was the end of the road: the
+              screen said a link was on its way to an inbox that did not exist
+              and offered nothing to do about it. The address is kept, so this
+              lands on the form with it filled in, ready to correct or to send
+              again. */}
+          <Btn
+            type="button"
+            variant="outline"
+            className="btn-block"
+            onClick={() => setStatus('idle')}
+          >
+            Back
+          </Btn>
         </Card>
       </div>
     )

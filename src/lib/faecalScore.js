@@ -40,6 +40,16 @@ const RED = '#A33A2E'
 
 const TONE_COLOUR = { optimal: GREEN, acceptable: AMBER, outside: RED }
 
+// How a rung is DRAWN, which since 4 Oct 2026 is not the same question as
+// what the guide calls it.
+//
+// Ash's instruction that day: score 2 is green on both charts, and the rungs
+// either side of the acceptable range — 1 and 3.5 for a dog, 1 for a cat —
+// are amber rather than red. `tone` still carries the guide's own three-way
+// key, so the advice and the concern flags are unchanged by this; only the
+// colour moved.
+const SHADE_COLOUR = { green: GREEN, amber: AMBER, red: RED }
+
 // One row per rung the guide draws for that species, in order.
 //
 // APPROVED — Dr Ash Cullen (BSc, DVM), 24 Sep 2026. Her words: dogs "Soft"
@@ -57,11 +67,11 @@ const TONE_COLOUR = { optimal: GREEN, acceptable: AMBER, outside: RED }
 // alert beside it.
 const RUNGS = {
   dog: [
-    { score: 1, tone: 'outside', band: 'Hard', text: 'Hard, dry and crumbly. Breaks apart when picked up.' },
-    { score: 2, tone: 'acceptable', band: 'Acceptable', text: 'Firm and well formed, with a clear shape. May have small cracks on the surface.' },
+    { score: 1, tone: 'outside', shade: 'amber', band: 'Hard', text: 'Hard, dry and crumbly. Breaks apart when picked up.' },
+    { score: 2, tone: 'acceptable', shade: 'green', band: 'Acceptable', text: 'Firm and well formed, with a clear shape. May have small cracks on the surface.' },
     { score: 2.5, tone: 'optimal', band: 'Optimal', text: 'Well formed and slightly soft, with a damp surface. Picks up cleanly.' },
     { score: 3, tone: 'acceptable', band: 'Acceptable', text: 'Moist and starting to lose its shape. Leaves a little residue.' },
-    { score: 3.5, tone: 'outside', band: 'Soft', text: 'Soft and moist. Still holds a shape, but leaves residue when picked up.' },
+    { score: 3.5, tone: 'outside', shade: 'amber', band: 'Soft', text: 'Soft and moist. Still holds a shape, but leaves residue when picked up.' },
     { score: 4, tone: 'outside', band: 'Loose', text: 'Very moist, with little shape left. Hard to pick up.' },
     // PENDING ASH — the description. "Mostly liquid" is the band now, on
     // Ash's instruction 24 Sep 2026, so the sentence no longer opens by
@@ -73,8 +83,8 @@ const RUNGS = {
   // the ground or in a bag; a cat's in a litter tray, where litter sticks to
   // it and a liquid stool soaks in rather than pooling (Ash, 21 Sep 2026).
   cat: [
-    { score: 1, tone: 'outside', band: 'Hard', text: 'Hard, dry and crumbly. Breaks apart when scooped.' },
-    { score: 2, tone: 'acceptable', band: 'Acceptable', text: 'Firm and well formed, with a clear shape. Scoops out cleanly with little litter stuck to it.' },
+    { score: 1, tone: 'outside', shade: 'amber', band: 'Hard', text: 'Hard, dry and crumbly. Breaks apart when scooped.' },
+    { score: 2, tone: 'acceptable', shade: 'green', band: 'Acceptable', text: 'Firm and well formed, with a clear shape. Scoops out cleanly with little litter stuck to it.' },
     { score: 2.5, tone: 'optimal', band: 'Optimal', text: 'Well formed and slightly soft. A little litter sticks to the surface.' },
     // Back to "Acceptable" — Ash, 24 Sep 2026, reversing the "Soft" she
     // had asked for an hour earlier. 3 is an acceptable rung on the cat
@@ -127,7 +137,10 @@ export function faecalBandLabelsFor(species) {
 
 export function faecalColourForIndexFor(species) {
   const rungs = rungsFor(species)
-  return (index) => TONE_COLOUR[rungs[index]?.tone] ?? RED
+  return (index) => {
+    const rung = rungs[index]
+    return SHADE_COLOUR[rung?.shade] ?? TONE_COLOUR[rung?.tone] ?? RED
+  }
 }
 
 export function faecalIndexOf(score, species) {
@@ -168,7 +181,9 @@ export function faecalLabelOf(score, species) {
 //
 // Every key the app has ever offered is kept, including 1.5, so a day saved
 // on a retired rung still scores exactly as it did.
-export const FAECAL_TO_TEN = { 1: 6, 1.5: 8, 2: 9, 2.5: 10, 3: 9, 3.5: 7, 4: 5, 4.5: 2, 5: 0 }
+// 2 scores 10 from 4 Oct 2026 — Ash's instruction, with the colour change
+// above: "no reduction in qol score if selected". 3 still scores 9.
+export const FAECAL_TO_TEN = { 1: 6, 1.5: 8, 2: 10, 2.5: 10, 3: 9, 3.5: 7, 4: 5, 4.5: 2, 5: 0 }
 
 // What a red rung tells the owner to do — Ash's instruction 24 Sep 2026:
 // "advise user to seek vet attention if this is an ongoing issue".

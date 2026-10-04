@@ -23,7 +23,7 @@ function prefersReducedMotion() {
 // A number says 68%; a ring says 68% of what, at a glance and without being
 // read. Drawn rather than charted — one circle needs no library, and the
 // chart library's smallest useful unit is heavier than this whole card.
-export default function ScoreRing({ percent, colour, size = 64, centre = null }) {
+export default function ScoreRing({ percent, colour, size = 64, centre = null, label = null }) {
   // The ring sweeps up to the score and the number counts with it — Ash's
   // instruction 23 Sep 2026. It is the app's central number, and arriving
   // fully drawn gives the owner nothing to watch; filling makes the same fact
@@ -68,7 +68,7 @@ export default function ScoreRing({ percent, colour, size = 64, centre = null })
     <span
       className="pet-summary-ring"
       role="img"
-      aria-label={`Quality of life ${percent}%`}
+      aria-label={label ?? `Quality of life ${percent}%`}
       style={{ width: size, height: size }}
     >
       <svg viewBox="0 0 64 64" width={size} height={size}>

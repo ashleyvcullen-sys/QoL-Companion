@@ -195,6 +195,20 @@ export default function SwipeableWizard({
     if (trackRef.current) trackRef.current.style.height = ''
     writeTrack(0, 0)
     setLifted(false)
+
+    // The page on screen is the one we were heading for. Anything asked for
+    // while it was arriving goes now — a frame later, so it starts from the
+    // track this effect has just put back where it belongs, and only if it is
+    // still what was wanted (a tap in between supersedes it).
+    const next = queued.current
+    queued.current = null
+    if (next != null && next !== pageIndex) {
+      requestAnimationFrame(() => {
+        if (heading.current === next) runMoveRef.current?.(next)
+      })
+    } else {
+      heading.current = pageIndex
+    }
   }, [pageIndex, writeTrack, cancelPendingWrite, setLifted, setNeighbourOffset])
 
   // One move, however it was asked for. The track finishes the slide to
@@ -221,6 +235,23 @@ export default function SwipeableWizard({
   const settleTimer = useRef(null)
   const settleDone = useRef(null)
 
+  // Where the wizard is HEADING, as opposed to the page React has rendered.
+  //
+  // A page lands at the END of its slide, so for the ~260ms one takes,
+  // `pageIndex` is still the page behind. Every control counted from it, so a
+  // tap made while a slide was running asked for the page that was already
+  // arriving — `moveTo` dropped it as "already there", and the tap did
+  // nothing at all. Tapping Next at a steady pace through the assessment
+  // turned one page for every two taps, which reads as the wizard losing
+  // taps, or as questions going past unanswered.
+  //
+  // Ash's report 4 Oct 2026. Taps are counted from here instead, and a move
+  // asked for mid-slide is queued rather than raced, so every tap turns
+  // exactly one page.
+  const heading = useRef(initialPageIndex)
+  const queued = useRef(null)
+  const runMoveRef = useRef(null)
+
   function finishSettle() {
     clearTimeout(settleTimer.current)
     const done = settleDone.current
@@ -228,10 +259,23 @@ export default function SwipeableWizard({
     if (done) done()
   }
 
+  // What was asked for. The slide itself is runMove below.
   function moveTo(index) {
+    if (index === heading.current || index < 0 || index > pages.length - 1) return
+    heading.current = index
+    // Asked for while a slide is still running: it waits for that one to
+    // land, and the layout effect above starts it. Racing it instead left the
+    // track part-way through one slide while a second was declared on it,
+    // which is the tap that went missing.
+    if (settleDone.current) {
+      queued.current = index
+      return
+    }
+    runMove(index)
+  }
+
+  function runMove(index) {
     if (index === pageIndex || index < 0 || index > pages.length - 1) return
-    // A move asked for while one is still running: finish that one first, so
-    // two swipes in quick succession queue up rather than fight.
     finishSettle()
     // Before the slide starts, so the question that arrives is already at its
     // top — see setNeighbourOffset. A tap on Next needs this as much as a
@@ -293,16 +337,18 @@ export default function SwipeableWizard({
     cancelAnimationFrame(frameRef.current)
   }, [])
 
+  runMoveRef.current = runMove
+
   function goNext() {
     if (isLastPage) {
       onComplete?.()
       return
     }
-    moveTo(pageIndex + 1)
+    moveTo(heading.current + 1)
   }
 
   function goBack() {
-    moveTo(pageIndex - 1)
+    moveTo(heading.current - 1)
   }
 
   // Straight to a page, from its dot.

@@ -80,13 +80,18 @@ export async function saveConditionSchedule({ pet, conditionKey, patch }) {
   return error ?? null
 }
 
-// The line under the day picker, in both places that draw one: the Schedule
-// screen and a condition's own cadence control. Written out in both until
-// 24 Sep 2026.
+// The hint under the day picker went on Ash's instruction 4 Oct 2026. Both
+// sentences — "Pick nothing and the reminder falls the right number of days
+// after your last entry." and "Tap it again to go back to counting from your
+// last entry." — are gone from the Schedule screen and from a condition's own
+// cadence control.
+
+// The time of day this pet's check-in reminders land at, or null for the old
+// behaviour: the time the last entry happened to be saved at.
 //
-// APPROVED — Dr Ash Cullen (BSc, DVM). Her words, moved rather than rewritten.
-export function reminderDayHint(chosenDay) {
-  return chosenDay == null
-    ? 'Pick nothing and the reminder falls the right number of days after your last entry.'
-    : 'Tap it again to go back to counting from your last entry.'
+// Stored in the pets table's `schedule` jsonb beside the cadences, so it
+// needed no migration. Medication reminders keep their own per-dose times.
+export function reminderTimeOf(pet) {
+  const time = pet?.schedule?.reminderTime
+  return typeof time === 'string' && /^\d{1,2}:\d{2}/.test(time) ? time : null
 }

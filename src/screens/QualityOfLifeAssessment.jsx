@@ -49,6 +49,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import { invalidateQuery } from '../lib/queryCache'
 import { scheduleQolReminder } from '../lib/notifications'
+import { reminderTimeOf } from '../lib/cadence'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
 import { diseaseDaysByDate } from '../lib/diseaseDays'
@@ -665,7 +666,13 @@ export default function QualityOfLifeAssessment() {
     // keeps the reminder counting from when the pet was actually last
     // checked on rather than drifting from whenever the cadence was set.
     const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
-    scheduleQolReminder({ petId: pet.id, petName: pet.name, cadenceDays, fromDate: entryDate }).catch((error) => {
+    scheduleQolReminder({
+      petId: pet.id,
+      petName: pet.name,
+      cadenceDays,
+      reminderTime: reminderTimeOf(pet),
+      fromDate: entryDate,
+    }).catch((error) => {
       console.error('Failed to reschedule QoL reminder:', error.message)
     })
 

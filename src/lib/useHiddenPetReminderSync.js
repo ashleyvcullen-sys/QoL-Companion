@@ -10,6 +10,7 @@ import {
 } from './notifications'
 import { fetchMedications } from './medicationsData'
 import { fetchPetConditions } from './conditionsData'
+import { reminderTimeOf } from './cadence'
 
 // Keeps scheduled reminders in step with which pets are actually visible.
 //
@@ -101,6 +102,7 @@ export function useHiddenPetReminderSync() {
           petName: pet.name,
           cadenceDays,
           cadenceDay: pet.schedule?.qolDay ?? null,
+          reminderTime: reminderTimeOf(pet),
           fromDate: new Date(),
         }).catch((error) => {
           console.error('Could not restore reminder for', pet.name, error.message)

@@ -47,7 +47,7 @@ import {
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition,
-  reminderDayHint,
+  reminderTimeOf,
 } from '../lib/cadence'
 import { scheduleConditionReminder } from '../lib/notifications'
 import { formatDateDDMMYY } from '../lib/formatDate'
@@ -249,6 +249,7 @@ export default function ConditionMonitoring() {
       conditionLabel: definition.label,
       cadenceDays: next.days ?? cadence?.days ?? 1,
       cadenceDay: next.day ?? null,
+      reminderTime: reminderTimeOf(pet),
       fromDate: latestEntry?.date ? new Date(`${latestEntry.date}T00:00:00`) : new Date(),
     })
   }
@@ -674,7 +675,6 @@ export default function ConditionMonitoring() {
                           max={1}
                           onChange={(days) => changeCadence({ day: days.length ? days[days.length - 1] : null })}
                         />
-                        <p className="assessment-hint">{reminderDayHint(cadence.day)}</p>
                       </div>
                     )}
 

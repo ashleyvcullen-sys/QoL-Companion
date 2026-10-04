@@ -29,6 +29,7 @@ import {
 } from '../lib/scoring'
 import { diseaseDaysByDate } from '../lib/diseaseDays'
 import PillarBreakdownModal from './PillarBreakdownModal'
+import DayAnswersModal from './DayAnswersModal'
 import { describeAssessmentDay } from '../lib/assessmentSummary'
 import { WELLBEING_CONCEPTS } from './WellbeingConcepts'
 import { MONITORING_STATE, monitoringStatus } from '../lib/monitoringStatus'
@@ -67,6 +68,8 @@ export default function PetSummaryCard() {
   const [askingCondition, setAskingCondition] = useState(null)
   // Whether the owner has asked why today's score was capped.
   const [showCapReason, setShowCapReason] = useState(false)
+  // Whether the owner has asked to read back the last check-in's answers.
+  const [showLastAnswers, setShowLastAnswers] = useState(false)
   const navigate = useNavigate()
   const { hasPremium } = useEntitlements()
   // Doses, for the line below the conditions. Only for an account that can
@@ -120,6 +123,11 @@ export default function PetSummaryCard() {
     return wouldHaveCounted?.bandFloorIndex > 0 ? reading : null
   }, [bcsEntries])
 
+  // The pain half of the latest day, which the answers modal reads alongside
+  // the general one.
+  const latestPain = latestGeneral
+    ? painEntries.find((row) => row.date === latestGeneral.date) ?? null
+    : null
   const latest = resultFor(latestGeneral)
   const previous = resultFor(previousGeneral)
   const change = latest && previous ? latest.percent - previous.percent : null
@@ -427,9 +435,28 @@ export default function PetSummaryCard() {
             </p>
           </div>
         ) : (
-          <p className="pet-summary-empty">
-            No assessment yet. The first one is what everything else is measured against.
-          </p>
+          /* Before the first assessment the card used to drop to this one
+             line — no photo, no ring, nothing of the animal at all. Ash's
+             report 4 Oct 2026, testing a brand-new account: the home screen
+             a new owner lands on is the emptiest it will ever be, and it was
+             also the only one that did not show their pet.
+
+             Same ring at the same size, drawn empty, with the same photo in
+             it. The line below it is her approved copy, unchanged.
+
+             APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */
+          <div className="pet-summary-score">
+            <ScoreRing
+              percent={0}
+              colour="var(--border)"
+              size={148}
+              label="No quality of life score yet"
+              centre={<PetAvatar pet={pet} size={112} editable />}
+            />
+            <p className="pet-summary-empty">
+              No assessment yet. The first one is what everything else is measured against.
+            </p>
+          </div>
         )}
 
         {overview && <PillarSummary overview={overview} breakdown={breakdown} pet={pet} />}
@@ -459,6 +486,28 @@ export default function PetSummaryCard() {
           <p className="pet-summary-clear">
             <Check size={14} /> Monitoring up to date
           </p>
+        )}
+
+        {/* Read back what was actually said last time — Ash's instruction
+            4 Oct 2026. The answers were saved, scored, charted and exported,
+            but the only way to see them as questions and answers was to find
+            that day on the Trends calendar and tap it. The last check-in is
+            the one an owner wants most often, and it is the one this card is
+            already about.
+
+            The same DayAnswersModal the calendar opens, so the two can never
+            describe a day differently. Read-only: editing a past day belongs
+            to the assessment's own "Edit Existing" path.
+
+            APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+        {latestGeneral && (
+          <button
+            type="button"
+            className="subtle-link pet-summary-answers-link"
+            onClick={() => setShowLastAnswers(true)}
+          >
+            See Your Last Answers
+          </button>
         )}
 
         {/* Only when there is something to do, on Ash's instruction 3 Sep
@@ -609,6 +658,18 @@ export default function PetSummaryCard() {
             be overlooked.
           </p>
         </Modal>
+      )}
+
+      {showLastAnswers && latestGeneral && (
+        <DayAnswersModal
+          title="Your Last Answers"
+          dateLabel={formatDateDDMMYY(latestGeneral.date)}
+          rows={describeAssessmentDay(latestGeneral, latestPain, pet?.species)}
+          pet={pet}
+          emptyMessage="No assessment was saved on this day."
+          note={latestGeneral?.notes ?? latestPain?.notes ?? null}
+          onClose={() => setShowLastAnswers(false)}
+        />
       )}
 
       <ConditionIntroModal
