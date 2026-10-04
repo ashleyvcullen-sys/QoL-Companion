@@ -36,6 +36,24 @@ export function qolReminderIdForPet(petId) {
   return hashToNotificationId(petId)
 }
 
+// One id per pet per weekday, for a check-in set to specific days rather than
+// to an interval — Ash's instruction 4 Oct 2026. Namespaced with 'qolday:' so
+// it can never collide with the pet's own interval reminder above.
+export function qolWeekdayReminderId(petId, weekday) {
+  return hashToNotificationId(`qolday:${petId}:${weekday}`)
+}
+
+// Sunday to Saturday, as JavaScript numbers them — the same 0-6 the day
+// picker and MonthCalendar use.
+export const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6]
+
+// A check-in on chosen weekdays repeats natively and therefore needs a clock
+// time, which an interval reminder never did: it simply landed at the time of
+// day the last entry was saved. The owner's own reminder time is used when
+// they have set one; this is what a reminder falls back to when they have
+// not, and the screen says so rather than leaving it to be discovered.
+export const DEFAULT_REMINDER_TIME = '09:00'
+
 // One id per medication per time slot, so a three-times-a-day drug holds
 // three independent reminders and editing one time doesn't disturb the
 // others. Namespaced with 'med:' so a medication uuid can never collide
@@ -148,7 +166,14 @@ export function atChosenTime(date, time, cadenceDays = 1) {
 // Cancels just this pet's reminder — every other pet's stays scheduled.
 export async function cancelQolReminder(petId) {
   if (!petId) return
-  await LocalNotifications.cancel({ notifications: [{ id: qolReminderIdForPet(petId) }] })
+  await LocalNotifications.cancel({
+    notifications: [
+      { id: qolReminderIdForPet(petId) },
+      // Every weekday, not only the ones currently chosen: this is what
+      // clears Wednesday when the owner drops it from the set.
+      ...WEEKDAYS.map((weekday) => ({ id: qolWeekdayReminderId(petId, weekday) })),
+    ],
+  })
 }
 
 // One-off cleanup for installs that predate per-pet ids. Harmless no-op
@@ -173,6 +198,12 @@ async function cancelLegacySharedReminder() {
 // instead of counting fresh from each one.
 export async function scheduleQolReminder({
   petId, petName, cadenceDays, cadenceDay = null, fromDate, reminderTime = null,
+  // The weekdays a check-in is wanted on, 0-6. When there are any, they win:
+  // the reminder stops being an interval counted from the last entry and
+  // becomes one repeating notification per chosen day — Ash's instruction
+  // 4 Oct 2026, so "3 times weekly" can mean Monday, Wednesday and Friday
+  // rather than "every two days".
+  weekdays = null,
 }) {
   if (!petId) return
 
@@ -192,6 +223,25 @@ export async function scheduleQolReminder({
   // guard below and fires one in sixty seconds. Turning reminders off would
   // have produced a notification a minute later.
   if (!cadenceDays) return
+
+  const chosenDays = Array.isArray(weekdays)
+    ? [...new Set(weekdays.map(Number).filter((day) => WEEKDAYS.includes(day)))].sort((a, b) => a - b)
+    : []
+
+  if (chosenDays.length > 0) {
+    const [hour, minute] = (reminderTime ?? DEFAULT_REMINDER_TIME).split(':').map(Number)
+    await LocalNotifications.schedule({
+      notifications: chosenDays.map((weekday) => ({
+        id: qolWeekdayReminderId(petId, weekday),
+        title: 'Quality of Life Check-In',
+        body: `Time for ${petName}'s quality of life check-in`,
+        // Capacitor counts Sunday as 1; the picker counts it as 0.
+        schedule: { on: { weekday: weekday + 1, hour, minute }, repeats: true, allowWhileIdle: true },
+        extra: { screen: 'assessment', petId },
+      })),
+    })
+    return
+  }
 
   let nextDate = new Date(fromDate)
   nextDate.setDate(nextDate.getDate() + cadenceDays)

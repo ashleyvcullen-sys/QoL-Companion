@@ -31,6 +31,62 @@ export const CADENCE_OPTIONS = [
 // this name.
 export const CONDITION_CADENCE_OPTIONS = [...CADENCE_OPTIONS]
 
+// How often the assessment repeats.
+//
+// One list, like every other control on these screens — Ash's instruction
+// 4 Oct 2026, after a two-list "3 times / weekly" version read as three
+// controls for one question. The weekly frequencies are hers, the same day:
+// twice through six times a week, "if they want".
+//
+// `days` is the interval the reminder and the overdue badge run on, and it is
+// what goes on `schedule.qol` exactly as before — so nothing else in the app
+// had to change. The option's own key goes beside it on `schedule.qolRepeat`,
+// so the list reads back as it was set rather than as whatever interval it
+// worked out to.
+//
+// A whole number of days cannot separate every rung: five and six times a
+// week both land on "every day", and three and four times a week both land on
+// "every two days". The key is what keeps them apart on screen.
+// `times` is how many weekdays the rung asks for. Where it is set, the day
+// picker takes that many and the reminder fires on exactly those days —
+// Ash's instruction 4 Oct 2026. Without any days chosen the rung still falls
+// back to its interval, so nothing is broken for an owner who ignores it.
+export const QOL_CADENCE_OPTIONS = [
+  { value: 'daily', label: 'Daily', days: 1 },
+  { value: 'weekly-6', label: '6 times weekly', days: 1, times: 6 },
+  { value: 'weekly-5', label: '5 times weekly', days: 1, times: 5 },
+  { value: 'weekly-4', label: '4 times weekly', days: 2, times: 4 },
+  { value: 'weekly-3', label: '3 times weekly', days: 2, times: 3 },
+  { value: 'weekly-2', label: 'Twice weekly', days: 3, times: 2 },
+  { value: 'weekly', label: 'Weekly', days: 7 },
+  { value: 'fortnightly', label: 'Every 2 weeks', days: 14 },
+  { value: 'monthly', label: 'Monthly', days: 30 },
+]
+
+// The weekdays this pet's check-in is set to, 0-6. Empty means it is still an
+// interval counted from the last entry.
+export function qolWeekdaysOf(pet) {
+  const days = pet?.schedule?.qolDays
+  if (!Array.isArray(days)) return []
+  return [...new Set(days.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
+    .sort((a, b) => a - b)
+}
+
+export function qolCadenceOption(value) {
+  return QOL_CADENCE_OPTIONS.find((option) => option.value === value) ?? null
+}
+
+// Which option the list should be showing. A pet set up before this existed
+// has only an interval saved, so it falls back to the first option with that
+// interval — 1 day is Daily, 7 is Weekly, and so on.
+export function qolRepeatOf(pet) {
+  const saved = qolCadenceOption(pet?.schedule?.qolRepeat)
+  if (saved) return saved
+  const days = pet?.schedule?.qol ?? pet?.schedule?.general ?? 7
+  return QOL_CADENCE_OPTIONS.find((option) => option.days === days)
+    ?? QOL_CADENCE_OPTIONS.find((option) => option.value === 'weekly')
+}
+
 // Which day the reminder lands on, and therefore which picker to show. A
 // daily cadence has no day to choose; a fortnightly one still lands on a
 // weekday. Monthly is the only one that asks for a date.

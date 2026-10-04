@@ -49,7 +49,7 @@ import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import { invalidateQuery } from '../lib/queryCache'
 import { scheduleQolReminder } from '../lib/notifications'
-import { reminderTimeOf } from '../lib/cadence'
+import { reminderTimeOf, qolWeekdaysOf } from '../lib/cadence'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
 import { diseaseDaysByDate } from '../lib/diseaseDays'
@@ -671,6 +671,7 @@ export default function QualityOfLifeAssessment() {
       petName: pet.name,
       cadenceDays,
       reminderTime: reminderTimeOf(pet),
+      weekdays: qolWeekdaysOf(pet),
       fromDate: entryDate,
     }).catch((error) => {
       console.error('Failed to reschedule QoL reminder:', error.message)

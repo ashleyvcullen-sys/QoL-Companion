@@ -13,6 +13,7 @@ import {
   requestExactAlarmPermission,
   scheduleConditionReminder,
   scheduleQolReminder,
+  DEFAULT_REMINDER_TIME,
 } from '../lib/notifications'
 import { useMedications } from '../lib/medicationsData'
 import { todayIsoDate, useAllConditionEntries, usePetConditions } from '../lib/conditionsData'
@@ -34,6 +35,9 @@ import {
   saveConditionSchedule,
   scheduleForCondition as scheduleForConditionOf,
   reminderTimeOf,
+  QOL_CADENCE_OPTIONS,
+  qolRepeatOf,
+  qolWeekdaysOf,
 } from '../lib/cadence'
 
 // The options, the day-mode rule and the per-condition defaults now live in
@@ -103,7 +107,23 @@ function ScheduleRow({
   options = CADENCE_OPTIONS,
   reminderOff = false,
   onRemindersChange = null,
+  // The assessment picks from a longer list, keyed by name rather than by
+  // interval — see QOL_CADENCE_OPTIONS. The condition rows keep the presets,
+  // which are keyed by their number of days.
+  repeat = null,
+  onRepeatChange = null,
+  // The weekdays chosen for a rung that asks for several, and the way to
+  // change them.
+  weekdays = [],
+  onWeekdaysChange = null,
+  // Only to say, under the day picker, what time those days land at. A
+  // reminder on chosen weekdays repeats natively and so must carry a clock
+  // time; this screen names it rather than letting the owner find out.
+  reminderTime = null,
 }) {
+  const asksRepeat = Boolean(repeat && onRepeatChange)
+  // A rung like "3 times weekly" picks its days rather than an interval.
+  const asksWeekdays = Boolean(asksRepeat && repeat.times && onWeekdaysChange)
   // Nothing is overdue when there is no schedule to be overdue against.
   //
   // Through the shared helper rather than a local date subtraction. The one
@@ -157,7 +177,27 @@ function ScheduleRow({
       {/* Hidden while reminders are off: how often to be reminded is not a
           question worth answering when the answer is "never". It comes back
           holding the cadence it had, which is what turning them on restores. */}
-      {!reminderOff && (
+      {/* One list, with the weekly frequencies in it — Ash's instruction
+          4 Oct 2026. Twice through six times a week, alongside the four
+          intervals that were always there.
+
+          APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+      {!reminderOff && asksRepeat && (
+        <div className="field">
+          <label htmlFor="qol-repeat">Repeat</label>
+          <select
+            id="qol-repeat"
+            value={repeat.value}
+            onChange={(e) => onRepeatChange(e.target.value)}
+          >
+            {QOL_CADENCE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {!reminderOff && !asksRepeat && (
         <div className="field">
           <label>Repeat</label>
           <select value={cadenceDays} onChange={(e) => onCadenceChange(Number(e.target.value))}>
@@ -168,11 +208,37 @@ function ScheduleRow({
         </div>
       )}
 
+      {/* Which days, for a rung that asks for more than one — Ash's
+          instruction 4 Oct 2026. Three times weekly as an interval is "every
+          two days", which drifts across the week and is not what anyone means
+          by it; three times weekly as Monday, Wednesday and Friday is.
+
+          Choosing none is allowed and is the old behaviour: the reminder goes
+          back to counting from the last entry.
+
+          ALL COPY PENDING ASH. */}
+      {!reminderOff && asksWeekdays && (
+        <div className="field">
+          <label>Which days?</label>
+          <ReminderDayPicker
+            mode="week"
+            value={weekdays}
+            max={repeat.times}
+            onChange={onWeekdaysChange}
+          />
+          <p className="assessment-hint">
+            {weekdays.length > 0
+              ? `Your check-in reminder arrives on these days, at ${formatTime(reminderTime ?? DEFAULT_REMINDER_TIME)}.`
+              : `Pick up to ${repeat.times} day${repeat.times === 1 ? '' : 's'}, or leave this empty to be reminded every ${cadenceDays} days instead.`}
+          </p>
+        </div>
+      )}
+
       {/* Which day, once "how often" leaves a choice. A cadence says how
           often; it cannot say when, and "weekly" measured from whichever
           Tuesday the last entry happened to fall on is not a day anyone
           picked. */}
-      {!reminderOff && dayMode && onDayChange && (
+      {!reminderOff && !asksWeekdays && dayMode && onDayChange && (
         <div className="field">
           <label>{dayMode === 'week' ? 'Which day?' : 'Which date?'}</label>
           <ReminderDayPicker
@@ -223,6 +289,12 @@ export default function Schedule() {
   // 4 Oct 2026. Null keeps the old behaviour, which is to land at whatever
   // time the last entry was saved at.
   const reminderTime = reminderTimeOf(pet)
+  // Which rung of the list this pet is on. One set up before the list grew
+  // reads back as the rung with its interval.
+  const qolRepeat = qolRepeatOf(pet)
+  const qolWeekdays = qolWeekdaysOf(pet)
+  // A fresh array every render, so the effect below is keyed on its contents.
+  const weekdayKey = qolWeekdays.join(',')
 
   // Per-condition cadence, stored under the same `schedule` object as the
   // assessment's. A condition with no entry here falls back to the cadence
@@ -257,9 +329,12 @@ export default function Schedule() {
       cadenceDays,
       cadenceDay,
       reminderTime,
+      weekdays: qolWeekdays,
       fromDate: latestGeneralDate ?? new Date(),
     })
-  }, [notifStatus, loading, cadenceDays, cadenceDay, reminderTime, latestGeneralDate, pet.id, pet.name])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifStatus, loading, cadenceDays, cadenceDay, reminderTime, weekdayKey,
+    latestGeneralDate, pet.id, pet.name])
 
   // The same self-healing pass for every condition being monitored. Keyed on
   // a serialised copy of the schedule rather than the object itself, which is
@@ -300,6 +375,28 @@ export default function Schedule() {
       qol: days,
       qolDay: keepsDay ? cadenceDay : null,
     })
+  }
+
+  // Both are saved: the rung, so the list reads back as it was set, and the
+  // interval it works out to, which is what every other reader in the app has
+  // always used.
+  async function updateRepeat(value) {
+    const option = QOL_CADENCE_OPTIONS.find((item) => item.value === value)
+    if (!option) return
+    const keepsDay = dayModeFor(option.days) === dayModeFor(cadenceDays)
+    await saveSchedule({
+      ...pet.schedule,
+      qol: option.days,
+      qolRepeat: option.value,
+      qolDay: keepsDay ? cadenceDay : null,
+      // Days chosen for "3 times weekly" mean nothing on "Monthly", and more
+      // of them than the new rung asks for is not a set anyone picked.
+      qolDays: option.times ? qolWeekdays.slice(0, option.times) : [],
+    })
+  }
+
+  async function updateWeekdays(days) {
+    await saveSchedule({ ...pet.schedule, qolDays: days })
   }
 
   async function updateCadenceDay(day) {
@@ -372,18 +469,24 @@ export default function Schedule() {
             <span>How often should I be assessing my pet's quality of life?</span>
           </div>
         </button>
+      </Card>
 
-        {/* One time of day for every check-in reminder — Ash's instruction
-            4 Oct 2026. Without it a reminder lands at whatever time the last
-            entry was saved at, which is how an owner who assessed once at
-            11pm ends up being asked at 11pm from then on.
+      {/* One time of day for every check-in reminder — Ash's instruction
+          4 Oct 2026. Without it a reminder lands at whatever time the last
+          entry was saved at, which is how an owner who assessed once at 11pm
+          ends up being asked at 11pm from then on.
 
-            Here rather than on each section: it is the same answer for all of
-            them, and asking it once is the point. Medication reminders are
-            not affected — those already fire at times the owner set dose by
-            dose.
+          In its own card, on her instruction the same day. It shared one with
+          the "how often should I be assessing" question above, which put two
+          unrelated things — something to read and something to set — in one
+          box with nothing between them.
 
-            APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+          Here rather than on each section: it is the same answer for all of
+          them, and asking it once is the point. Medication reminders are not
+          affected — those already fire at times the owner set dose by dose.
+
+          APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+      <Card>
         <div className="field schedule-reminder-time">
           <label htmlFor="reminder-time">What time should reminders arrive?</label>
           <input
@@ -422,7 +525,17 @@ export default function Schedule() {
             // already reads as OFF: the tab's due dot clears with it and no
             // notification is armed.
             reminderOff={cadenceDays === 0}
-            onRemindersChange={(turnOn) => updateCadence(turnOn ? 7 : 0)}
+            // Turning reminders back on restores the interval that was set,
+            // rather than resetting everyone to weekly.
+            onRemindersChange={(turnOn) => updateCadence(turnOn ? qolRepeat.days : 0)}
+            // The assessment only, on Ash's instruction 4 Oct 2026. A
+            // condition's cadence is the one its own definition recommends,
+            // which is a clinical number rather than a preference.
+            repeat={qolRepeat}
+            onRepeatChange={updateRepeat}
+            weekdays={qolWeekdays}
+            onWeekdaysChange={updateWeekdays}
+            reminderTime={reminderTime}
           />
         )}
       </Card>

@@ -6,11 +6,12 @@ import {
   checkNotificationPermission,
   getPendingNotificationIds,
   qolReminderIdForPet,
+  qolWeekdayReminderId,
   scheduleQolReminder,
 } from './notifications'
 import { fetchMedications } from './medicationsData'
 import { fetchPetConditions } from './conditionsData'
-import { reminderTimeOf } from './cadence'
+import { reminderTimeOf, qolWeekdaysOf } from './cadence'
 
 // Keeps scheduled reminders in step with which pets are actually visible.
 //
@@ -92,7 +93,15 @@ export function useHiddenPetReminderSync() {
       if (cancelled) return
 
       for (const pet of visiblePets) {
-        if (pending.has(qolReminderIdForPet(pet.id))) continue
+        // A check-in set to weekdays holds one pending notification per day
+        // rather than one under the pet's own id, so "already restored" is a
+        // different question for it — Ash's instruction 4 Oct 2026. Without
+        // this the pass would re-arm those every launch.
+        const weekdays = qolWeekdaysOf(pet)
+        const alreadyPending = weekdays.length > 0
+          ? weekdays.every((weekday) => pending.has(qolWeekdayReminderId(pet.id, weekday)))
+          : pending.has(qolReminderIdForPet(pet.id))
+        if (alreadyPending) continue
         // A pet with no cadence set has never had a reminder to restore.
         const cadenceDays = pet.schedule?.qol ?? pet.schedule?.general
         if (!cadenceDays) continue
@@ -103,6 +112,7 @@ export function useHiddenPetReminderSync() {
           cadenceDays,
           cadenceDay: pet.schedule?.qolDay ?? null,
           reminderTime: reminderTimeOf(pet),
+          weekdays,
           fromDate: new Date(),
         }).catch((error) => {
           console.error('Could not restore reminder for', pet.name, error.message)
