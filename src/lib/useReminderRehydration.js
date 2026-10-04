@@ -12,7 +12,7 @@ import {
 import { fetchMedications } from './medicationsData'
 import { fetchPetConditions } from './conditionsData'
 import { conditionByKey } from './conditions'
-import { reminderTimeOf } from './cadence'
+import { conditionWeekdaysOf, reminderTimeOf } from './cadence'
 
 // Medication reminders are scheduled with the OS, not stored in our
 // database — so they do not survive a reinstall, a restore from backup, or a
@@ -89,6 +89,11 @@ export function useReminderRehydration() {
             conditionLabel: definition.label,
             cadenceDays,
             cadenceDay: saved?.day ?? null,
+            // The pinned weekdays, or this pass would re-arm the condition on
+            // its bare interval and quietly undo them — the self-healing
+            // launch pass must restore what was set, not a simplification of
+            // it. Added 4 Oct 2026 with the shared frequency list.
+            weekdays: conditionWeekdaysOf(pet, condition.conditionKey),
             reminderTime: reminderTimeOf(pet),
             fromDate: new Date(),
           }).catch((error) => {

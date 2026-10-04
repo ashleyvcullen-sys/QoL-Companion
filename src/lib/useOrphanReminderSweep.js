@@ -4,13 +4,16 @@ import { useAuth } from './AuthContext'
 import { usePets } from './PetsContext'
 import {
   MAX_MEDICATION_SLOTS,
+  WEEKDAYS,
   cancelAllReminders,
   cancelReminderIds,
   checkNotificationPermission,
   conditionReminderId,
+  conditionWeekdayReminderId,
   getPendingNotificationIds,
   medicationReminderId,
   qolReminderIdForPet,
+  qolWeekdayReminderId,
 } from './notifications'
 import { fetchMedications } from './medicationsData'
 import { fetchPetConditions } from './conditionsData'
@@ -98,6 +101,19 @@ export function useOrphanReminderSweep() {
 
       for (const pet of visiblePets) {
         expected.add(qolReminderIdForPet(pet.id))
+        // Every weekday, whether or not it is currently chosen — the same
+        // reasoning as the medication slots below.
+        //
+        // THIS WAS A BUG, fixed 4 Oct 2026. Per-weekday check-in reminders
+        // landed earlier the same day and this sweep was not taught about
+        // them, so a pet set to "3 times weekly" had its three day-reminders
+        // cancelled as orphans on the next launch — silently, because
+        // cancelling a reminder nobody is watching for looks like nothing at
+        // all. A reminder the app itself schedules must always be in this
+        // set, and "all seven" is the form that cannot go stale.
+        for (const weekday of WEEKDAYS) {
+          expected.add(qolWeekdayReminderId(pet.id, weekday))
+        }
 
         const [medications, conditions] = await Promise.all([
           fetchMedications(pet.id).catch(() => { complete = false; return [] }),
@@ -107,6 +123,11 @@ export function useOrphanReminderSweep() {
 
         for (const condition of conditions) {
           expected.add(conditionReminderId(pet.id, condition.conditionKey))
+          // And its per-weekday ids, for a condition pinned to days rather
+          // than to an interval — 4 Oct 2026, with the shared frequency list.
+          for (const weekday of WEEKDAYS) {
+            expected.add(conditionWeekdayReminderId(pet.id, condition.conditionKey, weekday))
+          }
         }
         // Every slot, not only the ones currently in use. A drug edited from
         // three times a day to two leaves the third slot queued until the

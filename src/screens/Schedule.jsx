@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, BellOff, HelpCircle } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
@@ -31,6 +31,7 @@ import { formatDateDDMMYY } from '../lib/formatDate'
 import {
   CADENCE_OPTIONS,
   CONDITION_CADENCE_OPTIONS,
+  conditionCadenceOption,
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition as scheduleForConditionOf,
@@ -107,9 +108,11 @@ function ScheduleRow({
   options = CADENCE_OPTIONS,
   reminderOff = false,
   onRemindersChange = null,
-  // The assessment picks from a longer list, keyed by name rather than by
-  // interval — see QOL_CADENCE_OPTIONS. The condition rows keep the presets,
-  // which are keyed by their number of days.
+  // The rung this row is on, as an option object, and the way to change it.
+  // The assessment's options are keyed by name; a condition's by its number
+  // of days — see CONDITION_CADENCE_OPTIONS, which is the same list projected
+  // onto its intervals. Either way this row only reads `.value`, `.label` and
+  // `.times`, so it does not need to know which it has been handed.
   repeat = null,
   onRepeatChange = null,
   // The weekdays chosen for a rung that asks for several, and the way to
@@ -121,6 +124,8 @@ function ScheduleRow({
   // time; this screen names it rather than letting the owner find out.
   reminderTime = null,
 }) {
+  // Unique per row, for the label/control pairing below.
+  const rowId = useId()
   const asksRepeat = Boolean(repeat && onRepeatChange)
   // A rung like "3 times weekly" picks its days rather than an interval.
   const asksWeekdays = Boolean(asksRepeat && repeat.times && onWeekdaysChange)
@@ -182,15 +187,21 @@ function ScheduleRow({
           intervals that were always there.
 
           APPROVED — Dr Ash Cullen (BSc, DVM), 4 Oct 2026. */}
+      {/* `options` rather than the assessment's list by name — the diseases
+          use this same branch since 4 Oct 2026, and a hardcoded list would
+          have shown them the assessment's rungs while saving their own.
+          The id is per-row for the same reason: several of these render at
+          once, and one id shared between them points every label at the
+          first row's control. */}
       {!reminderOff && asksRepeat && (
         <div className="field">
-          <label htmlFor="qol-repeat">Repeat</label>
+          <label htmlFor={`${rowId}-repeat`}>Repeat</label>
           <select
-            id="qol-repeat"
+            id={`${rowId}-repeat`}
             value={repeat.value}
             onChange={(e) => onRepeatChange(e.target.value)}
           >
-            {QOL_CADENCE_OPTIONS.map((option) => (
+            {options.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
@@ -344,7 +355,7 @@ export default function Schedule() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || notifStatus !== 'granted' || conditionsLoading) return
     trackedConditions.forEach((definition) => {
-      const { days, day } = scheduleForCondition(definition)
+      const { days, day, weekdays } = scheduleForCondition(definition)
       const entries = byCondition[definition.key] ?? []
       scheduleConditionReminder({
         petId: pet.id,
@@ -353,6 +364,7 @@ export default function Schedule() {
         conditionLabel: definition.label,
         cadenceDays: days,
         cadenceDay: day,
+        weekdays,
         reminderTime,
         fromDate: localDateFromIso(entries[entries.length - 1]?.date) ?? new Date(),
       })
@@ -558,7 +570,7 @@ export default function Schedule() {
         {!conditionsLoading && trackedConditions.map((definition) => {
           const entries = byCondition[definition.key] ?? []
           const lastDate = entries[entries.length - 1]?.date ?? null
-          const { days, day, off } = scheduleForCondition(definition)
+          const { days, day, off, weekdays } = scheduleForCondition(definition)
 
           return (
             <div key={definition.key}>
@@ -569,6 +581,28 @@ export default function Schedule() {
                 cadenceDay={day}
                 options={CONDITION_CADENCE_OPTIONS}
                 reminderOff={off}
+                // The same frequency list the assessment uses — Ash's
+                // instruction 4 Oct 2026. Through `repeat` rather than
+                // `onCadenceChange` so this row gets the day picker for a
+                // rung like "3 times weekly"; the option is found by its
+                // interval, which is unique across the list.
+                repeat={conditionCadenceOption(days) ?? CONDITION_CADENCE_OPTIONS[0]}
+                onRepeatChange={(next) => {
+                  const option = conditionCadenceOption(Number(next))
+                  if (!option) return
+                  updateConditionSchedule(definition.key, {
+                    days: option.days,
+                    // A weekday and a date are not interchangeable, so the
+                    // day is dropped whenever the kind of day changes.
+                    day: dayModeFor(option.days) === dayModeFor(days) ? day : null,
+                    // And the pinned days go when the rung stops asking for
+                    // several, or nothing would ever clear them.
+                    weekdays: option.times ? weekdays : [],
+                  })
+                }}
+                weekdays={weekdays}
+                onWeekdaysChange={(next) => updateConditionSchedule(definition.key, { weekdays: next })}
+                reminderTime={reminderTimeOf(pet)}
                 // Off is stored as a cadence of 0. Turning reminders back on
                 // restores the cadence the condition was set up with rather
                 // than guessing at one — `days` is 0 while they are off, so
@@ -576,13 +610,6 @@ export default function Schedule() {
                 onRemindersChange={(turnOn) => updateConditionSchedule(definition.key, {
                   days: turnOn ? (definition.cadence?.days ?? 7) : 0,
                   day: turnOn ? day : null,
-                })}
-                onCadenceChange={(next) => updateConditionSchedule(definition.key, {
-                  days: next,
-                  // Same reasoning as the assessment above: a weekday and a
-                  // date are not interchangeable, so the day is dropped
-                  // whenever the kind of day changes.
-                  day: dayModeFor(next) === dayModeFor(days) ? day : null,
                 })}
                 onDayChange={(nextDay) => updateConditionSchedule(definition.key, { day: nextDay })}
               />

@@ -44,6 +44,7 @@ import { monitoredLabels } from '../lib/monitoredList'
 import {
   CONDITION_CADENCE_OPTIONS,
   cadenceLabel,
+  conditionCadenceOption,
   dayModeFor,
   saveConditionSchedule,
   scheduleForCondition,
@@ -249,6 +250,10 @@ export default function ConditionMonitoring() {
       conditionLabel: definition.label,
       cadenceDays: next.days ?? cadence?.days ?? 1,
       cadenceDay: next.day ?? null,
+      // From the patch where this change set them, falling back to what was
+      // already saved — otherwise picking days would save them and schedule
+      // the old interval, and the screen would disagree with the phone.
+      weekdays: next.weekdays ?? cadence?.weekdays ?? [],
       reminderTime: reminderTimeOf(pet),
       fromDate: latestEntry?.date ? new Date(`${latestEntry.date}T00:00:00`) : new Date(),
     })
@@ -649,14 +654,18 @@ export default function ConditionMonitoring() {
                         id="condition-cadence"
                         value={cadence.days}
                         onChange={(event) => {
-                          const next = Number(event.target.value)
+                          const option = conditionCadenceOption(Number(event.target.value))
+                          if (!option) return
                           changeCadence({
-                            days: next,
+                            days: option.days,
                             // A weekday and a date are not interchangeable, so
                             // the day is dropped whenever the kind of day
                             // changes — the same rule the Reminders screen
                             // follows.
-                            day: dayModeFor(next) === dayModeFor(cadence.days) ? cadence.day : null,
+                            day: dayModeFor(option.days) === dayModeFor(cadence.days) ? cadence.day : null,
+                            // And the pinned days go when the rung stops
+                            // asking for several, or nothing clears them.
+                            weekdays: option.times ? cadence.weekdays : [],
                           })
                         }}
                       >
@@ -666,7 +675,24 @@ export default function ConditionMonitoring() {
                       </select>
                     </div>
 
-                    {!cadence.off && dayModeFor(cadence.days) && (
+                    {/* Which days, for a rung that asks for more than one —
+                        the same control the assessment's own frequency gained
+                        on 4 Oct 2026, and the same fallback: choose none and
+                        the reminder goes back to counting from the last
+                        entry. */}
+                    {conditionCadenceOption(cadence.days)?.times && (
+                      <div className="field">
+                        <label>Which days?</label>
+                        <ReminderDayPicker
+                          mode="week"
+                          value={cadence.weekdays}
+                          max={conditionCadenceOption(cadence.days).times}
+                          onChange={(days) => changeCadence({ weekdays: days })}
+                        />
+                      </div>
+                    )}
+
+                    {!cadence.off && !conditionCadenceOption(cadence.days)?.times && dayModeFor(cadence.days) && (
                       <div className="field">
                         <label>{dayModeFor(cadence.days) === 'week' ? 'Which day?' : 'Which date?'}</label>
                         <ReminderDayPicker

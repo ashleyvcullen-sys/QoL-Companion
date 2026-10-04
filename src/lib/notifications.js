@@ -70,6 +70,15 @@ export function conditionReminderId(petId, conditionKey) {
   return hashToNotificationId(`cond:${petId}:${conditionKey}`)
 }
 
+// One id per condition per weekday, for a condition pinned to specific days
+// rather than to an interval — added 4 Oct 2026 when the diseases gained the
+// assessment's frequency list. Namespaced with 'condday:' so it can collide
+// with neither the condition's own interval reminder above nor the pet's
+// 'qolday:' ones.
+export function conditionWeekdayReminderId(petId, conditionKey, weekday) {
+  return hashToNotificationId(`condday:${petId}:${conditionKey}:${weekday}`)
+}
+
 // Moves a due date forward onto the day the owner asked for.
 //
 // A cadence on its own says how OFTEN; it cannot say WHEN. "Weekly" from a
@@ -276,7 +285,15 @@ export async function cancelConditionReminder(petId, conditionKey) {
   if (!petId || !conditionKey) return
   try {
     await LocalNotifications.cancel({
-      notifications: [{ id: conditionReminderId(petId, conditionKey) }],
+      notifications: [
+        { id: conditionReminderId(petId, conditionKey) },
+        // Every weekday, not only the ones currently chosen — the same
+        // reasoning as MAX_MEDICATION_SLOTS below. Moving a condition from
+        // "3 times weekly" to "Weekly" has to clear the three day-reminders
+        // it used to hold, and by then the app no longer knows which three
+        // they were.
+        ...WEEKDAYS.map((weekday) => ({ id: conditionWeekdayReminderId(petId, conditionKey, weekday) })),
+      ],
     })
   } catch {
     // Cancelling something that was never scheduled is a no-op on both
@@ -295,6 +312,9 @@ export async function cancelConditionReminder(petId, conditionKey) {
 export async function scheduleConditionReminder({
   petId, petName, conditionKey, conditionLabel, cadenceDays, cadenceDay = null, fromDate,
   reminderTime = null,
+  // The weekdays this condition is wanted on, 0-6. When there are any they
+  // win, exactly as they do for the check-in: see scheduleQolReminder.
+  weekdays = null,
 }) {
   if (!petId || !conditionKey) return
 
@@ -304,6 +324,28 @@ export async function scheduleConditionReminder({
   await cancelConditionReminder(petId, conditionKey)
 
   if (!cadenceDays) return
+
+  const chosenDays = Array.isArray(weekdays)
+    ? [...new Set(weekdays.map(Number).filter((day) => WEEKDAYS.includes(day)))].sort((a, b) => a - b)
+    : []
+
+  // Pinned days repeat natively at a clock time, so they survive the app
+  // never being opened — and "3 times weekly" means Monday, Wednesday and
+  // Friday rather than every second day drifting round the week.
+  if (chosenDays.length > 0) {
+    const [hour, minute] = (reminderTime ?? DEFAULT_REMINDER_TIME).split(':').map(Number)
+    await LocalNotifications.schedule({
+      notifications: chosenDays.map((weekday) => ({
+        id: conditionWeekdayReminderId(petId, conditionKey, weekday),
+        title: `${conditionLabel} Check-In`,
+        body: `Time for ${petName}'s ${conditionLabel.toLowerCase()} check-in`,
+        // Capacitor counts Sunday as 1; the picker counts it as 0.
+        schedule: { on: { weekday: weekday + 1, hour, minute }, repeats: true, allowWhileIdle: true },
+        extra: { screen: 'condition', petId, conditionKey },
+      })),
+    })
+    return
+  }
 
   let nextDate = new Date(fromDate ?? Date.now())
   nextDate.setDate(nextDate.getDate() + cadenceDays)
