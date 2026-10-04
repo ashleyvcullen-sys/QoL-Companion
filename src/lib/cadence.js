@@ -9,12 +9,14 @@ import { supabase } from './supabase'
 // reminder" — `undefined` means the owner has never touched this one, which
 // is not the same thing. Two copies of that would eventually disagree.
 
-export const CADENCE_OPTIONS = [
-  { value: 1, label: 'Daily' },
-  { value: 7, label: 'Weekly' },
-  { value: 14, label: 'Every 2 weeks' },
-  { value: 30, label: 'Monthly' },
-]
+// CADENCE_OPTIONS — the original four intervals — was removed on 4 Oct 2026.
+// It had become nothing but ScheduleRow's default `options`, and as a default
+// it was actively harmful: the assessment row passed no list of its own, so
+// when the repeat control started reading `options` it silently showed these
+// four rungs while saving against the six in QOL_CADENCE_OPTIONS below.
+//
+// Every list of frequencies now comes from QOL_CADENCE_OPTIONS, or from
+// CONDITION_CADENCE_OPTIONS, which is that same list keyed by interval.
 
 // How often a thing repeats — one list, used by the assessment and, since
 // 4 Oct 2026, by every disease too.

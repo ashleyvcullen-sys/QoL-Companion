@@ -29,7 +29,6 @@ import Btn from '../components/Btn'
 import Skeleton from '../components/Skeleton'
 import { formatDateDDMMYY } from '../lib/formatDate'
 import {
-  CADENCE_OPTIONS,
   CONDITION_CADENCE_OPTIONS,
   conditionCadenceOption,
   dayModeFor,
@@ -105,7 +104,13 @@ function ScheduleRow({
   cadenceDay = null,
   onCadenceChange,
   onDayChange,
-  options = CADENCE_OPTIONS,
+  // No default. Both callers hand their own list over, and the default that
+  // used to sit here was the old four-interval one — so the row that forgot
+  // to pass anything showed the wrong rungs while saving against the right
+  // ones, which is how the assessment ended up stuck on four options after
+  // the diseases gained six. A missing list should be a visible break, not a
+  // quietly different control.
+  options,
   reminderOff = false,
   onRemindersChange = null,
   // The rung this row is on, as an option object, and the way to change it.
@@ -540,9 +545,12 @@ export default function Schedule() {
             // Turning reminders back on restores the interval that was set,
             // rather than resetting everyone to weekly.
             onRemindersChange={(turnOn) => updateCadence(turnOn ? qolRepeat.days : 0)}
-            // The assessment only, on Ash's instruction 4 Oct 2026. A
-            // condition's cadence is the one its own definition recommends,
-            // which is a clinical number rather than a preference.
+            // Explicitly, even though this row's options used to be the
+            // default: the repeat control takes whatever list it is handed
+            // since the diseases started using it too, and leaving this off
+            // showed the assessment the old four intervals while saving
+            // against the new list. Ash spotted it on her phone.
+            options={QOL_CADENCE_OPTIONS}
             repeat={qolRepeat}
             onRepeatChange={updateRepeat}
             weekdays={qolWeekdays}
