@@ -111,15 +111,27 @@ export function bodyConditionInfluence(bodyCondition) {
   if (!Number.isFinite(score)) return null
   if (Number.isFinite(daysAgo) && daysAgo > BCS_MAX_AGE_DAYS) return null
   if (score >= 4 && score <= 5) return { bandFloorIndex: 0, pillarScore: 100, red: false }
+  // ONLY A SEVERE BODY CONDITION CAPS THE SCORE — Ash's instruction 5 Oct
+  // 2026: "qol score should not be capped by a bcs that has fallen unless the
+  // bcs is severe (1-2 or 8-9)". Until then a 3 that had fallen from a higher
+  // score, and any 6 or 7, each capped the day at Moderately reduced.
+  //
+  // The cap and the pillar are separate judgements and only the cap changed.
+  // A 3 that has fallen, and a 6 or 7, still carry 50 into Appetite — the
+  // finding is real and still visible in the pillar it belongs to. What it no
+  // longer does is hold the headline number down on a day that is otherwise
+  // fine, which is a different and much stronger claim: body condition moves
+  // over months, and a weight that has not been re-measured since a fortnight
+  // ago should not be deciding how today reads.
   if (score === 3) {
     const previous = Number(bodyCondition?.previousScore)
     const fallen = Number.isFinite(previous) && previous > score
     return fallen
-      ? { bandFloorIndex: BAND_INDEX_MODERATE_IMPACT, pillarScore: 50, red: false, fallen: true }
+      ? { bandFloorIndex: 0, pillarScore: 50, red: false, fallen: true }
       : { bandFloorIndex: 0, pillarScore: 75, red: false }
   }
   if (score === 6 || score === 7) {
-    return { bandFloorIndex: BAND_INDEX_MODERATE_IMPACT, pillarScore: 50, red: false }
+    return { bandFloorIndex: 0, pillarScore: 50, red: false }
   }
   return { bandFloorIndex: BAND_INDEX_SEVERE_IMPACT, pillarScore: 0, red: true }
 }
@@ -484,9 +496,11 @@ export function computeGeneralQolResult(entry, beap, species = null, diseaseEmer
     },
     {
       index: bodyConditionInfluenceNow?.bandFloorIndex ?? 0,
-      reason: bodyConditionInfluenceNow?.fallen
-        ? `body condition falling to ${bodyCondition?.score} of 9`
-        : `body condition ${bodyCondition?.score} of 9`,
+      // No "falling to" variant any more: since 5 Oct 2026 a fallen 3 does
+      // not cap, so the only body condition that reaches this line is a
+      // severe one, and those cap on the score itself rather than on a
+      // change. `fallen` is still set on the influence for the pillar detail.
+      reason: `body condition ${bodyCondition?.score} of 9`,
       findings: bodyCondition?.score != null
         ? [`Body condition ${bodyCondition.score} of 9`]
         : [],
@@ -683,7 +697,7 @@ export const INDIVIDUAL_MEASURE_GROUPS = [
     color: '#C97B8C',
     measures: [
       { key: 'breathing', label: 'Breathing' },
-      { key: 'eyes', label: 'Eyes' },
+      { key: 'eyes', label: 'Eyes & Facial Positioning' },
       { key: 'ambulation', label: 'Mobility' },
       { key: 'activity', label: 'Activity' },
       { key: 'appetite', label: 'Appetite' },
@@ -785,7 +799,10 @@ export function computeOverviewBreakdown(latestGeneralEntry, latestPainEntry, pi
   }
 
   pain('comfort', 'breathing', 'Breathing')
-  pain('comfort', 'eyes', species === 'cat' ? 'Eyes / Face' : 'Eyes')
+  // One name for both species since 5 Oct 2026 — Ash's instruction. The dog
+  // scale read "Eyes" and the cat scale "Eyes / Face"; the new name is true
+  // of both and more so of the cat, whose scale IS facial positioning.
+  pain('comfort', 'eyes', 'Eyes & Facial Positioning')
   pain('comfort', 'ambulation', 'Mobility')
   pain('comfort', 'posture', 'Posture')
   pain('comfort', 'palpation', 'Response to Touch')

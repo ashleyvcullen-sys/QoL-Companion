@@ -131,7 +131,7 @@ export const BEAP_SCALES = {
       "Constant rapid, laboured breathing, even at rest.",
       "Distressed gasping, struggling to breathe. Gums may appear white or blue.",
     ] },
-    { key: "eyes", letter: "E", label: "Eyes", concernFrom: null, emergencyFrom: null, levels: [
+    { key: "eyes", letter: "E", label: "Eyes & Facial Positioning", concernFrom: null, emergencyFrom: null, levels: [
       "Eyes bright and alert.",
       "Eyes slightly less bright than usual.",
       "Eyes slightly duller, brow may be slightly furrowed.",
@@ -197,7 +197,7 @@ export const BEAP_SCALES = {
       "Rapid, laboured, open-mouth breathing.",
       "Distressed, gasping, or extreme effort to breathe.",
     ] },
-    { key: "eyes", letter: "E", label: "Eyes / Face", concernFrom: null, emergencyFrom: null, levels: [
+    { key: "eyes", letter: "E", label: "Eyes & Facial Positioning", concernFrom: null, emergencyFrom: null, levels: [
       "Ears forward, eyes round with normal pupils, relaxed muzzle, whiskers loose.",
       "Ears slightly rotated, mild squint, pupils a touch wider.",
       "Ears rotated out or back, moderate squint, dilated pupils.",

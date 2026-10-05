@@ -5,7 +5,13 @@
 //               breathing and breathing effort, coughing, ascites,
 //               fainting/collapse, exercise tolerance, seizures
 //   Appetite    vomiting, nausea, stool quality, drinking, reflux
-//               (plus cognitive toileting / litter habits, her addition)
+//
+// COGNITIVE TOILETING / LITTER HABITS MOVED TO COMFORT on Ash's instruction,
+// 5 Oct 2026 — it sat under Appetite from 21 Sep. Losing the habit of asking
+// to go out, or of using the tray, is a comfort and dignity problem rather
+// than a digestive one, and arthritis:litter_tray has always been read that
+// way: the same behaviour should not change pillar because the cause is
+// cognitive rather than musculoskeletal.
 //
 // URINATION MOVED TO COMFORT on Ash's instruction, 24 Sep 2026 — passing
 // urine is a question about physical ease rather than about intake and
@@ -48,7 +54,12 @@ const BY_CONDITION = {
   },
   cognitive: {
     disorientation: CU, activity_changes: CU, interactions: CO, anxiety: CO,
-    house_soiling: A,
+    // Comfort, not Appetite — Ash's instruction 5 Oct 2026. Losing the habit
+    // of asking to go out, or of using the tray, is a comfort and dignity
+    // problem rather than a digestive one: arthritis:litter_tray has always
+    // been read that way, and the same behaviour should not change pillar
+    // because the cause is cognitive rather than musculoskeletal.
+    house_soiling: C,
     // Ash's instruction 1 Oct 2026: the cognitive sleep question feeds Sleep.
     //
     // It is the exception to the rule above, and safe to be one. The question

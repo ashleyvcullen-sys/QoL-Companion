@@ -54,16 +54,18 @@ const CASES = [
   ['an urgent finding caps at 49', PERFECT_DAY, PERFECT_BEAP,
     { diseaseEmergencies: [{ conditionLabel: 'Kidney Disease' }] }, 49, 'Severely reduced'],
 
-  // Body condition. 4-5 ideal; 3 only when it has fallen; 6-7 amber; 1, 2,
-  // 8 and 9 red; nothing older than 30 days counts at all.
+  // Body condition. Only 1, 2, 8 and 9 cap the score — Ash's instruction
+  // 5 Oct 2026. A 3 that has fallen from a higher score, and any 6 or 7, still
+  // carry 50 into the Appetite pillar but no longer hold the day's headline
+  // number down. Nothing older than 30 days counts at all.
   ['an ideal body condition changes nothing', GOOD_DAY, GOOD_BEAP,
     { bodyCondition: { score: 5, daysAgo: 3, previousScore: 5 } }, 85, 'Mildly reduced'],
   ['a pet that has always been a 3 is left alone', GOOD_DAY, GOOD_BEAP,
     { bodyCondition: { score: 3, daysAgo: 4, previousScore: 3 } }, 85, 'Mildly reduced'],
-  ['a 3 that used to be a 5 caps at 74', GOOD_DAY, GOOD_BEAP,
-    { bodyCondition: { score: 3, daysAgo: 4, previousScore: 5 } }, 74, 'Moderately reduced'],
-  ['a 7 caps at 74', GOOD_DAY, GOOD_BEAP,
-    { bodyCondition: { score: 7, daysAgo: 4, previousScore: 7 } }, 74, 'Moderately reduced'],
+  ['a 3 that used to be a 5 no longer caps', GOOD_DAY, GOOD_BEAP,
+    { bodyCondition: { score: 3, daysAgo: 4, previousScore: 5 } }, 85, 'Mildly reduced'],
+  ['a 7 no longer caps', GOOD_DAY, GOOD_BEAP,
+    { bodyCondition: { score: 7, daysAgo: 4, previousScore: 7 } }, 85, 'Mildly reduced'],
   ['a 2 caps at 49', GOOD_DAY, GOOD_BEAP,
     { bodyCondition: { score: 2, daysAgo: 4, previousScore: 3 } }, 49, 'Severely reduced'],
   ['a 9 caps at 49', GOOD_DAY, GOOD_BEAP,
