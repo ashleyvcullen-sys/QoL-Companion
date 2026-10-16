@@ -69,7 +69,8 @@ const SECTIONS = [
       // go stale when the offer changes.
       //
       // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
-      'Premium may be offered with a free trial period. Trials are subject to eligibility determined by Apple: one introductory offer per Apple ID per subscription group, so a customer who has previously subscribed to Premium is not eligible. Unless cancelled at least 24 hours before the trial ends, the trial converts automatically to a paid subscription at the price and interval shown before purchase. Cancelling during a trial keeps access until the trial period ends, and no payment is taken.',
+      // Google Play wording APPROVED — Dr Ash Cullen (BSc, DVM), 16 Oct 2026 (matches the website).
+      'Premium may be offered with a free trial period. Trials are subject to eligibility determined by Apple or Google: one introductory offer per Apple ID or Google Play account, so a customer who has previously subscribed to Premium is not eligible. Unless cancelled before the trial ends (at least 24 hours before, on iPhone), the trial converts automatically to a paid subscription at the price and interval shown before purchase. Cancelling during a trial keeps access until the trial period ends, and no payment is taken.',
       'Premium includes:',
       { list: [
         'Up to five pet profiles',
@@ -207,7 +208,8 @@ const SECTIONS = [
       //
       // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
       'You may stop using the App at any time. You can delete individual pet records using "Delete Pet", and delete your account entirely using the in-app account deletion option, or by contacting us at info@qolcompanion.com.au.',
-      'Deleting your account does not cancel an active subscription or free trial. Subscriptions are managed by Apple and must be cancelled in your Apple ID settings — see Section 5.',
+      // Android wording APPROVED — Dr Ash Cullen (BSc, DVM), 16 Oct 2026.
+      'Deleting your account does not cancel an active subscription or free trial. Subscriptions are managed by Apple or Google and must be cancelled in your Apple ID settings (iPhone) or in the Google Play Store under Payments & subscriptions (Android) — see Section 5.',
       'We may suspend or terminate your access to the App if you breach these Terms, or for any other reason with reasonable notice, except where immediate termination is warranted by unlawful conduct or risk to others. If we terminate your access other than for breach, you may request a copy of your data at info@qolcompanion.com.au before it is deleted.',
       'Sections 6, 7, 8, 9 and 13, and any fees already payable under Section 5, survive termination of these Terms.',
     ],

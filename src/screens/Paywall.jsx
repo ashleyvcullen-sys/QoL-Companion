@@ -13,6 +13,8 @@ import { PRIVACY_POLICY_URL, TERMS_URL } from '../lib/legalUrls'
 import {
   APPLE_DISCLOSURE,
   APPLE_TRIAL_DISCLOSURE,
+  GOOGLE_DISCLOSURE,
+  GOOGLE_TRIAL_DISCLOSURE,
   trialLine,
   CANCELLATION_KEEPS_RECORDS,
   PAYWALL_FEATURE_LIST,
@@ -25,9 +27,12 @@ import {
 // works from a browser view, and it lands on the subscription list rather
 // than somewhere the user then has to navigate from.
 //
-// PENDING ASH — the Play Store equivalent, once there is an Android build:
-// https://play.google.com/store/account/subscriptions
-const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
+// Android (16 Oct 2026, approved by Ash): Google's documented page for
+// managing a subscription to one app. Untested on a device until the Android
+// build exists.
+const MANAGE_SUBSCRIPTION_URL = Capacitor.getPlatform() === 'android'
+  ? 'https://play.google.com/store/account/subscriptions?package=com.qolcompanion.app'
+  : 'https://apps.apple.com/account/subscriptions'
 
 // Renders whatever length Apple reports, so the paywall cannot disagree with
 // the offer configured in App Store Connect. Nothing here hard-codes a
@@ -342,7 +347,9 @@ export default function Paywall() {
               does not fit, the layout gives way, not the text. This is the
               string Apple checks under Guideline 3.1.2. */}
           <p className="paywall-disclosure">
-            {selectedTrial ? APPLE_TRIAL_DISCLOSURE : APPLE_DISCLOSURE}
+            {Capacitor.getPlatform() === 'android'
+              ? (selectedTrial ? GOOGLE_TRIAL_DISCLOSURE : GOOGLE_DISCLOSURE)
+              : (selectedTrial ? APPLE_TRIAL_DISCLOSURE : APPLE_DISCLOSURE)}
           </p>
         </>
       )}

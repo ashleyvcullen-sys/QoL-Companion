@@ -205,3 +205,19 @@ export const APPLE_TRIAL_DISCLOSURE =
   'period unless cancelled at least 24 hours before it ends. Payment is ' +
   'charged to your Apple ID at confirmation of purchase. Manage or cancel ' +
   'anytime in your Apple ID settings.'
+
+// APPROVED — Dr Ash Cullen (BSc, DVM), 16 Oct 2026. The Google Play equivalents, shown on Android in
+// place of the two Apple strings above. Google bills through the Play account
+// and lets a subscriber cancel any time before renewal, so Apple's "24 hours"
+// window is left out rather than carried across.
+export const GOOGLE_DISCLOSURE =
+  'Your subscription renews automatically unless cancelled before the end of ' +
+  'the current period. Payment is charged to your Google Play account at ' +
+  'confirmation of purchase. Manage or cancel anytime in the Google Play Store ' +
+  'under Payments & subscriptions.'
+
+export const GOOGLE_TRIAL_DISCLOSURE =
+  'Your free trial converts to a paid subscription at the end of the trial ' +
+  'period unless cancelled before it ends. Payment is charged to your Google ' +
+  'Play account at confirmation of purchase. Manage or cancel anytime in the ' +
+  'Google Play Store under Payments & subscriptions.'

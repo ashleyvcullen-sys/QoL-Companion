@@ -38,7 +38,7 @@ const SECTIONS = [
     heading: 'Data deletion',
     paragraphs: [
       "You can remove a pet's data at any time using the \"Remove pet\" option under Account Management in Settings, which deletes that pet's stored record.",
-      "You can also delete your entire account from within the app. This permanently removes all of your information, including anything hidden because a subscription has ended. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
+      "You can also delete your entire account from within the app. This permanently removes all of your information, including anything hidden because a subscription has ended. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings (iPhone) or in the Google Play Store under Payments & subscriptions (Android).",
     ],
   },
   {

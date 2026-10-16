@@ -106,8 +106,9 @@ const SECTIONS = [
       'You can permanently delete a pet\'s data at any time using the "Remove pet" option in Settings — this immediately and permanently removes that pet\'s profile and all associated assessments, notes, history, medications, photos, and videos.',
       'You can permanently delete your entire account at any time using the "Delete Account" option in Settings. This immediately and permanently deletes your account, your pet profile(s), and all associated data including all stored files — this action cannot be undone, and does not require contacting us.',
       'Deleting the App from your device does not delete your data, because it is stored in your account rather than on the device. Use Delete Account if that is what you intend.',
-      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026.
-      "Deletion removes your information from our live systems. Residual copies may persist in our providers' encrypted backups for a short period, after which they are overwritten. We retain nothing beyond that except where the law requires it. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings.",
+      // APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026; Android wording
+      // APPROVED 16 Oct 2026, matching the website.
+      "Deletion removes your information from our live systems. Residual copies may persist in our providers' encrypted backups for a short period, after which they are overwritten. We retain nothing beyond that except where the law requires it. Deleting your account does not cancel an active subscription — cancel that in your Apple ID settings (iPhone) or in the Google Play Store under Payments & subscriptions (Android).",
     ],
   },
   {

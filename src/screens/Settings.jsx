@@ -36,18 +36,34 @@ import {
 //
 // The RevenueCat SDK has no showManageSubscriptions in the version this app
 // pins (13.4.0) — checked before writing this rather than assumed.
-const MANAGE_SUBSCRIPTION_SCHEME = 'itms-apps://apps.apple.com/account/subscriptions'
-const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions'
+//
+// Android (16 Oct 2026): Google's documented page for managing a subscription
+// to one app. Capacitor hands play.google.com to the system, which opens it in
+// the Play Store app. Untested on a device until the Android build exists.
+const IS_ANDROID = Capacitor.getPlatform() === 'android'
+const PLAY_PACKAGE = 'com.qolcompanion.app'
+const PLAY_SUBSCRIPTIONS_URL = `https://play.google.com/store/account/subscriptions?package=${PLAY_PACKAGE}`
+const MANAGE_SUBSCRIPTION_SCHEME = IS_ANDROID
+  ? PLAY_SUBSCRIPTIONS_URL
+  : 'itms-apps://apps.apple.com/account/subscriptions'
+const MANAGE_SUBSCRIPTION_URL = IS_ANDROID
+  ? PLAY_SUBSCRIPTIONS_URL
+  : 'https://apps.apple.com/account/subscriptions'
 
 // Opens the App Store straight onto the write-a-review sheet for this app.
 // Separate from the in-app review prompt on the assessment screen, and it has
 // to be: Apple's own sheet cannot be summoned by a button, and a person who
 // WANTS to leave a review should never have to wait for one to appear.
 //
-// PENDING ASH — the Play Store equivalent, once there is an Android build:
-// market://details?id=<package>
-const WRITE_REVIEW_SCHEME = 'itms-apps://apps.apple.com/app/id6797211642?action=write-review'
-const WRITE_REVIEW_URL = 'https://apps.apple.com/app/id6797211642?action=write-review'
+// Android (16 Oct 2026, approved by Ash): market:// opens this app's page in
+// the Play Store app, where the review box is. Google has no direct
+// write-a-review link. Untested on a device until the Android build exists.
+const WRITE_REVIEW_SCHEME = IS_ANDROID
+  ? `market://details?id=${PLAY_PACKAGE}`
+  : 'itms-apps://apps.apple.com/app/id6797211642?action=write-review'
+const WRITE_REVIEW_URL = IS_ANDROID
+  ? `https://play.google.com/store/apps/details?id=${PLAY_PACKAGE}`
+  : 'https://apps.apple.com/app/id6797211642?action=write-review'
 
 function openWriteReview() {
   if (Capacitor.isNativePlatform()) {
@@ -477,12 +493,16 @@ export default function Settings() {
               lands days AFTER they deleted. The Terms say so; nobody reads
               the Terms with a finger over a red button.
               //
-              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. */}
+              APPROVED — Dr Ash Cullen (BSc, DVM), 13 Sep 2026. Android variant
+              APPROVED 16 Oct 2026: each phone names its own store. */}
           {hasPremium && (
             <p className="form-error" role="alert">
               <strong>Your subscription will not be cancelled.</strong> Deleting your
               account here does not cancel your Premium subscription — you will continue
-              to be charged unless you cancel it in your Apple ID settings.{' '}
+              to be charged unless you cancel it{' '}
+              {IS_ANDROID
+                ? 'in the Google Play Store under Payments & subscriptions.'
+                : 'in your Apple ID settings.'}{' '}
               <button
                 type="button"
                 className="subtle-link"

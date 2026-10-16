@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, ChevronLeft, Droplet, FileDown, Lock } from 'lucide-react'
+import { Bell, Check, ChevronLeft, Droplet, FileDown, Lock } from 'lucide-react'
 import Card from '../components/Card'
 import SectionTitle from '../components/SectionTitle'
 import { WELLBEING_CONCEPTS } from '../components/WellbeingConcepts'
@@ -48,7 +48,12 @@ import { usePets } from '../lib/PetsContext'
 import { useQolHistory } from '../lib/useQolHistory'
 import { supabase } from '../lib/supabase'
 import { invalidateQuery } from '../lib/queryCache'
-import { scheduleQolReminder } from '../lib/notifications'
+import { Capacitor } from '@capacitor/core'
+import {
+  checkNotificationPermission,
+  requestNotificationPermission,
+  scheduleQolReminder,
+} from '../lib/notifications'
 import { reminderTimeOf, qolWeekdaysOf } from '../lib/cadence'
 import { loadTodaysAssessmentDraft, saveAssessmentDraft, clearAssessmentDraft } from '../lib/assessmentDraft'
 import { maybeAskForReview } from '../lib/reviewPrompt'
@@ -362,6 +367,12 @@ export default function QualityOfLifeAssessment() {
   const [wizardKey, setWizardKey] = useState(0)
   // The page the owner is standing on right now, saved with the draft.
   const currentPageRef = useRef(0)
+  // The reminder offer on the Saved screen. `reminderPermission` is the
+  // phone's answer (null off-device, or until checked); the args are the
+  // ones this save scheduled with, so a yes can schedule the same reminder.
+  const [reminderPermission, setReminderPermission] = useState(null)
+  const reminderArgsRef = useRef(null)
+  const [remindersJustEnabled, setRemindersJustEnabled] = useState(false)
 
   // Runs once history has loaded. A completed entry for today takes
   // priority over the local in-progress draft entirely — if today's
@@ -666,16 +677,30 @@ export default function QualityOfLifeAssessment() {
     // keeps the reminder counting from when the pet was actually last
     // checked on rather than drifting from whenever the cadence was set.
     const cadenceDays = pet.schedule.qol ?? pet.schedule.general ?? 7
-    scheduleQolReminder({
+    const reminderArgs = {
       petId: pet.id,
       petName: pet.name,
       cadenceDays,
       reminderTime: reminderTimeOf(pet),
       weekdays: qolWeekdaysOf(pet),
       fromDate: entryDate,
-    }).catch((error) => {
+    }
+    reminderArgsRef.current = reminderArgs
+    scheduleQolReminder(reminderArgs).catch((error) => {
       console.error('Failed to reschedule QoL reminder:', error.message)
     })
+
+    // scheduleQolReminder quietly does nothing without notification
+    // permission, and until 16 Oct 2026 the only places that asked for it
+    // were Settings > Check-in Reminders and Medications. So a new owner who
+    // never went looking got no reminders at all. Checked here so the Saved
+    // screen can offer them. Native only (there is no permission in a
+    // browser), and not when the owner has turned check-in reminders off.
+    if (Capacitor.isNativePlatform() && cadenceDays) {
+      checkNotificationPermission()
+        .then(setReminderPermission)
+        .catch((error) => console.error('Could not check notification permission:', error.message))
+    }
 
     await clearAssessmentDraft(pet.id)
 
@@ -870,6 +895,19 @@ export default function QualityOfLifeAssessment() {
     />,
   ]
 
+  // The phone's own prompt, then the reminder this save already tried to
+  // schedule — the first attempt returned early for want of permission.
+  async function enableReminders() {
+    const display = await requestNotificationPermission()
+    setReminderPermission(display)
+    if (display === 'granted' && reminderArgsRef.current) {
+      setRemindersJustEnabled(true)
+      await scheduleQolReminder(reminderArgsRef.current).catch((error) => {
+        console.error('Failed to schedule QoL reminder:', error.message)
+      })
+    }
+  }
+
   if (completed) {
     const { result, previous } = completed
     const change = previous ? result.percent - previous.result.percent : null
@@ -908,6 +946,30 @@ export default function QualityOfLifeAssessment() {
               {change === 0
                 ? 'The same as last time.'
                 : `${describePercentChange(change)}. A single comparison is not a trend — the charts show whether it holds.`}
+            </p>
+          )}
+
+          {/* Offered only to an owner the phone has never asked. Allowed or
+              declined, it does not come back: a decline is changed in the
+              phone's settings, and Settings > Check-in Reminders already
+              says so. */}
+          {(reminderPermission === 'prompt' || reminderPermission === 'prompt-with-rationale') && (
+            <div className="notif-secondary">
+              {/* APPROVED — Dr Ash Cullen (BSc, DVM), 16 Oct 2026. */}
+              <p className="notif-state">
+                <Bell size={15} />
+                Get a reminder for {pet.name}&apos;s next check-in?
+              </p>
+              <p className="notif-sub">Trends start to show from the second check-in.</p>
+              <Btn type="button" className="btn-block notif-action" onClick={enableReminders}>
+                Enable Reminders
+              </Btn>
+            </div>
+          )}
+          {reminderPermission === 'granted' && remindersJustEnabled && (
+            <p className="notif-state">
+              <Check size={15} strokeWidth={2.5} />
+              Notifications are on
             </p>
           )}
 
